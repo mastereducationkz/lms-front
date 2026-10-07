@@ -5,6 +5,9 @@ import apiClient from '../services/api';
 import { getSatOfficialDates } from '../services/api/exams';
 import { toast } from '../components/Toast.tsx';
 import { isCollegeBoardPasswordRequired } from '../lib/assignmentZeroCollegeBoard';
+import { formatDate, type Locale, type MessageKey } from '@/lib/i18n';
+import { useLocale, useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 import {
   Upload,
   CheckCircle,
@@ -126,12 +129,12 @@ interface FormData {
   additional_comments: string;
 }
 
-const SCHOOL_TYPES = [
-  { value: 'NIS', label: 'Nazarbayev Intellectual Schools' },
-  { value: 'RFMS', label: 'National Physics and Mathematics Schools' },
-  { value: 'BIL', label: 'Bilim Innovation Lyceums' },
-  { value: 'Private', label: 'Private school' },
-  { value: 'Public', label: 'Public school' },
+const SCHOOL_TYPES: { value: string; label: MessageKey }[] = [
+  { value: 'NIS', label: 'studentHome.assignmentZero.school.nis' },
+  { value: 'RFMS', label: 'studentHome.assignmentZero.school.rfms' },
+  { value: 'BIL', label: 'studentHome.assignmentZero.school.bil' },
+  { value: 'Private', label: 'studentHome.assignmentZero.school.private' },
+  { value: 'Public', label: 'studentHome.assignmentZero.school.public' },
 ];
 
 // SAT official dates are fetched from GET /exams/sat-dates (see satTargetDates below).
@@ -142,19 +145,27 @@ const SCHOOL_TYPES = [
 // the backend had the correct list all along. Do not reintroduce a local date table.
 
 const SAT_MONTHS = [
-  { value: 'January', label: 'January' },
-  { value: 'February', label: 'February' },
-  { value: 'March', label: 'March' },
-  { value: 'April', label: 'April' },
-  { value: 'May', label: 'May' },
-  { value: 'June', label: 'June' },
-  { value: 'July', label: 'July' },
-  { value: 'August', label: 'August' },
-  { value: 'September', label: 'September' },
-  { value: 'October', label: 'October' },
-  { value: 'November', label: 'November' },
-  { value: 'December', label: 'December' },
+  { value: 'January' },
+  { value: 'February' },
+  { value: 'March' },
+  { value: 'April' },
+  { value: 'May' },
+  { value: 'June' },
+  { value: 'July' },
+  { value: 'August' },
+  { value: 'September' },
+  { value: 'October' },
+  { value: 'November' },
+  { value: 'December' },
 ];
+
+/** "January" / «Январь»: month `index` (0 = January) in the reader's language. */
+const monthName = (index: number, locale: Locale): string => {
+  const name = formatDate(new Date(2026, index, 15), { month: 'long' }, locale);
+  return name.charAt(0).toUpperCase() + name.slice(1);
+};
+
+const PHONE_PLACEHOLDER = '+7 (XXX) XXX-XX-XX';
 
 const SAT_YEARS = [
   { value: '2026', label: '2026' },
@@ -166,50 +177,51 @@ const SAT_YEARS = [
   { value: '2020', label: '2020' },
 ];
 
-const GRAMMAR_QUESTIONS = [
-  { key: 'grammar_punctuation', label: 'I feel confident in the following topic: Essential and Non-Essential Clauses. I can easily identify dependent clauses and apply punctuation rules.' },
-  { key: 'grammar_noun_clauses', label: 'I feel confident in the following topic: Colons and Dashes. I understand all of the conditions for the use of colons and dashes.' },
-  { key: 'grammar_relative_clauses', label: 'I feel confident in the following topic: Modifiers. I understand the dependence between Subject and Fragment.' },
-  { key: 'grammar_verb_forms', label: 'I feel confident in the following topic: Tenses. I understand the difference between the use of different tenses. I can easily distinguish Past Perfect, Past Simple, Present Perfect, Present Simple, Present Continuous, Future Simple Tenses.' },
-  { key: 'grammar_comparisons', label: 'I feel confident in the following topic: Parallel Structure. I can apply rules of parallel structures to the lists of nouns, verbs, etc.' },
-  { key: 'grammar_transitions', label: 'I feel confident in the following topic: Transitions. I mostly understand the meaning of the 2 sentences and can easily identify the most suitable transition.' },
-  { key: 'grammar_synthesis', label: 'I feel confident in the following topic: FANBOYS, Conjunctions, Strong Transitions. I understand how to connect sentences, sentences and fragments via the mentioned above rules.' },
+const GRAMMAR_QUESTIONS: { key: string; label: MessageKey }[] = [
+  { key: 'grammar_punctuation', label: 'studentHome.assignmentZero.q.grammarPunctuation' },
+  { key: 'grammar_noun_clauses', label: 'studentHome.assignmentZero.q.grammarNounClauses' },
+  { key: 'grammar_relative_clauses', label: 'studentHome.assignmentZero.q.grammarRelativeClauses' },
+  { key: 'grammar_verb_forms', label: 'studentHome.assignmentZero.q.grammarVerbForms' },
+  { key: 'grammar_comparisons', label: 'studentHome.assignmentZero.q.grammarComparisons' },
+  { key: 'grammar_transitions', label: 'studentHome.assignmentZero.q.grammarTransitions' },
+  { key: 'grammar_synthesis', label: 'studentHome.assignmentZero.q.grammarSynthesis' },
 ];
 
-const READING_QUESTIONS = [
-  { key: 'reading_word_in_context', label: 'I feel confident in the following topic: Vocabulary in Context. In most cases, I know or can guess the meaning of the words from the context.' },
-  { key: 'reading_text_structure', label: 'I feel confident in the following topic: Main Idea Questions. It is easy for me to read the passage and identify the main idea/theme/topic.' },
-  { key: 'reading_cross_text', label: 'I feel confident in the following topic: Sentence Function. It is easy for me to understand what is the role of certain sentence in the passage.' },
-  { key: 'reading_central_ideas', label: 'I feel confident in the following topic: Rhetorical Synthesis. It is easy for me to answer questions that require combining information from multiple sources.' },
-  { key: 'reading_inferences', label: 'I feel confident in the following topic: Detailed Evidence. I can easily identify the point of the author and find evidence that supports or opposes his/her view.' },
+const READING_QUESTIONS: { key: string; label: MessageKey }[] = [
+  { key: 'reading_word_in_context', label: 'studentHome.assignmentZero.q.readingWordInContext' },
+  { key: 'reading_text_structure', label: 'studentHome.assignmentZero.q.readingTextStructure' },
+  { key: 'reading_cross_text', label: 'studentHome.assignmentZero.q.readingCrossText' },
+  { key: 'reading_central_ideas', label: 'studentHome.assignmentZero.q.readingCentralIdeas' },
+  { key: 'reading_inferences', label: 'studentHome.assignmentZero.q.readingInferences' },
 ];
 
-const PASSAGES_QUESTIONS = [
-  { key: 'passages_literary', label: 'I feel confident in the following type of passages: Fiction Passages. I understand the tone and mood of the passage from the literary techniques.' },
-  { key: 'passages_social_science', label: 'I feel confident in the following type of passages: Social Science Passages. I can understand scientific terms connected with society, memory, psychology, behavior, even if they are not familiar to me. I mostly understand the scientific ideas or hypothesis presented in the passage.' },
-  { key: 'passages_humanities', label: 'I feel confident in the following type of passages: Historical Passages. I can understand political terms even if they are not familiar to me. I mostly understand the ideas of the authors. I can explain what author is advocating for. I understand the context of the issue.' },
-  { key: 'passages_science', label: 'I feel confident in the following type of passages: Natural Science Passages. I can understand scientific terms even if they are not familiar to me. I mostly understand the scientific ideas or hypothesis presented in the passage.' },
-  { key: 'passages_poetry', label: 'I feel confident in the following type of passages: Poems. I can understand the general ideas in the Poems.' },
+const PASSAGES_QUESTIONS: { key: string; label: MessageKey }[] = [
+  { key: 'passages_literary', label: 'studentHome.assignmentZero.q.passagesLiterary' },
+  { key: 'passages_social_science', label: 'studentHome.assignmentZero.q.passagesSocialScience' },
+  { key: 'passages_humanities', label: 'studentHome.assignmentZero.q.passagesHumanities' },
+  { key: 'passages_science', label: 'studentHome.assignmentZero.q.passagesScience' },
+  { key: 'passages_poetry', label: 'studentHome.assignmentZero.q.passagesPoetry' },
 ];
 
-const MATH_TOPICS = [
-  'Problem-solving and Data Analysis',
-  'Linear equations',
-  'Linear inequalities',
-  'Linear functions',
-  'System of linear equations',
-  'Quadratic equations',
-  'Quadratic functions',
-  'Polynomial functions',
-  'Radical, rational, and exponential functions',
-  'Equivalent expressions',
-  'Percentages',
-  'Ratios, rates, proportional relationships',
-  'Geometry and Trigonometry',
-  'Lines, angles, and triangles',
-  'Right triangles',
-  'Circles and sectors',
-  'Area, volume, and 3D shapes',
+// `value` is what the submission stores (the English name); `label` is what the student reads.
+const MATH_TOPICS: { value: string; label: MessageKey }[] = [
+  { value: 'Problem-solving and Data Analysis', label: 'studentHome.assignmentZero.math.problemSolving' },
+  { value: 'Linear equations', label: 'studentHome.assignmentZero.math.linearEquations' },
+  { value: 'Linear inequalities', label: 'studentHome.assignmentZero.math.linearInequalities' },
+  { value: 'Linear functions', label: 'studentHome.assignmentZero.math.linearFunctions' },
+  { value: 'System of linear equations', label: 'studentHome.assignmentZero.math.linearSystems' },
+  { value: 'Quadratic equations', label: 'studentHome.assignmentZero.math.quadraticEquations' },
+  { value: 'Quadratic functions', label: 'studentHome.assignmentZero.math.quadraticFunctions' },
+  { value: 'Polynomial functions', label: 'studentHome.assignmentZero.math.polynomialFunctions' },
+  { value: 'Radical, rational, and exponential functions', label: 'studentHome.assignmentZero.math.radicalFunctions' },
+  { value: 'Equivalent expressions', label: 'studentHome.assignmentZero.math.equivalentExpressions' },
+  { value: 'Percentages', label: 'studentHome.assignmentZero.math.percentages' },
+  { value: 'Ratios, rates, proportional relationships', label: 'studentHome.assignmentZero.math.ratios' },
+  { value: 'Geometry and Trigonometry', label: 'studentHome.assignmentZero.math.geometry' },
+  { value: 'Lines, angles, and triangles', label: 'studentHome.assignmentZero.math.linesAngles' },
+  { value: 'Right triangles', label: 'studentHome.assignmentZero.math.rightTriangles' },
+  { value: 'Circles and sectors', label: 'studentHome.assignmentZero.math.circles' },
+  { value: 'Area, volume, and 3D shapes', label: 'studentHome.assignmentZero.math.areaVolume' },
 ];
 
 // =============================================================================
@@ -217,18 +229,18 @@ const MATH_TOPICS = [
 // =============================================================================
 
 const IELTS_TARGET_DATES = [
-  { value: 'January', label: 'January' },
-  { value: 'February', label: 'February' },
-  { value: 'March', label: 'March' },
-  { value: 'April', label: 'April' },
-  { value: 'May', label: 'May' },
-  { value: 'June', label: 'June' },
-  { value: 'July', label: 'July' },
-  { value: 'August', label: 'August' },
-  { value: 'September', label: 'September' },
-  { value: 'October', label: 'October' },
-  { value: 'November', label: 'November' },
-  { value: 'December', label: 'December' },
+  { value: 'January' },
+  { value: 'February' },
+  { value: 'March' },
+  { value: 'April' },
+  { value: 'May' },
+  { value: 'June' },
+  { value: 'July' },
+  { value: 'August' },
+  { value: 'September' },
+  { value: 'October' },
+  { value: 'November' },
+  { value: 'December' },
 ];
 
 const IELTS_TARGET_SCORES = [
@@ -243,62 +255,62 @@ const IELTS_TARGET_SCORES = [
   { value: '9.0', label: '9.0' },
 ];
 
-const IELTS_LISTENING_QUESTIONS = [
-  { key: 'ielts_listening_main_idea', label: 'I feel confident in understanding main ideas and general themes in listening passages. I can easily identify the topic and purpose of conversations or monologues.' },
-  { key: 'ielts_listening_details', label: 'I feel confident in catching specific details such as names, numbers, dates, and factual information while listening.' },
-  { key: 'ielts_listening_opinion', label: 'I feel confident in understanding speakers\' opinions, attitudes, and feelings expressed in the audio.' },
-  { key: 'ielts_listening_accents', label: 'I feel confident in understanding different English accents (British, American, Australian, etc.) without difficulty.' },
+const IELTS_LISTENING_QUESTIONS: { key: string; label: MessageKey }[] = [
+  { key: 'ielts_listening_main_idea', label: 'studentHome.assignmentZero.q.ieltsListeningMainIdea' },
+  { key: 'ielts_listening_details', label: 'studentHome.assignmentZero.q.ieltsListeningDetails' },
+  { key: 'ielts_listening_opinion', label: 'studentHome.assignmentZero.q.ieltsListeningOpinion' },
+  { key: 'ielts_listening_accents', label: 'studentHome.assignmentZero.q.ieltsListeningAccents' },
 ];
 
-const IELTS_READING_QUESTIONS = [
-  { key: 'ielts_reading_skimming', label: 'I feel confident in skimming texts to quickly identify main ideas, topic sentences, and overall structure.' },
-  { key: 'ielts_reading_scanning', label: 'I feel confident in scanning texts to locate specific information such as names, dates, and facts.' },
-  { key: 'ielts_reading_vocabulary', label: 'I feel confident in understanding academic vocabulary and can often guess meanings from context.' },
-  { key: 'ielts_reading_inference', label: 'I feel confident in making inferences and understanding implied meanings that are not directly stated.' },
-  { key: 'ielts_reading_matching', label: 'I feel confident in matching headings to paragraphs and matching information to correct sources.' },
+const IELTS_READING_QUESTIONS: { key: string; label: MessageKey }[] = [
+  { key: 'ielts_reading_skimming', label: 'studentHome.assignmentZero.q.ieltsReadingSkimming' },
+  { key: 'ielts_reading_scanning', label: 'studentHome.assignmentZero.q.ieltsReadingScanning' },
+  { key: 'ielts_reading_vocabulary', label: 'studentHome.assignmentZero.q.ieltsReadingVocabulary' },
+  { key: 'ielts_reading_inference', label: 'studentHome.assignmentZero.q.ieltsReadingInference' },
+  { key: 'ielts_reading_matching', label: 'studentHome.assignmentZero.q.ieltsReadingMatching' },
 ];
 
-const IELTS_WRITING_QUESTIONS = [
-  { key: 'ielts_writing_task1_graphs', label: 'I feel confident in describing graphs, charts, and tables in Task 1. I can identify trends, compare data, and summarize key features.' },
-  { key: 'ielts_writing_task1_process', label: 'I feel confident in describing processes, diagrams, and maps in Task 1. I can sequence steps and explain changes.' },
-  { key: 'ielts_writing_task2_structure', label: 'I feel confident in structuring Task 2 essays with clear introduction, body paragraphs, and conclusion.' },
-  { key: 'ielts_writing_task2_arguments', label: 'I feel confident in developing arguments with clear topic sentences, supporting examples, and explanations.' },
-  { key: 'ielts_writing_grammar', label: 'I feel confident in using a range of grammatical structures accurately in my writing.' },
-  { key: 'ielts_writing_vocabulary', label: 'I feel confident in using varied and appropriate vocabulary, including academic words and collocations.' },
+const IELTS_WRITING_QUESTIONS: { key: string; label: MessageKey }[] = [
+  { key: 'ielts_writing_task1_graphs', label: 'studentHome.assignmentZero.q.ieltsWritingTask1Graphs' },
+  { key: 'ielts_writing_task1_process', label: 'studentHome.assignmentZero.q.ieltsWritingTask1Process' },
+  { key: 'ielts_writing_task2_structure', label: 'studentHome.assignmentZero.q.ieltsWritingTask2Structure' },
+  { key: 'ielts_writing_task2_arguments', label: 'studentHome.assignmentZero.q.ieltsWritingTask2Arguments' },
+  { key: 'ielts_writing_grammar', label: 'studentHome.assignmentZero.q.ieltsWritingGrammar' },
+  { key: 'ielts_writing_vocabulary', label: 'studentHome.assignmentZero.q.ieltsWritingVocabulary' },
 ];
 
-const IELTS_SPEAKING_QUESTIONS = [
-  { key: 'ielts_speaking_fluency', label: 'I feel confident in speaking fluently without long pauses or hesitations. I can maintain a natural flow of speech.' },
-  { key: 'ielts_speaking_vocabulary', label: 'I feel confident in using a wide range of vocabulary to express ideas clearly and precisely.' },
-  { key: 'ielts_speaking_grammar', label: 'I feel confident in using correct grammar while speaking, including complex sentence structures.' },
-  { key: 'ielts_speaking_pronunciation', label: 'I feel confident in my pronunciation, including word stress, intonation, and clear articulation.' },
-  { key: 'ielts_speaking_part2', label: 'I feel confident in Part 2 (Long Turn) - I can speak for 1-2 minutes on a topic with good organization and detail.' },
-  { key: 'ielts_speaking_part3', label: 'I feel confident in Part 3 (Discussion) - I can discuss abstract topics and express complex ideas clearly.' },
+const IELTS_SPEAKING_QUESTIONS: { key: string; label: MessageKey }[] = [
+  { key: 'ielts_speaking_fluency', label: 'studentHome.assignmentZero.q.ieltsSpeakingFluency' },
+  { key: 'ielts_speaking_vocabulary', label: 'studentHome.assignmentZero.q.ieltsSpeakingVocabulary' },
+  { key: 'ielts_speaking_grammar', label: 'studentHome.assignmentZero.q.ieltsSpeakingGrammar' },
+  { key: 'ielts_speaking_pronunciation', label: 'studentHome.assignmentZero.q.ieltsSpeakingPronunciation' },
+  { key: 'ielts_speaking_part2', label: 'studentHome.assignmentZero.q.ieltsSpeakingPart2' },
+  { key: 'ielts_speaking_part3', label: 'studentHome.assignmentZero.q.ieltsSpeakingPart3' },
 ];
 
-const IELTS_WEAK_TOPICS = [
-  'Listening - Multiple choice questions',
-  'Listening - Sentence completion',
-  'Listening - Note/form completion',
-  'Listening - Map/diagram labeling',
-  'Reading - True/False/Not Given',
-  'Reading - Yes/No/Not Given',
-  'Reading - Matching headings',
-  'Reading - Summary completion',
-  'Reading - Multiple choice',
-  'Writing Task 1 - Line graphs',
-  'Writing Task 1 - Bar charts',
-  'Writing Task 1 - Pie charts',
-  'Writing Task 1 - Tables',
-  'Writing Task 1 - Process diagrams',
-  'Writing Task 1 - Maps',
-  'Writing Task 2 - Opinion essays',
-  'Writing Task 2 - Discussion essays',
-  'Writing Task 2 - Problem/solution essays',
-  'Writing Task 2 - Advantage/disadvantage essays',
-  'Speaking Part 1 - Personal topics',
-  'Speaking Part 2 - Cue cards',
-  'Speaking Part 3 - Abstract discussions',
+const IELTS_WEAK_TOPICS: { value: string; label: MessageKey }[] = [
+  { value: 'Listening - Multiple choice questions', label: 'studentHome.assignmentZero.ieltsTopic.listeningMultipleChoice' },
+  { value: 'Listening - Sentence completion', label: 'studentHome.assignmentZero.ieltsTopic.listeningSentence' },
+  { value: 'Listening - Note/form completion', label: 'studentHome.assignmentZero.ieltsTopic.listeningNoteForm' },
+  { value: 'Listening - Map/diagram labeling', label: 'studentHome.assignmentZero.ieltsTopic.listeningMap' },
+  { value: 'Reading - True/False/Not Given', label: 'studentHome.assignmentZero.ieltsTopic.readingTrueFalse' },
+  { value: 'Reading - Yes/No/Not Given', label: 'studentHome.assignmentZero.ieltsTopic.readingYesNo' },
+  { value: 'Reading - Matching headings', label: 'studentHome.assignmentZero.ieltsTopic.readingHeadings' },
+  { value: 'Reading - Summary completion', label: 'studentHome.assignmentZero.ieltsTopic.readingSummary' },
+  { value: 'Reading - Multiple choice', label: 'studentHome.assignmentZero.ieltsTopic.readingMultipleChoice' },
+  { value: 'Writing Task 1 - Line graphs', label: 'studentHome.assignmentZero.ieltsTopic.task1Line' },
+  { value: 'Writing Task 1 - Bar charts', label: 'studentHome.assignmentZero.ieltsTopic.task1Bar' },
+  { value: 'Writing Task 1 - Pie charts', label: 'studentHome.assignmentZero.ieltsTopic.task1Pie' },
+  { value: 'Writing Task 1 - Tables', label: 'studentHome.assignmentZero.ieltsTopic.task1Tables' },
+  { value: 'Writing Task 1 - Process diagrams', label: 'studentHome.assignmentZero.ieltsTopic.task1Process' },
+  { value: 'Writing Task 1 - Maps', label: 'studentHome.assignmentZero.ieltsTopic.task1Maps' },
+  { value: 'Writing Task 2 - Opinion essays', label: 'studentHome.assignmentZero.ieltsTopic.task2Opinion' },
+  { value: 'Writing Task 2 - Discussion essays', label: 'studentHome.assignmentZero.ieltsTopic.task2Discussion' },
+  { value: 'Writing Task 2 - Problem/solution essays', label: 'studentHome.assignmentZero.ieltsTopic.task2Problem' },
+  { value: 'Writing Task 2 - Advantage/disadvantage essays', label: 'studentHome.assignmentZero.ieltsTopic.task2Advantages' },
+  { value: 'Speaking Part 1 - Personal topics', label: 'studentHome.assignmentZero.ieltsTopic.speakingPart1' },
+  { value: 'Speaking Part 2 - Cue cards', label: 'studentHome.assignmentZero.ieltsTopic.speakingPart2' },
+  { value: 'Speaking Part 3 - Abstract discussions', label: 'studentHome.assignmentZero.ieltsTopic.speakingPart3' },
 ];
 
 type CourseProgramType = 'sat' | 'ielts' | 'nuet' | 'general_english';
@@ -334,8 +346,8 @@ function LikertScale({
   value,
   onChange,
   error,
-  leftLabel = 'Strongly Disagree',
-  rightLabel = 'Strongly Agree',
+  leftLabel,
+  rightLabel,
 }: {
   label: string;
   value: number | null;
@@ -344,11 +356,12 @@ function LikertScale({
   leftLabel?: string;
   rightLabel?: string;
 }) {
+  const t = useT();
   return (
     <div className="space-y-3 p-4 border border-border rounded-lg bg-muted">
       <Label className="text-sm font-medium block">{label}</Label>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-muted-foreground w-24 text-left">{leftLabel}</span>
+        <span className="text-xs text-muted-foreground w-24 text-left">{leftLabel ?? t('studentHome.assignmentZero.likert.disagree')}</span>
         <div className="flex gap-2 flex-1 justify-center">
           {LIKERT_SCALE.map((option) => (
             <button
@@ -365,7 +378,7 @@ function LikertScale({
             </button>
           ))}
         </div>
-        <span className="text-xs text-muted-foreground w-24 text-right">{rightLabel}</span>
+        <span className="text-xs text-muted-foreground w-24 text-right">{rightLabel ?? t('studentHome.assignmentZero.likert.agree')}</span>
       </div>
       {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
     </div>
@@ -374,14 +387,15 @@ function LikertScale({
 
 // Saving indicator component
 function SavingIndicator({ status }: { status: 'idle' | 'saving' | 'saved' | 'error' }) {
+  const t = useT();
   if (status === 'idle') return null;
 
   const label =
     status === 'saving'
-      ? 'Saving…'
+      ? t('studentHome.assignmentZero.save.saving')
       : status === 'saved'
-        ? 'Saved'
-        : 'Save failed'
+        ? t('studentHome.assignmentZero.save.saved')
+        : t('studentHome.assignmentZero.save.failed')
 
   return (
     <div
@@ -421,6 +435,8 @@ const normalizeStringArray = (raw: unknown): string[] => {
 export default function AssignmentZeroPage() {
   const { user, refreshUser, logout } = useAuth();
   const navigate = useNavigate();
+  const t = useT();
+  const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -454,29 +470,29 @@ export default function AssignmentZeroPage() {
   // Dynamic steps based on user groups
   const DYNAMIC_STEPS = useMemo(() => {
     const baseSteps = [
-      { id: 'personal', title: 'Personal Info', type: 'common' },
-      { id: 'account', title: 'Account Info', type: 'common' },
-      { id: 'education', title: 'Education', type: 'common' },
+      { id: 'personal', title: t('studentHome.assignmentZero.step.personal'), type: 'common' },
+      { id: 'account', title: t('studentHome.assignmentZero.step.account'), type: 'common' },
+      { id: 'education', title: t('studentHome.assignmentZero.step.education'), type: 'common' },
     ];
     
     const satSteps = [
-      { id: 'sat_results', title: 'SAT Results', type: 'sat' },
-      { id: 'sat_grammar', title: 'Grammar', type: 'sat' },
-      { id: 'sat_reading', title: 'Reading', type: 'sat' },
-      { id: 'sat_passages', title: 'Passages', type: 'sat' },
-      { id: 'sat_math', title: 'Math Topics', type: 'sat' },
+      { id: 'sat_results', title: t('studentHome.assignmentZero.step.satResults'), type: 'sat' },
+      { id: 'sat_grammar', title: t('studentHome.assignmentZero.step.grammar'), type: 'sat' },
+      { id: 'sat_reading', title: t('studentHome.assignmentZero.section.reading'), type: 'sat' },
+      { id: 'sat_passages', title: t('studentHome.assignmentZero.step.passages'), type: 'sat' },
+      { id: 'sat_math', title: t('studentHome.assignmentZero.step.mathTopics'), type: 'sat' },
     ];
     
     const ieltsSteps = [
-      { id: 'ielts_listening', title: 'Listening', type: 'ielts' },
-      { id: 'ielts_reading', title: 'IELTS Reading', type: 'ielts' },
-      { id: 'ielts_writing', title: 'Writing', type: 'ielts' },
-      { id: 'ielts_speaking', title: 'Speaking', type: 'ielts' },
-      { id: 'ielts_topics', title: 'IELTS Topics', type: 'ielts' },
+      { id: 'ielts_listening', title: t('studentHome.assignmentZero.section.listening'), type: 'ielts' },
+      { id: 'ielts_reading', title: t('studentHome.assignmentZero.step.ieltsReading'), type: 'ielts' },
+      { id: 'ielts_writing', title: t('studentHome.assignmentZero.section.writing'), type: 'ielts' },
+      { id: 'ielts_speaking', title: t('studentHome.assignmentZero.section.speaking'), type: 'ielts' },
+      { id: 'ielts_topics', title: t('studentHome.assignmentZero.step.ieltsTopics'), type: 'ielts' },
     ];
     
     const endSteps = [
-      { id: 'comments', title: 'Comments', type: 'common' },
+      { id: 'comments', title: t('studentHome.assignmentZero.step.comments'), type: 'common' },
     ];
     
     let steps = [...baseSteps];
@@ -485,7 +501,7 @@ export default function AssignmentZeroPage() {
     steps = [...steps, ...endSteps];
     
     return steps;
-  }, [showSAT, showIELTS]);
+  }, [showSAT, showIELTS, t]);
   
   const totalSteps = DYNAMIC_STEPS.length;
   const displayStep =
@@ -587,7 +603,7 @@ export default function AssignmentZeroPage() {
   // Only upcoming CONFIRMED administrations are offered as a target; College Board's
   // provisional "Anticipated" 2027-28 dates are excluded so a student is never asked
   // to plan around a date that may still move.
-  const [satTargetDates, setSatTargetDates] = useState<{ value: string; label: string }[]>([]);
+  const [satTargetDates, setSatTargetDates] = useState<{ value: string; label: string; testDate: string }[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -597,8 +613,8 @@ export default function AssignmentZeroPage() {
         if (cancelled) return;
         // `value` stays the human label because that is what `sat_target_date` has
         // always stored, and the backend parses it back to a real date. Changing the
-        // stored form would break existing rows.
-        setSatTargetDates(dates.map((d) => ({ value: d.label, label: d.label })));
+        // stored form would break existing rows. The reader sees `test_date` in their language.
+        setSatTargetDates(dates.map((d) => ({ value: d.label, label: d.label, testDate: d.test_date })));
       } catch {
         if (!cancelled) setSatTargetDates([]);
       }
@@ -1026,14 +1042,14 @@ export default function AssignmentZeroPage() {
       allowedTypes.includes(file.type) ||
       ((file.type === '' || file.type === 'application/octet-stream') && extOk);
     if (!typeOk) {
-      toast('Please upload an image file (JPEG, PNG, GIF, or WEBP)', 'error');
+      toast(t('studentHome.assignmentZero.toast.imageType'), 'error');
       e.target.value = '';
       return;
     }
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      toast('File size must be less than 10MB', 'error');
+      toast(t('studentHome.assignmentZero.toast.fileTooBig'), 'error');
       e.target.value = '';
       return;
     }
@@ -1043,10 +1059,10 @@ export default function AssignmentZeroPage() {
       const fileToUpload = await compressImageIfNeeded(file);
       const result = await apiClient.uploadAssignmentZeroScreenshot(fileToUpload);
       handleInputChange('screenshot_url', result.url);
-      toast('Screenshot uploaded successfully', 'success');
+      toast(t('studentHome.assignmentZero.toast.screenshotUploaded'), 'success');
     } catch (error) {
       console.error('Upload failed:', error);
-      const msg = error instanceof Error ? error.message : 'Failed to upload screenshot';
+      const msg = error instanceof Error ? error.message : t('studentHome.assignmentZero.toast.uploadFailed');
       toast(msg, 'error');
     } finally {
       setUploadingFile(false);
@@ -1057,34 +1073,35 @@ export default function AssignmentZeroPage() {
   const validateStep = (step: number): boolean => {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
     const stepId = DYNAMIC_STEPS[step - 1]?.id;
+    const required = t('studentHome.assignmentZero.required');
 
     // Validate based on step ID instead of step number
     if (stepId === 'personal') {
-      if (!formData.full_name.trim()) newErrors.full_name = 'Required';
-      if (!formData.phone_number.trim()) newErrors.phone_number = 'Required';
-      if (!formData.parent_phone_number.trim()) newErrors.parent_phone_number = 'Required';
-      if (!formData.telegram_id.trim()) newErrors.telegram_id = 'Required';
-      if (!formData.email.trim()) newErrors.email = 'Required';
+      if (!formData.full_name.trim()) newErrors.full_name = required;
+      if (!formData.phone_number.trim()) newErrors.phone_number = required;
+      if (!formData.parent_phone_number.trim()) newErrors.parent_phone_number = required;
+      if (!formData.telegram_id.trim()) newErrors.telegram_id = required;
+      if (!formData.email.trim()) newErrors.email = required;
     } else if (stepId === 'account') {
-      if (showSAT && !formData.college_board_email.trim()) newErrors.college_board_email = 'Required';
+      if (showSAT && !formData.college_board_email.trim()) newErrors.college_board_email = required;
       if (isCollegeBoardPasswordRequired(showSAT, hasCollegeBoardPassword) && !formData.college_board_password.trim()) {
-        newErrors.college_board_password = 'Required';
+        newErrors.college_board_password = required;
       }
-      if (!formData.birthday_date) newErrors.birthday_date = 'Required';
-      if (!formData.city.trim()) newErrors.city = 'Required';
+      if (!formData.birthday_date) newErrors.birthday_date = required;
+      if (!formData.city.trim()) newErrors.city = required;
     } else if (stepId === 'education') {
-      if (!formData.school_type) newErrors.school_type = 'Required';
-      if (!formData.group_name.trim()) newErrors.group_name = 'Required';
+      if (!formData.school_type) newErrors.school_type = required;
+      if (!formData.group_name.trim()) newErrors.group_name = required;
       // SAT target date only required if user is in SAT group
-      if (showSAT && !formData.sat_target_date) newErrors.sat_target_date = 'Required';
+      if (showSAT && !formData.sat_target_date) newErrors.sat_target_date = required;
       // IELTS target date only required if user is in IELTS group
-      if (showIELTS && !formData.ielts_target_date) newErrors.ielts_target_date = 'Required';
+      if (showIELTS && !formData.ielts_target_date) newErrors.ielts_target_date = required;
     }
  else if (stepId === 'sat_results') {
-      if (!formData.recent_practice_test_score.trim()) newErrors.recent_practice_test_score = 'Required';
-      if (!formData.bluebook_verbal.trim()) newErrors.bluebook_verbal = 'Required';
-      if (!formData.bluebook_math.trim()) newErrors.bluebook_math = 'Required';
-      if (!formData.screenshot_url) newErrors.screenshot_url = 'Required';
+      if (!formData.recent_practice_test_score.trim()) newErrors.recent_practice_test_score = required;
+      if (!formData.bluebook_verbal.trim()) newErrors.bluebook_verbal = required;
+      if (!formData.bluebook_math.trim()) newErrors.bluebook_math = required;
+      if (!formData.screenshot_url) newErrors.screenshot_url = required;
     }
     // All other steps (assessments) are optional, no required validation
 
@@ -1117,7 +1134,7 @@ export default function AssignmentZeroPage() {
       if (requiredStepIds.includes(stepId)) {
         if (!validateStep(i + 1)) {
           setCurrentStep(i + 1);
-          toast('Please complete all required fields', 'error');
+          toast(t('studentHome.assignmentZero.toast.completeRequired'), 'error');
           return;
         }
       }
@@ -1185,11 +1202,11 @@ export default function AssignmentZeroPage() {
       // Refresh user data to get updated assignment_zero_completed status
       await refreshUser();
 
-      toast('Assignment Zero submitted successfully!', 'success');
+      toast(t('studentHome.assignmentZero.toast.submitted'), 'success');
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Submit failed:', error);
-      toast(error.message || 'Failed to submit', 'error');
+      toast(error.message || t('studentHome.assignmentZero.toast.submitFailed'), 'error');
     } finally {
       setSubmitting(false);
     }
@@ -1209,12 +1226,12 @@ export default function AssignmentZeroPage() {
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <CheckCircle className="w-16 h-16 text-green-500 dark:text-green-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-foreground mb-2">Already Completed!</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-2">{t('studentHome.assignmentZero.done.title')}</h2>
             <p className="text-muted-foreground mb-6">
-              You have already submitted Assignment Zero. You can proceed to your dashboard.
+              {t('studentHome.assignmentZero.done.body')}
             </p>
             <Button onClick={() => navigate('/dashboard')} className="w-full">
-              Go to Dashboard
+              {t('studentHome.assignmentZero.done.goToDashboard')}
             </Button>
           </CardContent>
         </Card>
@@ -1231,10 +1248,10 @@ export default function AssignmentZeroPage() {
         <div className="mb-6 rounded-2xl border border-slate-200/70 dark:border-border bg-white/80 dark:bg-card/80 backdrop-blur p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-1">Assignment Zero</h1>
-              <p className="text-base text-muted-foreground">Self-Assessment Questionnaire</p>
+              <h1 className="text-3xl font-bold text-foreground mb-1">{t('studentHome.assignmentZero.title')}</h1>
+              <p className="text-base text-muted-foreground">{t('studentHome.assignmentZero.subtitle')}</p>
               <p className="text-sm text-muted-foreground mt-2">
-                Please be honest when answering questions. This helps us understand your current level.
+                {t('studentHome.assignmentZero.beHonest')}
               </p>
             </div>
             <Button 
@@ -1243,12 +1260,12 @@ export default function AssignmentZeroPage() {
               onClick={() => logout()}
               className="text-muted-foreground hover:text-red-600 hover:border-red-200 dark:hover:text-red-400 dark:hover:border-red-900 transition-colors"
             >
-              Logout
+              {t('studentHome.assignmentZero.logout')}
             </Button>
           </div>
           <div className="mt-5 flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
-            <span>Step {displayStep} of {totalSteps}</span>
-            <span>{Math.round((displayStep / Math.max(1, totalSteps)) * 100)}% completed</span>
+            <span>{t('studentHome.assignmentZero.stepOf', { step: displayStep, total: totalSteps })}</span>
+            <span>{t('studentHome.assignmentZero.percentDone', { percent: Math.round((displayStep / Math.max(1, totalSteps)) * 100) })}</span>
           </div>
           <div className="mt-2 h-1.5 bg-slate-200 dark:bg-secondary rounded-full">
             <div
@@ -1278,7 +1295,7 @@ export default function AssignmentZeroPage() {
                   title={step.title}
                 >
                   <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-black/10 dark:bg-white/10 text-[11px] font-semibold">
-                    {stepNumber < displayStep ? <Check className="h-3 w-3" strokeWidth={3} aria-label="Done" /> : stepNumber}
+                    {stepNumber < displayStep ? <Check className="h-3 w-3" strokeWidth={3} aria-label={t('studentHome.assignmentZero.stepDone')} /> : stepNumber}
                   </span>
                   <span className="whitespace-nowrap">{step.title}</span>
                 </button>
@@ -1286,7 +1303,7 @@ export default function AssignmentZeroPage() {
             })}
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            Step {displayStep} of {totalSteps}: {DYNAMIC_STEPS[displayStep - 1]?.title}
+            {t('studentHome.assignmentZero.stepOfTitled', { step: displayStep, total: totalSteps, title: DYNAMIC_STEPS[displayStep - 1]?.title ?? '' })}
           </p>
         </div>
 
@@ -1295,20 +1312,20 @@ export default function AssignmentZeroPage() {
           <CardHeader>
             <CardTitle>{DYNAMIC_STEPS[displayStep - 1]?.title}</CardTitle>
             <CardDescription>
-              {currentStepId === 'personal' && 'Tell us about yourself'}
-              {currentStepId === 'account' && (showSAT ? 'Your College Board and platform accounts' : 'Your platform account')}
-              {currentStepId === 'education' && (showSAT || showIELTS ? 'Your school and test goals' : 'Your school information')}
-              {currentStepId === 'sat_results' && 'Your recent SAT test scores'}
-              {currentStepId === 'sat_grammar' && 'Rate your grammar knowledge (1 = Don\'t know, 5 = Mastered)'}
-              {currentStepId === 'sat_reading' && 'Rate your reading skills (1 = Don\'t know, 5 = Mastered)'}
-              {currentStepId === 'sat_passages' && 'Rate your familiarity with SAT passage types (1 = Don\'t know, 5 = Mastered)'}
-              {currentStepId === 'sat_math' && 'Select the math topics you need to work on'}
-              {currentStepId === 'ielts_listening' && 'Rate your IELTS listening skills (1 = Don\'t know, 5 = Mastered)'}
-              {currentStepId === 'ielts_reading' && 'Rate your IELTS reading skills (1 = Don\'t know, 5 = Mastered)'}
-              {currentStepId === 'ielts_writing' && 'Rate your IELTS writing skills (1 = Don\'t know, 5 = Mastered)'}
-              {currentStepId === 'ielts_speaking' && 'Rate your IELTS speaking skills (1 = Don\'t know, 5 = Mastered)'}
-              {currentStepId === 'ielts_topics' && 'Select the IELTS topics you need to work on'}
-              {currentStepId === 'comments' && 'Any additional comments or questions'}
+              {currentStepId === 'personal' && t('studentHome.assignmentZero.about.personal')}
+              {currentStepId === 'account' && (showSAT ? t('studentHome.assignmentZero.about.accountSat') : t('studentHome.assignmentZero.about.account'))}
+              {currentStepId === 'education' && (showSAT || showIELTS ? t('studentHome.assignmentZero.about.educationGoals') : t('studentHome.assignmentZero.about.education'))}
+              {currentStepId === 'sat_results' && t('studentHome.assignmentZero.about.satResults')}
+              {currentStepId === 'sat_grammar' && t('studentHome.assignmentZero.about.grammar')}
+              {currentStepId === 'sat_reading' && t('studentHome.assignmentZero.about.reading')}
+              {currentStepId === 'sat_passages' && t('studentHome.assignmentZero.about.passages')}
+              {currentStepId === 'sat_math' && t('studentHome.assignmentZero.about.math')}
+              {currentStepId === 'ielts_listening' && t('studentHome.assignmentZero.about.ieltsListening')}
+              {currentStepId === 'ielts_reading' && t('studentHome.assignmentZero.about.ieltsReading')}
+              {currentStepId === 'ielts_writing' && t('studentHome.assignmentZero.about.ieltsWriting')}
+              {currentStepId === 'ielts_speaking' && t('studentHome.assignmentZero.about.ieltsSpeaking')}
+              {currentStepId === 'ielts_topics' && t('studentHome.assignmentZero.about.ieltsTopics')}
+              {currentStepId === 'comments' && t('studentHome.assignmentZero.about.comments')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -1316,10 +1333,10 @@ export default function AssignmentZeroPage() {
             {currentStepId === 'personal' && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="full_name">Name and Surname *</Label>
+                  <Label htmlFor="full_name">{t('studentHome.assignmentZero.field.fullName')} *</Label>
                   <Input
                     id="full_name"
-                    placeholder="Enter your full name"
+                    placeholder={t('studentHome.assignmentZero.field.fullNamePlaceholder')}
                     value={formData.full_name}
                     onChange={(e) => handleInputChange('full_name', e.target.value)}
                     className={errors.full_name ? 'border-red-500' : ''}
@@ -1328,10 +1345,10 @@ export default function AssignmentZeroPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone_number">Your Phone Number *</Label>
+                  <Label htmlFor="phone_number">{t('studentHome.assignmentZero.field.phone')} *</Label>
                   <Input
                     id="phone_number"
-                    placeholder="+7 (XXX) XXX-XX-XX"
+                    placeholder={PHONE_PLACEHOLDER}
                     value={formData.phone_number}
                     onChange={(e) => handleInputChange('phone_number', e.target.value)}
                     className={errors.phone_number ? 'border-red-500' : ''}
@@ -1340,10 +1357,10 @@ export default function AssignmentZeroPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="parent_phone_number">Your Parent's Phone Number *</Label>
+                  <Label htmlFor="parent_phone_number">{t('studentHome.assignmentZero.field.parentPhone')} *</Label>
                   <Input
                     id="parent_phone_number"
-                    placeholder="+7 (XXX) XXX-XX-XX"
+                    placeholder={PHONE_PLACEHOLDER}
                     value={formData.parent_phone_number}
                     onChange={(e) => handleInputChange('parent_phone_number', e.target.value)}
                     className={errors.parent_phone_number ? 'border-red-500' : ''}
@@ -1354,10 +1371,10 @@ export default function AssignmentZeroPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="telegram_id">Your Telegram ID *</Label>
+                  <Label htmlFor="telegram_id">{t('studentHome.assignmentZero.field.telegram')} *</Label>
                   <Input
                     id="telegram_id"
-                    placeholder="@your_telegram"
+                    placeholder={t('studentHome.assignmentZero.field.telegramPlaceholder')}
                     value={formData.telegram_id}
                     onChange={(e) => handleInputChange('telegram_id', e.target.value)}
                     className={errors.telegram_id ? 'border-red-500' : ''}
@@ -1366,14 +1383,14 @@ export default function AssignmentZeroPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email">{t('studentHome.assignmentZero.field.email')} *</Label>
                   <p className="text-xs text-muted-foreground">
-                    This email will be used to give you access to the weekly practice tests.
+                    {t('studentHome.assignmentZero.field.emailHint')}
                   </p>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder={t('studentHome.assignmentZero.field.emailPlaceholder')}
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     className={errors.email ? 'border-red-500' : ''}
@@ -1389,14 +1406,14 @@ export default function AssignmentZeroPage() {
                 {showSAT && (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="college_board_email">College Board Account Email *</Label>
+                      <Label htmlFor="college_board_email">{t('studentHome.assignmentZero.field.cbEmail')} *</Label>
                       <p className="text-xs text-muted-foreground">
-                        Please provide your email with which you have registered your College Board account.
+                        {t('studentHome.assignmentZero.field.cbEmailHint')}
                       </p>
                       <Input
                         id="college_board_email"
                         type="email"
-                        placeholder="collegeboard@email.com"
+                        placeholder={t('studentHome.assignmentZero.field.cbEmailPlaceholder')}
                         value={formData.college_board_email}
                         onChange={(e) => handleInputChange('college_board_email', e.target.value)}
                         className={errors.college_board_email ? 'border-red-500' : ''}
@@ -1408,21 +1425,20 @@ export default function AssignmentZeroPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="college_board_password">
-                        College Board Account Password{hasCollegeBoardPassword ? '' : ' *'}
+                        {t('studentHome.assignmentZero.field.cbPassword')}{hasCollegeBoardPassword ? '' : ' *'}
                       </Label>
                       <p className="text-xs text-muted-foreground">
-                        Your email and password will be used by your teacher to check if you have correctly
-                        registered for SAT.
+                        {t('studentHome.assignmentZero.field.cbPasswordHint')}
                       </p>
                       {hasCollegeBoardPassword && (
                         <p className="text-xs text-brand">
-                          Password saved — leave this field blank to keep it unchanged.
+                          {t('studentHome.assignmentZero.field.cbPasswordSaved')}
                         </p>
                       )}
                       <Input
                         id="college_board_password"
                         type="password"
-                        placeholder={hasCollegeBoardPassword ? 'Leave blank to keep the saved password' : 'Enter your password'}
+                        placeholder={hasCollegeBoardPassword ? t('studentHome.assignmentZero.field.cbPasswordKeep') : t('studentHome.assignmentZero.field.cbPasswordPlaceholder')}
                         value={formData.college_board_password}
                         onChange={(e) => handleInputChange('college_board_password', e.target.value)}
                         className={errors.college_board_password ? 'border-red-500' : ''}
@@ -1435,7 +1451,7 @@ export default function AssignmentZeroPage() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="birthday_date">Birthday Date *</Label>
+                  <Label htmlFor="birthday_date">{t('studentHome.assignmentZero.field.birthday')} *</Label>
                   <Input
                     id="birthday_date"
                     type="date"
@@ -1447,10 +1463,10 @@ export default function AssignmentZeroPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="city">City *</Label>
+                  <Label htmlFor="city">{t('studentHome.assignmentZero.field.city')} *</Label>
                   <Input
                     id="city"
-                    placeholder="Enter your city"
+                    placeholder={t('studentHome.assignmentZero.field.cityPlaceholder')}
                     value={formData.city}
                     onChange={(e) => handleInputChange('city', e.target.value)}
                     className={errors.city ? 'border-red-500' : ''}
@@ -1464,18 +1480,18 @@ export default function AssignmentZeroPage() {
             {currentStepId === 'education' && (
               <>
                 <div className="space-y-2">
-                  <Label>Which type of school do you study at? *</Label>
+                  <Label>{t('studentHome.assignmentZero.school.question')} *</Label>
                   <Select
                     value={formData.school_type}
                     onValueChange={(value) => handleInputChange('school_type', value)}
                   >
                     <SelectTrigger className={errors.school_type ? 'border-red-500' : ''}>
-                      <SelectValue placeholder="Select your school type" />
+                      <SelectValue placeholder={t('studentHome.assignmentZero.school.placeholder')} />
                     </SelectTrigger>
                     <SelectContent>
                       {SCHOOL_TYPES.map((type) => (
                         <SelectItem key={type.value} value={type.value}>
-                          {type.label}
+                          {t(type.label)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1484,10 +1500,10 @@ export default function AssignmentZeroPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="group_name">Group Name *</Label>
+                  <Label htmlFor="group_name">{t('studentHome.assignmentZero.group.name')} *</Label>
                   <Input
                     id="group_name"
-                    placeholder="Enter your group name"
+                    placeholder={t('studentHome.assignmentZero.group.placeholder')}
                     value={formData.group_name}
                     onChange={(e) => handleInputChange('group_name', e.target.value)}
                     className={errors.group_name ? 'border-red-500' : ''}
@@ -1499,18 +1515,18 @@ export default function AssignmentZeroPage() {
                 {showSAT && (
                   <>
                     <div className="space-y-2">
-                      <Label>When are you planning to pass SAT? *</Label>
+                      <Label>{t('studentHome.assignmentZero.sat.when')} *</Label>
                       <Select
                         value={formData.sat_target_date}
                         onValueChange={(value) => handleInputChange('sat_target_date', value)}
                       >
                         <SelectTrigger className={errors.sat_target_date ? 'border-red-500' : ''}>
-                          <SelectValue placeholder="Select target date" />
+                          <SelectValue placeholder={t('studentHome.assignmentZero.selectTargetDate')} />
                         </SelectTrigger>
                         <SelectContent>
                           {satTargetDates.map((date) => (
                             <SelectItem key={date.value} value={date.value}>
-                              {date.label}
+                              {formatDate(date.testDate, { day: 'numeric', month: 'long', year: 'numeric' }, locale) || date.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1527,42 +1543,42 @@ export default function AssignmentZeroPage() {
                         }
                       />
                       <Label htmlFor="has_passed_sat" className="cursor-pointer">
-                        Have you passed SAT before?
+                        {t('studentHome.assignmentZero.sat.passedBefore')}
                       </Label>
                     </div>
 
                     {formData.has_passed_sat_before && (
                       <div className="space-y-4 p-4 bg-muted rounded-lg border dark:border-border">
-                        <Label className="font-medium">What was your score and on which exam?</Label>
+                        <Label className="font-medium">{t('studentHome.assignmentZero.sat.previousScore')}</Label>
                         
                         {/* Month and Year Selection */}
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="previous_sat_month">Month *</Label>
+                            <Label htmlFor="previous_sat_month">{t('studentHome.assignmentZero.month')} *</Label>
                             <Select
                               value={formData.previous_sat_month}
                               onValueChange={(value) => handleInputChange('previous_sat_month', value)}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Select month" />
+                                <SelectValue placeholder={t('studentHome.assignmentZero.selectMonth')} />
                               </SelectTrigger>
                               <SelectContent>
-                                {SAT_MONTHS.map((month) => (
+                                {SAT_MONTHS.map((month, index) => (
                                   <SelectItem key={month.value} value={month.value}>
-                                    {month.label}
+                                    {monthName(index, locale)}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="previous_sat_year">Year *</Label>
+                            <Label htmlFor="previous_sat_year">{t('studentHome.assignmentZero.year')} *</Label>
                             <Select
                               value={formData.previous_sat_year}
                               onValueChange={(value) => handleInputChange('previous_sat_year', value)}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Select year" />
+                                <SelectValue placeholder={t('studentHome.assignmentZero.selectYear')} />
                               </SelectTrigger>
                               <SelectContent>
                                 {SAT_YEARS.map((year) => (
@@ -1578,7 +1594,7 @@ export default function AssignmentZeroPage() {
                         {/* Verbal and Math Scores */}
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="previous_sat_verbal">Verbal Score *</Label>
+                            <Label htmlFor="previous_sat_verbal">{t('studentHome.assignmentZero.verbalScore')} *</Label>
                             <Input
                               id="previous_sat_verbal"
                               type="number"
@@ -1590,7 +1606,7 @@ export default function AssignmentZeroPage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="previous_sat_math">Math Score *</Label>
+                            <Label htmlFor="previous_sat_math">{t('studentHome.assignmentZero.mathScore')} *</Label>
                             <Input
                               id="previous_sat_math"
                               type="number"
@@ -1606,7 +1622,7 @@ export default function AssignmentZeroPage() {
                         {/* Show total score if both are entered */}
                         {formData.previous_sat_verbal && formData.previous_sat_math && (
                           <div className="text-sm text-muted-foreground bg-card p-2 rounded border dark:border-border">
-                            Total Score: <span className="font-semibold">{Number(formData.previous_sat_verbal) + Number(formData.previous_sat_math)}</span>
+                            {t('studentHome.assignmentZero.totalScore')} <span className="font-semibold">{Number(formData.previous_sat_verbal) + Number(formData.previous_sat_math)}</span>
                           </div>
                         )}
                       </div>
@@ -1618,18 +1634,18 @@ export default function AssignmentZeroPage() {
                 {showIELTS && (
                   <>
                     <div className="space-y-2">
-                      <Label>When are you planning to pass IELTS? *</Label>
+                      <Label>{t('studentHome.assignmentZero.ielts.when')} *</Label>
                       <Select
                         value={formData.ielts_target_date}
                         onValueChange={(value) => handleInputChange('ielts_target_date', value)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select target date" />
+                          <SelectValue placeholder={t('studentHome.assignmentZero.selectTargetDate')} />
                         </SelectTrigger>
                         <SelectContent>
-                          {IELTS_TARGET_DATES.map((date) => (
+                          {IELTS_TARGET_DATES.map((date, index) => (
                             <SelectItem key={date.value} value={date.value}>
-                              {date.label}
+                              {monthName(index, locale)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1637,13 +1653,13 @@ export default function AssignmentZeroPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>What is your target IELTS score?</Label>
+                      <Label>{t('studentHome.assignmentZero.ielts.target')}</Label>
                       <Select
                         value={formData.ielts_target_score}
                         onValueChange={(value) => handleInputChange('ielts_target_score', value)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select target score" />
+                          <SelectValue placeholder={t('studentHome.assignmentZero.ielts.selectTarget')} />
                         </SelectTrigger>
                         <SelectContent>
                           {IELTS_TARGET_SCORES.map((score) => (
@@ -1664,17 +1680,17 @@ export default function AssignmentZeroPage() {
                         }
                       />
                       <Label htmlFor="has_passed_ielts" className="cursor-pointer">
-                        Have you passed IELTS before?
+                        {t('studentHome.assignmentZero.ielts.passedBefore')}
                       </Label>
                     </div>
 
                     {formData.has_passed_ielts_before && (
                       <div className="space-y-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                        <Label className="font-medium">What were your previous IELTS scores?</Label>
+                        <Label className="font-medium">{t('studentHome.assignmentZero.ielts.previousScores')}</Label>
                         
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="previous_ielts_listening">Listening</Label>
+                            <Label htmlFor="previous_ielts_listening">{t('studentHome.assignmentZero.section.listening')}</Label>
                             <Input
                               id="previous_ielts_listening"
                               type="number"
@@ -1687,7 +1703,7 @@ export default function AssignmentZeroPage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="previous_ielts_reading">Reading</Label>
+                            <Label htmlFor="previous_ielts_reading">{t('studentHome.assignmentZero.section.reading')}</Label>
                             <Input
                               id="previous_ielts_reading"
                               type="number"
@@ -1700,7 +1716,7 @@ export default function AssignmentZeroPage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="previous_ielts_writing">Writing</Label>
+                            <Label htmlFor="previous_ielts_writing">{t('studentHome.assignmentZero.section.writing')}</Label>
                             <Input
                               id="previous_ielts_writing"
                               type="number"
@@ -1713,7 +1729,7 @@ export default function AssignmentZeroPage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="previous_ielts_speaking">Speaking</Label>
+                            <Label htmlFor="previous_ielts_speaking">{t('studentHome.assignmentZero.section.speaking')}</Label>
                             <Input
                               id="previous_ielts_speaking"
                               type="number"
@@ -1728,7 +1744,7 @@ export default function AssignmentZeroPage() {
                         </div>
                         
                         <div className="space-y-2">
-                          <Label htmlFor="previous_ielts_overall">Overall Band Score</Label>
+                          <Label htmlFor="previous_ielts_overall">{t('studentHome.assignmentZero.ielts.overall')}</Label>
                           <Input
                             id="previous_ielts_overall"
                             type="number"
@@ -1752,15 +1768,14 @@ export default function AssignmentZeroPage() {
               <>
                 <div className="space-y-2">
                   <Label htmlFor="recent_practice_test_score">
-                    What was your score on recent practice tests? *
+                    {t('studentHome.assignmentZero.results.recent')} *
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    For example: "I passed Bluebook Practice Test 5 on October 23rd and got 1200 (Verbal
-                    500, Math 700)"
+                    {t('studentHome.assignmentZero.results.recentExample')}
                   </p>
                   <Textarea
                     id="recent_practice_test_score"
-                    placeholder="Describe your recent practice test results"
+                    placeholder={t('studentHome.assignmentZero.results.recentPlaceholder')}
                     value={formData.recent_practice_test_score}
                     onChange={(e) => handleInputChange('recent_practice_test_score', e.target.value)}
                     className={errors.recent_practice_test_score ? 'border-red-500' : ''}
@@ -1772,11 +1787,11 @@ export default function AssignmentZeroPage() {
 
                 <div className="space-y-2">
                   <Label>
-                    Please submit the results of Bluebook Practice Test 5 *
+                    {t('studentHome.assignmentZero.results.bluebook')} *
                   </Label>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <Label htmlFor="bluebook_verbal" className="text-sm text-muted-foreground">Verbal Score</Label>
+                      <Label htmlFor="bluebook_verbal" className="text-sm text-muted-foreground">{t('studentHome.assignmentZero.verbalScore')}</Label>
                       <Input
                         id="bluebook_verbal"
                         type="number"
@@ -1790,7 +1805,7 @@ export default function AssignmentZeroPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="bluebook_math" className="text-sm text-muted-foreground">Math Score</Label>
+                      <Label htmlFor="bluebook_math" className="text-sm text-muted-foreground">{t('studentHome.assignmentZero.mathScore')}</Label>
                       <Input
                         id="bluebook_math"
                         type="number"
@@ -1805,21 +1820,21 @@ export default function AssignmentZeroPage() {
                     </div>
                   </div>
                   {(errors.bluebook_verbal || errors.bluebook_math) && (
-                    <p className="text-sm text-red-500 dark:text-red-400">Both Verbal and Math scores are required</p>
+                    <p className="text-sm text-red-500 dark:text-red-400">{t('studentHome.assignmentZero.results.bothRequired')}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Upload a screenshot with your results of Bluebook Practice Test 5 *</Label>
+                  <Label>{t('studentHome.assignmentZero.results.screenshot')} *</Label>
                   <p className="text-xs text-muted-foreground">
-                    Max 10 MB. Supported formats: JPEG, PNG, GIF, WEBP
+                    {t('studentHome.assignmentZero.results.screenshotLimits')}
                   </p>
 
                   {formData.screenshot_url ? (
                     <div className="border rounded-lg p-4 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
                       <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
                         <CheckCircle className="w-5 h-5" />
-                        <span className="font-medium">Screenshot uploaded successfully!</span>
+                        <span className="font-medium">{t('studentHome.assignmentZero.results.uploaded')}</span>
                       </div>
                       <Button
                         type="button"
@@ -1828,7 +1843,7 @@ export default function AssignmentZeroPage() {
                         className="mt-2"
                         onClick={() => handleInputChange('screenshot_url', '')}
                       >
-                        Upload different file
+                        {t('studentHome.assignmentZero.results.uploadDifferent')}
                       </Button>
                     </div>
                   ) : (
@@ -1854,12 +1869,12 @@ export default function AssignmentZeroPage() {
                         {uploadingFile ? (
                           <>
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
-                            <span className="text-muted-foreground">Uploading...</span>
+                            <span className="text-muted-foreground">{t('studentHome.assignmentZero.results.uploading')}</span>
                           </>
                         ) : (
                           <>
                             <Upload className="w-8 h-8 text-gray-400 dark:text-muted-foreground" />
-                            <span className="text-muted-foreground">Click to upload screenshot</span>
+                            <span className="text-muted-foreground">{t('studentHome.assignmentZero.results.clickToUpload')}</span>
                           </>
                         )}
                       </label>
@@ -1878,20 +1893,18 @@ export default function AssignmentZeroPage() {
                 <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4 flex gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <div className="text-sm text-amber-800 dark:text-amber-300">
-                    <p className="font-medium mb-1">Important</p>
+                    <p className="font-medium mb-1">{t('studentHome.assignmentZero.important')}</p>
                     <p>
-                      Please be honest when answering questions. This questionnaire is designed to
-                      identify your current strong and weak skills to help us personalize your
-                      learning experience.
+                      {t('studentHome.assignmentZero.honestNote')}
                     </p>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Grammar Assessment</h3>
+                <h3 className="text-lg font-semibold mb-2">{t('studentHome.assignmentZero.heading.grammar')}</h3>
                 <div className="space-y-4">
                   {GRAMMAR_QUESTIONS.map((question) => (
                     <LikertScale
                       key={question.key}
-                      label={question.label}
+                      label={t(question.label)}
                       value={formData[question.key as keyof FormData] as number | null}
                       onChange={(value) => handleInputChange(question.key as keyof FormData, value)}
                     />
@@ -1903,12 +1916,12 @@ export default function AssignmentZeroPage() {
             {/* Step: Reading Skills Assessment */}
             {currentStepId === 'sat_reading' && (
               <>
-                <h3 className="text-lg font-semibold mb-4">Assessment of Reading Skills</h3>
+                <h3 className="text-lg font-semibold mb-4">{t('studentHome.assignmentZero.heading.reading')}</h3>
                 <div className="space-y-4">
                   {READING_QUESTIONS.map((question) => (
                     <LikertScale
                       key={question.key}
-                      label={question.label}
+                      label={t(question.label)}
                       value={formData[question.key as keyof FormData] as number | null}
                       onChange={(value) => handleInputChange(question.key as keyof FormData, value)}
                     />
@@ -1919,12 +1932,12 @@ export default function AssignmentZeroPage() {
             {/* Step: SAT Passage Types */}
             {currentStepId === 'sat_passages' && (
               <>
-                <h3 className="text-lg font-semibold mb-4">Styles of the SAT Passages</h3>
+                <h3 className="text-lg font-semibold mb-4">{t('studentHome.assignmentZero.heading.passages')}</h3>
                 <div className="space-y-4">
                   {PASSAGES_QUESTIONS.map((question) => (
                     <LikertScale
                       key={question.key}
-                      label={question.label}
+                      label={t(question.label)}
                       value={formData[question.key as keyof FormData] as number | null}
                       onChange={(value) => handleInputChange(question.key as keyof FormData, value)}
                     />
@@ -1938,12 +1951,11 @@ export default function AssignmentZeroPage() {
               <>
                 <div className="bg-brand-surface border border-brand-border rounded-lg p-4 mb-4">
                   <p className="text-sm text-brand-subtle-foreground">
-                    <strong>Instructions:</strong> Select all the math topics that you feel you need
-                    to work on or improve.
+                    <strong>{t('studentHome.assignmentZero.instructions')}</strong> {t('studentHome.assignmentZero.mathInstructions')}
                   </p>
                 </div>
                 <div className="grid grid-cols-1 gap-3">
-                  {MATH_TOPICS.map((topic) => (
+                  {MATH_TOPICS.map(({ value: topic, label }) => (
                     <div key={topic} className="flex items-center space-x-3">
                       <Checkbox
                         id={`math-${topic}`}
@@ -1951,13 +1963,13 @@ export default function AssignmentZeroPage() {
                         onCheckedChange={() => handleMathTopicToggle(topic)}
                       />
                       <Label htmlFor={`math-${topic}`} className="cursor-pointer text-sm">
-                        {topic}
+                        {t(label)}
                       </Label>
                     </div>
                   ))}
                 </div>
                 <p className="text-sm text-muted-foreground mt-4">
-                  Selected: {formData.math_topics.length} topic(s)
+                  {t('studentHome.assignmentZero.selectedTopics', { count: formData.math_topics.length })}
                 </p>
               </>
             )}
@@ -1968,20 +1980,18 @@ export default function AssignmentZeroPage() {
                 <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4 flex gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <div className="text-sm text-amber-800 dark:text-amber-300">
-                    <p className="font-medium mb-1">Important</p>
+                    <p className="font-medium mb-1">{t('studentHome.assignmentZero.important')}</p>
                     <p>
-                      Please be honest when answering questions. This questionnaire is designed to
-                      identify your current strong and weak skills to help us personalize your
-                      learning experience.
+                      {t('studentHome.assignmentZero.honestNote')}
                     </p>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold mb-4">IELTS Listening Skills Assessment</h3>
+                <h3 className="text-lg font-semibold mb-4">{t('studentHome.assignmentZero.heading.ieltsListening')}</h3>
                 <div className="space-y-4">
                   {IELTS_LISTENING_QUESTIONS.map((question) => (
                     <LikertScale
                       key={question.key}
-                      label={question.label}
+                      label={t(question.label)}
                       value={formData[question.key as keyof FormData] as number | null}
                       onChange={(value) => handleInputChange(question.key as keyof FormData, value)}
                     />
@@ -1993,12 +2003,12 @@ export default function AssignmentZeroPage() {
             {/* IELTS Reading Assessment */}
             {currentStepId === 'ielts_reading' && (
               <>
-                <h3 className="text-lg font-semibold mb-4">IELTS Reading Skills Assessment</h3>
+                <h3 className="text-lg font-semibold mb-4">{t('studentHome.assignmentZero.heading.ieltsReading')}</h3>
                 <div className="space-y-4">
                   {IELTS_READING_QUESTIONS.map((question) => (
                     <LikertScale
                       key={question.key}
-                      label={question.label}
+                      label={t(question.label)}
                       value={formData[question.key as keyof FormData] as number | null}
                       onChange={(value) => handleInputChange(question.key as keyof FormData, value)}
                     />
@@ -2010,12 +2020,12 @@ export default function AssignmentZeroPage() {
             {/* IELTS Writing Assessment */}
             {currentStepId === 'ielts_writing' && (
               <>
-                <h3 className="text-lg font-semibold mb-4">IELTS Writing Skills Assessment</h3>
+                <h3 className="text-lg font-semibold mb-4">{t('studentHome.assignmentZero.heading.ieltsWriting')}</h3>
                 <div className="space-y-4">
                   {IELTS_WRITING_QUESTIONS.map((question) => (
                     <LikertScale
                       key={question.key}
-                      label={question.label}
+                      label={t(question.label)}
                       value={formData[question.key as keyof FormData] as number | null}
                       onChange={(value) => handleInputChange(question.key as keyof FormData, value)}
                     />
@@ -2027,12 +2037,12 @@ export default function AssignmentZeroPage() {
             {/* IELTS Speaking Assessment */}
             {currentStepId === 'ielts_speaking' && (
               <>
-                <h3 className="text-lg font-semibold mb-4">IELTS Speaking Skills Assessment</h3>
+                <h3 className="text-lg font-semibold mb-4">{t('studentHome.assignmentZero.heading.ieltsSpeaking')}</h3>
                 <div className="space-y-4">
                   {IELTS_SPEAKING_QUESTIONS.map((question) => (
                     <LikertScale
                       key={question.key}
-                      label={question.label}
+                      label={t(question.label)}
                       value={formData[question.key as keyof FormData] as number | null}
                       onChange={(value) => handleInputChange(question.key as keyof FormData, value)}
                     />
@@ -2046,12 +2056,11 @@ export default function AssignmentZeroPage() {
               <>
                 <div className="bg-brand-surface border border-brand-border rounded-lg p-4 mb-4">
                   <p className="text-sm text-brand-subtle-foreground">
-                    <strong>Instructions:</strong> Select all the IELTS topics and question types that you feel you need
-                    to work on or improve.
+                    <strong>{t('studentHome.assignmentZero.instructions')}</strong> {t('studentHome.assignmentZero.ieltsInstructions')}
                   </p>
                 </div>
                 <div className="grid grid-cols-1 gap-3">
-                  {IELTS_WEAK_TOPICS.map((topic) => (
+                  {IELTS_WEAK_TOPICS.map(({ value: topic, label }) => (
                     <div key={topic} className="flex items-center space-x-3">
                       <Checkbox
                         id={`ielts-${topic}`}
@@ -2059,13 +2068,13 @@ export default function AssignmentZeroPage() {
                         onCheckedChange={() => handleIeltsWeakTopicToggle(topic)}
                       />
                       <Label htmlFor={`ielts-${topic}`} className="text-sm font-normal cursor-pointer">
-                        {topic}
+                        {t(label)}
                       </Label>
                     </div>
                   ))}
                 </div>
                 <p className="text-sm text-muted-foreground mt-4">
-                  Selected: {formData.ielts_weak_topics.length} topic(s)
+                  {t('studentHome.assignmentZero.selectedTopics', { count: formData.ielts_weak_topics.length })}
                 </p>
               </>
             )}
@@ -2074,14 +2083,13 @@ export default function AssignmentZeroPage() {
             {currentStepId === 'comments' && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="additional_comments">Additional Comments (Optional)</Label>
+                  <Label htmlFor="additional_comments">{t('studentHome.assignmentZero.comments.label')}</Label>
                   <p className="text-xs text-muted-foreground">
-                    Is there anything else you'd like us to know? Any specific questions, concerns, or
-                    areas you'd like help with?
+                    {t('studentHome.assignmentZero.comments.hint')}
                   </p>
                   <Textarea
                     id="additional_comments"
-                    placeholder="Enter any additional comments or questions here..."
+                    placeholder={t('studentHome.assignmentZero.comments.placeholder')}
                     value={formData.additional_comments}
                     onChange={(e) => handleInputChange('additional_comments', e.target.value)}
                     rows={6}
@@ -2092,11 +2100,9 @@ export default function AssignmentZeroPage() {
                 <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <div className="text-sm text-amber-800 dark:text-amber-300">
-                    <p className="font-medium mb-1">Important</p>
+                    <p className="font-medium mb-1">{t('studentHome.assignmentZero.important')}</p>
                     <p>
-                      Please be honest when answering questions. This questionnaire is designed to
-                      identify your current strong and weak skills to help us personalize your
-                      learning experience.
+                      {t('studentHome.assignmentZero.honestNote')}
                     </p>
                   </div>
                 </div>
@@ -2108,7 +2114,7 @@ export default function AssignmentZeroPage() {
               {displayStep > 1 ? (
                 <Button type="button" variant="outline" onClick={handleBack}>
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
+                  {t('common.back')}
                 </Button>
               ) : (
                 <div />
@@ -2116,7 +2122,7 @@ export default function AssignmentZeroPage() {
 
               {displayStep < totalSteps ? (
                 <Button type="button" onClick={handleNext}>
-                  Next <ArrowRight className="w-4 h-4 ml-2" />
+                  {t('studentHome.assignmentZero.next')} <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               ) : (
                 <Button
@@ -2128,12 +2134,12 @@ export default function AssignmentZeroPage() {
                   {submitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Submitting...
+                      {t('studentHome.assignmentZero.submitting')}
                     </>
                   ) : (
                     <>
                       <Send className="w-4 h-4 mr-2" />
-                      Submit Assignment Zero
+                      {t('studentHome.assignmentZero.submit')}
                     </>
                   )}
                 </Button>

@@ -5,10 +5,13 @@ import { fetchQuizById, getQuizAttemptsLeft, submitQuiz } from "../services/api"
 import { toast } from '../components/Toast.tsx';
 import type { Quiz } from '../types';
 import { ArrowRight, FileText, Music } from 'lucide-react';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 export default function QuizPage() {
   const { id } = useParams<{ id: string }>();
   const nav = useNavigate();
+  const t = useT();
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [left, setLeft] = useState<number>(0);
@@ -26,8 +29,8 @@ export default function QuizPage() {
 
   useEffect(() => {
     if (time <= 0) return;
-    const t = setInterval(() => setTime(s => Math.max(0, s - 1)), 1000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setTime(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(timer);
   }, [time]);
 
   const score = useMemo(() => {
@@ -48,27 +51,27 @@ export default function QuizPage() {
     if (!id) return;
     
     await submitQuiz(id, answers, score);
-    toast(`Your score: ${score}%`, 'success');
+    toast(t('lessonPlayer.quizPage.score', { score }), 'success');
     nav('/quizzes');
   };
 
-  if (!quiz) return <div className="text-muted-foreground">Loading...</div>;
-  if (left <= 0) return <div className="text-muted-foreground">No attempts left.</div>;
+  if (!quiz) return <div className="text-muted-foreground">{t('common.loading')}</div>;
+  if (left <= 0) return <div className="text-muted-foreground">{t('lessonPlayer.quizPage.noAttempts')}</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="min-w-0 break-words text-3xl font-bold">{quiz.title}</h1>
-        <div className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm dark:bg-secondary dark:text-foreground">Time: {Math.floor(time/60)}:{String(time%60).padStart(2,'0')}</div>
+        <div className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm dark:bg-secondary dark:text-foreground">{t('lessonPlayer.quizPage.time', { time: `${Math.floor(time/60)}:${String(time%60).padStart(2,'0')}` })}</div>
       </div>
       {/* Quiz-level media for audio/PDF quizzes */}
       {(quiz as any).quiz_media_url && (
         <div className="bg-card rounded-2xl shadow-card p-6 mb-6">
           <h3 className="flex items-center gap-2 text-lg font-semibold mb-4">
             {(quiz as any).quiz_media_type === 'audio' ? (
-              <><Music className="h-5 w-5" aria-hidden="true" />Audio Material</>
+              <><Music className="h-5 w-5" aria-hidden="true" />{t('lessonPlayer.quizPage.audio')}</>
             ) : (
-              <><FileText className="h-5 w-5" aria-hidden="true" />Reference Document</>
+              <><FileText className="h-5 w-5" aria-hidden="true" />{t('lessonPlayer.quizPage.reference')}</>
             )}
           </h3>
           {(quiz as any).quiz_media_type === 'audio' ? (
@@ -84,7 +87,7 @@ export default function QuizPage() {
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
-                  <span className="font-medium">Reference PDF Document</span>
+                  <span className="font-medium">{t('lessonPlayer.quizPage.referencePdf')}</span>
                 </div>
                 <a 
                   href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + (quiz as any).quiz_media_url} 
@@ -92,12 +95,12 @@ export default function QuizPage() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-solid text-brand-solid-foreground rounded-lg hover:bg-brand-solid-hover text-sm"
                 >
-                  Open PDF
+                  {t('lessonPlayer.quizPage.openPdf')}
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </a>
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                Reference this document to answer the questions below.
+                {t('lessonPlayer.quizPage.referenceHint')}
               </p>
             </div>
           ) : null}
@@ -107,7 +110,7 @@ export default function QuizPage() {
       <form onSubmit={onSubmit} className="space-y-6">
         {quiz.questions.map((q, idx) => (
           <div key={q.id} className="bg-card rounded-2xl shadow-card p-5">
-            <div className="text-sm text-muted-foreground">Question {idx+1}</div>
+            <div className="text-sm text-muted-foreground">{t('lessonPlayer.quizPage.question', { number: idx + 1 })}</div>
             <div className="font-medium mb-3">{q.body}</div>
             
             {/* Media attachment for media questions */}
@@ -116,7 +119,7 @@ export default function QuizPage() {
                 {(q as any).media_type === 'image' ? (
                   <img 
                     src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + (q as any).media_url} 
-                    alt="Question media" 
+                    alt={t('lessonPlayer.quiz.questionMedia')} 
                     className="max-w-full max-h-96 object-contain rounded-lg border shadow-sm"
                   />
                 ) : (q as any).media_type === 'pdf' ? (
@@ -125,7 +128,7 @@ export default function QuizPage() {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
-                      <span className="font-medium">PDF Document</span>
+                      <span className="font-medium">{t('lessonPlayer.quizPage.pdf')}</span>
                     </div>
                     <a 
                       href={(q as any).media_url} 
@@ -133,7 +136,7 @@ export default function QuizPage() {
                       rel="noopener noreferrer"
                       className="text-brand hover:text-brand-subtle-foreground text-sm mt-1 inline-flex items-center gap-1"
                     >
-                      View PDF
+                      {t('lessonPlayer.quizPage.viewPdf')}
                       <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                     </a>
                   </div>
@@ -158,13 +161,13 @@ export default function QuizPage() {
             {(q.type === 'short' || (q as any).question_type === 'short_answer') && (
               <input
                 className="mt-1 border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-ring"
-                placeholder="Your answer"
+                placeholder={t('lessonPlayer.quizPage.yourAnswer')}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
               />
             )}
             {(q as any).question_type === 'text_completion' && (
               <div className="mt-4 p-4 bg-muted rounded-lg">
-                <div className="text-sm text-muted-foreground mb-3">Fill in the blanks:</div>
+                <div className="text-sm text-muted-foreground mb-3">{t('lessonPlayer.quizPage.fillBlanks')}</div>
                 <div className="space-y-2">
                   {(() => {
                     const text = ((q as any).content_text || '').toString();
@@ -201,7 +204,7 @@ export default function QuizPage() {
             )}
           </div>
         ))}
-        <button className="px-4 py-2 bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground rounded-lg">Submit</button>
+        <button className="px-4 py-2 bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground rounded-lg">{t('lessonPlayer.quizPage.submit')}</button>
       </form>
     </div>
   );

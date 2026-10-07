@@ -3,11 +3,14 @@
  * builder's preview, never into the saved look — the avatar everyone sees keeps earned parts only.
  * Pure helpers, so the builder's rules are testable without rendering it.
  */
+import { achievementField } from '@/lib/achievements';
+import { activeLocale, t, type Locale } from '@/lib/i18n';
 import {
   CATEGORY_OF_TAG,
   CATEGORY_PARTS,
   isLockedPart,
   isRewardPart,
+  partLabel,
   rewardPart,
   usesLockedPart,
   type LayerTag,
@@ -15,6 +18,7 @@ import {
   type MascotCategory,
   type MascotConfig,
 } from './config';
+import '@/lib/i18n/catalogs/studentHome';
 
 export interface TryPart {
   category: MascotCategory;
@@ -102,6 +106,7 @@ export function saveBlock(
   config: MascotConfig,
   locked: LockedParts | null | undefined,
   achievements: AchievementLike[] | null | undefined,
+  locale: Locale = activeLocale(),
 ): SaveBlock | null {
   const wearing = lockedInLook(config, locked);
   if (wearing.length === 0) return null;
@@ -109,12 +114,21 @@ export function saveBlock(
   const reward = rewardPart(part.category, part.index);
   const a = reward ? achievements?.find((x) => x.key === reward.achievement) : undefined;
   const secret = !!a && a.secret && !a.unlocked;
-  const label = !a ? 'Earn its achievement to keep it' : secret ? 'Earn a secret achievement to keep it' : `Earn ${a.title} to keep it`;
+  const label = !a
+    ? t('studentHome.mascot.earnAnyToKeep', undefined, locale)
+    : secret
+      ? t('studentHome.mascot.earnSecretToKeep', undefined, locale)
+      : t('studentHome.mascot.earnToKeep', { title: achievementField(a, 'title', locale) }, locale);
+  const hint = a ? achievementField(a, 'hint', locale) : null;
   return {
     part,
-    partName: reward?.name ?? CATEGORY_PARTS[part.category][part.index]?.label ?? 'this part',
+    partName: partLabel(part.category, part.index, locale),
     label,
-    howTo: !a ? null : secret ? (a.hint ? `Secret · hint: ${a.hint}` : 'A secret — keep learning to discover it.') : a.how_to,
+    howTo: !a
+      ? null
+      : secret
+        ? (hint ? t('studentHome.achievements.secretHint', { hint }, locale) : t('studentHome.achievements.secret', undefined, locale))
+        : achievementField(a, 'how_to', locale),
     progress: secret ? null : a?.progress ?? null,
     achievementKey: a?.key ?? reward?.achievement ?? '',
     moreAchievements: new Set(

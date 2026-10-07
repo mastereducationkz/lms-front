@@ -7,6 +7,8 @@ import { RankMedal } from './RankMedal';
 import { toast } from '../Toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Input } from '../ui/input';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherDesk';
 
 interface GroupStudent {
   user_id: number;
@@ -20,6 +22,7 @@ interface WeeklyAwardsHubProps {
 }
 
 export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
+  const t = useT();
   const [groups, setGroups] = useState<any[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
   const [groupStudents, setGroupStudents] = useState<GroupStudent[]>([]);
@@ -65,7 +68,7 @@ export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
       }
     } catch (error) {
       console.error('Failed to load groups:', error);
-      toast('Failed to load groups', 'error');
+      toast(t('teacherDesk.awards.groupsFailed'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +109,7 @@ export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
       setPointsDistribution({});
     } catch (error) {
       console.error('Failed to load leaderboard:', error);
-      toast('Failed to load group leaderboard', 'error');
+      toast(t('teacherDesk.awards.leaderboardFailed'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -163,7 +166,7 @@ export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
         }
       }
       
-      toast('Points distributed successfully!', 'success');
+      toast(t('teacherDesk.awards.distributed'), 'success');
       loadAllowance(groupId);
       onClose();
       
@@ -173,7 +176,7 @@ export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
       }
     } catch (error: any) {
       console.error('Failed to distribute points:', error);
-      toast(error.response?.data?.detail || 'Failed to distribute points', 'error');
+      toast(error.response?.data?.detail || t('teacherDesk.awards.distributeFailed'), 'error');
     } finally {
       setIsSaving(false);
     }
@@ -191,9 +194,9 @@ export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
               <Trophy className="w-5 h-5 text-foreground" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-semibold text-foreground">Weekly Awards Distribution</DialogTitle>
+              <DialogTitle className="text-xl font-semibold text-foreground">{t('teacherDesk.awards.title')}</DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground mt-1">
-                You can distribute up to {allowance.limit} points per week for this group. (Used: {allowance.given})
+                {t('teacherDesk.awards.description', { count: allowance.limit, given: allowance.given })}
               </DialogDescription>
             </div>
           </div>
@@ -201,10 +204,10 @@ export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
 
         <div className="mt-6 space-y-6">
           <div>
-            <label className="text-sm font-medium text-foreground  mb-2 block">Select Group</label>
+            <label className="text-sm font-medium text-foreground  mb-2 block">{t('teacherDesk.awards.selectGroup')}</label>
             <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
               <SelectTrigger>
-                <SelectValue placeholder="Choose a group" />
+                <SelectValue placeholder={t('teacherDesk.awards.chooseGroup')} />
               </SelectTrigger>
               <SelectContent>
                 {groups.map((group) => (
@@ -219,22 +222,22 @@ export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
           <div className={`rounded-lg p-4 border ${allowance.remaining === 0 ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50' : 'bg-muted/60 border-border'}`}>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-muted-foreground">Available to distribute</p>
+                <p className="text-sm text-muted-foreground">{t('teacherDesk.awards.available')}</p>
                 <p className={`text-2xl font-bold ${allowance.remaining === 0 ? 'text-red-700 dark:text-red-400' : 'text-foreground'}`}>
-                  {allowance.remaining} points
+                  {t('teacherDesk.awards.points', { count: allowance.remaining })}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-muted-foreground">Selected / Remaining</p>
+                <p className="text-sm text-muted-foreground">{t('teacherDesk.awards.selectedRemaining')}</p>
                 <p className={`text-2xl font-bold ${remainingInBatch < 0 ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}>
                   {totalBatch} / {remainingInBatch}
                 </p>
               </div>
             </div>
             {allowance.remaining === 0 ? (
-               <p className="text-sm text-red-700 dark:text-red-400 mt-2 font-medium">Group limit reached. You cannot give more points this week.</p>
+               <p className="text-sm text-red-700 dark:text-red-400 mt-2 font-medium">{t('teacherDesk.awards.limitReached')}</p>
             ) : remainingInBatch < 0 && (
-              <p className="text-sm text-red-600 dark:text-red-400 mt-2">You've exceeded your available allowance!</p>
+              <p className="text-sm text-red-600 dark:text-red-400 mt-2">{t('teacherDesk.awards.overLimit')}</p>
             )}
           </div>
 
@@ -245,17 +248,17 @@ export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
           ) : groupStudents.length === 0 ? (
             <div className="text-center py-12 bg-muted/60 rounded-lg">
               <TrendingUp className="w-12 h-12 text-gray-300 dark:text-muted-foreground/50 mx-auto mb-3" />
-              <p className="text-muted-foreground">No students in this group</p>
+              <p className="text-muted-foreground">{t('teacherDesk.noStudentsInGroup')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-muted/60 border-b border-border">
                   <tr>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground  uppercase">Rank</th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground  uppercase">Student</th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground  uppercase">Weekly Points</th>
-                    <th className="px-3 py-2 text-center text-xs font-semibold text-muted-foreground  uppercase">Award Points</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground  uppercase">{t('teacherDesk.col.rank')}</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground  uppercase">{t('teacherDesk.col.student')}</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-muted-foreground  uppercase">{t('teacherDesk.col.weeklyPoints')}</th>
+                    <th className="px-3 py-2 text-center text-xs font-semibold text-muted-foreground  uppercase">{t('teacherDesk.awards.awardPoints')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -295,7 +298,7 @@ export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
                             />
                           </div>
                           {hasError && (
-                            <p className="text-xs text-red-600 dark:text-red-400 mt-1 text-center">Min {MIN_POINTS_PER_STUDENT}</p>
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-1 text-center">{t('teacherDesk.awards.min', { min: MIN_POINTS_PER_STUDENT })}</p>
                           )}
                         </td>
                       </tr>
@@ -309,14 +312,14 @@ export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
 
         <DialogFooter className="mt-6">
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button 
             onClick={handleDistribute}
             disabled={!canDistribute() || isSaving}
             className="bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground"
           >
-            {isSaving ? 'Distributing...' : 'Distribute Points'}
+            {isSaving ? t('teacherDesk.awards.distributing') : t('teacherDesk.awards.distribute')}
           </Button>
         </DialogFooter>
       </DialogContent>

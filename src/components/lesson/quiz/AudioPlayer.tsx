@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Play, Pause, Volume2, VolumeX, RotateCcw, TriangleAlert } from 'lucide-react';
+import { useT } from '../../../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 interface AudioPlayerProps {
   src: string;
@@ -22,6 +24,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   onPlayCountChange,
   className = ''
 }) => {
+  const t = useT();
   const audioRef = useRef<HTMLAudioElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   
@@ -66,10 +69,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       setHasStarted(true);
       audio.play().catch(err => {
         console.error('Error playing audio:', err);
-        setError('Failed to play audio');
+        setError(t('lessonPlayer.quizAudio.playFailed'));
       });
     }
-  }, [isPlaying, canPlay, isStrictMode, currentTime, hasStarted, playCount, onPlayCountChange]);
+  }, [isPlaying, canPlay, isStrictMode, currentTime, hasStarted, playCount, onPlayCountChange, t]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -92,7 +95,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     const handleCanPlayThrough = () => setIsLoading(false);
     const handleError = () => {
       setIsLoading(false);
-      setError('Failed to load audio');
+      setError(t('lessonPlayer.quizAudio.loadFailed'));
     };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
@@ -122,7 +125,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
-      e.returnValue = 'You are in exam mode. If you leave, your audio plays will be lost. Are you sure?';
+      e.returnValue = t('lessonPlayer.quizAudio.leaveWarning');
       return e.returnValue;
     };
 
@@ -240,7 +243,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
               ? 'text-foreground/70 hover:bg-accent hover:text-accent-foreground'
               : 'text-muted-foreground/50 cursor-not-allowed'
           }`}
-          title="Restart"
+          title={t('lessonPlayer.quizAudio.restart')}
         >
           <RotateCcw className="w-4 h-4" />
         </button>

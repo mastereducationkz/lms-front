@@ -8,12 +8,17 @@ import type { ReactNode } from 'react';
 import Orca from './Orca';
 import { resolveMascot, type MascotConfig } from './config';
 import { EYE_L, EYE_R } from './art/base';
+import { t, type MessageKey } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/chatLive';
+import '@/lib/i18n/catalogs/sharedUi';
 
 export const REACTION_KINDS = ['love', 'laugh', 'fire', 'clap', 'mindblown', 'splash'] as const;
 export type ReactionKind = (typeof REACTION_KINDS)[number];
 
-export const REACTION_LABEL: Record<ReactionKind, string> = {
-  love: 'Love', laugh: 'Haha', fire: 'Fire', clap: 'Bravo', mindblown: 'Mind blown', splash: 'Splash',
+/** The reactions' names, shared with the live lesson's reaction bar. */
+export const REACTION_LABEL: Record<ReactionKind, MessageKey> = {
+  love: 'chatLive.live.reaction.love', laugh: 'chatLive.live.reaction.laugh', fire: 'chatLive.live.reaction.fire',
+  clap: 'chatLive.live.reaction.clap', mindblown: 'chatLive.live.reaction.mindblown', splash: 'chatLive.live.reaction.splash',
 };
 // Bubbles and counters draw a reaction with ReactionGlyph (live-lesson/reactionIcons): icons, not emoji.
 
@@ -139,7 +144,7 @@ export default function ReactionOrca({ kind, code, userId, size = 48, className,
   const leap = kind === 'splash' ? -16 : 0;
   return (
     <svg viewBox="-24 -24 248 248" width={size} height={size} className={className} role="img"
-      aria-label={title ?? `${REACTION_LABEL[kind]} reaction`}>
+      aria-label={title ?? t('sharedUi.mascot.reaction', { name: t(REACTION_LABEL[kind]) })}>
       {BEHIND[kind]?.()}
       <g transform={`translate(0 ${leap})`}>
         <Orca config={config} size={200} />

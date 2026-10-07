@@ -1,5 +1,7 @@
 import React from 'react';
 import { Check } from 'lucide-react';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/courseAuthoring';
 
 interface StepperProps {
   steps: string[];
@@ -9,6 +11,7 @@ interface StepperProps {
 }
 
 export default function Stepper({ steps, current, onStepChange, className = '' }: StepperProps) {
+  const t = useT();
   return (
     <div className={`w-full`}>      
       <ol className={`flex items-center w-full text-sm ${className}`}>
@@ -20,13 +23,13 @@ export default function Stepper({ steps, current, onStepChange, className = '' }
               <button
                 type="button"
                 onClick={() => onStepChange && onStepChange(index)}
-                className={`group flex items-center gap-3 w-full text-left`}>
+                className="group flex items-center gap-3 w-full text-left">
                 <span
                   className={`flex items-center justify-center w-8 h-8 rounded-full border transition 
                   ${isCompleted ? 'bg-blue-600 text-white border-blue-600' : isActive ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-gray-300 text-gray-500 dark:border-border dark:text-gray-400'}
                 `}
                 >
-                  {isCompleted ? <Check className="h-4 w-4" aria-label="Completed" /> : index + 1}
+                  {isCompleted ? <Check className="h-4 w-4" aria-label={t('courseAuthoring.stepper.completed')} /> : index + 1}
                 </span>
                 <span className={`${isActive ? 'text-gray-900 dark:text-foreground' : 'text-gray-500 dark:text-gray-400'} font-medium`}>{label}</span>
               </button>

@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getAvailableTeachers, createLessonRequest } from '../services/api';
 import { toast } from '../components/Toast';
-import { formatInKZ, fromDatetimeLocalKZ } from '../lib/datetime';
+import { fromDatetimeLocalKZ } from '../lib/datetime';
+import { formatDateTime, type MessageKey } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherDesk';
 import type { AvailableTeacher } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
@@ -14,13 +17,26 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 
 type RequestType = 'substitution' | 'reschedule' | 'cancel';
 
+/** What the confirmation says, per request type: applied at once, or sent for approval. */
+const APPLIED_TEXT: Record<RequestType, MessageKey> = {
+  substitution: 'teacherDesk.subRequest.appliedSubstitution',
+  reschedule: 'teacherDesk.subRequest.appliedReschedule',
+  cancel: 'teacherDesk.subRequest.appliedCancel',
+};
+const SENT_TEXT: Record<RequestType, MessageKey> = {
+  substitution: 'teacherDesk.subRequest.sentSubstitution',
+  reschedule: 'teacherDesk.subRequest.sentReschedule',
+  cancel: 'teacherDesk.subRequest.sentCancel',
+};
+
 export default function SubstitutionRequestPage() {
   const navigate = useNavigate();
+  const t = useT();
   const [searchParams] = useSearchParams();
 
   const eventId = searchParams.get('event_id') ? Number(searchParams.get('event_id')) : undefined;
   const groupId = searchParams.get('group_id') ? Number(searchParams.get('group_id')) : 0;
-  const eventTitle = searchParams.get('title') || 'Lesson';
+  const eventTitle = searchParams.get('title') || t('teacherDesk.subRequest.lessonFallback');
   const eventDatetime = searchParams.get('datetime') || '';
   const initialType = (searchParams.get('type') as RequestType) || 'substitution';
 
@@ -82,7 +98,7 @@ export default function SubstitutionRequestPage() {
       setSubmitted(true);
     } catch (error: any) {
       console.error('Failed to submit request:', error);
-      const msg = error?.response?.data?.detail || 'Failed to submit request. Please try again.';
+      const msg = error?.response?.data?.detail || t('teacherDesk.subRequest.submitFailed');
       toast(typeof msg === 'string' ? msg : JSON.stringify(msg), 'error');
     } finally {
       setSubmitting(false);
@@ -103,14 +119,14 @@ export default function SubstitutionRequestPage() {
       <div className="min-h-screen bg-muted flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardHeader className="text-center">
-            <CardTitle>Invalid Request</CardTitle>
+            <CardTitle>{t('teacherDesk.subRequest.invalid')}</CardTitle>
             <CardDescription>
-              Missing lesson information. Please start from the Calendar and click on an event.
+              {t('teacherDesk.subRequest.invalidHint')}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
             <Button onClick={() => navigate('/calendar')}>
-              Back to Calendar
+              {t('teacherDesk.subRequest.backToCalendar')}
             </Button>
           </CardContent>
         </Card>
@@ -123,19 +139,17 @@ export default function SubstitutionRequestPage() {
       <div className="min-h-screen bg-muted flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardHeader className="text-center">
-            <CardTitle>{autoApplied ? 'Change Applied' : 'Request Submitted'}</CardTitle>
+            <CardTitle>{autoApplied ? t('teacherDesk.subRequest.applied') : t('teacherDesk.subRequest.submitted')}</CardTitle>
             <CardDescription>
-              {autoApplied
-                ? `Your ${requestType} was applied immediately and added to the Lesson Requests list.`
-                : `Your ${requestType} request has been sent to the head teacher for approval.`}
+              {t(autoApplied ? APPLIED_TEXT[requestType] : SENT_TEXT[requestType])}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center gap-2">
             <Button variant="outline" onClick={() => navigate('/calendar')}>
-              Back to Calendar
+              {t('teacherDesk.subRequest.backToCalendar')}
             </Button>
             <Button onClick={() => navigate('/my-requests')}>
-              View My Requests
+              {t('teacherDesk.subRequest.myRequests')}
             </Button>
           </CardContent>
         </Card>
@@ -148,11 +162,11 @@ export default function SubstitutionRequestPage() {
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">New Request</h1>
-            <p className="text-muted-foreground">Cancel, reschedule, or request a substitute</p>
+            <h1 className="text-2xl font-bold tracking-tight">{t('teacherDesk.subRequest.title')}</h1>
+            <p className="text-muted-foreground">{t('teacherDesk.subRequest.subtitle')}</p>
           </div>
           <Button variant="outline" onClick={() => navigate(-1)}>
-            Back
+            {t('common.back')}
           </Button>
         </div>
 
@@ -160,48 +174,48 @@ export default function SubstitutionRequestPage() {
           <CardHeader>
             <CardTitle>{eventTitle}</CardTitle>
             <CardDescription>
-              {eventDatetime ? formatInKZ(eventDatetime, { dateStyle: 'long', timeStyle: 'short' }) : 'N/A'}
+              {eventDatetime ? formatDateTime(eventDatetime, { dateStyle: 'long', timeStyle: 'short' }) : t('teacherDesk.notAvailable')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <Tabs value={requestType} onValueChange={(v) => setRequestType(v as RequestType)} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="substitution">Substitution</TabsTrigger>
-                <TabsTrigger value="reschedule">Reschedule</TabsTrigger>
-                <TabsTrigger value="cancel">Cancel</TabsTrigger>
+                <TabsTrigger value="substitution">{t('teacherDesk.subRequest.tabSubstitution')}</TabsTrigger>
+                <TabsTrigger value="reschedule">{t('teacherDesk.subRequest.tabReschedule')}</TabsTrigger>
+                <TabsTrigger value="cancel">{t('teacherDesk.subRequest.tabCancel')}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="substitution" className="space-y-4 mt-4">
                 <div className="flex items-center justify-between">
-                  <Label>Select a substitute teacher</Label>
+                  <Label>{t('teacherDesk.subRequest.selectSubstitute')}</Label>
                 </div>
 
                 {loadingTeachers ? (
                   <div className="text-center py-8 text-muted-foreground text-sm">
-                    Loading available teachers...
+                    {t('teacherDesk.subRequest.loadingTeachers')}
                   </div>
                 ) : availableTeachers.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground text-sm border rounded-md bg-muted/50">
-                    No available teachers found for this time slot
-                    <Button variant="link" onClick={loadTeachers} className="h-auto p-0 ml-1">Retry</Button>
+                    {t('teacherDesk.subRequest.noTeachers')}
+                    <Button variant="link" onClick={loadTeachers} className="h-auto p-0 ml-1">{t('teacherDesk.retry')}</Button>
                   </div>
                 ) : (
                   <div className="grid gap-2 border rounded-md p-2 max-h-60 overflow-y-auto">
-                    {availableTeachers.map(t => (
-                      <div key={t.id} className="flex items-center space-x-2 p-2 rounded hover:bg-muted/50 transition-colors">
+                    {availableTeachers.map(teacher => (
+                      <div key={teacher.id} className="flex items-center space-x-2 p-2 rounded hover:bg-muted/50 transition-colors">
                         <Checkbox
-                          id={`teacher-${t.id}`}
-                          checked={selectedTeacherIds.includes(t.id)}
-                          onCheckedChange={() => toggleTeacher(t.id)}
+                          id={`teacher-${teacher.id}`}
+                          checked={selectedTeacherIds.includes(teacher.id)}
+                          onCheckedChange={() => toggleTeacher(teacher.id)}
                         />
                         <div className="grid gap-0.5 leading-none">
                           <label
-                            htmlFor={`teacher-${t.id}`}
+                            htmlFor={`teacher-${teacher.id}`}
                             className="text-sm font-medium leading-none cursor-pointer"
                           >
-                            {t.name}
+                            {teacher.name}
                           </label>
-                          <p className="text-xs text-muted-foreground">{t.email}</p>
+                          <p className="text-xs text-muted-foreground">{teacher.email}</p>
                         </div>
                       </div>
                     ))}
@@ -211,7 +225,7 @@ export default function SubstitutionRequestPage() {
 
               <TabsContent value="reschedule" className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="new-date">New Date & Time (Kazakhstan time)</Label>
+                  <Label htmlFor="new-date">{t('teacherDesk.subRequest.newDateTime')}</Label>
                   <Input
                     id="new-date"
                     type="datetime-local"
@@ -223,16 +237,16 @@ export default function SubstitutionRequestPage() {
 
               <TabsContent value="cancel" className="space-y-4 mt-4">
                 <p className="text-sm text-muted-foreground">
-                  This will send a cancellation request to your head teacher. The lesson will only be cancelled after approval.
+                  {t('teacherDesk.subRequest.cancelHint')}
                 </p>
               </TabsContent>
             </Tabs>
 
             <div className="space-y-2">
-              <Label htmlFor="reason">Reason {requestType === 'cancel' ? '' : '(Optional)'}</Label>
+              <Label htmlFor="reason">{requestType === 'cancel' ? t('teacherDesk.subRequest.reason') : t('teacherDesk.subRequest.reasonOptional')}</Label>
               <Textarea
                 id="reason"
-                placeholder="Explain why you need this change..."
+                placeholder={t('teacherDesk.subRequest.reasonPlaceholder')}
                 value={reason}
                 onChange={e => setReason(e.target.value)}
                 className="resize-none"
@@ -245,7 +259,7 @@ export default function SubstitutionRequestPage() {
               disabled={submitting || !canSubmit}
               variant={requestType === 'cancel' ? 'destructive' : 'default'}
             >
-              {submitting ? 'Submitting...' : 'Submit Request'}
+              {submitting ? t('teacherDesk.subRequest.submitting') : t('teacherDesk.subRequest.submit')}
             </Button>
           </CardContent>
         </Card>

@@ -5,13 +5,17 @@ import RecordingMark from './RecordingMark';
 import type { Event } from '../../types';
 import {
   cx, formatTime, eventStyle, isSubstitutedForTeacher,
-  eventsOnDay, weekTimeWindow, isSameDay, DAY_NAMES,
+  eventsOnDay, weekTimeWindow, isSameDay,
   minutesInAlmaty,
 } from './calendarUtils';
 import { todayInAlmaty } from '../../lib/datetime';
 import {
-  cardTitle, countLabel, lanesForWidth, planDay, tileDots, tileLabel, tileTooltip, type HourTile,
+  cardTitle, lanesForWidth, planDay, tileDots, type HourTile,
 } from './weekLayout';
+import { eventCountText, hourTileTitle } from './calendarText';
+import { formatDate } from '../../lib/i18n';
+import { useLocale, useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 
 interface Props {
   weekDays: Date[];
@@ -33,6 +37,7 @@ type User = Props['user'];
 function EventCard({ event, user, now, style, onClick }: {
   event: Event; user: User; now: Date; style: CSSProperties; onClick: () => void;
 }) {
+  const t = useT();
   const s = eventStyle(event);
   const sub = isSubstitutedForTeacher(event, user);
   const isAssignment = event.event_type === 'assignment';
@@ -51,7 +56,7 @@ function EventCard({ event, user, now, style, onClick }: {
       )}
     >
       <div className={cx('flex items-center gap-1 text-[10.5px] font-bold tabular-nums', s.time)}>
-        {isAssignment && <Flag className="h-2.5 w-2.5 shrink-0" aria-label="Homework deadline" />}
+        {isAssignment && <Flag className="h-2.5 w-2.5 shrink-0" aria-label={t('chatLive.calendar.homeworkDeadline')} />}
         {formatTime(event.start_datetime)}
         <RecordingMark event={event} role={user?.role} className="h-2.5 w-2.5" />
         <MeetMark event={event} role={user?.role} className="h-2.5 w-2.5" />
@@ -65,16 +70,18 @@ function EventCard({ event, user, now, style, onClick }: {
 function SlotTile({ tile, day, top, now, onClick }: {
   tile: HourTile; day: Date; top: number; now: Date; onClick: () => void;
 }) {
+  const locale = useLocale();
   const hh = `${String(tile.hour).padStart(2, '0')}:00`;
   const { dots, extra } = tileDots(tile);
   const allPast = tile.events.every((e) => new Date(e.end_datetime).getTime() < now.getTime());
-  const dayLabel = day.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
+  const dayLabel = formatDate(day, { weekday: 'long', day: 'numeric', month: 'long' }, locale);
+  const count = eventCountText(tile.events, locale);
   return (
     <button
       type="button"
       onClick={onClick}
-      title={tileTooltip(tile)}
-      aria-label={`${hh}, ${tileLabel(tile)}, ${dayLabel}`}
+      title={hourTileTitle(tile, locale)}
+      aria-label={`${hh}, ${count}, ${dayLabel}`}
       style={{ top, height: TILE_PX, left: 3, right: 3 }}
       className={cx(
         'absolute flex flex-col justify-center gap-1.5 overflow-hidden rounded-lg border border-border bg-muted/50 px-2 py-1 text-left transition hover:bg-muted',
@@ -84,7 +91,7 @@ function SlotTile({ tile, day, top, now, onClick }: {
     >
       <div className="flex min-w-0 items-baseline gap-1.5">
         <span className="flex-none text-[10.5px] font-bold tabular-nums text-muted-foreground">{hh}</span>
-        <span className="truncate text-[11.5px] font-semibold text-foreground">{tileLabel(tile)}</span>
+        <span className="truncate text-[11.5px] font-semibold text-foreground">{count}</span>
       </div>
       <div className="flex min-w-0 items-center gap-1" aria-hidden="true">
         {dots.map((dot) => (
@@ -115,6 +122,7 @@ function useLanes(ref: RefObject<HTMLDivElement>): number {
 export default function WeekView({ weekDays, events, user, onEventClick, onSlotClick }: Props) {
   const gridRef = useRef<HTMLDivElement>(null);
   const maxLanes = useLanes(gridRef);
+  const locale = useLocale();
 
   const days = useMemo(
     () => weekDays.map((day) => {
@@ -152,7 +160,7 @@ export default function WeekView({ weekDays, events, user, onEventClick, onSlotC
           return (
             <div key={i} className="border-l border-border px-2 py-2 text-center">
               <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {DAY_NAMES[i]}
+                {formatDate(day, { weekday: 'short' }, locale)}
               </div>
               <div
                 className={cx(
@@ -164,7 +172,7 @@ export default function WeekView({ weekDays, events, user, onEventClick, onSlotC
               </div>
               {plan.mode === 'summary' && (
                 <div className="mt-1 truncate text-[10.5px] leading-none text-muted-foreground">
-                  {countLabel(dayEvents)}
+                  {eventCountText(dayEvents, locale)}
                 </div>
               )}
             </div>

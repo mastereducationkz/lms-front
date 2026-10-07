@@ -4,6 +4,8 @@ import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 import { GroupFilterBar, ProgramBadges, useGroupFilters } from './GroupFilters';
 import type { RecipientSummary, TelegramGroup } from '../../services/api/announcements';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/announcements';
 
 interface RecipientPickerProps {
   /** Groups that can receive an announcement: approved, with the bot still in them. */
@@ -34,6 +36,7 @@ export function RecipientPicker({
   onAllStudentsChange,
   pin,
 }: RecipientPickerProps) {
+  const t = useT();
   const filters = useGroupFilters(approvedGroups);
   const { visibleGroups, isFiltering } = filters;
 
@@ -69,13 +72,12 @@ export function RecipientPicker({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Recipients</CardTitle>
+        <CardTitle className="text-base">{t('announcements.recipients.title')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {approvedGroups.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No approved groups yet. Add the bot to a group (or post <code>/register</code> in one it
-            is already in), then approve it under Groups.
+            {t('announcements.recipients.noneBefore')} <code>/register</code> {t('announcements.recipients.noneAfter')}
           </p>
         ) : (
           <div className="space-y-3">
@@ -91,16 +93,16 @@ export function RecipientPicker({
                 />
                 <Label htmlFor="select-visible-groups" className="cursor-pointer text-sm font-medium">
                   {isFiltering
-                    ? `Select all ${visibleGroups.length} shown`
-                    : `All groups (${approvedGroups.length})`}
+                    ? t('announcements.recipients.selectShown', { count: visibleGroups.length })
+                    : t('announcements.recipients.allGroups', { count: approvedGroups.length })}
                 </Label>
               </div>
               {selectedCount > 0 && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span>
-                    {selectedCount} selected
+                    {t('announcements.recipients.selected', { count: selectedCount })}
                     {hiddenSelectedCount > 0 && (
-                      <span className="text-amber-600"> · {hiddenSelectedCount} hidden by filters</span>
+                      <span className="text-amber-600"> · {t('announcements.recipients.hiddenByFilters', { count: hiddenSelectedCount })}</span>
                     )}
                   </span>
                   <button
@@ -108,7 +110,7 @@ export function RecipientPicker({
                     onClick={() => onSelectedGroupsChange(new Set())}
                     className={linkButtonClass}
                   >
-                    Clear
+                    {t('announcements.recipients.clear')}
                   </button>
                 </div>
               )}
@@ -117,9 +119,9 @@ export function RecipientPicker({
             <div className="max-h-72 space-y-0.5 overflow-y-auto rounded-md border border-border p-1.5">
               {visibleGroups.length === 0 ? (
                 <div className="py-6 text-center text-sm text-muted-foreground">
-                  No groups match these filters.{' '}
+                  {t('announcements.filters.noMatch')}{' '}
                   <button type="button" onClick={filters.clearFilters} className={linkButtonClass}>
-                    Clear filters
+                    {t('announcements.filters.clear')}
                   </button>
                 </div>
               ) : (
@@ -141,8 +143,8 @@ export function RecipientPicker({
                     </Label>
                     <ProgramBadges programs={filters.programsOf(group)} />
                     {pin && !group.bot_is_admin && (
-                      <span className="shrink-0 text-xs text-amber-600" title="Pinning needs admin rights">
-                        can't pin
+                      <span className="shrink-0 text-xs text-amber-600" title={t('announcements.recipients.pinNeedsAdmin')}>
+                        {t('announcements.recipients.cantPin')}
                       </span>
                     )}
                   </div>
@@ -159,11 +161,11 @@ export function RecipientPicker({
             onCheckedChange={(checked) => onAllStudentsChange(checked === true)}
           />
           <Label htmlFor="all-students" className="cursor-pointer text-sm font-normal">
-            All linked students ({summary?.students_opted_in ?? 0})
+            {t('announcements.recipients.allStudents', { count: summary?.students_opted_in ?? 0 })}
           </Label>
           {summary && summary.students_bound > summary.students_opted_in && (
             <span className="text-xs text-muted-foreground">
-              {summary.students_bound - summary.students_opted_in} muted announcements
+              {t('announcements.recipients.muted', { count: summary.students_bound - summary.students_opted_in })}
             </span>
           )}
         </div>

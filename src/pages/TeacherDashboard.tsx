@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { Fragment, useEffect, useState, useMemo, useRef, type ReactNode } from 'react';
 import { sanitizeHtml } from '../lib/safeHtml';
 import { Link, useNavigate } from 'react-router-dom';
 import { WebinarPayCard, type WebinarPay } from '../components/teacher/WebinarPayCard';
@@ -9,6 +9,7 @@ import { toast } from '../components/Toast';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDate, formatDateTime, formatNumber } from '../lib/i18n';
 import { useT } from '../lib/i18n/react';
+import type { MessageKey } from '../lib/i18n';
 import { 
   BookOpen, 
   Users, 
@@ -56,6 +57,7 @@ import InstallAppCard from '../components/pwa/InstallAppCard';
 import { CompletionMeta } from '../components/progress/CompletionMeta';
 import type { CheckpointSummary } from '../lib/completion';
 import '@/lib/i18n/catalogs/teacher';
+import '@/lib/i18n/catalogs/teacherDesk';
 
 interface TeacherStats {
   total_courses: number;
@@ -185,6 +187,25 @@ interface SalaryBreakdownResult {
     telegram_username_link?: string
     tel_link?: string
   }
+}
+
+/** Question types as the API names them → their label. */
+const QUESTION_TYPE_LABELS: Record<string, MessageKey> = {
+  single_choice: 'teacherDesk.questionType.singleChoice',
+  multiple_choice: 'teacherDesk.questionType.multipleChoice',
+  short_answer: 'teacherDesk.questionType.shortAnswer',
+  fill_blank: 'teacherDesk.questionType.fillBlank',
+  text_completion: 'teacherDesk.questionType.textCompletion',
+  long_text: 'teacherDesk.questionType.longText',
+  media_question: 'teacherDesk.questionType.mediaQuestion',
+  media_open_question: 'teacherDesk.questionType.mediaOpenQuestion',
+  matching: 'teacherDesk.questionType.matching',
+  image_content: 'teacherDesk.questionType.imageContent',
+};
+
+/** A translated sentence whose {placeholders} are JSX (a bold word inside the sentence). */
+function withParts(template: string, parts: Record<string, ReactNode>): ReactNode[] {
+  return template.split(/\{(\w+)\}/).map((piece, i) => (i % 2 ? <Fragment key={i}>{parts[piece]}</Fragment> : piece));
 }
 
 export default function TeacherDashboard() {
@@ -441,7 +462,7 @@ export default function TeacherDashboard() {
         .forEach((r) => console.warn('Dashboard load: a request failed:', (r as PromiseRejectedResult).reason));
 
     } catch (err) {
-      setError('Failed to load teacher dashboard data');
+      setError(t('teacherDesk.dashboard.loadFailed'));
       console.error('Teacher dashboard error:', err);
     } finally {
       setLoading(false);
@@ -482,7 +503,7 @@ export default function TeacherDashboard() {
       });
       setSalaryResult(res);
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Failed to generate salary breakdown';
+      const msg = error instanceof Error ? error.message : t('teacherDesk.dashboard.salaryFailed');
       toast(msg, 'error');
     } finally {
       setIsSalaryLoading(false);
@@ -552,7 +573,7 @@ export default function TeacherDashboard() {
       setTimeout(() => setIsAssignmentDataLoaded(true), 100);
     } catch (error) {
       console.error('Failed to load assignment/submission details:', error);
-      toast('Failed to load details for grading', 'error');
+      toast(t('teacherDesk.dashboard.loadDetailsFailed'), 'error');
       handleCloseGradingModal(); // Close modal if data fails to load
     }
   };
@@ -562,7 +583,7 @@ export default function TeacherDashboard() {
 
     // Validation
     if (gradingScore === '' || gradingScore === null || gradingScore === undefined) {
-      toast('Please enter a grade score', 'error');
+      toast(t('teacherDesk.dashboard.enterGradeScore'), 'error');
       return;
     }
 
@@ -580,10 +601,10 @@ export default function TeacherDashboard() {
       localStorage.removeItem(draftKey);
       
       applyAssignmentGradeLocally(selectedSubmission.id, Number(gradingScore), gradingFeedback);
-      toast('Submission graded successfully', 'success');
+      toast(t('teacherDesk.dashboard.submissionGraded'), 'success');
       handleCloseGradingModal();
     } catch (error) {
-      toast('Failed to grade submission', 'error');
+      toast(t('teacherDesk.dashboard.gradeFailed'), 'error');
       console.error('Grading error:', error);
     } finally {
       setIsSubmitting(false);
@@ -593,10 +614,10 @@ export default function TeacherDashboard() {
   const handleAllowResubmission = async (submissionId: number) => {
     try {
       await apiClient.allowResubmission(String(submissionId));
-      toast('Resubmission allowed', 'info');
+      toast(t('teacherDesk.dashboard.resubmissionAllowed'), 'info');
       await refreshSubmissionsOnly();
     } catch (error) {
-      toast('Failed to allow resubmission', 'error');
+      toast(t('teacherDesk.dashboard.resubmissionFailed'), 'error');
       console.error('Resubmission error:', error);
     }
   };
@@ -609,7 +630,7 @@ export default function TeacherDashboard() {
       const preview = await apiClient.getAutoGradeUnitHomeworkPreview();
       setAutoGradePreview(preview?.items || []);
     } catch (error) {
-      toast('Failed to load auto-grade preview', 'error');
+      toast(t('teacherDesk.autoGrade.previewFailed'), 'error');
       console.error('Auto-grade preview error:', error);
     } finally {
       setIsAutoGradePreviewLoading(false);
@@ -618,7 +639,7 @@ export default function TeacherDashboard() {
 
   const handleAutoGradeUnitHomework = async () => {
     if (autoGradePreview.length === 0) {
-      toast('No eligible unit-only homework submissions found', 'info');
+      toast(t('teacherDesk.autoGrade.noneEligible'), 'info');
       return;
     }
 
@@ -627,16 +648,16 @@ export default function TeacherDashboard() {
       const result = await apiClient.autoGradeUnitHomework();
 
       if ((result?.graded_count || 0) > 0) {
-        toast(`Auto-graded ${result.graded_count} submission(s) with 100%`, 'success');
+        toast(t('teacherDesk.autoGrade.done', { count: result.graded_count }), 'success');
       } else {
-        toast('No eligible unit-only homework submissions found', 'info');
+        toast(t('teacherDesk.autoGrade.noneEligible'), 'info');
       }
 
       setIsAutoGradeDialogOpen(false);
       setAutoGradePreview([]);
       await refreshSubmissionsOnly();
     } catch (error) {
-      toast('Failed to auto-grade homework', 'error');
+      toast(t('teacherDesk.autoGrade.failed'), 'error');
       console.error('Auto-grade homework error:', error);
     } finally {
       setIsAutoGrading(false);
@@ -678,7 +699,7 @@ export default function TeacherDashboard() {
           const parsed = JSON.parse(savedDraft);
           setQuizGradeScore(parsed.score ?? '');
           setQuizGradeFeedback(parsed.feedback || '');
-          toast('Restored draft from local storage', 'info');
+          toast(t('teacherDesk.dashboard.draftRestored'), 'info');
         } catch (e) {
           setQuizGradeScore('');
           setQuizGradeFeedback('');
@@ -726,7 +747,7 @@ export default function TeacherDashboard() {
     
     // Validation
     if (quizGradeScore === '' || quizGradeScore === null || quizGradeScore === undefined) {
-      toast('Please enter a score', 'error');
+      toast(t('teacherDesk.dashboard.enterScore'), 'error');
       return;
     }
 
@@ -743,22 +764,22 @@ export default function TeacherDashboard() {
       
       applyQuizGradeLocally(selectedQuizAttempt.quiz_attempt_id, Number(quizGradeScore), quizGradeFeedback);
       handleCloseQuizGradeModal();
-      toast('Quiz graded successfully', 'success');
+      toast(t('teacherDesk.dashboard.quizGraded'), 'success');
     } catch (error) {
-      toast('Failed to grade quiz', 'error');
+      toast(t('teacherDesk.dashboard.quizGradeFailed'), 'error');
       console.error('Quiz grading error:', error);
     }
   };
 
   const handleDeleteQuizAttempt = async (attemptId: number) => {
-    if (!confirm('Are you sure? The student will be able to resubmit.')) return;
+    if (!confirm(t('teacherDesk.dashboard.deleteAttemptConfirm'))) return;
     try {
       await apiClient.deleteQuizAttempt(attemptId);
-      toast('Quiz attempt deleted', 'info');
+      toast(t('teacherDesk.dashboard.attemptDeleted'), 'info');
       setUngradedQuizAttempts(prev => prev.filter(attempt => attempt.id !== attemptId));
       setGradedQuizAttempts(prev => prev.filter(attempt => attempt.id !== attemptId));
     } catch (error) {
-      toast('Failed to delete quiz attempt', 'error');
+      toast(t('teacherDesk.dashboard.attemptDeleteFailed'), 'error');
       console.error('Delete quiz attempt error:', error);
     }
   };
@@ -795,7 +816,7 @@ export default function TeacherDashboard() {
         type: 'quiz',
         student_name: attempt.user_name,
         student_email: attempt.user_email,
-        assignment_title: attempt.quiz_title || 'Quiz',
+        assignment_title: attempt.quiz_title || t('teacherDesk.dashboard.typeQuiz'),
         course_title: attempt.course_title,
         lesson_title: attempt.lesson_title,
         submitted_at: attempt.created_at,
@@ -816,7 +837,7 @@ export default function TeacherDashboard() {
         type: 'quiz',
         student_name: attempt.user_name,
         student_email: attempt.user_email,
-        assignment_title: attempt.quiz_title || 'Quiz',
+        assignment_title: attempt.quiz_title || t('teacherDesk.dashboard.typeQuiz'),
         course_title: attempt.course_title,
         lesson_title: attempt.lesson_title,
         submitted_at: attempt.created_at,
@@ -832,7 +853,7 @@ export default function TeacherDashboard() {
 
     // Sort by date desc
     return all.sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime());
-  }, [pendingSubmissions, recentSubmissions, ungradedQuizAttempts, gradedQuizAttempts]);
+  }, [pendingSubmissions, recentSubmissions, ungradedQuizAttempts, gradedQuizAttempts, t]);
 
   const filteredSubmissions = useMemo(() => {
     if (activeTab === 'pending') {
@@ -928,10 +949,10 @@ export default function TeacherDashboard() {
     return (
       <div className="p-6">
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-800 dark:text-red-400">
-          <h3 className="font-bold">Error loading dashboard</h3>
+          <h3 className="font-bold">{t('teacherDesk.dashboard.loadError')}</h3>
           <p>{error}</p>
           <Button onClick={loadTeacherData} variant="outline" className="mt-2 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/20">
-            Retry
+            {t('teacherDesk.retry')}
           </Button>
         </div>
       </div>
@@ -960,7 +981,7 @@ export default function TeacherDashboard() {
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between gap-3">
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{t('teacherDesk.dashboard.title')}</h1>
         <div className="flex flex-wrap gap-2">
           {user?.role === 'admin' && (
             <Button
@@ -968,7 +989,7 @@ export default function TeacherDashboard() {
               className="bg-brand-solid hover:bg-brand-solid-hover text-white"
             >
               <BookOpen className="w-4 h-4 mr-2" />
-              Manage Courses
+              {t('teacherDesk.dashboard.manageCourses')}
             </Button>
           )}
           {(user?.role === 'admin' || user?.role === 'teacher' || user?.role === 'curator') && (
@@ -980,7 +1001,7 @@ export default function TeacherDashboard() {
                   className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                 >
                   <Wallet className="w-4 h-4 mr-2" />
-                  Salary Breakdown
+                  {t('teacherDesk.dashboard.salaryBreakdown')}
                 </Button>
               )}
               <Button
@@ -989,7 +1010,7 @@ export default function TeacherDashboard() {
                 className="border-border text-foreground hover:bg-muted dark:hover:bg-secondary"
               >
                 <Trophy className="h-4 w-4" aria-hidden="true" />
-                Weekly Awards
+                {t('teacherDesk.awards.button')}
               </Button>
               <Button
                 onClick={() => navigate('/manual-unlocks')}
@@ -997,7 +1018,7 @@ export default function TeacherDashboard() {
                 className="border-brand-border  text-brand-subtle-foreground  hover:bg-brand-subtle"
               >
                 <Unlock className="w-4 h-4 mr-2" />
-                Manual Unlocks
+                {t('teacherDesk.dashboard.manualUnlocks')}
               </Button>
             </>
           )}
@@ -1016,7 +1037,7 @@ export default function TeacherDashboard() {
         <Card className="shadow-sm border border-border">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-muted-foreground">Pending Reviews</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('teacherDesk.dashboard.pendingReviews')}</span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-foreground">{stats?.pending_submissions || 0}</span>
@@ -1027,7 +1048,7 @@ export default function TeacherDashboard() {
               )}
             </div>
             {(stats?.pending_submissions ?? 0) > 0 && (
-              <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">Requires attention</p>
+              <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">{t('teacherDesk.dashboard.requiresAttention')}</p>
             )}
           </CardContent>
         </Card>
@@ -1036,7 +1057,7 @@ export default function TeacherDashboard() {
         <Card className="shadow-sm border border-border">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-muted-foreground">Active This Week</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('teacherDesk.dashboard.activeThisWeek')}</span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-foreground">{stats?.active_students || 0}</span>
@@ -1046,7 +1067,7 @@ export default function TeacherDashboard() {
             </div>
             {(stats?.total_students ?? 0) > 0 && (
               <p className="text-xs text-muted-foreground  mt-2">
-                {Math.round(((stats?.active_students || 0) / (stats?.total_students || 1)) * 100)}% engagement
+                {t('teacherDesk.dashboard.engagement', { percent: Math.round(((stats?.active_students || 0) / (stats?.total_students || 1)) * 100) })}
               </p>
             )}
           </CardContent>
@@ -1056,14 +1077,14 @@ export default function TeacherDashboard() {
         <Card className="shadow-sm border border-border">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-muted-foreground">Avg Score</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('teacherDesk.avgScore')}</span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-foreground">{stats?.avg_student_score || 0}</span>
-              <span className="text-sm text-muted-foreground">pts</span>
+              <span className="text-sm text-muted-foreground">{t('teacherDesk.dashboard.pointsShort')}</span>
             </div>
             <p className="text-xs text-muted-foreground  mt-2">
-              From {stats?.graded_submissions || 0} graded
+              {t('teacherDesk.dashboard.fromGraded', { count: stats?.graded_submissions || 0 })}
             </p>
           </CardContent>
         </Card>
@@ -1072,7 +1093,7 @@ export default function TeacherDashboard() {
         <Card className="shadow-sm border border-border">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-muted-foreground">Avg Progress</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('teacherDesk.avgProgress')}</span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-foreground">{stats?.avg_student_progress || 0}%</span>
@@ -1095,13 +1116,13 @@ export default function TeacherDashboard() {
           <CardHeader className="px-6 py-4 border-b border-border bg-card rounded-t-xl">
             <div className="flex flex-col @lg:flex-row @lg:items-center justify-between gap-2">
               <div>
-                <CardTitle className="text-lg font-bold text-foreground">Today's Homework</CardTitle>
-                <p className="text-sm text-muted-foreground">Groups you assigned homework to today</p>
+                <CardTitle className="text-lg font-bold text-foreground">{t('teacherDesk.dashboard.todayHomework')}</CardTitle>
+                <p className="text-sm text-muted-foreground">{t('teacherDesk.dashboard.todayHomeworkHint')}</p>
               </div>
               <span className="text-sm text-muted-foreground">
-                Assigned {todayHw.assigned_count}/{todayHw.total_groups}
+                {t('teacherDesk.dashboard.assignedCount', { assigned: todayHw.assigned_count, total: todayHw.total_groups })}
                 {todayHw.missing_count > 0 && (
-                  <span className="text-rose-600 dark:text-rose-400"> · missing: {todayHw.missing_count}</span>
+                  <span className="text-rose-600 dark:text-rose-400"> · {t('teacherDesk.dashboard.missingCount', { count: todayHw.missing_count })}</span>
                 )}
               </span>
             </div>
@@ -1111,16 +1132,16 @@ export default function TeacherDashboard() {
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/80 dark:bg-secondary/50 text-muted-foreground border-b border-border">
                   <tr>
-                    <th className="text-left px-6 py-3 font-semibold">Group</th>
-                    <th className="text-left px-6 py-3 font-semibold">Homework</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.col.group')}</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.col.homework')}</th>
                     <th
                       className="text-left px-6 py-3 font-semibold cursor-pointer select-none hover:text-foreground"
                       onClick={() => setHwSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))}
-                      title="Sort by last assigned date"
+                      title={t('teacherDesk.dashboard.sortByLastAssigned')}
                       aria-sort={hwSortDir === 'desc' ? 'descending' : 'ascending'}
                     >
                       <span className="inline-flex items-center gap-1">
-                        Last assigned
+                        {t('teacherDesk.dashboard.lastAssigned')}
                         {hwSortDir === 'desc' ? <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />}
                       </span>
                     </th>
@@ -1147,7 +1168,7 @@ export default function TeacherDashboard() {
                         {g.has_homework_today ? (
                           <span className="text-emerald-600 dark:text-emerald-400">{g.assignments.map((a) => a.title).join(', ')}</span>
                         ) : (
-                          <span className="text-rose-500 dark:text-rose-400">Not assigned today</span>
+                          <span className="text-rose-500 dark:text-rose-400">{t('teacherDesk.dashboard.notAssignedToday')}</span>
                         )}
                       </td>
                       <td className="px-6 py-3 text-muted-foreground  whitespace-nowrap">
@@ -1170,15 +1191,15 @@ export default function TeacherDashboard() {
           <CardHeader className="px-6 py-4 border-b border-border bg-card rounded-t-xl">
             <div className="flex flex-col @lg:flex-row @lg:items-center justify-between gap-2">
               <div>
-                <CardTitle className="text-lg font-bold text-foreground">Attendance Required</CardTitle>
-                <p className="text-sm text-muted-foreground">Classes that ended without attendance recorded</p>
+                <CardTitle className="text-lg font-bold text-foreground">{t('teacherDesk.dashboard.attendanceRequired')}</CardTitle>
+                <p className="text-sm text-muted-foreground">{t('teacherDesk.dashboard.attendanceRequiredHint')}</p>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-rose-600 dark:text-rose-400">
-                  {attendanceGroups.length} groups · {stats.missing_attendance_reminders.length} lessons
+                  {t('common.groups', { count: attendanceGroups.length })} · {t('common.lessons', { count: stats.missing_attendance_reminders.length })}
                 </span>
                 <Button onClick={() => navigate('/attendance')} size="sm" variant="outline" className="text-xs h-7">
-                  Go to Attendance
+                  {t('teacherDesk.dashboard.goToAttendance')}
                 </Button>
               </div>
             </div>
@@ -1188,10 +1209,10 @@ export default function TeacherDashboard() {
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/80 dark:bg-secondary/50 text-muted-foreground border-b border-border">
                   <tr>
-                    <th className="text-left px-6 py-3 font-semibold">Group</th>
-                    <th className="text-left px-6 py-3 font-semibold">Lessons missing</th>
-                    <th className="text-left px-6 py-3 font-semibold">Oldest</th>
-                    <th className="text-right px-6 py-3 font-semibold">Action</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.col.group')}</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.dashboard.lessonsMissing')}</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.dashboard.oldest')}</th>
+                    <th className="text-right px-6 py-3 font-semibold">{t('teacherDesk.dashboard.action')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1208,12 +1229,12 @@ export default function TeacherDashboard() {
                       <td className="px-6 py-3 text-rose-600 dark:text-rose-400 font-semibold">{g.count}</td>
                       <td className="px-6 py-3 text-muted-foreground  whitespace-nowrap">
                         {g.oldest && g.oldestEventId ? (
-                          <Link to={lessonPath(g.oldestEventId, 'register')} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline" title="Open lesson">
+                          <Link to={lessonPath(g.oldestEventId, 'register')} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline" title={t('teacherDesk.dashboard.openLesson')}>
                             {formatDate(new Date(g.oldest))}
                           </Link>
                         ) : g.oldest ? formatDate(new Date(g.oldest)) : '—'}
                       </td>
-                      <td className="px-6 py-3 text-right text-rose-600 dark:text-rose-400 font-medium">Mark</td>
+                      <td className="px-6 py-3 text-right text-rose-600 dark:text-rose-400 font-medium">{t('teacherDesk.dashboard.mark')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1229,8 +1250,8 @@ export default function TeacherDashboard() {
           <div className="flex flex-col @lg:flex-row @lg:items-center justify-between gap-4">
             <div className="flex items-center space-x-2">
               <div>
-                <CardTitle className="text-lg font-bold text-foreground">Submissions</CardTitle>
-                <p className="text-sm text-muted-foreground">Manage student assignments and grading</p>
+                <CardTitle className="text-lg font-bold text-foreground">{t('teacherDesk.dashboard.submissions')}</CardTitle>
+                <p className="text-sm text-muted-foreground">{t('teacherDesk.dashboard.submissionsHint')}</p>
               </div>
             </div>
 
@@ -1241,14 +1262,14 @@ export default function TeacherDashboard() {
                 variant="outline"
                 className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
               >
-                {isAutoGrading ? 'Auto-grading...' : 'Auto-grade HW'}
+                {isAutoGrading ? t('teacherDesk.dashboard.autoGrading') : t('teacherDesk.dashboard.autoGradeButton')}
               </Button>
 
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full @lg:w-auto">
                 <TabsList className="grid w-full grid-cols-3 @lg:w-[300px]">
-                  <TabsTrigger value="pending">Pending</TabsTrigger>
-                  <TabsTrigger value="graded">Graded</TabsTrigger>
-                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="pending">{t('teacherDesk.dashboard.tabPending')}</TabsTrigger>
+                  <TabsTrigger value="graded">{t('teacherDesk.dashboard.tabGraded')}</TabsTrigger>
+                  <TabsTrigger value="all">{t('common.all')}</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
@@ -1258,11 +1279,11 @@ export default function TeacherDashboard() {
           {filteredSubmissions.length === 0 ? (
             <div className="p-12 text-center bg-muted/50 dark:bg-secondary/50">
               <CheckCircle className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-1">No submissions found</h3>
+              <h3 className="text-lg font-medium text-foreground mb-1">{t('teacherDesk.dashboard.noSubmissions')}</h3>
               <p className="text-muted-foreground">
                 {activeTab === 'pending' 
-                  ? "You're all caught up! No pending reviews." 
-                  : "No submissions match the current filter."}
+                  ? t('teacherDesk.dashboard.allCaughtUp')
+                  : t('teacherDesk.dashboard.noFilterMatch')}
               </p>
             </div>
           ) : (
@@ -1270,13 +1291,13 @@ export default function TeacherDashboard() {
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/80 dark:bg-secondary/50 text-muted-foreground border-b border-border">
                   <tr>
-                    <th className="text-left px-6 py-3 font-semibold">Student</th>
-                    <th className="text-left px-6 py-3 font-semibold">Type</th>
-                    <th className="text-left px-6 py-3 font-semibold">Title</th>
-                    <th className="text-left px-6 py-3 font-semibold">Status</th>
-                    <th className="text-left px-6 py-3 font-semibold">Submitted</th>
-                    <th className="text-left px-6 py-3 font-semibold">Score</th>
-                    <th className="text-right px-6 py-3 font-semibold">Actions</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.col.student')}</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.col.type')}</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.col.title')}</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.col.status')}</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.col.submitted')}</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.col.score')}</th>
+                    <th className="text-right px-6 py-3 font-semibold">{t('teacherDesk.col.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -1288,7 +1309,7 @@ export default function TeacherDashboard() {
                             {submission.student_name?.charAt(0) || '?'}
                           </div>
                           <div>
-                            <div className="font-medium text-foreground">{submission.student_name || 'Unknown'}</div>
+                            <div className="font-medium text-foreground">{submission.student_name || t('teacherDesk.dashboard.unknownStudent')}</div>
                             <div className="text-xs text-muted-foreground">{submission.student_email}</div>
                           </div>
                         </div>
@@ -1300,7 +1321,7 @@ export default function TeacherDashboard() {
                             ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800" 
                             : "bg-brand-surface  text-brand-subtle-foreground  border-brand-border"}
                         >
-                          {submission.type === 'quiz' ? 'Quiz' : 'Homework'}
+                          {submission.type === 'quiz' ? t('teacherDesk.dashboard.typeQuiz') : t('teacherDesk.dashboard.typeHomework')}
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
@@ -1313,7 +1334,7 @@ export default function TeacherDashboard() {
                             ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/20" 
                             : "bg-orange-100 dark:bg-orange-900/20 text-orange-800 dark:text-orange-400 hover:bg-orange-200 dark:hover:bg-orange-800/30 border-transparent"}
                         >
-                          {submission.is_graded ? 'Graded' : 'Needs Grading'}
+                          {submission.is_graded ? t('teacherDesk.dashboard.statusGraded') : t('teacherDesk.dashboard.statusNeedsGrading')}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">
@@ -1359,14 +1380,14 @@ export default function TeacherDashboard() {
                                 onClick={() => handleGradeQuizClick(submission)}
                               >
                                 <ClipboardCheck className="w-4 h-4 mr-1" />
-                                Grade
+                                {t('teacherDesk.grading.grade')}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 className="text-muted-foreground hover:text-red-600 dark:hover:text-red-400"
                                 onClick={() => handleDeleteQuizAttempt(submission.quiz_attempt_id)}
-                                title="Allow Resubmission"
+                                title={t('teacherDesk.dashboard.allowResubmission')}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
@@ -1380,7 +1401,7 @@ export default function TeacherDashboard() {
                                 onClick={() => handleGradeSubmission(submission)}
                               >
                                 {submission.is_graded ? <Eye className="w-4 h-4 mr-1" /> : <ClipboardCheck className="w-4 h-4 mr-1" />}
-                                {submission.is_graded ? 'View' : 'Grade'}
+                                {submission.is_graded ? t('teacherDesk.grading.view') : t('teacherDesk.grading.grade')}
                               </Button>
                               {!submission.is_graded && (
                                 <Button
@@ -1389,7 +1410,7 @@ export default function TeacherDashboard() {
                                   className="text-muted-foreground  hover:text-foreground"
                                   onClick={() => handleAllowResubmission(submission.id)}
                                 >
-                                  Resubmit
+                                  {t('teacherDesk.dashboard.resubmit')}
                                 </Button>
                               )}
                             </>
@@ -1410,8 +1431,8 @@ export default function TeacherDashboard() {
         <CardHeader className="px-6 py-4 border-b border-border bg-card rounded-t-xl">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="min-w-0">
-              <CardTitle className="text-lg font-bold text-foreground">Student Progress</CardTitle>
-              <p className="text-sm text-muted-foreground">Overview of all students across your courses</p>
+              <CardTitle className="text-lg font-bold text-foreground">{t('teacherDesk.dashboard.studentProgress')}</CardTitle>
+              <p className="text-sm text-muted-foreground">{t('teacherDesk.dashboard.studentProgressHint')}</p>
             </div>
             
             <div className="flex flex-wrap items-center gap-2 min-w-0">
@@ -1419,7 +1440,7 @@ export default function TeacherDashboard() {
                 type="text"
                 value={studentSearch}
                 onChange={(e) => setStudentSearch(e.target.value)}
-                placeholder="Search student…"
+                placeholder={t('teacherDesk.dashboard.searchStudent')}
                 className="w-full @lg:w-56 min-w-0 px-3 py-2 text-sm bg-card border border-border rounded-lg outline-none focus:border-brand"
               />
             {uniqueGroups.length > 0 && (
@@ -1427,13 +1448,13 @@ export default function TeacherDashboard() {
                 <Filter className="w-4 h-4 shrink-0 text-muted-foreground" />
                 <Select value={activeGroup} onValueChange={setActiveGroup}>
                   <SelectTrigger className="w-full @lg:w-[200px] bg-card border-border">
-                    <SelectValue placeholder="All Students" />
+                    <SelectValue placeholder={t('teacherDesk.dashboard.allStudents')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Students</SelectItem>
+                    <SelectItem value="all">{t('teacherDesk.dashboard.allStudents')}</SelectItem>
                     {uniqueGroups.map(group => (
                       <SelectItem key={group.name} value={group.name}>
-                        {group.name}{group.archived ? ' (archived)' : ''}
+                        {group.archived ? t('teacherDesk.dashboard.archivedGroupName', { name: group.name }) : group.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1447,7 +1468,7 @@ export default function TeacherDashboard() {
                   onChange={(e) => setShowArchivedGroups(e.target.checked)}
                   className="rounded border-border"
                 />
-                Archived groups
+                {t('teacherDesk.dashboard.archivedGroups')}
               </label>
               <label className="flex items-center gap-1.5 text-xs text-muted-foreground  whitespace-nowrap cursor-pointer select-none">
                 <input
@@ -1456,7 +1477,7 @@ export default function TeacherDashboard() {
                   onChange={(e) => setShowInactiveStudents(e.target.checked)}
                   className="rounded border-border"
                 />
-                Deactivated students
+                {t('teacherDesk.dashboard.deactivatedStudents')}
               </label>
             </div>
           </div>
@@ -1465,11 +1486,11 @@ export default function TeacherDashboard() {
           {filteredStudents.length === 0 ? (
             <div className="p-12 text-center bg-muted/50 dark:bg-secondary/50">
               <Users className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-1">No students found</h3>
+              <h3 className="text-lg font-medium text-foreground mb-1">{t('teacherDesk.dashboard.noStudents')}</h3>
               <p className="text-muted-foreground">
                 {showArchivedGroups
-                  ? 'Try adjusting the group filter.'
-                  : 'Try adjusting the group filter, or turn on “Archived groups” to see finished cohorts.'}
+                  ? t('teacherDesk.dashboard.adjustFilter')
+                  : t('teacherDesk.dashboard.adjustFilterOrArchived')}
               </p>
             </div>
           ) : (
@@ -1477,12 +1498,12 @@ export default function TeacherDashboard() {
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/80 dark:bg-secondary/50 text-muted-foreground border-b border-border">
                   <tr>
-                    <th className="text-left px-6 py-3 font-semibold">Student</th>
-                    <th className="text-left px-6 py-3 font-semibold">Group</th>
-                    <th className="text-left px-6 py-3 font-semibold">Course</th>
-                    <th className="text-left px-6 py-3 font-semibold">Current Unit</th>
-                    <th className="text-left px-6 py-3 font-semibold" title="Completed units / total units">Progress</th>
-                    <th className="text-left px-6 py-3 font-semibold">Last Activity</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.col.student')}</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.col.group')}</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.col.course')}</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.dashboard.currentUnit')}</th>
+                    <th className="text-left px-6 py-3 font-semibold" title={t('teacherDesk.dashboard.progressTitle')}>{t('teacherDesk.col.progress')}</th>
+                    <th className="text-left px-6 py-3 font-semibold">{t('teacherDesk.col.lastActivity')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -1490,7 +1511,7 @@ export default function TeacherDashboard() {
                     <tr
                       key={`${student.student_id}-${student.course_id}-${index}`}
                       className="hover:bg-muted/80 dark:hover:bg-secondary/30 transition-colors cursor-pointer"
-                      title="Open student analytics"
+                      title={t('teacherDesk.openStudentAnalytics')}
                       onClick={() => navigate(
                         `/analytics/student/${student.student_id}${student.course_id ? `?course_id=${student.course_id}` : ''}`
                       )}
@@ -1513,7 +1534,7 @@ export default function TeacherDashboard() {
                               {student.student_name}
                               {student.is_inactive && (
                                 <span className="ml-1.5 text-[10px] font-normal text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded px-1 py-px align-middle">
-                                  Deactivated
+                                  {t('teacherDesk.dashboard.deactivated')}
                                 </span>
                               )}
                             </div>
@@ -1529,7 +1550,7 @@ export default function TeacherDashboard() {
                             </Badge>
                             {student.group_is_archived && (
                               <Badge variant="outline" className="text-[10px] text-muted-foreground border-border whitespace-nowrap">
-                                Archived
+                                {t('teacherDesk.archived')}
                               </Badge>
                             )}
                           </div>
@@ -1574,7 +1595,7 @@ export default function TeacherDashboard() {
                       <td className="px-6 py-4 text-muted-foreground">
                         {student.last_activity 
                           ? formatDate(new Date(student.last_activity), { month: 'short', day: 'numeric' })
-                          : <span className="text-muted-foreground">Never</span>
+                          : <span className="text-muted-foreground">{t('teacherDesk.never')}</span>
                         }
                       </td>
                     </tr>
@@ -1588,7 +1609,7 @@ export default function TeacherDashboard() {
           {filteredStudents.length > studentsPerPage && (
             <div className="flex flex-col gap-3 px-4 py-4 @lg:flex-row @lg:items-center @lg:justify-between @lg:px-6 border-t border-border bg-muted dark:bg-secondary rounded-b-xl">
               <div className="text-sm text-muted-foreground">
-                Showing {((studentPage - 1) * studentsPerPage) + 1} to {Math.min(studentPage * studentsPerPage, filteredStudents.length)} of {filteredStudents.length} students
+                {t('teacherDesk.dashboard.showing', { from: ((studentPage - 1) * studentsPerPage) + 1, to: Math.min(studentPage * studentsPerPage, filteredStudents.length), total: filteredStudents.length })}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -1597,10 +1618,10 @@ export default function TeacherDashboard() {
                   onClick={() => setStudentPage(p => Math.max(1, p - 1))}
                   disabled={studentPage === 1}
                 >
-                  Previous
+                  {t('teacherDesk.dashboard.previous')}
                 </Button>
                 <span className="text-sm text-muted-foreground  px-2">
-                  Page {studentPage} of {totalStudentPages}
+                  {t('teacherDesk.dashboard.page', { page: studentPage, pages: totalStudentPages })}
                 </span>
                 <Button
                   variant="outline"
@@ -1608,7 +1629,7 @@ export default function TeacherDashboard() {
                   onClick={() => setStudentPage(p => Math.min(totalStudentPages, p + 1))}
                   disabled={studentPage >= totalStudentPages}
                 >
-                  Next
+                  {t('teacherDesk.dashboard.next')}
                 </Button>
               </div>
             </div>
@@ -1620,26 +1641,26 @@ export default function TeacherDashboard() {
       <Dialog open={isQuizGradeModalOpen} onOpenChange={(open) => !open && handleCloseQuizGradeModal()}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Grade Quiz Submission</DialogTitle>
+            <DialogTitle>{t('teacherDesk.dashboard.gradeQuiz')}</DialogTitle>
           </DialogHeader>
           
           {selectedQuizAttempt && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4 text-sm bg-muted dark:bg-secondary p-4 rounded-lg">
                 <div>
-                  <span className="font-semibold text-muted-foreground">Student:</span>
+                  <span className="font-semibold text-muted-foreground">{t('teacherDesk.grading.studentLabel')}</span>
                   <p className="text-foreground">{selectedQuizAttempt.student_name}</p>
                 </div>
                 <div>
-                  <span className="font-semibold text-muted-foreground">Quiz:</span>
+                  <span className="font-semibold text-muted-foreground">{t('teacherDesk.grading.quizLabel')}</span>
                   <p className="text-foreground">{selectedQuizAttempt.assignment_title}</p>
                 </div>
                 <div>
-                  <span className="font-semibold text-muted-foreground">Lesson:</span>
+                  <span className="font-semibold text-muted-foreground">{t('teacherDesk.dashboard.lessonLabel')}</span>
                   <p className="text-foreground">{selectedQuizAttempt.lesson_title}</p>
                 </div>
                 <div>
-                  <span className="font-semibold text-muted-foreground">Course:</span>
+                  <span className="font-semibold text-muted-foreground">{t('teacherDesk.dashboard.courseLabel')}</span>
                   <p className="text-foreground">{selectedQuizAttempt.course_title}</p>
                 </div>
               </div>
@@ -1649,7 +1670,7 @@ export default function TeacherDashboard() {
                 <div className="mb-6 bg-muted dark:bg-secondary p-4 rounded-lg border border-border">
                   <h4 className="font-semibold mb-3 text-foreground flex items-center">
                     <BookOpen className="w-4 h-4 mr-2" />
-                    Reference Material
+                    {t('teacherDesk.dashboard.referenceMaterial')}
                   </h4>
                   
                   {selectedQuizAttempt.quiz_media_type === 'pdf' ? (
@@ -1657,7 +1678,7 @@ export default function TeacherDashboard() {
                        <iframe 
                          src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + selectedQuizAttempt.quiz_media_url} 
                          className="w-full h-full rounded border border-border bg-card"
-                         title="Reference PDF"
+                         title={t('teacherDesk.dashboard.referencePdf')}
                        />
                        <div className="mt-2 text-right">
                          <a 
@@ -1666,7 +1687,7 @@ export default function TeacherDashboard() {
                            rel="noreferrer"
                            className="text-sm text-brand  hover:underline"
                          >
-                           Open PDF in new tab
+                           {t('teacherDesk.dashboard.openPdf')}
                          </a>
                        </div>
                     </div>
@@ -1674,7 +1695,7 @@ export default function TeacherDashboard() {
                     <div className="flex justify-center">
                       <img 
                         src={selectedQuizAttempt.quiz_media_url} 
-                        alt="Reference" 
+                        alt={t('teacherDesk.dashboard.referenceAlt')} 
                         className="max-h-96 rounded shadow-sm object-contain"
                       />
                     </div>
@@ -1689,7 +1710,7 @@ export default function TeacherDashboard() {
               )}
 
               <div>
-                <h3 className="font-semibold mb-3 text-foreground">Quiz Answers</h3>
+                <h3 className="font-semibold mb-3 text-foreground">{t('teacherDesk.dashboard.quizAnswers')}</h3>
                 {selectedQuizAttempt.quiz_answers?.length > 0 ? (
                   <div className="space-y-6">
                     {selectedQuizAttempt.quiz_answers.map((item: any, idx: number) => (
@@ -1700,16 +1721,16 @@ export default function TeacherDashboard() {
                       }`}>
                         {/* Header with Type and Status */}
                         <div className="p-3 bg-muted dark:bg-secondary border-b border-border flex items-center justify-between">
-                          <span className="text-xs font-semibold text-muted-foreground">Question {idx + 1}</span>
+                          <span className="text-xs font-semibold text-muted-foreground">{t('teacherDesk.grading.questionNumber', { number: idx + 1 })}</span>
                           <div className="flex gap-2">
-                             <span className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-secondary text-foreground capitalize">
-                               {item.question_type?.replace('_', ' ') || 'Question'}
+                             <span className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-secondary text-foreground">
+                               {QUESTION_TYPE_LABELS[item.question_type] ? t(QUESTION_TYPE_LABELS[item.question_type]) : item.question_type?.replace('_', ' ') || t('teacherDesk.questionType.question')}
                              </span>
                              {item.question_type !== 'long_text' && (
                                <span className={`text-xs px-2 py-1 rounded font-medium ${
                                  item.is_correct ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'
                                }`}>
-                                 {item.is_correct ? 'Correct' : 'Incorrect'}
+                                 {item.is_correct ? t('teacherDesk.dashboard.correct') : t('teacherDesk.dashboard.incorrect')}
                                </span>
                              )}
                           </div>
@@ -1718,7 +1739,7 @@ export default function TeacherDashboard() {
                         {/* Passage (if exists) */}
                         {item.content_text && (
                           <div className="p-4 border-b border-border">
-                            <p className="text-[14px] font-semibold text-foreground  mb-1">Passage</p>
+                            <p className="text-[14px] font-semibold text-foreground  mb-1">{t('teacherDesk.dashboard.passage')}</p>
                             <div 
                               className="text-foreground  prose prose-sm max-w-none text-[14px]"
                               dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.content_text) }}
@@ -1735,22 +1756,22 @@ export default function TeacherDashboard() {
                         <div className="p-4 bg-muted dark:bg-secondary">
                           <div className="grid gap-4">
                             <div>
-                               <p className="text-[12px] font-semibold text-brand  mb-1">{selectedQuizAttempt?.student_name}'s Answer</p>
+                               <p className="text-[12px] font-semibold text-brand  mb-1">{t('teacherDesk.dashboard.studentAnswer', { name: selectedQuizAttempt?.student_name ?? '' })}</p>
                                <div className={`text-foreground  whitespace-pre-wrap p-3 rounded border ${
                                  item.question_type === 'long_text' 
                                    ? 'bg-brand-surface  border-brand-border' 
                                    : (item.is_correct ? 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800')
                                }`}>
-                                 {item.student_answer || <span className="text-muted-foreground italic">No answer provided</span>}
+                                 {item.student_answer || <span className="text-muted-foreground italic">{t('teacherDesk.grading.noAnswer')}</span>}
                                </div>
                             </div>
                             
                             {/* Correct Answer Display (if incorrect and not long_text) */}
                             {item.question_type !== 'long_text' && !item.is_correct && (
                                <div>
-                                  <p className="text-[12px] font-semibold text-green-600 dark:text-green-400 uppercase mb-1">Correct Answer</p>
+                                  <p className="text-[12px] font-semibold text-green-600 dark:text-green-400 uppercase mb-1">{t('teacherDesk.dashboard.correctAnswer')}</p>
                                   <div className="text-foreground p-3 rounded border border-green-100 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
-                                    {item.correct_answer || 'N/A'}
+                                    {item.correct_answer || t('teacherDesk.notAvailable')}
                                   </div>
                                </div>
                             )}
@@ -1760,13 +1781,13 @@ export default function TeacherDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-muted-foreground">No answers found</p>
+                  <p className="text-muted-foreground">{t('teacherDesk.dashboard.noAnswers')}</p>
                 )}
               </div>
 
               <div className="grid gap-4 border-t pt-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="quizScore">Score (0-100)</Label>
+                  <Label htmlFor="quizScore">{t('teacherDesk.grading.scoreRange')}</Label>
                   <Input
                     id="quizScore"
                     type="number"
@@ -1790,16 +1811,16 @@ export default function TeacherDashboard() {
                       −10%
                     </Button>
                     <Button type="button" variant="outline" size="sm" onClick={() => handleQuizQuickScore('clear')}>
-                      Clear
+                      {t('teacherDesk.grading.clear')}
                     </Button>
                   </div>
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="quizFeedback">Feedback</Label>
+                  <Label htmlFor="quizFeedback">{t('teacherDesk.grading.feedback')}</Label>
                   <Textarea
                     id="quizFeedback"
-                    placeholder="Enter feedback for the student..."
+                    placeholder={t('teacherDesk.grading.feedbackPlaceholder')}
                     value={quizGradeFeedback}
                     onChange={(e) => setQuizGradeFeedback(e.target.value)}
                     rows={4}
@@ -1810,8 +1831,8 @@ export default function TeacherDashboard() {
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseQuizGradeModal}>Cancel</Button>
-            <Button className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-600/70 dark:hover:bg-purple-600/85" onClick={handleSubmitQuizGrade}>Submit Grade</Button>
+            <Button variant="outline" onClick={handleCloseQuizGradeModal}>{t('common.cancel')}</Button>
+            <Button className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-600/70 dark:hover:bg-purple-600/85" onClick={handleSubmitQuizGrade}>{t('teacherDesk.grading.submitGrade')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1823,11 +1844,11 @@ export default function TeacherDashboard() {
           <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-border shrink-0">
             <div>
               <DialogTitle className="text-lg font-semibold leading-tight">
-                {currentAssignment?.title || 'Grade Submission'}
+                {currentAssignment?.title || t('teacherDesk.grading.gradeSubmission')}
               </DialogTitle>
               {selectedSubmission && (
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  {selectedSubmission.student_name || selectedSubmission.user_name || 'Student'}
+                  {selectedSubmission.student_name || selectedSubmission.user_name || t('teacherDesk.studentFallback')}
                   {selectedSubmission.submitted_at && (
                     <span className="ml-2 text-xs">
                       · {formatDateTime(new Date(selectedSubmission.submitted_at))}
@@ -1841,7 +1862,7 @@ export default function TeacherDashboard() {
           <div className="flex flex-1 overflow-hidden">
             {/* Left side - Submission Content (scrollable) */}
             <div className="flex-1 overflow-y-auto p-6 border-r border-border">
-              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Student's Work</h3>
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">{t('teacherDesk.dashboard.studentWork')}</h3>
 
               {currentAssignment?.assignment_type === 'multi_task' && selectedSubmission ? (
                 <MultiTaskSubmission
@@ -1857,7 +1878,7 @@ export default function TeacherDashboard() {
                     <div className="flex items-center p-3 bg-muted/40 rounded-lg border border-border">
                       <FileText className="w-5 h-5 text-brand  mr-3 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
+                        <div className="font-medium text-sm truncate">{selectedSubmission.submitted_file_name || t('teacherDesk.grading.attachedFile')}</div>
                       </div>
                       <SubmissionFileDownloadLink
                         fileUrl={selectedSubmission.file_url}
@@ -1883,7 +1904,7 @@ export default function TeacherDashboard() {
                   )}
 
                   {!selectedSubmission?.file_url && !selectedSubmission?.answers?.text && currentAssignment?.assignment_type !== 'multi_task' && (
-                    <div className="text-muted-foreground italic text-sm">No content to display.</div>
+                    <div className="text-muted-foreground italic text-sm">{t('teacherDesk.dashboard.noContent')}</div>
                   )}
                 </div>
               )}
@@ -1895,7 +1916,7 @@ export default function TeacherDashboard() {
                 {/* Score */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium text-foreground">Score</Label>
+                    <Label className="text-sm font-medium text-foreground">{t('teacherDesk.grading.score')}</Label>
                     <span className="text-xs text-muted-foreground">/ {currentAssignment?.max_score ?? 100}</span>
                   </div>
 
@@ -1905,7 +1926,7 @@ export default function TeacherDashboard() {
                       type="button"
                       onClick={() => handleAssignmentQuickScore('minus10')}
                       className="h-9 w-9 shrink-0 rounded border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center text-base leading-none select-none"
-                      aria-label="Decrease by 10%"
+                      aria-label={t('teacherDesk.dashboard.decrease')}
                     >
                       −
                     </button>
@@ -1930,7 +1951,7 @@ export default function TeacherDashboard() {
                       type="button"
                       onClick={() => handleAssignmentQuickScore('plus10')}
                       className="h-9 w-9 shrink-0 rounded border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center text-base leading-none select-none"
-                      aria-label="Increase by 10%"
+                      aria-label={t('teacherDesk.dashboard.increase')}
                     >
                       +
                     </button>
@@ -1963,7 +1984,7 @@ export default function TeacherDashboard() {
                       onClick={() => handleAssignmentQuickScore('clear')}
                       className="flex-1 h-7 rounded border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                     >
-                      Clear
+                      {t('teacherDesk.grading.clear')}
                     </button>
                   </div>
                 </div>
@@ -1973,12 +1994,12 @@ export default function TeacherDashboard() {
 
                 {/* Feedback */}
                 <div className="space-y-2">
-                  <Label htmlFor="gradeFeedback" className="text-sm font-medium text-foreground">Feedback</Label>
+                  <Label htmlFor="gradeFeedback" className="text-sm font-medium text-foreground">{t('teacherDesk.grading.feedback')}</Label>
                   <Textarea
                     id="gradeFeedback"
                     value={gradingFeedback}
                     onChange={(e) => setGradingFeedback(e.target.value)}
-                    placeholder="Write feedback for the student..."
+                    placeholder={t('teacherDesk.dashboard.writeFeedback')}
                     className="resize-none text-sm min-h-[140px]"
                     rows={6}
                   />
@@ -1988,10 +2009,10 @@ export default function TeacherDashboard() {
               {/* Actions */}
               <div className="p-4 border-t border-border space-y-1.5 shrink-0">
                 <Button className="w-full h-9" onClick={handleSubmitGrade} disabled={isSubmitting}>
-                  {isSubmitting ? 'Saving...' : 'Save Grade'}
+                  {isSubmitting ? t('teacherDesk.grading.saving') : t('teacherDesk.grading.saveGrade')}
                 </Button>
                 <Button variant="ghost" size="sm" className="w-full text-muted-foreground hover:text-foreground" onClick={handleCloseGradingModal}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </div>
             </div>
@@ -2194,37 +2215,40 @@ export default function TeacherDashboard() {
       >
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Auto-grade Homework</DialogTitle>
+            <DialogTitle>{t('teacherDesk.autoGrade.title')}</DialogTitle>
             <DialogDescription>
-              This action automatically sets 100% for pending completion homework — units, resource/link visits, and text tasks.
+              {t('teacherDesk.autoGrade.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="rounded-md border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-900/10 p-3 text-sm text-emerald-900 dark:text-emerald-200">
-              Homework that needs manual review — <b>audio</b> and <b>file uploads</b> — is skipped and stays for you to grade.
+              {withParts(t('teacherDesk.autoGrade.skipped'), {
+                audio: <b>{t('teacherDesk.autoGrade.audio')}</b>,
+                files: <b>{t('teacherDesk.autoGrade.files')}</b>,
+              })}
             </div>
 
             {isAutoGradePreviewLoading ? (
-              <div className="text-sm text-muted-foreground">Loading eligible homework...</div>
+              <div className="text-sm text-muted-foreground">{t('teacherDesk.autoGrade.loading')}</div>
             ) : autoGradePreview.length === 0 ? (
               <div className="text-sm text-muted-foreground">
-                No eligible pending homework found for auto-grading.
+                {t('teacherDesk.autoGrade.empty')}
               </div>
             ) : (
               <div className="space-y-2">
                 <p className="text-sm font-medium text-foreground">
-                  Eligible submissions: {autoGradePreview.length}
+                  {t('teacherDesk.autoGrade.eligible', { count: autoGradePreview.length })}
                 </p>
                 <div className="rounded-md border border-border overflow-hidden">
                   <div className="max-h-72 overflow-y-auto">
                     <table className="min-w-full text-sm">
                       <thead className="bg-muted dark:bg-secondary/50 border-b border-border">
                         <tr>
-                          <th className="text-left px-3 py-2 font-medium">Homework</th>
-                          <th className="text-left px-3 py-2 font-medium">Student</th>
-                          <th className="text-left px-3 py-2 font-medium">Submitted</th>
-                          <th className="text-left px-3 py-2 font-medium">Score</th>
+                          <th className="text-left px-3 py-2 font-medium">{t('teacherDesk.col.homework')}</th>
+                          <th className="text-left px-3 py-2 font-medium">{t('teacherDesk.col.student')}</th>
+                          <th className="text-left px-3 py-2 font-medium">{t('teacherDesk.col.submitted')}</th>
+                          <th className="text-left px-3 py-2 font-medium">{t('teacherDesk.col.score')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
@@ -2250,14 +2274,14 @@ export default function TeacherDashboard() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAutoGradeDialogOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleAutoGradeUnitHomework}
               disabled={isAutoGradePreviewLoading || isAutoGrading || autoGradePreview.length === 0}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              {isAutoGrading ? 'Auto-grading...' : `Auto-grade ${autoGradePreview.length} submission(s)`}
+              {isAutoGrading ? t('teacherDesk.dashboard.autoGrading') : t('teacherDesk.autoGrade.confirm', { count: autoGradePreview.length })}
             </Button>
           </DialogFooter>
         </DialogContent>

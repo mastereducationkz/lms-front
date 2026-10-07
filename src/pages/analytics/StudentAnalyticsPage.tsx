@@ -14,6 +14,7 @@ import { DATE, formatDate as formatDay, formatDateTime } from '@/lib/i18n';
 import { useT } from '@/lib/i18n/react';
 import apiClient from '@/services/api';
 import '@/lib/i18n/catalogs/analytics';
+import '@/lib/i18n/catalogs/teacherInsights';
 
 interface StepProgress {
   status: 'completed' | 'in_progress' | 'not_started';
@@ -191,17 +192,17 @@ export const StudentAnalyticsPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to load student details:', err);
-      setError('Failed to load student detailed progress.');
+      setError(t('teacherInsights.studentAnalytics.loadFailed'));
     } finally {
       setLoading(false);
     }
   };
 
   const formatDuration = (minutes: number) => {
-    if (minutes < 60) return `${Math.round(minutes)}m`;
+    if (minutes < 60) return t('teacherInsights.duration.minutes', { minutes: Math.round(minutes) });
     const hours = Math.floor(minutes / 60);
     const mins = Math.round(minutes % 60);
-    return `${hours}h ${mins}m`;
+    return t('teacherInsights.duration.hoursMinutes', { hours, minutes: mins });
   };
 
   const formatDate = (dateString: string | null) => {
@@ -212,7 +213,7 @@ export const StudentAnalyticsPage: React.FC = () => {
   if (loading) {
     return (
       <div className="p-8 flex justify-center items-center">
-        <div className="animate-pulse text-muted-foreground">Loading student details...</div>
+        <div className="animate-pulse text-muted-foreground">{t('teacherInsights.studentAnalytics.loading')}</div>
       </div>
     );
   }
@@ -222,10 +223,10 @@ export const StudentAnalyticsPage: React.FC = () => {
       <div className="p-8">
         <div className="max-w-4xl mx-auto">
           <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4 pl-0 hover:bg-transparent">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Analytics
+            <ArrowLeft className="mr-2 h-4 w-4" /> {t('teacherInsights.studentAnalytics.backToAnalytics')}
           </Button>
           <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-4 rounded-md border border-red-200 dark:border-red-800">
-            {error || "Student not found or no access."}
+            {error || t('teacherInsights.studentAnalytics.notFound')}
           </div>
         </div>
       </div>
@@ -282,7 +283,7 @@ export const StudentAnalyticsPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
-              {data.total_stats?.completed_steps} <span className="text-sm text-muted-foreground  font-normal">/ {data.total_stats?.total_steps} steps</span>
+              {data.total_stats?.completed_steps} <span className="text-sm text-muted-foreground  font-normal">{t('teacherInsights.studentAnalytics.ofSteps', { count: data.total_stats?.total_steps ?? 0 })}</span>
             </div>
             {data.total_stats?.total_steps > 0 && (
               <div className="w-full h-1.5 bg-muted  rounded-full mt-2 overflow-hidden">
@@ -300,7 +301,7 @@ export const StudentAnalyticsPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-xl font-bold text-foreground">{formatDate(data.total_stats?.last_activity)}</div>
-            <p className="text-xs text-muted-foreground  mt-1">Most recent action</p>
+            <p className="text-xs text-muted-foreground  mt-1">{t('teacherInsights.studentAnalytics.mostRecentAction')}</p>
           </CardContent>
         </Card>
         <Card>
@@ -308,7 +309,7 @@ export const StudentAnalyticsPage: React.FC = () => {
             <CardTitle className="text-sm font-medium text-muted-foreground">{t('analytics.student.enrollmentStatus')}</CardTitle>
           </CardHeader>
           <CardContent>
-             <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">Active</Badge>
+             <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">{t('teacherInsights.studentAnalytics.active')}</Badge>
           </CardContent>
         </Card>
       </div>
@@ -335,8 +336,8 @@ export const StudentAnalyticsPage: React.FC = () => {
             <div className="@3xl:col-span-2 space-y-6">
               <Card className="border-border shadow-sm">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Difficult Topics</CardTitle>
-                  <CardDescription>Lessons with most mistakes</CardDescription>
+                  <CardTitle className="text-lg">{t('teacherInsights.studentAnalytics.difficultTopics')}</CardTitle>
+                  <CardDescription>{t('teacherInsights.studentAnalytics.difficultTopicsHint')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {data.difficult_topics?.length > 0 ? (
@@ -344,13 +345,13 @@ export const StudentAnalyticsPage: React.FC = () => {
                       {data.difficult_topics.map((topic) => (
                         <Badge key={topic.id} variant="secondary" className="px-3 py-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors cursor-default">
                           {topic.title}
-                          <span className="ml-2 font-bold px-1.5 py-0.5 bg-amber-200/50 dark:bg-amber-800/50 rounded text-[10px]">{topic.error_count} errors</span>
+                          <span className="ml-2 font-bold px-1.5 py-0.5 bg-amber-200/50 dark:bg-amber-800/50 rounded text-[10px]">{t('teacherInsights.studentAnalytics.errorsCount', { count: topic.error_count })}</span>
                         </Badge>
                       ))}
                     </div>
                   ) : (
                     <div className="text-center py-6 text-muted-foreground bg-muted dark:bg-secondary border border-dashed dark:border-border rounded-lg">
-                      No significant difficulty hotspots identified yet.
+                      {t('teacherInsights.studentAnalytics.noHotspots')}
                     </div>
                   )}
                 </CardContent>
@@ -359,17 +360,17 @@ export const StudentAnalyticsPage: React.FC = () => {
               <Card className="border-border shadow-sm">
                 <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
                   <div>
-                    <CardTitle className="text-lg">Difficult Questions</CardTitle>
-                    <CardDescription>Specific questions that need review</CardDescription>
+                    <CardTitle className="text-lg">{t('teacherInsights.studentAnalytics.difficultQuestions')}</CardTitle>
+                    <CardDescription>{t('teacherInsights.studentAnalytics.difficultQuestionsHint')}</CardDescription>
                   </div>
                   {data?.difficult_questions?.length > 0 && (
                     <div className="flex items-center gap-2">
                       <Select value={selectedLessonId} onValueChange={setSelectedLessonId}>
                         <SelectTrigger className="w-[180px] h-9 text-xs">
-                          <SelectValue placeholder="All Lessons" />
+                          <SelectValue placeholder={t('teacherInsights.shared.allLessons')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Lessons</SelectItem>
+                          <SelectItem value="all">{t('teacherInsights.shared.allLessons')}</SelectItem>
                           {Array.from(new Map(data.difficult_questions.map(q => [q.lesson_id, q.lesson_title])).entries()).map(([id, title]) => (
                             <SelectItem key={id} value={id.toString()}>{title}</SelectItem>
                           ))}
@@ -378,7 +379,7 @@ export const StudentAnalyticsPage: React.FC = () => {
                       <div className="relative w-48">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                          placeholder="Search..."
+                          placeholder={t('teacherInsights.shared.searchPlaceholder')}
                           className="pl-8 h-9 text-xs"
                           value={questionSearch}
                           onChange={(e) => setQuestionSearch(e.target.value)}
@@ -414,14 +415,14 @@ export const StudentAnalyticsPage: React.FC = () => {
                             className="opacity-0 group-hover:opacity-100 h-8 text-brand hover:text-brand hover:bg-card border-transparent hover:border-brand shadow-none transition-all"
                             onClick={() => navigate(`/course/${courseId}/lesson/${q.lesson_id}?stepId=${q.step_id}&questionId=${q.id}`)}
                           >
-                            Inspect
+                            {t('teacherInsights.studentAnalytics.inspect')}
                           </Button>
                         </div>
                       ))}
                     </div>
                   ) : (
                       <div className="text-center py-6 text-muted-foreground bg-muted dark:bg-secondary border border-dashed dark:border-border rounded-lg">
-                        {questionSearch ? "No questions match your filter." : "Congratulations! All answered questions look good."}
+                        {questionSearch ? t('teacherInsights.studentAnalytics.noQuestionsMatch') : t('teacherInsights.studentAnalytics.allGood')}
                       </div>
                     );
                   })()}
@@ -434,8 +435,8 @@ export const StudentAnalyticsPage: React.FC = () => {
               {satData.length > 0 && (
                 <Card className="border-border shadow-sm">
                   <CardHeader>
-                    <CardTitle className="text-lg">SAT Dynamics</CardTitle>
-                    <CardDescription>Score history</CardDescription>
+                    <CardTitle className="text-lg">{t('teacherInsights.studentAnalytics.satDynamics')}</CardTitle>
+                    <CardDescription>{t('teacherInsights.studentAnalytics.scoreHistory')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="h-[200px] w-full">
@@ -453,9 +454,9 @@ export const StudentAnalyticsPage: React.FC = () => {
                             }}
                             formatter={(value: any, name: string) => {
                                 const labels: Record<string, string> = {
-                                    percentage: 'Total',
-                                    mathPercentage: 'Math',
-                                    verbalPercentage: 'Verbal'
+                                    percentage: t('teacherInsights.shared.total'),
+                                    mathPercentage: t('teacherInsights.shared.math'),
+                                    verbalPercentage: t('teacherInsights.shared.verbal')
                                 };
                                 return [`${value}%`, labels[name] || name];
                             }}
@@ -496,10 +497,10 @@ export const StudentAnalyticsPage: React.FC = () => {
                       <Table>
                         <TableHeader>
                           <TableRow className="bg-muted/50 dark:bg-secondary/50">
-                            <TableHead className="text-[10px] uppercase font-bold py-2 px-2">TEST</TableHead>
-                            <TableHead className="text-center text-[10px] uppercase font-bold py-2 px-1">MATH</TableHead>
-                            <TableHead className="text-center text-[10px] uppercase font-bold py-2 px-1">VERBAL</TableHead>
-                            <TableHead className="text-center text-[10px] uppercase font-bold py-2 px-2">TOTAL</TableHead>
+                            <TableHead className="text-[10px] uppercase font-bold py-2 px-2">{t('teacherInsights.studentAnalytics.test')}</TableHead>
+                            <TableHead className="text-center text-[10px] uppercase font-bold py-2 px-1">{t('teacherInsights.shared.math')}</TableHead>
+                            <TableHead className="text-center text-[10px] uppercase font-bold py-2 px-1">{t('teacherInsights.shared.verbal')}</TableHead>
+                            <TableHead className="text-center text-[10px] uppercase font-bold py-2 px-2">{t('teacherInsights.shared.total')}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -549,8 +550,8 @@ export const StudentAnalyticsPage: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between px-1">
                 <div>
-                  <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Pending Assignments</h3>
-                  <p className="text-xs text-muted-foreground">Upcoming work that needs submission</p>
+                  <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">{t('teacherInsights.studentAnalytics.pendingAssignments')}</h3>
+                  <p className="text-xs text-muted-foreground">{t('teacherInsights.studentAnalytics.pendingHint')}</p>
                 </div>
                 <Badge variant="outline" className="bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800 font-medium">
                   {data?.homework?.filter(h => h.status === 'pending').length || 0}
@@ -572,17 +573,17 @@ export const StudentAnalyticsPage: React.FC = () => {
                               <div className="flex items-center gap-2">
                                 <h4 className="text-sm font-medium text-foreground">{hw.title}</h4>
                                 {isOverdue && (
-                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border-none">Overdue</Badge>
+                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border-none">{t('teacherInsights.studentAnalytics.overdue')}</Badge>
                                 )}
                               </div>
                               <div className="flex items-center gap-3 mt-1">
                                 <span className={`text-[10px] flex items-center gap-1 ${isOverdue ? 'text-rose-500 dark:text-rose-400 font-medium' : 'text-muted-foreground'}`}>
                                   <AlertTriangle className="h-3 w-3" />
-                                  {hw.due_date ? `Due: ${formatDay(new Date(hw.due_date))}` : 'No deadline'}
+                                  {hw.due_date ? t('teacherInsights.studentAnalytics.due', { date: formatDay(new Date(hw.due_date)) }) : t('teacherInsights.studentAnalytics.noDeadline')}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground  flex items-center gap-1">
                                   <BookOpen className="h-3 w-3" />
-                                  {hw.max_score} pts
+                                  {t('teacherInsights.studentAnalytics.points', { count: hw.max_score })}
                                 </span>
                               </div>
                             </div>
@@ -593,7 +594,7 @@ export const StudentAnalyticsPage: React.FC = () => {
                             className="h-8 text-xs text-brand hover:bg-card dark:hover:bg-secondary hover:text-brand border-transparent hover:border-border shadow-none"
                             onClick={() => navigate(`/homework/${hw.id}/progress`)}
                           >
-                            {isTeacher() ? 'Grade' : 'View Details'}
+                            {isTeacher() ? t('teacherInsights.studentAnalytics.grade') : t('teacherInsights.studentAnalytics.viewDetails')}
                           </Button>
                         </div>
                       );
@@ -601,8 +602,8 @@ export const StudentAnalyticsPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="text-center py-10 text-muted-foreground">
-                    <p className="text-sm font-medium">All tasks completed</p>
-                    <p className="text-[11px]">No assignments currently pending.</p>
+                    <p className="text-sm font-medium">{t('teacherInsights.studentAnalytics.allTasksCompleted')}</p>
+                    <p className="text-[11px]">{t('teacherInsights.studentAnalytics.noPending')}</p>
                   </div>
                 )}
               </div>
@@ -612,8 +613,8 @@ export const StudentAnalyticsPage: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between px-1">
                 <div>
-                  <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Submitted Work</h3>
-                  <p className="text-xs text-muted-foreground">History of your completed assignments</p>
+                  <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">{t('teacherInsights.studentAnalytics.submittedWork')}</h3>
+                  <p className="text-xs text-muted-foreground">{t('teacherInsights.studentAnalytics.submittedHint')}</p>
                 </div>
                 <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800 font-medium">
                   {data?.homework?.filter(h => h.status === 'submitted').length || 0}
@@ -635,18 +636,18 @@ export const StudentAnalyticsPage: React.FC = () => {
                               <div className="flex items-center gap-2">
                                 <h4 className="text-sm font-medium text-foreground">{hw.title}</h4>
                                 {needsGrading && (
-                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-brand-surface  text-brand  border-none">Needs Grading</Badge>
+                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-brand-surface  text-brand  border-none">{t('teacherInsights.studentAnalytics.needsGrading')}</Badge>
                                 )}
                               </div>
                               <div className="flex items-center gap-3 mt-1">
                                 <span className="text-[10px] text-muted-foreground  flex items-center gap-1">
                                   <History className="h-3 w-3" />
-                                  Submitted: {hw.submitted_at ? formatDay(new Date(hw.submitted_at)) : 'Unknown'}
+                                  {t('teacherInsights.studentAnalytics.submittedOn', { date: hw.submitted_at ? formatDay(new Date(hw.submitted_at)) : t('teacherInsights.studentAnalytics.unknown') })}
                                 </span>
                                 {hw.is_graded ? (
-                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-none">Graded</Badge>
+                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-none">{t('teacherInsights.studentAnalytics.graded')}</Badge>
                                 ) : (
-                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-muted dark:bg-secondary text-muted-foreground border-none">Reviewing</Badge>
+                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-muted dark:bg-secondary text-muted-foreground border-none">{t('teacherInsights.studentAnalytics.reviewing')}</Badge>
                                 )}
                               </div>
                             </div>
@@ -669,7 +670,7 @@ export const StudentAnalyticsPage: React.FC = () => {
                               onClick={() => navigate(`/homework/${hw.id}/progress`)}
                             >
                               {/* Curators can no longer grade, so never offer them a "Grade" affordance. */}
-                              {(isTeacher() || isAdmin()) ? (needsGrading ? 'Grade' : 'Review') : 'View Details'}
+                              {(isTeacher() || isAdmin()) ? (needsGrading ? t('teacherInsights.studentAnalytics.grade') : t('teacherInsights.studentAnalytics.review')) : t('teacherInsights.studentAnalytics.viewDetails')}
                             </Button>
                           </div>
                         </div>
@@ -678,7 +679,7 @@ export const StudentAnalyticsPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="text-center py-10 text-muted-foreground">
-                    <p className="text-sm font-medium">No submissions yet</p>
+                    <p className="text-sm font-medium">{t('teacherInsights.studentAnalytics.noSubmissions')}</p>
                   </div>
                 )}
               </div>
@@ -690,8 +691,8 @@ export const StudentAnalyticsPage: React.FC = () => {
           {/* Detailed Curriculum Progress */}
           <Card className="border-border shadow-sm">
             <CardHeader>
-              <CardTitle>Detailed Progress</CardTitle>
-              <CardDescription>Step-by-step breakdown of learning activity</CardDescription>
+              <CardTitle>{t('teacherInsights.studentAnalytics.detailedProgress')}</CardTitle>
+              <CardDescription>{t('teacherInsights.studentAnalytics.detailedProgressHint')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[600px] overflow-y-auto pr-4">
@@ -705,7 +706,7 @@ export const StudentAnalyticsPage: React.FC = () => {
                           <details className="group">
                             <summary className="flex items-center justify-between p-4 cursor-pointer bg-muted dark:bg-secondary hover:bg-muted transition-colors list-none">
                                 <div className="flex items-center">
-                                    <span className="font-semibold text-foreground">Module {module.module_info.order_index}: {module.module_info.title}</span>
+                                    <span className="font-semibold text-foreground">{t('teacherInsights.studentAnalytics.moduleTitle', { number: module.module_info.order_index, title: module.module_info.title })}</span>
                                 </div>
                                 <ChevronDown className="h-5 w-5 text-muted-foreground  transition-transform group-open:rotate-180" />
                             </summary>
@@ -761,7 +762,7 @@ export const StudentAnalyticsPage: React.FC = () => {
                     </div>
                     {/* Fallback if no modules */}
                     {getSortedModules(course).length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground">No content structure found for this course.</div>
+                        <div className="text-center py-8 text-muted-foreground">{t('teacherInsights.studentAnalytics.noContent')}</div>
                     )}
                   </div>
                 ))}
@@ -776,9 +777,9 @@ export const StudentAnalyticsPage: React.FC = () => {
             <CardHeader className="pb-4">
               <CardTitle className="text-lg flex items-center gap-2">
                 <History className="h-5 w-5 text-brand" />
-                History of Activity
+                {t('teacherInsights.studentAnalytics.historyTitle')}
               </CardTitle>
-              <CardDescription>Recent learning actions</CardDescription>
+              <CardDescription>{t('teacherInsights.studentAnalytics.historyHint')}</CardDescription>
             </CardHeader>
             <CardContent className="overflow-y-auto px-10 pb-10">
               {data.activity_history?.length > 0 ? (
@@ -805,7 +806,7 @@ export const StudentAnalyticsPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-40 text-muted-foreground  italic">
-                    No activity recorded recently.
+                    {t('teacherInsights.studentAnalytics.noActivity')}
                 </div>
               )}
             </CardContent>

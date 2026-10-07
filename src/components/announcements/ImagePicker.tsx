@@ -3,6 +3,8 @@ import { ChevronLeft, ImagePlus, X } from 'lucide-react';
 import { Label } from '../ui/label';
 import { toast } from '../Toast';
 import { MAX_IMAGES } from './telegramText';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/announcements';
 
 interface ImagePickerProps {
   images: File[];
@@ -15,6 +17,7 @@ interface ImagePickerProps {
  * to choose which image leads.
  */
 export function ImagePicker({ images, onChange }: ImagePickerProps) {
+  const t = useT();
   // Object URLs must be revoked or every re-pick leaks one.
   const previews = useMemo(() => images.map((file) => URL.createObjectURL(file)), [images]);
   useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews]);
@@ -24,11 +27,11 @@ export function ImagePicker({ images, onChange }: ImagePickerProps) {
     const picked = Array.from(files);
     const room = MAX_IMAGES - images.length;
     if (room <= 0) {
-      toast(`Telegram allows at most ${MAX_IMAGES} images per album`, 'error');
+      toast(t('announcements.images.albumFull', { max: MAX_IMAGES }), 'error');
       return;
     }
     if (picked.length > room) {
-      toast(`Only ${room} more image${room > 1 ? 's' : ''} can be added`, 'info');
+      toast(t('announcements.images.onlyMore', { count: room }), 'info');
     }
     onChange([...images, ...picked.slice(0, room)]);
   };
@@ -48,7 +51,7 @@ export function ImagePicker({ images, onChange }: ImagePickerProps) {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <Label className="text-xs text-muted-foreground">
-          Images ({images.length}/{MAX_IMAGES})
+          {t('announcements.images.label', { count: images.length, max: MAX_IMAGES })}
         </Label>
         <label className="inline-flex">
           <input
@@ -64,7 +67,7 @@ export function ImagePicker({ images, onChange }: ImagePickerProps) {
           />
           <span className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-accent">
             <ImagePlus className="h-4 w-4" />
-            Add images
+            {t('announcements.images.add')}
           </span>
         </label>
       </div>
@@ -81,7 +84,7 @@ export function ImagePicker({ images, onChange }: ImagePickerProps) {
                 type="button"
                 onClick={() => onChange(images.filter((_, i) => i !== index))}
                 className="absolute -right-2 -top-2 rounded-full bg-rose-600 p-1 text-white"
-                aria-label={`Remove ${file.name}`}
+                aria-label={t('announcements.images.remove', { name: file.name })}
               >
                 <X className="h-3 w-3" />
               </button>
@@ -91,7 +94,7 @@ export function ImagePicker({ images, onChange }: ImagePickerProps) {
                   onClick={() => move(index, -1)}
                   disabled={index === 0}
                   className={moveButtonClass}
-                  aria-label="Move earlier"
+                  aria-label={t('announcements.images.moveEarlier')}
                 >
                   <ChevronLeft className="h-3 w-3" />
                 </button>
@@ -100,7 +103,7 @@ export function ImagePicker({ images, onChange }: ImagePickerProps) {
                   onClick={() => move(index, 1)}
                   disabled={index === images.length - 1}
                   className={`${moveButtonClass} rotate-180`}
-                  aria-label="Move later"
+                  aria-label={t('announcements.images.moveLater')}
                 >
                   <ChevronLeft className="h-3 w-3" />
                 </button>

@@ -5,6 +5,8 @@ import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { Check, AlertTriangle } from 'lucide-react';
 import apiClient from '../services/api';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/courseAuthoring';
 
 import { 
   BookOpen, 
@@ -30,7 +32,7 @@ interface CourseSidebarProps {
 }
 
 export default function CourseSidebar({ 
-  courseTitle = "Course Title", 
+  courseTitle: courseTitleProp, 
   courseId, 
   coverImageUrl,
   isActive = false,
@@ -42,6 +44,8 @@ export default function CourseSidebar({
   onCourseStatusChange
 }: CourseSidebarProps) {
 
+  const t = useT();
+  const courseTitle = courseTitleProp ?? t('courseAuthoring.sidebar.courseTitle');
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,14 +62,14 @@ export default function CourseSidebar({
     try {
       await apiClient.publishCourse(courseId);
       
-      setSuccessMessage('Course published successfully!');
+      setSuccessMessage(t('courseAuthoring.sidebar.published'));
       setShowSuccessDialog(true);
       
       // Notify parent component about status change
       onCourseStatusChange?.(true);
     } catch (error) {
       console.error('Failed to publish course:', error);
-      alert('Failed to publish course. Please try again.');
+      alert(t('courseAuthoring.sidebar.publishFailed'));
     } finally {
       setIsPublishing(false);
     }
@@ -78,7 +82,7 @@ export default function CourseSidebar({
     try {
       await apiClient.unpublishCourse(courseId);
       
-      setSuccessMessage('Course unpublished successfully!');
+      setSuccessMessage(t('courseAuthoring.sidebar.unpublished'));
       setShowSuccessDialog(true);
       setShowUnpublishDialog(false);
       
@@ -86,16 +90,16 @@ export default function CourseSidebar({
       onCourseStatusChange?.(false);
     } catch (error) {
       console.error('Failed to unpublish course:', error);
-      alert('Failed to unpublish course. Please try again.');
+      alert(t('courseAuthoring.sidebar.unpublishFailed'));
     } finally {
       setIsUnpublishing(false);
     }
   };
 
   const courseNavItems = [
-    { section: 'overview' as const, label: 'Overview', icon: BookOpen },
-    { section: 'description' as const, label: 'Description', icon: FileText },
-    { section: 'content' as const, label: 'Content', icon: List },
+    { section: 'overview' as const, label: t('courseAuthoring.sidebar.overview'), icon: BookOpen },
+    { section: 'description' as const, label: t('courseAuthoring.sidebar.description'), icon: FileText },
+    { section: 'content' as const, label: t('courseAuthoring.sidebar.content'), icon: List },
   ];
 
   return (
@@ -135,7 +139,7 @@ export default function CourseSidebar({
               <span className={`text-xs font-medium ${
                 isActive ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
               }`}>
-                {isActive ? 'Active' : 'Draft'}
+                {isActive ? t('courseAuthoring.status.active') : t('courseAuthoring.status.draft')}
               </span>
             </div>
           </div>
@@ -149,7 +153,7 @@ export default function CourseSidebar({
             className='w-full'
             disabled={isPublishing || isUnpublishing}
           >
-            {isPublishing ? 'Publishing...' : isUnpublishing ? 'Unpublishing...' : isActive ? 'Unpublish' : 'Publish'}
+            {isPublishing ? t('courseAuthoring.sidebar.publishing') : isUnpublishing ? t('courseAuthoring.sidebar.unpublishing') : isActive ? t('courseAuthoring.sidebar.unpublish') : t('courseAuthoring.sidebar.publish')}
           </Button>
         )}
       </div>
@@ -188,7 +192,7 @@ export default function CourseSidebar({
             className='w-full'
             variant={hasUnsavedChanges ? 'default' : 'outline'}
           >
-            {hasUnsavedChanges ? `Save` : 'No Changes'}
+            {hasUnsavedChanges ? t('common.save') : t('courseAuthoring.sidebar.noChanges')}
           </Button>
         </div>
       )}
@@ -199,10 +203,10 @@ export default function CourseSidebar({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-orange-500 dark:text-orange-400" />
-              Unpublish Course
+              {t('courseAuthoring.sidebar.unpublishTitle')}
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to unpublish this course? This will change the course status from "Active" to "Draft" and students will no longer be able to access it.
+              {t('courseAuthoring.sidebar.unpublishConfirm')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex gap-2">
@@ -211,14 +215,14 @@ export default function CourseSidebar({
               onClick={() => setShowUnpublishDialog(false)}
               disabled={isUnpublishing}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleUnpublish}
               disabled={isUnpublishing}
             >
-              {isUnpublishing ? 'Unpublishing...' : 'Unpublish Course'}
+              {isUnpublishing ? t('courseAuthoring.sidebar.unpublishing') : t('courseAuthoring.sidebar.unpublishTitle')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -230,7 +234,7 @@ export default function CourseSidebar({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Check className="h-5 w-5 text-green-500 dark:text-green-400" />
-              Success
+              {t('courseAuthoring.sidebar.success')}
             </DialogTitle>
             <DialogDescription>
               {successMessage}
@@ -238,7 +242,7 @@ export default function CourseSidebar({
           </DialogHeader>
           <DialogFooter>
             <Button onClick={() => setShowSuccessDialog(false)}>
-              OK
+              {t('courseAuthoring.common.ok')}
             </Button>
           </DialogFooter>
         </DialogContent>

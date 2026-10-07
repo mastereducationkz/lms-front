@@ -22,8 +22,11 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { CheckCircle, Trash2 } from 'lucide-react';
 import { formatDate } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherDesk';
 
 export default function GradingQueue() {
+  const t = useT();
   const [attempts, setAttempts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAttempt, setSelectedAttempt] = useState<any>(null);
@@ -67,25 +70,25 @@ export default function GradingQueue() {
       loadAttempts(); // Reload list
     } catch (error) {
       console.error('Failed to submit grade:', error);
-      alert('Failed to submit grade');
+      alert(t('teacherDesk.queue.submitFailed'));
     }
   };
 
   const handleDeleteAttempt = async (attemptId: number) => {
-    if (!confirm('Are you sure you want to delete this attempt? The student will be able to resubmit.')) return;
+    if (!confirm(t('teacherDesk.queue.deleteConfirm'))) return;
     
     try {
       await apiClient.deleteQuizAttempt(attemptId);
       loadAttempts();
     } catch (error) {
       console.error('Failed to delete attempt:', error);
-      alert('Failed to delete attempt');
+      alert(t('teacherDesk.queue.deleteFailed'));
     }
   };
   
   const renderLongTextAnswers = (longTextAnswers: any[]) => {
       if (!longTextAnswers || longTextAnswers.length === 0) {
-          return <p className="text-gray-500">No long text answers found</p>;
+          return <p className="text-gray-500">{t('teacherDesk.queue.noLongText')}</p>;
       }
       
       return (
@@ -94,14 +97,14 @@ export default function GradingQueue() {
                   <div key={idx} className="border rounded-lg overflow-hidden">
                       {/* Question */}
                       <div className="p-4 bg-gray-100 border-b">
-                          <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Question {idx + 1}</p>
+                          <p className="text-xs font-semibold text-gray-500 uppercase mb-1">{t('teacherDesk.grading.questionNumber', { number: idx + 1 })}</p>
                           <p className="text-gray-900 font-medium">{item.question_text}</p>
                       </div>
                       {/* Student Answer */}
                       <div className="p-4 bg-white">
-                          <p className="text-xs font-semibold text-blue-600 uppercase mb-1">Student's Answer</p>
+                          <p className="text-xs font-semibold text-blue-600 uppercase mb-1">{t('teacherDesk.queue.studentAnswer')}</p>
                           <div className="text-gray-800 whitespace-pre-wrap bg-blue-50 p-3 rounded border border-blue-100">
-                            {item.student_answer || <span className="text-gray-400 italic">No answer provided</span>}
+                            {item.student_answer || <span className="text-gray-400 italic">{t('teacherDesk.grading.noAnswer')}</span>}
                           </div>
                       </div>
                   </div>
@@ -110,14 +113,14 @@ export default function GradingQueue() {
       );
   };
 
-  if (loading) return <div>Loading grading queue...</div>;
+  if (loading) return <div>{t('teacherDesk.queue.loading')}</div>;
 
   if (attempts.length === 0) {
     return (
       <Card>
         <CardContent className="p-8 text-center text-gray-500">
           <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
-          <p>All caught up! No quizzes pending grading.</p>
+          <p>{t('teacherDesk.queue.empty')}</p>
         </CardContent>
       </Card>
     );
@@ -127,16 +130,16 @@ export default function GradingQueue() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Pending Grading ({attempts.length})</CardTitle>
+          <CardTitle>{t('teacherDesk.queue.title', { count: attempts.length })}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Student</TableHead>
-                <TableHead>Quiz</TableHead>
-                <TableHead>Submitted</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>{t('teacherDesk.col.student')}</TableHead>
+                <TableHead>{t('teacherDesk.queue.quiz')}</TableHead>
+                <TableHead>{t('teacherDesk.col.submitted')}</TableHead>
+                <TableHead>{t('teacherDesk.col.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -156,13 +159,13 @@ export default function GradingQueue() {
                   <TableCell>
                     <div className="flex gap-2">
                       <Button size="sm" onClick={() => handleGradeClick(attempt)}>
-                        Grade
+                        {t('teacherDesk.grading.grade')}
                       </Button>
                       <Button 
                         size="sm" 
                         variant="destructive" 
                         onClick={() => handleDeleteAttempt(attempt.id)}
-                        title="Allow Resubmission (Delete Attempt)"
+                        title={t('teacherDesk.queue.allowResubmission')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -178,28 +181,28 @@ export default function GradingQueue() {
       <Dialog open={isGradeModalOpen} onOpenChange={setIsGradeModalOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Grade Submission</DialogTitle>
+            <DialogTitle>{t('teacherDesk.grading.gradeSubmission')}</DialogTitle>
           </DialogHeader>
           
           {selectedAttempt && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-semibold">Student:</span> {selectedAttempt.user_name}
+                  <span className="font-semibold">{t('teacherDesk.grading.studentLabel')}</span> {selectedAttempt.user_name}
                 </div>
                 <div>
-                  <span className="font-semibold">Quiz:</span> {selectedAttempt.quiz_title}
+                  <span className="font-semibold">{t('teacherDesk.grading.quizLabel')}</span> {selectedAttempt.quiz_title}
                 </div>
               </div>
 
               <div className="border-t pt-4">
-                <h3 className="font-semibold mb-3">Long Text Questions</h3>
+                <h3 className="font-semibold mb-3">{t('teacherDesk.queue.longTextQuestions')}</h3>
                 {renderLongTextAnswers(selectedAttempt.long_text_answers)}
               </div>
 
               <div className="grid gap-4 border-t pt-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="score">Score (0-100)</Label>
+                  <Label htmlFor="score">{t('teacherDesk.grading.scoreRange')}</Label>
                   <Input
                     id="score"
                     type="number"
@@ -211,10 +214,10 @@ export default function GradingQueue() {
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="feedback">Feedback</Label>
+                  <Label htmlFor="feedback">{t('teacherDesk.grading.feedback')}</Label>
                   <Textarea
                     id="feedback"
-                    placeholder="Enter feedback for the student..."
+                    placeholder={t('teacherDesk.grading.feedbackPlaceholder')}
                     value={gradeFeedback}
                     onChange={(e) => setGradeFeedback(e.target.value)}
                     rows={4}
@@ -225,8 +228,8 @@ export default function GradingQueue() {
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsGradeModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmitGrade}>Submit Grade</Button>
+            <Button variant="outline" onClick={() => setIsGradeModalOpen(false)}>{t('common.cancel')}</Button>
+            <Button onClick={handleSubmitGrade}>{t('teacherDesk.grading.submitGrade')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

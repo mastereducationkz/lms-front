@@ -226,6 +226,7 @@ export const attendance = {
   'attendance.submission.file': 'File',
   'attendance.submission.student': 'Student',
   'attendance.submission.assignment': 'Assignment',
+  'attendance.submission.email': 'Email',
   'attendance.submission.course': 'Course',
   'attendance.submission.submittedAt': 'Submitted',
   'attendance.submission.status': 'Status',

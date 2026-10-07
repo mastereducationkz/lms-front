@@ -11,6 +11,8 @@ import OnboardingManager from '../components/OnboardingManager.tsx';
 import ProtectedRoute from '../components/ProtectedRoute.tsx';
 import AppLayout from '../layouts/AppLayout.tsx';
 import ThinkingLoader from '../components/ThinkingLoader';
+import { t } from '../lib/i18n';
+import '@/lib/i18n/catalogs/shell';
 
 // Pages are code-split with React.lazy so the initial download is a small app shell plus only
 // the chunk for the current route. Previously all ~59 pages were eagerly imported into a single
@@ -101,7 +103,7 @@ const StudentReportPage = lazyRoute(() => import('../pages/StudentReportPage.tsx
 // Fallback shown while a route chunk is fetched.
 const RouteFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-background">
-    <ThinkingLoader state="breathing" size={64} label="Loading page…" />
+    <ThinkingLoader state="breathing" size={64} label={t('shell.loadingPage')} />
   </div>
 );
 

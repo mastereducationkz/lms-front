@@ -25,10 +25,13 @@ import { Checkbox } from '../../components/ui/checkbox';
 
 import { DateTimePicker } from '../../components/ui/date-time-picker';
 import MultiTaskEditor from '../../components/assignments/MultiTaskEditor';
-import { parseAsUTC, formatInKZ } from '../../lib/datetime';
+import { parseAsUTC } from '../../lib/datetime';
 import { prepareTeacherGroupList } from '../../lib/groupList';
 import { taskUploadMessage } from '../../lib/uploadFailure';
 import { createUploadCache } from '../../lib/uploadOnce';
+import { formatDateTime, formatNumber } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/homeworkStaff';
 
 interface AssignmentFormData {
   title: string;
@@ -52,6 +55,7 @@ interface AssignmentFormData {
 
 export default function AssignmentBuilderPage() {
   const { } = useAuth();
+  const t = useT();
   const navigate = useNavigate();
   const { groupId, assignmentId } = useParams();
   const [searchParams] = useSearchParams();
@@ -157,7 +161,7 @@ export default function AssignmentBuilderPage() {
       }
 
       setFormData({
-        title: copyFromId ? `Copy of ${assignment.title}` : assignment.title,
+        title: copyFromId ? t('homeworkStaff.builder.copyOf', { title: assignment.title }) : assignment.title,
         description: assignment.description || '',
         assignment_type: assignment.assignment_type,
         content: content || {},
@@ -189,7 +193,7 @@ export default function AssignmentBuilderPage() {
       }
     } catch (err) {
       console.error('Failed to load assignment:', err);
-      setError('Failed to load assignment details.');
+      setError(t('homeworkStaff.builder.loadError'));
     } finally {
       setLoading(false);
     }
@@ -206,7 +210,7 @@ export default function AssignmentBuilderPage() {
       setGroups(prepareTeacherGroupList(teacherGroups || []));
     } catch (err) {
       console.error('Failed to load groups:', err);
-      setError('Failed to load groups. Please try again.');
+      setError(t('homeworkStaff.builder.loadGroupsError'));
       setGroups([]);
     } finally {
       setGroupsLoading(false);
@@ -358,7 +362,7 @@ export default function AssignmentBuilderPage() {
     setError('');
 
     if (!formData.group_ids || formData.group_ids.length === 0) {
-      setError('Please select at least one group.');
+      setError(t('homeworkStaff.builder.selectGroup'));
       setLoading(false);
       return;
     }
@@ -372,9 +376,9 @@ export default function AssignmentBuilderPage() {
     });
     if (groupsMissingLink.length > 0) {
       const names = groupsMissingLink
-        .map(gid => groups.find(g => g.id === gid)?.name || `group ${gid}`)
+        .map(gid => groups.find(g => g.id === gid)?.name || t('homeworkStaff.builder.groupFallback', { id: gid }))
         .join(', ');
-      setError(`Please pick a class to link this homework to for: ${names}`);
+      setError(t('homeworkStaff.builder.pickClassFor', { names }));
       setLoading(false);
       return;
     }
@@ -477,7 +481,7 @@ export default function AssignmentBuilderPage() {
             teacherFileName = formData.content.teacher_file_name || formData.content.teacher_file.name;
           } catch (fileError) {
             console.error('Failed to upload teacher file:', fileError);
-            setError(fileError instanceof Error ? fileError.message : 'Failed to upload teacher file. Please try again.');
+            setError(fileError instanceof Error ? fileError.message : t('homeworkStaff.builder.uploadError'));
             setLoading(false);
             return;
           }
@@ -545,7 +549,7 @@ export default function AssignmentBuilderPage() {
       // Redirect to assignments list
       navigate('/homework');
     } catch (err: any) {
-      setError(err.message || `Failed to ${isEditing ? 'update' : 'create'} assignment. Please try again.`);
+      setError(err.message || t(isEditing ? 'homeworkStaff.builder.updateError' : 'homeworkStaff.builder.createError'));
       console.error(`Failed to ${isEditing ? 'update' : 'create'} assignment:`, err);
     } finally {
       setLoading(false);
@@ -580,12 +584,12 @@ export default function AssignmentBuilderPage() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Preview</CardTitle>
+          <CardTitle>{t('homeworkStaff.builder.preview')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <h4 className="font-medium">{formData.title || 'Untitled Homework'}</h4>
-            <p className="text-muted-foreground">{formData.description || 'No description'}</p>
+            <h4 className="font-medium">{formData.title || t('homeworkStaff.builder.untitled')}</h4>
+            <p className="text-muted-foreground">{formData.description || t('homeworkStaff.builder.noDescription')}</p>
           </div>
           {renderAssignmentTypeEditor()}
         </CardContent>
@@ -599,10 +603,10 @@ export default function AssignmentBuilderPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center text-foreground">
-            {isEditing ? 'Edit Homework' : copyFromId ? 'Copy Homework' : 'Create Homework'}
+            {isEditing ? t('homeworkStaff.builder.titleEdit') : copyFromId ? t('homeworkStaff.builder.titleCopy') : t('homeworkStaff.builder.titleCreate')}
           </h1>
           <p className="text-muted-foreground  mt-1">
-            {isEditing ? 'Update existing homework' : 'Create a new homework for your students'}
+            {isEditing ? t('homeworkStaff.builder.subtitleEdit') : t('homeworkStaff.builder.subtitleCreate')}
           </p>
         </div>
         <div className="flex space-x-2">
@@ -611,14 +615,14 @@ export default function AssignmentBuilderPage() {
             variant={previewMode ? "default" : "outline"}
           >
             <Eye className="w-4 h-4 mr-2" />
-            {previewMode ? 'Edit' : 'Preview'}
+            {previewMode ? t('common.edit') : t('homeworkStaff.builder.preview')}
           </Button>
           <Button
             onClick={() => navigate(-1)}
             variant="outline"
           >
             <X className="w-4 h-4 mr-2" />
-            Cancel
+            {t('common.cancel')}
           </Button>
         </div>
       </div>
@@ -639,38 +643,38 @@ export default function AssignmentBuilderPage() {
             {/* Basic Information */}
             <Card>
               <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
+                <CardTitle>{t('homeworkStaff.builder.basicInfo')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="title">
-                    Homework Title *
+                    {t('homeworkStaff.builder.titleLabel')}
                   </Label>
                   <Input
                     id="title"
                     type="text"
                     value={formData.title}
                     onChange={(e) => handleInputChange('title', e.target.value)}
-                    placeholder="Enter homework title"
+                    placeholder={t('homeworkStaff.builder.titlePlaceholder')}
                     required
                   />
                 </div>
 
                 <div>
                   <Label htmlFor="description">
-                    Description
+                    {t('homeworkStaff.builder.description')}
                   </Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="Enter homework description"
+                    placeholder={t('homeworkStaff.builder.descriptionPlaceholder')}
                   />
                 </div>
 
                 <div>
                   <Label htmlFor="homework-type">
-                    Homework Type
+                    {t('homeworkStaff.builder.type')}
                   </Label>
                   <Select
                     value={formData.assignment_type}
@@ -678,16 +682,16 @@ export default function AssignmentBuilderPage() {
                     disabled={isEditing && formData.assignment_type !== 'multi_task' && formData.assignment_type !== 'audio'}
                   >
                     <SelectTrigger id="homework-type">
-                      <SelectValue placeholder="Select homework type" />
+                      <SelectValue placeholder={t('homeworkStaff.builder.typePlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="multi_task">Multi-Task Assignment</SelectItem>
-                      <SelectItem value="audio">Audio Recording</SelectItem>
+                      <SelectItem value="multi_task">{t('homeworkStaff.builder.typeMulti')}</SelectItem>
+                      <SelectItem value="audio">{t('homeworkStaff.builder.typeAudio')}</SelectItem>
                     </SelectContent>
                   </Select>
                   {formData.assignment_type === 'audio' && (
                     <p className="text-xs text-muted-foreground  mt-1">
-                      Students record a voice message and submit it for you to listen to and grade.
+                      {t('homeworkStaff.builder.audioTypeHint')}
                     </p>
                   )}
                 </div>
@@ -698,7 +702,7 @@ export default function AssignmentBuilderPage() {
             {!previewMode && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Homework Content</CardTitle>
+                  <CardTitle>{t('homeworkStaff.builder.content')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {renderAssignmentTypeEditor()}
@@ -715,18 +719,18 @@ export default function AssignmentBuilderPage() {
             {/* Assignment Context */}
             <Card>
               <CardHeader>
-                <CardTitle>Context</CardTitle>
+                <CardTitle>{t('homeworkStaff.builder.context')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <Label className="mb-2 block">
-                    Groups *
+                    {t('homeworkStaff.builder.groups')}
                   </Label>
                   {groupsLoading ? (
-                    <div className="text-sm text-muted-foreground">Loading groups...</div>
+                    <div className="text-sm text-muted-foreground">{t('homeworkStaff.builder.loadingGroups')}</div>
                   ) : groups.length === 0 ? (
                     <p className="text-sm text-muted-foreground  mt-1">
-                      No groups found. Please create a group first.
+                      {t('homeworkStaff.builder.noGroups')}
                     </p>
                   ) : (
                     <div className="space-y-2 border dark:border-border rounded-md p-4 max-h-60 overflow-y-auto bg-card">
@@ -741,14 +745,14 @@ export default function AssignmentBuilderPage() {
                             htmlFor={`group-${group.id}`}
                             className="text-sm font-normal cursor-pointer"
                           >
-                            {group.name} <span className="text-xs text-muted-foreground">({group.student_count || 0} students)</span>
+                            {group.name} <span className="text-xs text-muted-foreground">{t('homeworkStaff.builder.groupStudents', { count: group.student_count || 0 })}</span>
                           </Label>
                         </div>
                       ))}
                     </div>
                   )}
                   <div className="text-xs text-muted-foreground  mt-2">
-                    Selected: {formData.group_ids?.length || 0} groups
+                    {t('homeworkStaff.builder.selectedGroups', { count: formData.group_ids?.length || 0 })}
                   </div>
                 </div>
               </CardContent>
@@ -757,12 +761,12 @@ export default function AssignmentBuilderPage() {
             {/* Settings */}
             <Card>
               <CardHeader>
-                <CardTitle>Settings</CardTitle>
+                <CardTitle>{t('homeworkStaff.builder.settings')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="max-score">
-                    Max Score *
+                    {t('homeworkStaff.builder.maxScore')}
                   </Label>
                   <Input
                     id="max-score"
@@ -778,22 +782,22 @@ export default function AssignmentBuilderPage() {
 
                 {/* Late Penalty Settings */}
                 <div className="pt-4 border-t space-y-3">
-                  <Label>Resubmissions</Label>
+                  <Label>{t('homeworkStaff.builder.resubmissions')}</Label>
                   <Select
                     value={formData.max_attempts == null ? 'unlimited' : 'fixed'}
                     onValueChange={(value) => handleInputChange('max_attempts', value === 'unlimited' ? null : Math.max(1, formData.max_attempts || 1))}
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="unlimited">Unlimited attempts until deadline</SelectItem>
-                      <SelectItem value="fixed">Fixed number of attempts</SelectItem>
+                      <SelectItem value="unlimited">{t('homeworkStaff.builder.attemptsUnlimited')}</SelectItem>
+                      <SelectItem value="fixed">{t('homeworkStaff.builder.attemptsFixed')}</SelectItem>
                     </SelectContent>
                   </Select>
                   {formData.max_attempts != null && (
                     <Input type="number" min="1" value={formData.max_attempts}
                       onChange={(e) => handleInputChange('max_attempts', Math.max(1, parseInt(e.target.value) || 1))} />
                   )}
-                  <p className="text-xs text-muted-foreground">Teachers can reopen a completed homework after its deadline. All attempts remain in history.</p>
+                  <p className="text-xs text-muted-foreground">{t('homeworkStaff.builder.attemptsHint')}</p>
                 </div>
 
                 {/* Late Penalty Settings */}
@@ -805,14 +809,14 @@ export default function AssignmentBuilderPage() {
                       onCheckedChange={(checked) => handleInputChange('late_penalty_enabled', checked)}
                     />
                     <Label htmlFor="late-penalty" className="cursor-pointer">
-                      Penalty for late submission?
+                      {t('homeworkStaff.builder.latePenalty')}
                     </Label>
                   </div>
                   
                   {formData.late_penalty_enabled && (
                     <div className="pl-6">
                       <Label htmlFor="penalty-multiplier" className="text-xs text-muted-foreground  mb-1 block">
-                        Score Multiplier (e.g. 0.6 means 60% of score)
+                        {t('homeworkStaff.builder.penaltyMultiplier')}
                       </Label>
                       <Input
                         id="penalty-multiplier"
@@ -831,7 +835,7 @@ export default function AssignmentBuilderPage() {
                 {/* Class Event Linking Section */}
                 {(formData.group_ids || []).length > 0 && (
                     <div className="pt-4 border-t space-y-4">
-                      <Label className="text-sm font-semibold">Link to Class</Label>
+                      <Label className="text-sm font-semibold">{t('homeworkStaff.builder.linkToClass')}</Label>
                       <div className="space-y-3">
                           {(formData.group_ids || []).map(groupId => {
                               const group = groups.find(g => g.id === groupId);
@@ -858,7 +862,7 @@ export default function AssignmentBuilderPage() {
                                                 }}
                                             >
                                               <SelectTrigger className="w-full bg-muted dark:bg-secondary border-border h-9 text-xs">
-                                                <SelectValue placeholder="Pick a class..." />
+                                                <SelectValue placeholder={t('homeworkStaff.builder.pickClass')} />
                                               </SelectTrigger>
                                               <SelectContent>
                                                 {groupEvents
@@ -868,14 +872,14 @@ export default function AssignmentBuilderPage() {
                                                       key={event.id} 
                                                       value={event.id.toString()}
                                                     >
-                                                        {event.title} - {formatInKZ(event.scheduled_at, { 
+                                                        {t('homeworkStaff.builder.classOption', { title: event.title, date: formatDateTime(event.scheduled_at, { 
                                                             weekday: 'short', 
                                                             month: 'short', 
                                                             day: 'numeric', 
                                                             hour: '2-digit', 
                                                             minute: '2-digit',
                                                             hour12: false
-                                                        })} (KZ)
+                                                        }) })}
                                                     </SelectItem>
                                                   ))}
                                               </SelectContent>
@@ -883,19 +887,25 @@ export default function AssignmentBuilderPage() {
 
                                             {hasExistingLink && (
                                               <p className="text-[11px] text-muted-foreground pl-0.5">
-                                                Currently linked{existingLessonNumber ? ` to Lesson ${existingLessonNumber}` : ''}
-                                                {groupDueDate ? ` · due ${formatInKZ(groupDueDate, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })} (KZ)` : ''}.
-                                                Pick a class above only if you want to change it.
+                                                {(() => {
+                                                  const due = groupDueDate ? formatDateTime(groupDueDate, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+                                                  return existingLessonNumber && due
+                                                    ? t('homeworkStaff.builder.linkedLessonDue', { lesson: existingLessonNumber, date: due })
+                                                    : existingLessonNumber
+                                                      ? t('homeworkStaff.builder.linkedLesson', { lesson: existingLessonNumber })
+                                                      : t('homeworkStaff.builder.linkedDue', { date: due });
+                                                })()}{' '}
+                                                {t('homeworkStaff.builder.changeLinkHint')}
                                               </p>
                                             )}
 
                                             {Number(selectedEventId) > 0 && (
                                               <div className="pl-2 pt-1.5 space-y-1.5 border-l-2 border-brand">
-                                                <Label className="text-[10px] text-brand  uppercase font-bold tracking-tight">Set Group Deadline (Optional)</Label>
+                                                <Label className="text-[10px] text-brand  uppercase font-bold tracking-tight">{t('homeworkStaff.builder.groupDeadline')}</Label>
                                                 <DateTimePicker
                                                     date={groupDueDate ? parseAsUTC(groupDueDate) : undefined}
                                                     setDate={(date) => handleGroupDueDateChange(groupId, date ? date.toISOString() : '')}
-                                                    placeholder="Individual due date..."
+                                                    placeholder={t('homeworkStaff.builder.groupDeadlinePlaceholder')}
                                                 />
                                               </div>
                                             )}
@@ -923,7 +933,7 @@ export default function AssignmentBuilderPage() {
                   ) : (
                     <>
                       <Save className="w-4 h-4 mr-2" />
-                      {isEditing ? 'Update Homework' : 'Create Homework'}
+                      {isEditing ? t('homeworkStaff.builder.update') : t('homeworkStaff.builder.create')}
                     </>
                   )}
                 </Button>
@@ -943,6 +953,7 @@ function AudioAssignmentEditor({
   content: any;
   onContentChange: (content: any) => void;
 }) {
+  const t = useT();
   const [question, setQuestion] = useState(content.question || '');
 
   // Sync state with props when content loads asynchronously (e.g. editing an existing assignment).
@@ -959,17 +970,16 @@ function AudioAssignmentEditor({
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="question-audio">Prompt *</Label>
+        <Label htmlFor="question-audio">{t('homeworkStaff.audio.prompt')}</Label>
         <Textarea
           id="question-audio"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="What should the student talk about? E.g. 'Describe your weekend in 1-2 minutes.'"
+          placeholder={t('homeworkStaff.audio.promptPlaceholder')}
         />
       </div>
       <p className="text-sm text-muted-foreground">
-        Students will record a voice message answering this prompt on a dedicated recording page.
-        No answer options or file types are needed — you grade the recording directly.
+        {t('homeworkStaff.audio.hint')}
       </p>
     </div>
   );
@@ -984,6 +994,7 @@ interface EditorProps {
 }
 
 function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: EditorProps) {
+  const t = useT();
   const [question, setQuestion] = useState(content.question || '');
   const [allowedTypes, setAllowedTypes] = useState(content.allowed_file_types || ['pdf', 'docx']);
   const [maxSize, setMaxSize] = useState(content.max_file_size_mb || 10);
@@ -1056,17 +1067,17 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="question-fu">Question *</Label>
+        <Label htmlFor="question-fu">{t('homeworkStaff.legacy.question')}</Label>
         <Textarea
           id="question-fu"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Enter your question or instructions"
+          placeholder={t('homeworkStaff.legacy.questionPlaceholder')}
         />
       </div>
 
       <div>
-        <Label className="mb-2">Teacher's File (Optional)</Label>
+        <Label className="mb-2">{t('homeworkStaff.legacy.teacherFile')}</Label>
         <div className="space-y-2">
           {content.teacher_file_url ? (
             // Display existing uploaded file
@@ -1074,14 +1085,14 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
               <div className="flex items-center space-x-2 flex-1">
                 <FileText className="w-4 h-4 text-brand" />
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-brand-surface-foreground">{content.teacher_file_name || 'Reference File'}</span>
+                  <span className="text-sm font-medium text-brand-surface-foreground">{content.teacher_file_name || t('homeworkStaff.editor.referenceFile')}</span>
                   <a 
                     href={content.teacher_file_url} 
                     target="_blank" 
                     rel="noopener noreferrer" 
                     className="text-xs text-brand  hover:underline"
                   >
-                    View/Download File
+                    {t('homeworkStaff.editor.viewDownloadFile')}
                   </a>
                 </div>
               </div>
@@ -1108,7 +1119,7 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
                 <FileText className="w-4 h-4 text-brand" />
                 <span className="text-sm font-medium text-foreground">{teacherFileName}</span>
                 <span className="text-xs text-muted-foreground">
-                  ({(teacherFile.size / 1024 / 1024).toFixed(2)} MB)
+                  {t('homeworkStaff.editor.fileSize', { size: formatNumber(teacherFile.size / 1024 / 1024, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}
                 </span>
               </div>
               <Button
@@ -1135,10 +1146,10 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
                   <FileText className="w-8 h-8 text-muted-foreground" />
                   <div>
                     <span className="text-sm font-medium text-brand  hover:text-brand">
-                      Click to upload teacher's file
+                      {t('homeworkStaff.legacy.upload')}
                     </span>
                     <p className="text-xs text-muted-foreground  mt-1">
-                      Supported: {fileTypes.map(type => type.label).join(', ')}
+                      {t('homeworkStaff.editor.supported', { types: fileTypes.map(type => type.label).join(', ') })}
                     </p>
                   </div>
                 </div>
@@ -1149,7 +1160,7 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
       </div>
 
       <div>
-        <Label className="mb-2">Allowed File Types for Students</Label>
+        <Label className="mb-2">{t('homeworkStaff.editor.allowedTypes')}</Label>
         <div className="grid grid-cols-2 gap-2">
           {fileTypes.map(type => (
             <div key={type.value} className="flex items-center space-x-2">
@@ -1164,7 +1175,7 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
       </div>
 
       <div>
-        <Label htmlFor="max-size">Maximum File Size (MB)</Label>
+        <Label htmlFor="max-size">{t('homeworkStaff.editor.maxFileSize')}</Label>
         <Input
           id="max-size"
           type="number"
@@ -1179,9 +1190,9 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
       <div className="pt-4 border-t">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <Label className="text-sm font-semibold">Answer Fields (Optional)</Label>
+            <Label className="text-sm font-semibold">{t('homeworkStaff.legacy.answerFields')}</Label>
             <p className="text-xs text-muted-foreground  mt-0.5">
-              Add fields for students to enter answers. System will auto-check correctness.
+              {t('homeworkStaff.legacy.answerFieldsHint')}
             </p>
           </div>
           <Button
@@ -1192,13 +1203,13 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
               const newFields = [...(content.answer_fields || [])];
               newFields.push({ 
                 id: Date.now(), 
-                label: `Problem ${newFields.length + 1}`, 
+                label: t('homeworkStaff.legacy.problemLabel', { number: newFields.length + 1 }), 
                 correct_answer: '' 
               });
               onContentChange({ ...content, answer_fields: newFields });
             }}
           >
-            + Add Field
+            + {t('homeworkStaff.answerFields.add')}
           </Button>
         </div>
         
@@ -1208,7 +1219,7 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
               <div key={field.id} className="flex items-start gap-2 p-3 bg-muted dark:bg-secondary rounded-lg border dark:border-border">
                 <div className="flex-1 space-y-2">
                   <Input
-                    placeholder="Field label (e.g., Problem 1)"
+                    placeholder={t('homeworkStaff.legacy.fieldLabelPlaceholder')}
                     value={field.label}
                     onChange={(e) => {
                       const updated = [...content.answer_fields];
@@ -1218,7 +1229,7 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
                     className="text-sm"
                   />
                   <Input
-                    placeholder="Correct answer"
+                    placeholder={t('homeworkStaff.legacy.correctAnswer')}
                     value={field.correct_answer}
                     onChange={(e) => {
                       const updated = [...content.answer_fields];

@@ -11,6 +11,8 @@ import { Card } from '@/components/ui/card';
 import { MasterMark } from '@/components/mascot/art/MasterMark';
 import { checkpointLabel, lessonsLabel, type CheckpointSummary } from '@/lib/completion';
 import { isBannerShaped, programLabel, programOf, progressSummary, type ProgramKey } from '@/lib/courseProgram';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/courseAuthoring';
 
 interface ProgramTheme {
   gradient: string;
@@ -115,6 +117,7 @@ export default function CourseCard({
   title, coverUrl, progress, lessonsDone, lessonsTotal, checkpoints, nextLesson, description, badges,
   actionLabel, actionIcon, actionArrow = false, actionVariant = 'default', onOpen, className = '',
 }: CourseCardProps) {
+  const t = useT();
   const theme = THEMES[programOf(title)];
   const hasProgress = progress !== undefined && progress !== null;
   const pct = Math.max(0, Math.min(100, Math.round(progress ?? 0)));
@@ -140,7 +143,7 @@ export default function CourseCard({
               aria-valuenow={pct}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Course progress"
+              aria-label={t('courseAuthoring.courseCard.progressAria')}
               aria-valuetext={progressSummary(pct, lessons)}
             >
               <div className={`h-full rounded-full ${theme.bar} transition-[width] duration-500`} style={{ width: `${pct}%` }} />
@@ -151,7 +154,7 @@ export default function CourseCard({
         {hasProgress && nextLesson && pct < 100 && (
           <p className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
             <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="shrink-0">Next:</span>
+            <span className="shrink-0">{t('courseAuthoring.courseCard.next')}</span>
             <span className="truncate font-medium text-foreground" title={nextLesson.title}>{nextLesson.title}</span>
           </p>
         )}

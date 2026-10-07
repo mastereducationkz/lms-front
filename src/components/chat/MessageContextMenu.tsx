@@ -1,6 +1,8 @@
 import * as ContextMenuPrimitive from '@radix-ui/react-context-menu';
 import { Flag, Plus, Reply } from 'lucide-react';
 import { QUICK_REACTIONS } from './chatEmojis';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 
 interface MessageContextMenuProps {
   children: React.ReactNode; // the bubble the menu is anchored to
@@ -23,6 +25,7 @@ const itemClass =
 export function MessageContextMenu({
   children, canReport, disabled, onReact, onMoreEmojis, onReply, onReport,
 }: MessageContextMenuProps) {
+  const t = useT();
   return (
     <ContextMenuPrimitive.Root>
       <ContextMenuPrimitive.Trigger asChild disabled={disabled}>
@@ -36,7 +39,7 @@ export function MessageContextMenu({
                 key={emoji}
                 onSelect={() => onReact(emoji)}
                 className="cursor-pointer rounded-full p-1 text-xl leading-none outline-none transition-transform focus:scale-125 focus:bg-muted"
-                aria-label={`React ${emoji}`}
+                aria-label={t('chatLive.chat.reactWith', { emoji })}
               >
                 {emoji}
               </ContextMenuPrimitive.Item>
@@ -44,14 +47,14 @@ export function MessageContextMenu({
             <ContextMenuPrimitive.Item
               onSelect={onMoreEmojis}
               className="ml-auto cursor-pointer rounded-full p-1.5 text-muted-foreground outline-none focus:bg-muted"
-              aria-label="More emoji"
+              aria-label={t('chatLive.chat.moreEmoji')}
             >
               <Plus className="w-4 h-4" />
             </ContextMenuPrimitive.Item>
           </div>
 
           <ContextMenuPrimitive.Item onSelect={onReply} className={itemClass}>
-            Reply
+            {t('chatLive.chat.reply')}
             <Reply className="w-4 h-4" />
           </ContextMenuPrimitive.Item>
           {canReport && (
@@ -59,7 +62,7 @@ export function MessageContextMenu({
               onSelect={onReport}
               className={`${itemClass} text-red-600 dark:text-red-400`}
             >
-              Report
+              {t('chatLive.chat.report')}
               <Flag className="w-4 h-4" />
             </ContextMenuPrimitive.Item>
           )}

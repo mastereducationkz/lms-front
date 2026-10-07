@@ -6,8 +6,11 @@ import {
 import { Skeleton } from '../ui/skeleton';
 import type { StarRule, StarsBreakdown as Breakdown } from '../../services/api/gamification';
 import {
-  barPercent, earlierLabel, isEmptyBreakdown, starRange, streakCopy,
+  barPercent, earlierLabel, isEmptyBreakdown, ruleCopy, sourceLabel, starRange, streakCopy,
 } from '../../lib/starsBreakdown';
+import { formatNumber } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 
 export type BreakdownState =
   | { status: 'loading' }
@@ -68,22 +71,23 @@ function StarTile() {
 }
 
 function Header({ titleId, empty, total }: { titleId: string; empty: boolean; total: number }) {
+  const t = useT();
   return (
     <div className="stars-header flex items-center gap-3">
       <StarTile />
       <div className="min-w-0">
         {empty ? (
           <>
-            <h2 id={titleId} className="text-base font-semibold text-foreground">Earn your first stars</h2>
-            <p className="text-sm text-foreground/70">Here is everything that adds stars to your total.</p>
+            <h2 id={titleId} className="text-base font-semibold text-foreground">{t('studentHome.stars.emptyTitle')}</h2>
+            <p className="text-sm text-foreground/70">{t('studentHome.stars.emptyHint')}</p>
           </>
         ) : (
           <>
             <h2 id={titleId} className="text-foreground">
-              <span className="text-2xl font-semibold tabular-nums">{total.toLocaleString('en-US')}</span>
-              <span className="ml-1.5 text-base font-medium">{total === 1 ? 'star' : 'stars'}</span>
+              <span className="text-2xl font-semibold tabular-nums">{formatNumber(total)}</span>
+              <span className="ml-1.5 text-base font-medium">{t('studentHome.stars.unit', { count: total })}</span>
             </h2>
-            <p className="text-sm text-foreground/70">Everything you have earned so far</p>
+            <p className="text-sm text-foreground/70">{t('studentHome.stars.earnedSoFar')}</p>
           </>
         )}
       </div>
@@ -106,7 +110,7 @@ function BarRow({ label, value, percent, tone }: { label: string; value: number;
       <div className="flex items-baseline justify-between gap-3 text-sm">
         <span className="min-w-0 truncate text-foreground">{label}</span>
         <span className={`tabular-nums font-medium ${value === 0 ? 'text-muted-foreground' : 'text-foreground'}`}>
-          {value.toLocaleString('en-US')}
+          {formatNumber(value)}
         </span>
       </div>
       <div className="stars-track h-1.5 overflow-hidden rounded-full" aria-hidden>
@@ -119,14 +123,15 @@ function BarRow({ label, value, percent, tone }: { label: string; value: number;
 }
 
 function SourceBars({ data }: { data: Breakdown }) {
+  const t = useT();
   const scale = data.earlier && data.earlier > 0
     ? [...data.sources, { key: 'other' as const, label: '', stars: data.earlier }]
     : data.sources;
   return (
-    <Section title="Where your stars came from">
+    <Section title={t('studentHome.stars.sourcesTitle')}>
       <ul className="flex flex-col gap-3">
         {data.sources.map((s) => (
-          <BarRow key={s.key} label={s.label} value={s.stars} percent={barPercent(s.stars, scale)} tone={s.key} />
+          <BarRow key={s.key} label={sourceLabel(s)} value={s.stars} percent={barPercent(s.stars, scale)} tone={s.key} />
         ))}
         {data.earlier ? (
           <BarRow
@@ -159,11 +164,13 @@ function StreakPanel({ data }: { data: Breakdown }) {
 }
 
 function RulesList({ rules, twoColumn = false }: { rules: StarRule[]; twoColumn?: boolean }) {
+  const t = useT();
   return (
-    <Section title="How to earn stars">
+    <Section title={t('studentHome.stars.howToEarn')}>
       <ul className={`grid gap-3 ${twoColumn ? '@[34rem]:grid-cols-2 @[34rem]:gap-x-8 @[34rem]:gap-y-4' : ''}`}>
         {rules.map((rule) => {
           const Icon = RULE_ICONS[rule.key] ?? Star;
+          const copy = ruleCopy(rule);
           return (
             <li key={rule.key} className="flex items-start gap-3">
               <span
@@ -175,12 +182,12 @@ function RulesList({ rules, twoColumn = false }: { rules: StarRule[]; twoColumn?
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-sm font-medium text-foreground">{rule.label}</span>
+                  <span className="text-sm font-medium text-foreground">{copy.label}</span>
                   <span className="flex-none text-sm font-semibold tabular-nums text-foreground">
                     {starRange(rule.min, rule.max)}
                   </span>
                 </div>
-                <p className="mt-0.5 text-[13px] leading-snug text-foreground/70">{rule.note}</p>
+                <p className="mt-0.5 text-[13px] leading-snug text-foreground/70">{copy.note}</p>
               </div>
             </li>
           );
@@ -191,9 +198,10 @@ function RulesList({ rules, twoColumn = false }: { rules: StarRule[]; twoColumn?
 }
 
 function LoadingPanel({ titleId }: { titleId: string }) {
+  const t = useT();
   return (
     <div className="@container flex flex-col gap-5" aria-busy="true">
-      <h2 id={titleId} className="sr-only">Loading your stars</h2>
+      <h2 id={titleId} className="sr-only">{t('studentHome.stars.loading')}</h2>
       <div className="flex items-center gap-3">
         <Skeleton className="h-10 w-10 rounded-xl" />
         <div className="space-y-2">
@@ -230,12 +238,13 @@ function LoadingPanel({ titleId }: { titleId: string }) {
 }
 
 function ErrorPanel({ titleId, onRetry }: { titleId: string; onRetry: () => void }) {
+  const t = useT();
   return (
     <div className="flex flex-col items-center gap-3 py-4 text-center" role="alert">
       <AlertCircle className="h-6 w-6 text-muted-foreground" aria-hidden />
       <div className="space-y-1">
-        <h2 id={titleId} className="text-sm font-semibold text-foreground">Couldn't load your stars</h2>
-        <p className="text-sm text-foreground/70">Check your connection and try again.</p>
+        <h2 id={titleId} className="text-sm font-semibold text-foreground">{t('studentHome.stars.loadFailed')}</h2>
+        <p className="text-sm text-foreground/70">{t('studentHome.stars.checkConnection')}</p>
       </div>
       <button
         type="button"
@@ -243,7 +252,7 @@ function ErrorPanel({ titleId, onRetry }: { titleId: string; onRetry: () => void
         className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover"
       >
         <RefreshCw className="h-3.5 w-3.5" aria-hidden />
-        Try again
+        {t('common.retry')}
       </button>
     </div>
   );

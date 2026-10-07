@@ -4,7 +4,13 @@ import { getDailyStreak } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { ShineBorder } from './magicui/shine-border';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { formatDate } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 import './StreakIcon.css';
+
+/** Sunday 4 Oct 2026 onwards: the calendar's Sun…Sat header, named in the reader's language. */
+const WEEK_FROM_SUNDAY = Array.from({ length: 7 }, (_, i) => new Date(2026, 9, 4 + i));
 
 type FlameState = 'lit' | 'flicker' | 'out';
 
@@ -32,6 +38,7 @@ function StreakFlame({ state, solo }: { state: FlameState; solo: boolean }) {
 
 const StreakIcon: React.FC = () => {
   const { user } = useAuth();
+  const t = useT();
   const [streakData, setStreakData] = useState<DailyStreakInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -99,15 +106,15 @@ const StreakIcon: React.FC = () => {
   const getTooltipText = () => {
     switch (streakData?.streak_status) {
       case 'active':
-        return `${streakData.daily_streak} day streak! Keep it up!`;
+        return t('studentHome.streak.active', { count: streakData.daily_streak });
       case 'at_risk':
-        return `${streakData.daily_streak} day streak at risk. Study today to maintain it!`;
+        return t('studentHome.streak.atRisk', { count: streakData.daily_streak });
       case 'broken':
-        return 'Streak broken. Start a new one today!';
+        return t('studentHome.streak.broken');
       case 'not_started':
-        return 'Start your learning streak today!';
+        return t('studentHome.streak.notStarted');
       default:
-        return 'Daily learning streak';
+        return t('studentHome.streak.default');
     }
   };
 
@@ -167,7 +174,7 @@ const StreakIcon: React.FC = () => {
     
     return {
       days,
-      monthName: new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      monthName: formatDate(new Date(currentYear, currentMonth), { month: 'long', year: 'numeric' })
     };
   };
 
@@ -219,20 +226,20 @@ const StreakIcon: React.FC = () => {
             <p className="text-sm text-muted-foreground mt-1">{getTooltipText()}</p>
             {typeof streakData.longest_streak === 'number' && streakData.longest_streak > 0 && (
               <p className="text-xs font-medium text-orange-600 dark:text-orange-400 mt-1">
-                Best streak: {streakData.longest_streak} day{streakData.longest_streak === 1 ? '' : 's'}
+                {t('studentHome.streak.best', { count: streakData.longest_streak })}
               </p>
             )}
             <p className="text-xs text-muted-foreground mt-2">
-              Your streak counts days you learn: a finished step, homework, a lesson attended, a live answer or a weekly test.
+              {t('studentHome.streak.rule')}
             </p>
           </div>
           
           {/* Calendar Grid */}
           <div className="grid grid-cols-7 gap-1">
             {/* Day headers */}
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-xs font-medium text-muted-foreground text-center py-1">
-                {day}
+            {WEEK_FROM_SUNDAY.map((date) => (
+              <div key={date.getDay()} className="text-xs font-medium text-muted-foreground text-center py-1">
+                {formatDate(date, { weekday: 'short' })}
               </div>
             ))}
             
@@ -268,11 +275,11 @@ const StreakIcon: React.FC = () => {
           <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-orange-500"></div>
-              <span className="text-muted-foreground">Active days</span>
+              <span className="text-muted-foreground">{t('studentHome.streak.activeDays')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded ring-2 ring-ring dark:ring-brand"></div>
-              <span className="text-muted-foreground">Today</span>
+              <span className="text-muted-foreground">{t('studentHome.streak.today')}</span>
             </div>
           </div>
         </PopoverContent>

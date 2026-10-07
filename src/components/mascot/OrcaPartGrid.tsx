@@ -9,10 +9,13 @@ import {
   CATEGORY_PARTS,
   isLockedPart,
   isRewardPart,
+  partLabel,
   type LockedParts,
   type MascotCategory,
   type MascotConfig,
 } from './config';
+import { useLocale, useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 
 interface PartGridProps {
   tab: MascotCategory;
@@ -24,11 +27,12 @@ interface PartGridProps {
 function Tile({ label, option, active, isLocked, isReward, onClick }: {
   label: string; option: MascotConfig; active: boolean; isLocked: boolean; isReward: boolean; onClick: () => void;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
-      title={isLocked ? `${label} — locked, tap to try it on` : label}
-      aria-label={isLocked ? `${label}, locked — try it on` : label}
+      title={isLocked ? t('studentHome.mascot.lockedTitle', { part: label }) : label}
+      aria-label={isLocked ? t('studentHome.mascot.lockedAria', { part: label }) : label}
       aria-pressed={active}
       onClick={onClick}
       className={`relative flex flex-col items-center gap-1 rounded-xl p-1.5 transition-colors ${
@@ -54,6 +58,8 @@ function Tile({ label, option, active, isLocked, isReward, onClick }: {
 }
 
 export default function OrcaPartGrid({ tab, config, locked, onPick }: PartGridProps) {
+  const t = useT();
+  const locale = useLocale();
   const parts = CATEGORY_PARTS[tab].map((part, index) => ({ part, index }));
   const free = parts.filter(({ index }) => !isRewardPart(tab, index));
   const rewards = parts.filter(({ index }) => isRewardPart(tab, index));
@@ -64,7 +70,7 @@ export default function OrcaPartGrid({ tab, config, locked, onPick }: PartGridPr
     return (
       <Tile
         key={part.key}
-        label={part.label}
+        label={partLabel(tab, index, locale)}
         option={option}
         active={config[tab] === index}
         isLocked={isLocked}
@@ -80,8 +86,8 @@ export default function OrcaPartGrid({ tab, config, locked, onPick }: PartGridPr
       {rewards.length > 0 && (
         <>
           <h4 className="mt-4 mb-2 text-xs font-semibold text-gray-700 dark:text-foreground inline-flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Earned with achievements
-            <span className="font-normal text-muted-foreground">· tap a locked one to try it on</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" /> {t('studentHome.mascot.earnedWithAchievements')}
+            <span className="font-normal text-muted-foreground">{t('studentHome.mascot.tapLockedToTry')}</span>
           </h4>
           <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">{rewards.map(tile)}</div>
         </>

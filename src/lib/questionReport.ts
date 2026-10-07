@@ -1,4 +1,5 @@
-const FALLBACK = 'Failed to submit report. Please try again.';
+import { activeLocale, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/sharedUi';
 
 /**
  * What to tell a student whose error report was refused.
@@ -11,7 +12,7 @@ const FALLBACK = 'Failed to submit report. Please try again.';
  * `detail` is only trusted when it is a string; FastAPI's validation errors put an array
  * there, which would otherwise render as "[object Object]".
  */
-export function reportErrorMessage(error: unknown): string {
+export function reportErrorMessage(error: unknown, locale: Locale = activeLocale()): string {
   const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
-  return typeof detail === 'string' && detail.trim() ? detail : FALLBACK;
+  return typeof detail === 'string' && detail.trim() ? detail : t('sharedUi.questionReport.submitFailed', undefined, locale);
 }

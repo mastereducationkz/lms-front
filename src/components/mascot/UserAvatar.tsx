@@ -4,6 +4,8 @@
  */
 import Orca from './Orca';
 import { resolveMascot } from './config';
+import { t } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/sharedUi';
 
 interface UserAvatarProps {
   userId?: number | string | null;
@@ -43,7 +45,7 @@ export default function UserAvatar({
       <Orca
         config={resolveMascot(mascot, userId)}
         size={size}
-        title={name ? `${name}'s orca` : 'Orca avatar'}
+        title={name ? t('sharedUi.mascot.avatarOf', { name }) : t('sharedUi.mascot.avatar')}
         className={`rounded-full shrink-0 ${className}`}
       />
     );

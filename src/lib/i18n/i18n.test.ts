@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { en, EN_NAMESPACES } from './en';
 import { ru, RU_NAMESPACES } from './ru';
 import type { Message } from './types';
 import './catalogs/curatorPages';
 import {
-  formatDate, formatDateTime, formatNumber, formatTime, intlLocale, localeForUser, plural, setActiveLocale, t, uiLocale,
+  deviceLocale, formatDate, formatDateTime, formatNumber, formatTime, intlLocale, localeForUser, plural, rememberDeviceLocale,
+  setActiveLocale, t, uiLocale,
 } from './index';
 
 const ROLES = ['student', 'parent', 'teacher', 'head_teacher', 'admin', 'curator', 'head_curator'];
@@ -22,10 +23,17 @@ describe('uiLocale — the one language rule', () => {
     expect(uiLocale('teacher', null)).toBe('en');
   });
 
-  it('has no stored preference yet, so a user reads by role', () => {
+  it('reads by role until the user chooses (Settings → Language)', () => {
     expect(localeForUser({ role: 'head_curator' })).toBe('ru');
-    expect(localeForUser({ role: 'admin' })).toBe('en');
-    expect(localeForUser(null)).toBe('en');
+    expect(localeForUser({ role: 'admin', ui_language: null })).toBe('en');
+  });
+
+  it('lets the user’s own choice override the role both ways', () => {
+    expect(localeForUser({ role: 'curator', ui_language: 'en' })).toBe('en');
+    expect(localeForUser({ role: 'head_curator', ui_language: 'en' })).toBe('en');
+    expect(localeForUser({ role: 'student', ui_language: 'ru' })).toBe('ru');
+    expect(localeForUser({ role: 'parent', ui_language: 'ru' })).toBe('ru');
+    expect(localeForUser({ role: 'curator', ui_language: 'kk' })).toBe('ru'); // not a choice we know
   });
 
   it('formats English as en-GB (day before month, 24-hour clock)', () => {
@@ -38,6 +46,32 @@ const placeholders = (m: Message): string[] => {
   const texts = typeof m === 'string' ? [m] : Object.values(m).filter((v): v is string => typeof v === 'string');
   return [...new Set(texts.flatMap((s) => [...s.matchAll(/\{(\w+)\}/g)].map((x) => x[1])))].sort();
 };
+
+describe('before anyone signs in (Q31)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const memoryStorage = () => {
+    const data = new Map<string, string>();
+    return { getItem: (k: string) => data.get(k) ?? null, setItem: (k: string, v: string) => void data.set(k, v) };
+  };
+
+  it('uses the language last used on this device, else English', () => {
+    vi.stubGlobal('localStorage', memoryStorage());
+    expect(localeForUser(null)).toBe('en');
+    rememberDeviceLocale('ru');
+    expect(deviceLocale()).toBe('ru');
+    expect(localeForUser(null)).toBe('ru');
+    expect(localeForUser({ role: 'student' })).toBe('en'); // a signed-in user is never the device's
+  });
+
+  it('falls back to English when storage is blocked or holds junk', () => {
+    vi.stubGlobal('localStorage', { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } });
+    expect(() => rememberDeviceLocale('ru')).not.toThrow();
+    expect(localeForUser(null)).toBe('en');
+    vi.stubGlobal('localStorage', { getItem: () => 'kk', setItem: () => undefined });
+    expect(localeForUser(null)).toBe('en');
+  });
+});
 
 describe('catalogs', () => {
   it('has the same namespaces in both languages', () => {

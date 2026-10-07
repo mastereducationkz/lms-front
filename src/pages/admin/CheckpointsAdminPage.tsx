@@ -10,10 +10,21 @@ import { useAuth } from '../../contexts/AuthContext';
 import { canEditCourseContent } from '../../lib/courseAccess';
 import {
   checkCheckpointQuiz, deadlineCountdown, formatDeadline, getCheckpointMatrix, lateLabel, listCheckpointDefinitions, listCheckpointGroups,
-  listUnitOptions, openCheckpoint, reopenCheckpoint, STATUS_CLASS, STATUS_LABEL, updateCheckpointDeadline,
+  listUnitOptions, openCheckpoint, reopenCheckpoint, STATUS_CLASS, updateCheckpointDeadline,
   updateCheckpointDefinition, updateCheckpointGroupSettings,
   type CheckpointCell, type CheckpointDefinition, type CheckpointGroup, type CheckpointMatrix, type CheckpointQuizCheck, type UnitOption,
 } from '../../services/api/checkpoints';
+import type { MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/adminPages';
+
+const STATUS_KEY: Record<CheckpointCell['status'], MessageKey> = {
+  locked: 'adminPages.checkpoints.status.locked',
+  available: 'adminPages.checkpoints.status.available',
+  completed: 'adminPages.checkpoints.status.completed',
+  overdue: 'adminPages.checkpoints.status.overdue',
+  reopened: 'adminPages.checkpoints.status.reopened',
+};
 
 /** Local-datetime input value → ISO string the backend stores as naive UTC. */
 const toIso = (local: string) => (local ? new Date(local).toISOString() : undefined);
@@ -28,11 +39,13 @@ const toLocalInputValue = (iso: string | null) => {
 };
 
 function StatusChip({ status, skipped }: { status: CheckpointCell['status']; skipped?: boolean }) {
-  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASS[status]}`}>{skipped ? 'Skipped' : STATUS_LABEL[status]}</span>;
+  const t = useT();
+  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASS[status]}`}>{skipped ? t('adminPages.checkpoints.status.skipped') : t(STATUS_KEY[status])}</span>;
 }
 
 export default function CheckpointsAdminPage() {
   const { user } = useAuth();
+  const t = useT();
   const role = user?.role ?? '';
   // Mirrors the backend: every staff role manages the groups it can see (the server scopes
   // teachers and curators to their own groups); definitions belong to admins and head roles.
@@ -53,9 +66,9 @@ export default function CheckpointsAdminPage() {
   const [unitOptions, setUnitOptions] = useState<Record<number, UnitOption[]>>({});
 
   useEffect(() => {
-    listCheckpointGroups('sat').then(setGroups).catch(() => toast.error('Failed to load groups'));
-    listCheckpointDefinitions().then(setDefinitions).catch(() => toast.error('Failed to load definitions'));
-  }, []);
+    listCheckpointGroups('sat').then(setGroups).catch(() => toast.error(t('adminPages.checkpoints.loadGroupsFailed')));
+    listCheckpointDefinitions().then(setDefinitions).catch(() => toast.error(t('adminPages.checkpoints.loadDefinitionsFailed')));
+  }, [t]);
 
   useEffect(() => {
     const wanted = new Map<number, number>();               // course_id -> a definition of that course
@@ -65,11 +78,11 @@ export default function CheckpointsAdminPage() {
         if (prev[courseId]) return prev;
         listUnitOptions(definitionId)
           .then((opts) => setUnitOptions((p) => ({ ...p, [courseId]: opts })))
-          .catch(() => toast.error('Failed to load the course units'));
+          .catch(() => toast.error(t('adminPages.checkpoints.loadUnitsFailed')));
         return prev;
       });
     });
-  }, [definitions]);
+  }, [definitions, t]);
 
   const reloadGen = useRef(0);
 
@@ -81,11 +94,11 @@ export default function CheckpointsAdminPage() {
       const result = await getCheckpointMatrix(groupId);
       if (reloadGen.current === gen) setMatrix(result);
     } catch {
-      toast.error('Failed to load matrix');
+      toast.error(t('adminPages.checkpoints.loadMatrixFailed'));
     } finally {
       setLoading(false);
     }
-  }, [groupId]);
+  }, [groupId, t]);
 
   useEffect(() => { setSelected(null); setMatrix(null); void reload(); }, [reload]);
 
@@ -124,7 +137,7 @@ export default function CheckpointsAdminPage() {
     try {
       await fn();
     } catch (e: any) {
-      toast.error(e?.response?.data?.detail ?? `${label} failed`);
+      toast.error(e?.response?.data?.detail ?? t('adminPages.checkpoints.actionFailed', { action: label }));
       setBusy(false);
       return false;
     }
@@ -145,21 +158,21 @@ export default function CheckpointsAdminPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <h1 className="text-2xl font-semibold">SAT Checkpoints</h1>
+      <h1 className="text-2xl font-semibold">{t('adminPages.checkpoints.title')}</h1>
 
       {/* ---- group picker + settings ---- */}
       <div className="flex flex-wrap items-end gap-3">
         <div className="w-96">
-          <label className="text-xs text-muted-foreground">Group</label>
+          <label className="text-xs text-muted-foreground">{t('adminPages.checkpoints.group')}</label>
           <SearchableSelect
             className="w-full"
             value={groupId ? String(groupId) : null}
             onChange={(v) => setGroupId(Number(v))}
-            placeholder="Choose a SAT group"
-            searchPlaceholder="Search by group or teacher…"
+            placeholder={t('adminPages.checkpoints.chooseGroup')}
+            searchPlaceholder={t('adminPages.checkpoints.searchGroup')}
             options={groups.map((g) => ({
               value: String(g.id),
-              label: `${g.name}${g.checkpoints_enabled ? ' · ON' : ''}`,
+              label: g.checkpoints_enabled ? t('adminPages.checkpoints.groupOn', { name: g.name }) : g.name,
               hint: `${g.teacher_name ? `${g.teacher_name} · ` : ''}${g.student_count}`,
             }))}
           />
@@ -168,27 +181,27 @@ export default function CheckpointsAdminPage() {
           <>
             <label className="flex items-center gap-2 rounded-lg border px-3 h-10 select-none">
               <input type="checkbox" checked={group.checkpoints_enabled} disabled={!canManage || busy}
-                     onChange={(e) => run(e.target.checked ? 'Checkpoints enabled' : 'Checkpoints disabled',
+                     onChange={(e) => run(e.target.checked ? t('adminPages.checkpoints.enabled') : t('adminPages.checkpoints.disabled'),
                        () => updateCheckpointGroupSettings(group.id, { enabled: e.target.checked }))} />
-              <span className="text-sm">Checkpoints enabled</span>
+              <span className="text-sm">{t('adminPages.checkpoints.enabled')}</span>
             </label>
             <div>
-              <label className="text-xs text-muted-foreground">Auto-open from checkpoint #</label>
+              <label className="text-xs text-muted-foreground">{t('adminPages.checkpoints.autoOpenFrom')}</label>
               <Input key={group.id} type="number" min={1} className="w-24" defaultValue={group.checkpoints_start_number} disabled={!canManage || busy}
                      onBlur={(e) => {
                        const n = Number(e.target.value);
                        if (n >= 1 && n !== group.checkpoints_start_number) {
-                         void run('Start number saved', () => updateCheckpointGroupSettings(group.id, { start_number: n }));
+                         void run(t('adminPages.checkpoints.startSaved'), () => updateCheckpointGroupSettings(group.id, { start_number: n }));
                        }
                      }} />
               <p className="mt-1 max-w-xs text-[11px] leading-snug text-muted-foreground">
-                Checkpoints below it never auto-open (a mid-course group). Switching checkpoints on marks what students already earned as skipped; only checkpoints earned afterwards open. Checkpoints never hold units back.
+                {t('adminPages.checkpoints.startHelp')}
                 {suggestedStart != null && (
-                  <> Suggested: <strong className="text-foreground">{suggestedStart}</strong>{suggestedStart > 1 ? ` — half the group has finished block ${suggestedStart - 1}.` : ' — nobody has finished block 1 yet.'}</>
+                  <> {t('adminPages.checkpoints.suggested')} <strong className="text-foreground">{suggestedStart}</strong> {suggestedStart > 1 ? t('adminPages.checkpoints.suggestedHalfDone', { block: suggestedStart - 1 }) : t('adminPages.checkpoints.suggestedNoneDone')}</>
                 )}
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => reload()} disabled={loading} aria-label="Reload matrix">
+            <Button variant="outline" size="sm" onClick={() => reload()} disabled={loading} aria-label={t('adminPages.checkpoints.reloadMatrix')}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             </Button>
           </>
@@ -201,17 +214,17 @@ export default function CheckpointsAdminPage() {
           <table className="min-w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
-                <th className="px-3 py-2 text-left">Student</th>
+                <th className="px-3 py-2 text-left">{t('adminPages.checkpoints.student')}</th>
                 {matrix.definitions.map((d) => (
                   <th key={d.id} className="px-3 py-2 text-left whitespace-nowrap">
-                    <div>{d.title}{!d.is_active && <span className="ml-1 text-[10px] text-muted-foreground">(inactive)</span>}</div>
+                    <div>{d.title}{!d.is_active && <span className="ml-1 text-[10px] text-muted-foreground">{t('adminPages.checkpoints.inactive')}</span>}</div>
                     {canManage && (
                       <div className="mt-1 flex gap-1">
                         <Button size="sm" variant="outline" disabled={busy}
-                                onClick={() => run(`${d.title} opened for group`, () => openCheckpoint(matrix.group.id, d.id, {}))}>Open all</Button>
+                                onClick={() => run(t('adminPages.checkpoints.openedForGroup', { title: d.title }), () => openCheckpoint(matrix.group.id, d.id, {}))}>{t('adminPages.checkpoints.openAll')}</Button>
                         <Button size="sm" variant="outline" disabled={busy}
-                                onClick={() => window.confirm(`Reopen ${d.title} for the whole group (new 24-hour deadline)?`)
-                                  && run(`${d.title} reopened for group`, () => reopenCheckpoint(matrix.group.id, d.id, {}))}>Reopen all</Button>
+                                onClick={() => window.confirm(t('adminPages.checkpoints.reopenAllConfirm', { title: d.title }))
+                                  && run(t('adminPages.checkpoints.reopenedForGroup', { title: d.title }), () => reopenCheckpoint(matrix.group.id, d.id, {}))}>{t('adminPages.checkpoints.reopenAll')}</Button>
                       </div>
                     )}
                   </th>
@@ -231,16 +244,16 @@ export default function CheckpointsAdminPage() {
                         type="button"
                         className="text-left"
                         onClick={() => { setSelected({ studentId: s.student_id, cell }); setDeadlineInput(toLocalInputValue(cell.deadline)); }}
-                        aria-label={`${s.name} — Checkpoint ${cell.number}, ${STATUS_LABEL[cell.status]}`}
+                        aria-label={t('adminPages.checkpoints.cellLabel', { name: s.name, number: cell.number, status: t(STATUS_KEY[cell.status]) })}
                       >
                         <StatusChip status={cell.status} skipped={cell.skipped} />
                         <div className="mt-1 text-[11px] text-muted-foreground">
-                          <span className="inline-flex items-center gap-0.5 align-[-1px]" aria-label={`${cell.units.filter((u) => u.completed).length} of ${cell.units.length} units completed`}>
+                          <span className="inline-flex items-center gap-0.5 align-[-1px]" aria-label={t('adminPages.checkpoints.unitsCompleted', { done: cell.units.filter((u) => u.completed).length, total: cell.units.length })}>
                             {cell.units.map((u) => (u.completed
                               ? <Check key={u.lesson_id} className="h-3 w-3 text-emerald-600 dark:text-emerald-400" strokeWidth={3} aria-hidden="true" />
                               : <Circle key={u.lesson_id} className="h-2 w-2" aria-hidden="true" />))}
                           </span>
-                          {cell.deadline && cell.status !== 'completed' && <> · due {formatDeadline(cell.deadline)} ({deadlineCountdown(cell.deadline)})</>}
+                          {cell.deadline && cell.status !== 'completed' && <> · {t('adminPages.checkpoints.due', { date: formatDeadline(cell.deadline), countdown: deadlineCountdown(cell.deadline) })}</>}
                           {cell.status === 'completed' && <> · {cell.correct_answers}/{cell.total_questions} ({cell.percentage}%)</>}
                           {cell.late && <span className="text-red-600 dark:text-red-400"> · {lateLabel(cell)}</span>}
                         </div>
@@ -252,7 +265,7 @@ export default function CheckpointsAdminPage() {
             </tbody>
           </table>
           <p className="px-3 py-2 text-[11px] text-muted-foreground border-t">
-            Under each chip, one mark per required unit in order: <Check className="inline h-3 w-3 align-[-2px] text-emerald-600 dark:text-emerald-400" strokeWidth={3} aria-label="check" /> completed, <Circle className="inline h-2 w-2" aria-label="circle" /> not yet. A checkpoint opens for a student when every mark is a check (definition active, group enabled, number not below the group's start). Deadline is 24 hours from opening; a later submission is accepted and shown as late.
+            {t('adminPages.checkpoints.legendStart')} <Check className="inline h-3 w-3 align-[-2px] text-emerald-600 dark:text-emerald-400" strokeWidth={3} aria-label={t('adminPages.checkpoints.legendCheck')} /> {t('adminPages.checkpoints.legendCompleted')} <Circle className="inline h-2 w-2" aria-label={t('adminPages.checkpoints.legendCircle')} /> {t('adminPages.checkpoints.legendNotYet')} {t('adminPages.checkpoints.legendRule')}
           </p>
         </div>
       )}
@@ -262,7 +275,7 @@ export default function CheckpointsAdminPage() {
         <div className="rounded-lg border p-4 space-y-3 max-w-xl">
           <div className="flex items-center justify-between">
             <h2 className="font-medium">
-              {matrix.students.find((s) => s.student_id === selected.studentId)?.name} · Checkpoint {selected.cell.number}
+              {t('adminPages.checkpoints.cellTitle', { name: matrix.students.find((s) => s.student_id === selected.studentId)?.name ?? '', number: selected.cell.number })}
             </h2>
             <StatusChip status={selected.cell.status} skipped={selected.cell.skipped} />
           </div>
@@ -270,46 +283,46 @@ export default function CheckpointsAdminPage() {
             {selected.cell.units.map((u) => (
               <li key={u.lesson_id} className="flex items-start gap-1.5">
                 {u.completed
-                  ? <SquareCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label="Completed" />
-                  : <Square className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-label="Not completed" />}
-                <span>{u.kind === 'verbal' ? 'Verbal' : 'Math'} — {u.title}</span>
+                  ? <SquareCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label={t('adminPages.checkpoints.unitCompleted')} />
+                  : <Square className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-label={t('adminPages.checkpoints.unitNotCompleted')} />}
+                <span>{u.kind === 'verbal' ? t('adminPages.checkpoints.verbal') : t('adminPages.checkpoints.math')} — {u.title}</span>
               </li>
             ))}
           </ul>
           {selected.cell.locked_reason && <p className="text-sm text-muted-foreground">{selected.cell.locked_reason}</p>}
           <dl className="grid grid-cols-2 gap-x-4 text-xs text-muted-foreground">
-            <dt>Opened</dt><dd>{formatDeadline(selected.cell.opened_at) || '—'} {selected.cell.opened_by ? `(${selected.cell.opened_by})` : ''}</dd>
-            <dt>Deadline</dt><dd>{formatDeadline(selected.cell.deadline) || '—'}</dd>
-            <dt>Submitted</dt><dd>{formatDeadline(selected.cell.submitted_at) || '—'}{selected.cell.submitted_at && (selected.cell.late ? <span className="text-red-600 dark:text-red-400"> · {lateLabel(selected.cell)}</span> : ' · on time')}</dd>
-            <dt>Result</dt><dd>{selected.cell.percentage != null ? `${selected.cell.correct_answers}/${selected.cell.total_questions} (${selected.cell.percentage}%)` : '—'}</dd>
-            <dt>Reopened</dt><dd>{selected.cell.reopen_count}×</dd>
+            <dt>{t('adminPages.checkpoints.opened')}</dt><dd>{formatDeadline(selected.cell.opened_at) || '—'} {selected.cell.opened_by ? `(${selected.cell.opened_by})` : ''}</dd>
+            <dt>{t('adminPages.checkpoints.deadline')}</dt><dd>{formatDeadline(selected.cell.deadline) || '—'}</dd>
+            <dt>{t('adminPages.checkpoints.submitted')}</dt><dd>{formatDeadline(selected.cell.submitted_at) || '—'}{selected.cell.submitted_at && (selected.cell.late ? <span className="text-red-600 dark:text-red-400"> · {lateLabel(selected.cell)}</span> : ` · ${t('adminPages.checkpoints.onTime')}`)}</dd>
+            <dt>{t('adminPages.checkpoints.result')}</dt><dd>{selected.cell.percentage != null ? `${selected.cell.correct_answers}/${selected.cell.total_questions} (${selected.cell.percentage}%)` : '—'}</dd>
+            <dt>{t('adminPages.checkpoints.reopenCount')}</dt><dd>{selected.cell.reopen_count}×</dd>
           </dl>
           {canManage && (
             <div className="flex flex-wrap items-end gap-2">
               {selected.cell.status === 'locked' && (
-                <Button size="sm" disabled={busy} onClick={() => run('Checkpoint opened',
+                <Button size="sm" disabled={busy} onClick={() => run(t('adminPages.checkpoints.checkpointOpened'),
                   () => openCheckpoint(matrix.group.id, selected.cell.checkpoint_id, { student_ids: [selected.studentId] }))}>
-                  Open for student
+                  {t('adminPages.checkpoints.openForStudent')}
                 </Button>
               )}
               {selected.cell.status !== 'locked' && (
-                <Button size="sm" variant="outline" disabled={busy} onClick={() => run('Checkpoint reopened',
+                <Button size="sm" variant="outline" disabled={busy} onClick={() => run(t('adminPages.checkpoints.checkpointReopened'),
                   () => reopenCheckpoint(matrix.group.id, selected.cell.checkpoint_id, { student_ids: [selected.studentId] }))}>
-                  Reopen (new 24 hours)
+                  {t('adminPages.checkpoints.reopenForStudent')}
                 </Button>
               )}
               {selected.cell.id != null && (
                 <>
                   <div>
-                    <label className="text-xs text-muted-foreground">New deadline (your local time)</label>
+                    <label className="text-xs text-muted-foreground">{t('adminPages.checkpoints.newDeadline')}</label>
                     <Input type="datetime-local" value={deadlineInput} onChange={(e) => setDeadlineInput(e.target.value)} />
                   </div>
                   <Button size="sm" variant="outline" disabled={busy || !deadlineInput} onClick={async () => {
-                    const ok = await run('Deadline updated',
+                    const ok = await run(t('adminPages.checkpoints.deadlineUpdated'),
                       () => updateCheckpointDeadline(selected.cell.id!, toIso(deadlineInput)!));
                     if (ok) setDeadlineInput('');
                   }}>
-                    Set deadline
+                    {t('adminPages.checkpoints.setDeadline')}
                   </Button>
                 </>
               )}
@@ -320,16 +333,16 @@ export default function CheckpointsAdminPage() {
 
       {/* ---- definitions ---- */}
       <div className="space-y-2">
-        <h2 className="font-medium">Checkpoint definitions</h2>
+        <h2 className="font-medium">{t('adminPages.checkpoints.definitions')}</h2>
         <div className="overflow-x-auto rounded-lg border">
           <table className="min-w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
                 <th className="px-3 py-2 text-left">#</th>
-                <th className="px-3 py-2 text-left">Active</th>
-                <th className="px-3 py-2 text-left">Required units (2 Verbal lessons + 1 Math lesson; a lesson may be 2 units)</th>
-                <th className="px-3 py-2 text-left">Questions</th>
-                <th className="px-3 py-2 text-left">Quiz</th>
+                <th className="px-3 py-2 text-left">{t('adminPages.checkpoints.active')}</th>
+                <th className="px-3 py-2 text-left">{t('adminPages.checkpoints.requiredUnits')}</th>
+                <th className="px-3 py-2 text-left">{t('adminPages.checkpoints.questions')}</th>
+                <th className="px-3 py-2 text-left">{t('adminPages.checkpoints.quiz')}</th>
               </tr>
             </thead>
             <tbody>
@@ -345,8 +358,8 @@ export default function CheckpointsAdminPage() {
                     <td className="px-3 py-2 whitespace-nowrap">{d.title}</td>
                     <td className="px-3 py-2">
                       <input type="checkbox" checked={d.is_active} disabled={!canEditDefinitions || busy}
-                             aria-label={`${d.title} active`}
-                             onChange={(e) => run(`${d.title} ${e.target.checked ? 'activated' : 'deactivated'}`,
+                             aria-label={t('adminPages.checkpoints.definitionActive', { title: d.title })}
+                             onChange={(e) => run(t(e.target.checked ? 'adminPages.checkpoints.definitionActivated' : 'adminPages.checkpoints.definitionDeactivated', { title: d.title }),
                                () => updateCheckpointDefinition(d.id, { is_active: e.target.checked }))} />
                     </td>
                     <td className="min-w-[24rem] px-3 py-2">
@@ -362,12 +375,12 @@ export default function CheckpointsAdminPage() {
                           {unitsChanged && (
                             <div className="flex flex-wrap items-center gap-2">
                               <Button size="sm" variant="outline" disabled={busy || !unitsValid} onClick={() => {
-                                void run(`${d.title} units saved`, () => updateCheckpointDefinition(d.id, {
+                                void run(t('adminPages.checkpoints.unitsSaved', { title: d.title }), () => updateCheckpointDefinition(d.id, {
                                   required_units: edit.map((u) => ({ lesson_id: u.lesson_id, kind: u.kind })),
                                 })).then((ok) => { if (ok) discardUnits(); });
-                              }}>Save</Button>
-                              <Button size="sm" variant="ghost" disabled={busy} onClick={discardUnits}>Cancel</Button>
-                              {!unitsValid && <span className="text-[11px] text-red-600 dark:text-red-400">Pick 2–3 Verbal and 1–2 Math units (4 at most)</span>}
+                              }}>{t('common.save')}</Button>
+                              <Button size="sm" variant="ghost" disabled={busy} onClick={discardUnits}>{t('common.cancel')}</Button>
+                              {!unitsValid && <span className="text-[11px] text-red-600 dark:text-red-400">{t('adminPages.checkpoints.unitsInvalid')}</span>}
                             </div>
                           )}
                         </div>
@@ -380,8 +393,8 @@ export default function CheckpointsAdminPage() {
                     <td className="px-3 py-2 whitespace-nowrap">
                       {d.question_count}/{d.total_questions}
                       <Button size="sm" variant="ghost" className="ml-1" onClick={async () => {
-                        try { const res = await checkCheckpointQuiz(d.id); setChecks((prev) => ({ ...prev, [d.id]: res })); } catch { toast.error('Check failed'); }
-                      }}>Check</Button>
+                        try { const res = await checkCheckpointQuiz(d.id); setChecks((prev) => ({ ...prev, [d.id]: res })); } catch { toast.error(t('adminPages.checkpoints.checkFailed')); }
+                      }}>{t('adminPages.checkpoints.check')}</Button>
                       {check && (
                         <div className="text-[11px] text-muted-foreground">
                           E{check.by_difficulty.easy} M{check.by_difficulty.medium} H{check.by_difficulty.hard} ?{check.by_difficulty.unset}
@@ -394,9 +407,9 @@ export default function CheckpointsAdminPage() {
                           teachers edit them (2026-10-03). */}
                       {d.quiz ? (
                         canEditCourseContent(role) ? (
-                          <Link className="text-primary hover:underline" to={`/course/${d.quiz.course_id}/lesson/${d.quiz.lesson_id}/edit`}>Edit questions</Link>
+                          <Link className="text-primary hover:underline" to={`/course/${d.quiz.course_id}/lesson/${d.quiz.lesson_id}/edit`}>{t('adminPages.checkpoints.editQuestions')}</Link>
                         ) : (
-                          <Link className="text-primary hover:underline" to={`/course/${d.quiz.course_id}/lesson/${d.quiz.lesson_id}`}>View questions</Link>
+                          <Link className="text-primary hover:underline" to={`/course/${d.quiz.course_id}/lesson/${d.quiz.lesson_id}`}>{t('adminPages.checkpoints.viewQuestions')}</Link>
                         )
                       ) : '—'}
                     </td>

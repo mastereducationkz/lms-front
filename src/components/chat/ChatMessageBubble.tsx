@@ -5,6 +5,8 @@ import { ChatAttachment } from './ChatAttachment';
 import { MessageReactions } from './MessageReactions';
 import { EmojiPicker } from './EmojiPicker';
 import { MessageContextMenu } from './MessageContextMenu';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 
 /** A chat message augmented with client-only optimistic-send state. `_status`
  * undefined = confirmed by the server; "pending" = awaiting the echo; "failed" = the
@@ -50,6 +52,7 @@ function ReadReceipt({ message }: { message: Message }) {
 export function ChatMessageBubble({
   message, isMine, currentUserId, formatTime, onReply, onReact, onJumpTo, onRetry, onReport, registerRef,
 }: ChatMessageBubbleProps) {
+  const t = useT();
   const [pickerOpen, setPickerOpen] = useState(false);
   const isPending = message._status === 'pending';
   const isFailed = message._status === 'failed';
@@ -66,8 +69,8 @@ export function ChatMessageBubble({
         onClick={() => onReply(message)}
         disabled={unsent}
         className="p-1 rounded-full text-gray-400 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent"
-        aria-label="Reply"
-        title="Reply"
+        aria-label={t('chatLive.chat.reply')}
+        title={t('chatLive.chat.reply')}
       >
         <Reply className="w-4 h-4" />
       </button>
@@ -81,8 +84,8 @@ export function ChatMessageBubble({
           type="button"
           disabled={unsent}
           className="p-1 rounded-full text-gray-400 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent"
-          aria-label="React"
-          title="React"
+          aria-label={t('chatLive.chat.react')}
+          title={t('chatLive.chat.react')}
         >
           <SmilePlus className="w-4 h-4" />
         </button>
@@ -107,10 +110,10 @@ export function ChatMessageBubble({
           }`}
         >
           <span className={`block text-[11px] font-semibold ${isMine ? 'text-blue-50' : 'text-brand'}`}>
-            {message.reply_preview.sender_name || 'Message'}
+            {message.reply_preview.sender_name || t('chatLive.chat.message')}
           </span>
           <span className={`block text-xs truncate ${isMine ? 'text-blue-50/90' : 'text-muted-foreground'}`}>
-            {message.reply_preview.content || (message.reply_preview.file_url ? <><Paperclip className="inline h-3 w-3 mr-1 align-[-2px]" aria-hidden="true" />Attachment</> : '')}
+            {message.reply_preview.content || (message.reply_preview.file_url ? <><Paperclip className="inline h-3 w-3 mr-1 align-[-2px]" aria-hidden="true" />{t('chatLive.chat.attachment')}</> : '')}
           </span>
         </button>
       )}
@@ -122,14 +125,14 @@ export function ChatMessageBubble({
           isMine ? 'text-blue-100' : 'text-muted-foreground'
         }`}>
           {formatTime(message.created_at)}
-          {isPending && <span>· sending…</span>}
+          {isPending && <span>· {t('chatLive.chat.sending')}</span>}
           {isFailed && (
             <button
               type="button"
               onClick={() => onRetry(message)}
               className="font-semibold text-red-200 underline hover:text-white"
             >
-              · failed · retry
+              · {t('chatLive.chat.failedRetry')}
             </button>
           )}
           {isMine && !unsent && <ReadReceipt message={message} />}

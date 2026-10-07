@@ -43,6 +43,8 @@ import {
 import Skeleton from '../components/Skeleton';
 import InstallAppCard from '../components/pwa/InstallAppCard';
 import { formatDate } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherInsights';
 
 interface ManagedCourse {
   id: number;
@@ -101,6 +103,7 @@ interface CourseTeachersData {
 
 export default function HeadTeacherDashboardPage() {
   const navigate = useNavigate();
+  const tr = useT();
   const [courses, setCourses] = useState<ManagedCourse[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [teachersData, setTeachersData] = useState<CourseTeachersData | null>(null);
@@ -315,8 +318,8 @@ export default function HeadTeacherDashboardPage() {
       {/* Header & Controls */}
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
         <div className="min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Head Teacher Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Overview of teacher performance and course activity</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{tr('teacherInsights.headDashboard.title')}</h1>
+          <p className="text-muted-foreground mt-1">{tr('teacherInsights.headDashboard.subtitle')}</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-2 max-w-full bg-card p-2 rounded-xl border shadow-sm">
@@ -324,12 +327,12 @@ export default function HeadTeacherDashboardPage() {
             type="text"
             value={teacherSearch}
             onChange={(e) => setTeacherSearch(e.target.value)}
-            placeholder="Search teacher…"
+            placeholder={tr('teacherInsights.headDashboard.searchTeacher')}
             className="w-52 max-w-full min-w-0 px-3 py-2 text-sm bg-transparent border border-border rounded-lg outline-none focus:border-brand"
           />
           <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
             <SelectTrigger className="w-[240px] max-w-full border-0 bg-transparent font-medium focus:ring-0">
-              <SelectValue placeholder="Select a course" />
+              <SelectValue placeholder={tr('teacherInsights.headDashboard.selectCourse')} />
             </SelectTrigger>
             <SelectContent>
               {courses.map((course) => (
@@ -346,7 +349,7 @@ export default function HeadTeacherDashboardPage() {
             <PopoverTrigger asChild>
               <Button
                 id="date"
-                variant={"ghost"}
+                variant="ghost"
                 className={cn(
                   "w-[260px] max-w-full justify-start text-left font-normal hover:bg-muted/60",
                   !dateRange && "text-muted-foreground"
@@ -356,14 +359,14 @@ export default function HeadTeacherDashboardPage() {
                 {dateRange?.from ? (
                   dateRange.to ? (
                     <>
-                      {format(dateRange.from, "LLL dd, y")} -{" "}
-                      {format(dateRange.to, "LLL dd, y")}
+                      {formatDate(dateRange.from)} -{" "}
+                      {formatDate(dateRange.to)}
                     </>
                   ) : (
-                    format(dateRange.from, "LLL dd, y")
+                    formatDate(dateRange.from)
                   )
                 ) : (
-                  <span>Pick a date range</span>
+                  <span>{tr('teacherInsights.headDashboard.pickDateRange')}</span>
                 )}
               </Button>
             </PopoverTrigger>
@@ -388,11 +391,17 @@ export default function HeadTeacherDashboardPage() {
       {(attendanceGaps.length > 0 || hwTeachers.length > 0) && (() => {
         const isHw = oversightTab === 'homework';
         const teachers = isHw ? hwTeachers : attendanceGaps;
-        const metricLabel = isHw ? 'Groups missing HW' : 'Lessons missing';
+        const metricLabel = isHw ? tr('teacherInsights.headDashboard.oversight.groupsMissingHw') : tr('teacherInsights.headDashboard.oversight.lessonsMissing');
         const totalMetric = teachers.reduce((s, t) => s + t.total_lessons, 0);
         const summary = teachers.length === 0
-          ? (isHw ? 'All groups with a lesson today got homework' : 'No unmarked attendance')
-          : `${teachers.length} teacher${teachers.length === 1 ? '' : 's'} · ${totalMetric} ${isHw ? 'group' : 'lesson'}${totalMetric === 1 ? '' : 's'} ${isHw ? 'without homework today' : 'unmarked'} · click a teacher to see groups`;
+          ? (isHw ? tr('teacherInsights.headDashboard.oversight.allGotHomework') : tr('teacherInsights.headDashboard.oversight.noUnmarked'))
+          : [
+              tr('teacherInsights.headDashboard.oversight.teachersCount', { count: teachers.length }),
+              isHw
+                ? tr('teacherInsights.headDashboard.oversight.groupsWithoutHw', { count: totalMetric })
+                : tr('teacherInsights.headDashboard.oversight.lessonsUnmarked', { count: totalMetric }),
+              tr('teacherInsights.headDashboard.oversight.clickTeacher'),
+            ].join(' · ');
         const TabBtn = ({ id, label, count }: { id: 'attendance' | 'homework'; label: string; count: number }) => (
           <button
             onClick={() => switchOversightTab(id)}
@@ -415,13 +424,13 @@ export default function HeadTeacherDashboardPage() {
                 <div>
                   <CardTitle className="text-base flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    Teacher Oversight
+                    {tr('teacherInsights.headDashboard.oversight.title')}
                   </CardTitle>
                   <CardDescription>{summary}</CardDescription>
                 </div>
                 <div className="flex items-center gap-1 bg-muted/60 rounded-lg p-1 self-start">
-                  <TabBtn id="attendance" label="Attendance" count={attendanceGaps.length} />
-                  <TabBtn id="homework" label="Homework" count={hwTeachers.length} />
+                  <TabBtn id="attendance" label={tr('teacherInsights.headDashboard.oversight.tabAttendance')} count={attendanceGaps.length} />
+                  <TabBtn id="homework" label={tr('teacherInsights.headDashboard.oversight.tabHomework')} count={hwTeachers.length} />
                 </div>
               </div>
             </CardHeader>
@@ -430,8 +439,8 @@ export default function HeadTeacherDashboardPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50/80 dark:bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
-                      <th className="text-left font-medium px-4 py-2.5">Teacher</th>
-                      <th className="text-right font-medium px-4 py-2.5 w-24">Groups</th>
+                      <th className="text-left font-medium px-4 py-2.5">{tr('teacherInsights.headDashboard.col.teacher')}</th>
+                      <th className="text-right font-medium px-4 py-2.5 w-24">{tr('teacherInsights.headDashboard.col.groups')}</th>
                       <th className="text-right font-medium px-4 py-2.5 w-40">{metricLabel}</th>
                     </tr>
                   </thead>
@@ -473,18 +482,18 @@ export default function HeadTeacherDashboardPage() {
                                   <p className="truncate font-medium">{g.group_name}</p>
                                   {!isHw && g.oldest && (
                                     <p className="text-xs text-muted-foreground">
-                                      oldest: {formatDate(new Date(g.oldest))}
+                                      {tr('teacherInsights.headDashboard.oversight.oldest', { date: formatDate(new Date(g.oldest)) })}
                                     </p>
                                   )}
                                   {isHw && (
-                                    <p className="text-xs text-muted-foreground">no homework today</p>
+                                    <p className="text-xs text-muted-foreground">{tr('teacherInsights.headDashboard.oversight.noHomeworkToday')}</p>
                                   )}
                                 </div>
                               </td>
                               <td className="px-4 py-2 text-right text-muted-foreground">
                                 {isHw
                                   ? '—'
-                                  : `${g.lessons_missing} lesson${g.lessons_missing === 1 ? '' : 's'}`}
+                                  : tr('common.lessons', { count: g.lessons_missing })}
                               </td>
                               <td className="px-4 py-2 text-right">
                                 <Button
@@ -498,7 +507,7 @@ export default function HeadTeacherDashboardPage() {
                                   variant="ghost"
                                   className="text-xs h-7"
                                 >
-                                  {isHw ? 'Assign' : 'Mark'}
+                                  {isHw ? tr('teacherInsights.headDashboard.oversight.assign') : tr('teacherInsights.headDashboard.oversight.mark')}
                                 </Button>
                               </td>
                             </tr>
@@ -518,47 +527,47 @@ export default function HeadTeacherDashboardPage() {
       <div className="grid grid-cols-1 @2xl:grid-cols-2 @4xl:grid-cols-4 gap-4">
         <Card className="border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Teachers</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{tr('teacherInsights.headDashboard.kpi.totalTeachers')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground dark:text-foreground">{totalTeachers}</div>
-            <p className="text-xs text-muted-foreground mt-1">Active in this course</p>
+            <p className="text-xs text-muted-foreground mt-1">{tr('teacherInsights.headDashboard.kpi.activeInCourse')}</p>
           </CardContent>
         </Card>
 
         <Card className="border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{tr('teacherInsights.headDashboard.kpi.totalStudents')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground dark:text-foreground">{totalStudents}</div>
-            <p className="text-xs text-muted-foreground mt-1">Across all groups</p>
+            <p className="text-xs text-muted-foreground mt-1">{tr('teacherInsights.headDashboard.kpi.acrossAllGroups')}</p>
           </CardContent>
         </Card>
 
         <Card className="border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Grading Actions</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{tr('teacherInsights.headDashboard.kpi.gradingActions')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600 dark:text-green-300">{totalHomeworksChecked}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              out of {teachersData?.teachers.reduce((sum, t) => sum + t.total_submissions_count, 0) || 0} submission attempts
+              {tr('teacherInsights.headDashboard.kpi.outOfAttempts', { count: teachersData?.teachers.reduce((sum, t) => sum + t.total_submissions_count, 0) || 0 })}
             </p>
           </CardContent>
         </Card>
 
         <Card className="border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Feedbacks Given</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{tr('teacherInsights.headDashboard.kpi.feedbacksGiven')}</CardTitle>
             <BarChart3 className="h-4 w-4 text-brand" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-brand">{totalFeedbacks}</div>
-            <p className="text-xs text-muted-foreground mt-1">Written comments</p>
+            <p className="text-xs text-muted-foreground mt-1">{tr('teacherInsights.shared.writtenComments')}</p>
           </CardContent>
         </Card>
       </div>
@@ -568,8 +577,8 @@ export default function HeadTeacherDashboardPage() {
         {/* Activity Timeline */}
         <Card className="@4xl:col-span-2 border shadow-sm">
           <CardHeader>
-            <CardTitle>Grading Activity</CardTitle>
-            <CardDescription>Daily volume of graded assignments across the course</CardDescription>
+            <CardTitle>{tr('teacherInsights.headDashboard.gradingActivity')}</CardTitle>
+            <CardDescription>{tr('teacherInsights.headDashboard.gradingActivityHint')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full">
@@ -589,7 +598,7 @@ export default function HeadTeacherDashboardPage() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.grid} />
                     <XAxis 
                       dataKey="date" 
-                      tickFormatter={(val) => format(new Date(val), 'MMM dd')}
+                      tickFormatter={(val) => formatDate(val, { month: 'short', day: 'numeric' })}
                       tick={chartTick(12)} 
                       axisLine={false}
                       tickLine={false}
@@ -603,12 +612,12 @@ export default function HeadTeacherDashboardPage() {
                     />
                     <RechartsTooltip 
                        contentStyle={chartTooltipStyle}
-                       labelFormatter={(label) => format(new Date(label), 'PPP')}
+                       labelFormatter={(label) => formatDate(label, { day: 'numeric', month: 'long', year: 'numeric' })}
                     />
                     <Area 
                       type="monotone" 
                       dataKey="submissions_graded"
-                      name="Graded"
+                      name={tr('teacherInsights.headDashboard.graded')}
                       stroke={chartColors.brand} 
                       strokeWidth={2}
                       fillOpacity={1} 
@@ -619,7 +628,7 @@ export default function HeadTeacherDashboardPage() {
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                   <BarChart3 className="h-8 w-8 mb-2 opacity-50" />
-                  <p>No activity data for this period</p>
+                  <p>{tr('teacherInsights.headDashboard.noActivityData')}</p>
                 </div>
               )}
             </div>
@@ -629,8 +638,8 @@ export default function HeadTeacherDashboardPage() {
         {/* Top Teachers Chart */}
         <Card className="border shadow-sm">
           <CardHeader>
-            <CardTitle>Top Active Teachers</CardTitle>
-            <CardDescription>By homeworks checked</CardDescription>
+            <CardTitle>{tr('teacherInsights.headDashboard.topTeachers')}</CardTitle>
+            <CardDescription>{tr('teacherInsights.headDashboard.topTeachersHint')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full">
@@ -656,13 +665,13 @@ export default function HeadTeacherDashboardPage() {
                        cursor={{ fill: chartColors.cursor }}
                        contentStyle={chartTooltipStyle}
                     />
-                    <Bar dataKey="checked_homeworks_count" name="Checked" fill={chartColors.brand} radius={[0, 4, 4, 0]} barSize={20} />
+                    <Bar dataKey="checked_homeworks_count" name={tr('teacherInsights.headDashboard.checked')} fill={chartColors.brand} radius={[0, 4, 4, 0]} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                    <Users className="h-8 w-8 mb-2 opacity-50" />
-                   <p>No teacher data available</p>
+                   <p>{tr('teacherInsights.headDashboard.noTeacherData')}</p>
                 </div>
               )}
             </div>
@@ -673,8 +682,8 @@ export default function HeadTeacherDashboardPage() {
       {/* Detailed Table */}
       <Card className="border shadow-sm overflow-hidden">
         <CardHeader>
-          <CardTitle>Teacher Performance</CardTitle>
-          <CardDescription>Detailed breakdown per teacher</CardDescription>
+          <CardTitle>{tr('teacherInsights.headDashboard.teacherPerformance')}</CardTitle>
+          <CardDescription>{tr('teacherInsights.headDashboard.teacherPerformanceHint')}</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {loadingTeachers ? (
@@ -683,7 +692,7 @@ export default function HeadTeacherDashboardPage() {
             </div>
           ) : teachersData?.teachers.length === 0 ? (
             <div className="p-12 text-center text-muted-foreground bg-slate-50/50 dark:bg-muted/40 dark:bg-secondary/20">
-              No teachers found
+              {tr('teacherInsights.headDashboard.noTeachers')}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -695,7 +704,7 @@ export default function HeadTeacherDashboardPage() {
                         onClick={() => handleSort('teacher_name')} 
                         className="flex items-center gap-1 hover:text-brand transition-colors"
                       >
-                        Teacher {getSortIcon('teacher_name')}
+                        {tr('teacherInsights.headDashboard.col.teacher')} {getSortIcon('teacher_name')}
                       </button>
                     </TableHead>
                     <TableHead className="text-center font-bold text-foreground dark:text-foreground">
@@ -703,7 +712,7 @@ export default function HeadTeacherDashboardPage() {
                         onClick={() => handleSort('groups_count')} 
                         className="flex items-center gap-1 mx-auto hover:text-brand transition-colors"
                       >
-                        Groups {getSortIcon('groups_count')}
+                        {tr('teacherInsights.headDashboard.col.groups')} {getSortIcon('groups_count')}
                       </button>
                     </TableHead>
                     <TableHead className="text-center font-bold text-foreground dark:text-foreground">
@@ -711,7 +720,7 @@ export default function HeadTeacherDashboardPage() {
                         onClick={() => handleSort('students_count')} 
                         className="flex items-center gap-1 mx-auto hover:text-brand transition-colors"
                       >
-                        Students {getSortIcon('students_count')}
+                        {tr('teacherInsights.headDashboard.col.students')} {getSortIcon('students_count')}
                       </button>
                     </TableHead>
                     <TableHead className="text-center font-bold text-foreground dark:text-foreground">
@@ -719,7 +728,7 @@ export default function HeadTeacherDashboardPage() {
                         onClick={() => handleSort('checked_homeworks_count')} 
                         className="flex items-center gap-1 mx-auto hover:text-brand transition-colors"
                       >
-                        Grading Actions {getSortIcon('checked_homeworks_count')}
+                        {tr('teacherInsights.headDashboard.kpi.gradingActions')} {getSortIcon('checked_homeworks_count')}
                       </button>
                     </TableHead>
                     <TableHead className="text-center font-bold text-foreground dark:text-foreground">
@@ -727,7 +736,7 @@ export default function HeadTeacherDashboardPage() {
                         onClick={() => handleSort('feedbacks_given_count')} 
                         className="flex items-center gap-1 mx-auto hover:text-brand transition-colors"
                       >
-                        Feedbacks {getSortIcon('feedbacks_given_count')}
+                        {tr('teacherInsights.headDashboard.col.feedbacks')} {getSortIcon('feedbacks_given_count')}
                       </button>
                     </TableHead>
                     <TableHead className="text-center font-bold text-foreground dark:text-foreground">
@@ -735,11 +744,11 @@ export default function HeadTeacherDashboardPage() {
                         onClick={() => handleSort('missed_attendance_count')} 
                         className="flex items-center gap-1 mx-auto hover:text-brand transition-colors"
                       >
-                        Missed Att. {getSortIcon('missed_attendance_count')}
+                        {tr('teacherInsights.headDashboard.col.missedAttendance')} {getSortIcon('missed_attendance_count')}
                       </button>
                     </TableHead>
-                    <TableHead className="text-center font-bold text-foreground dark:text-foreground">Activity Trend</TableHead>
-                    <TableHead className="text-right font-bold text-foreground dark:text-foreground">Action</TableHead>
+                    <TableHead className="text-center font-bold text-foreground dark:text-foreground">{tr('teacherInsights.headDashboard.col.activityTrend')}</TableHead>
+                    <TableHead className="text-right font-bold text-foreground dark:text-foreground">{tr('teacherInsights.headDashboard.col.action')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -800,10 +809,10 @@ export default function HeadTeacherDashboardPage() {
                       <TableCell className="text-center">
                          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                            <span className={teacher.homeworks_checked_last_7_days > 0 ? "text-emerald-600 dark:text-emerald-300 font-medium" : ""}>
-                             {teacher.homeworks_checked_last_7_days} (7d)
+                             {tr('teacherInsights.headDashboard.last7Days', { count: teacher.homeworks_checked_last_7_days })}
                            </span>
                            <span className="text-muted-foreground/50">|</span>
-                           <span>{teacher.homeworks_checked_last_30_days} (30d)</span>
+                           <span>{tr('teacherInsights.headDashboard.last30Days', { count: teacher.homeworks_checked_last_30_days })}</span>
                          </div>
                       </TableCell>
                       <TableCell className="text-right">

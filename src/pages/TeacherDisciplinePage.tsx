@@ -15,6 +15,9 @@ import {
   type DisciplinePeriodInfo,
   type DisciplineRegister,
 } from '../services/api/discipline';
+import { formatDate } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherInsights';
 
 /**
  * The head teachers' register, in place of «Attendance and Late lessons 16.09-31.10».
@@ -41,11 +44,12 @@ const TONE_CLASS: Record<string, string> = {
 
 const dayHead = (iso: string) => {
   const date = new Date(`${iso}T00:00:00Z`);
-  return { day: date.getUTCDate(), weekday: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getUTCDay()] };
+  return { day: date.getUTCDate(), weekday: formatDate(iso, { weekday: 'short' }) };
 };
 
 export default function TeacherDisciplinePage() {
   const { user } = useAuth();
+  const t = useT();
   const canDecide = user?.role === 'admin' || user?.role === 'head_teacher';
 
   const [periods, setPeriods] = useState<DisciplinePeriodInfo[]>([]);
@@ -62,7 +66,7 @@ export default function TeacherDisciplinePage() {
         setPeriods(data.periods);
         setPeriodKey((current) => current || data.periods[0]?.key || '');
       })
-      .catch((err) => setError(err?.response?.data?.detail || 'Could not load the periods'));
+      .catch((err) => setError(err?.response?.data?.detail || t('teacherInsights.discipline.loadPeriodsFailed')));
   }, []);
 
   const load = useCallback(async () => {
@@ -72,7 +76,7 @@ export default function TeacherDisciplinePage() {
     try {
       setRegister(await getRegister(periodKey, program || undefined));
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Could not load the register');
+      setError(err?.response?.data?.detail || t('teacherInsights.discipline.loadRegisterFailed'));
       setRegister(null);
     } finally {
       setLoading(false);
@@ -102,7 +106,7 @@ export default function TeacherDisciplinePage() {
       setClosing(false);
       await load();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Could not close the period');
+      setError(err?.response?.data?.detail || t('teacherInsights.discipline.closeFailed'));
       setClosing(false);
     } finally {
       setCloseBusy(false);
@@ -113,14 +117,14 @@ export default function TeacherDisciplinePage() {
     <div className="space-y-4 p-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Teacher discipline</h1>
+          <h1 className="text-2xl font-semibold">{t('teacherInsights.discipline.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            Lateness and missed lessons from the Meet record · 200 ₸ a minute · since 16.09.2026
+            {t('teacherInsights.discipline.subtitle')}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" disabled={index >= periods.length - 1}
-                  onClick={() => setPeriodKey(periods[index + 1]?.key)} aria-label="Earlier period">
+                  onClick={() => setPeriodKey(periods[index + 1]?.key)} aria-label={t('teacherInsights.discipline.earlierPeriod')}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="min-w-[13rem] text-center text-sm font-medium">
@@ -128,21 +132,21 @@ export default function TeacherDisciplinePage() {
             {register?.period.closed && <Lock className="ml-1 inline h-3.5 w-3.5 text-muted-foreground" />}
           </span>
           <Button variant="outline" size="sm" disabled={index <= 0}
-                  onClick={() => setPeriodKey(periods[index - 1]?.key)} aria-label="Later period">
+                  onClick={() => setPeriodKey(periods[index - 1]?.key)} aria-label={t('teacherInsights.discipline.laterPeriod')}>
             <ChevronRight className="h-4 w-4" />
           </Button>
           <a href={periodKey ? exportUrl(periodKey, program || undefined) : '#'}>
-            <Button variant="outline" size="sm"><Download className="mr-1.5 h-4 w-4" />Excel</Button>
+            <Button variant="outline" size="sm"><Download className="mr-1.5 h-4 w-4" />{t('teacherInsights.discipline.excel')}</Button>
           </a>
           {canDecide && register && !register.period.closed && (
-            <Button size="sm" onClick={() => setClosing(true)}><Lock className="mr-1.5 h-4 w-4" />Close period</Button>
+            <Button size="sm" onClick={() => setClosing(true)}><Lock className="mr-1.5 h-4 w-4" />{t('teacherInsights.discipline.closePeriod')}</Button>
           )}
         </div>
       </header>
 
       {showsProgramTabs(programs, program) && (
         <div className="flex flex-wrap gap-2">
-          <Button variant={program ? 'outline' : 'default'} size="sm" onClick={() => setProgram('')}>All</Button>
+          <Button variant={program ? 'outline' : 'default'} size="sm" onClick={() => setProgram('')}>{t('common.all')}</Button>
           {programs.map((name) => (
             <Button key={name} variant={program === name ? 'default' : 'outline'} size="sm"
                     onClick={() => setProgram(name)}>{name}</Button>
@@ -156,8 +160,8 @@ export default function TeacherDisciplinePage() {
       {register && !loading && register.teachers.length === 0 && (
         <p className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
           {program
-            ? `No ${program} lessons in this period yet.`
-            : 'Nothing in this period yet. The register starts on 16.09.2026, when the rule took effect.'}
+            ? t('teacherInsights.discipline.noProgramLessons', { program })
+            : t('teacherInsights.discipline.empty')}
         </p>
       )}
 
@@ -166,7 +170,7 @@ export default function TeacherDisciplinePage() {
           <table className="min-w-full border-collapse text-sm">
             <thead>
               <tr className="bg-muted">
-                <th className="sticky left-0 z-10 bg-muted px-3 py-2 text-left font-medium">Teacher</th>
+                <th className="sticky left-0 z-10 bg-muted px-3 py-2 text-left font-medium">{t('teacherInsights.discipline.col.teacher')}</th>
                 {register.days.map((day) => {
                   const head = dayHead(day);
                   return (
@@ -176,9 +180,9 @@ export default function TeacherDisciplinePage() {
                     </th>
                   );
                 })}
-                <th className="px-3 py-2 text-right font-medium">Late</th>
-                <th className="px-3 py-2 text-right font-medium">Missed</th>
-                <th className="px-3 py-2 text-right font-medium">Fine</th>
+                <th className="px-3 py-2 text-right font-medium">{t('teacherInsights.discipline.col.late')}</th>
+                <th className="px-3 py-2 text-right font-medium">{t('teacherInsights.discipline.col.missed')}</th>
+                <th className="px-3 py-2 text-right font-medium">{t('teacherInsights.discipline.col.fine')}</th>
               </tr>
             </thead>
             <tbody>
@@ -208,11 +212,11 @@ export default function TeacherDisciplinePage() {
                             cell.lessons ? 'hover:ring-1 hover:ring-border' : 'cursor-default')}
                         >
                           {mark === 'miss' ? (
-                            <X className="mx-auto h-3.5 w-3.5" strokeWidth={2.5} aria-label="Missed" />
+                            <X className="mx-auto h-3.5 w-3.5" strokeWidth={2.5} aria-label={t('teacherInsights.discipline.missedLesson')} />
                           ) : (
                             <span className="inline-flex items-center gap-0.5">
                               {text || (cell.lessons ? '·' : '')}
-                              {mark === 'made_up' && <Undo2 className="h-3 w-3" aria-label="made up" />}
+                              {mark === 'made_up' && <Undo2 className="h-3 w-3" aria-label={t('teacherInsights.discipline.madeUpMark')} />}
                             </span>
                           )}
                         </button>
@@ -230,7 +234,7 @@ export default function TeacherDisciplinePage() {
                 </tr>
               ))}
               <tr className="border-t-2 border-border bg-muted font-medium">
-                <td className="sticky left-0 z-10 bg-muted px-3 py-2">Total</td>
+                <td className="sticky left-0 z-10 bg-muted px-3 py-2">{t('teacherInsights.shared.total')}</td>
                 <td colSpan={register.days.length} />
                 <td className="px-3 py-2 text-right">{register.totals.late_minutes || '—'}</td>
                 <td className="px-3 py-2 text-right">{register.totals.misses || '—'}</td>
@@ -243,8 +247,7 @@ export default function TeacherDisciplinePage() {
 
       {register?.totals.unmeasurable ? (
         <p className="text-xs text-muted-foreground">
-          {register.totals.unmeasurable} of {register.totals.lessons} lessons had no LMS Meet room, so the
-          LMS could not judge them. They are marked «·», never as on time.
+          {t('teacherInsights.discipline.unmeasurableNote', { unmeasurable: register.totals.unmeasurable, lessons: register.totals.lessons })}
         </p>
       ) : null}
 

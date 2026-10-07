@@ -11,6 +11,9 @@ import {
   type BluebookGrid,
   type BluebookGroupOption,
 } from '../services/api/exams';
+import type { MessageKey } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherInsights';
 
 /**
  * Staff view: students as rows, Bluebook tests 4-11 as columns, each split into
@@ -29,16 +32,16 @@ import {
 const Z_STICKY_CELL = 'z-[2]';
 const Z_STICKY_CORNER = 'z-[3]';
 
-const trendMeta = (trend: string | null | undefined) => {
+const trendMeta = (trend: string | null | undefined): { Icon: typeof ArrowUp | null; cls: string; label: MessageKey | null } => {
   switch (trend) {
     case 'up':
-      return { Icon: ArrowUp, cls: 'bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-300', label: 'improved' };
+      return { Icon: ArrowUp, cls: 'bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-300', label: 'teacherInsights.bluebook.trend.improved' };
     case 'down':
-      return { Icon: ArrowDown, cls: 'bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300', label: 'declined' };
+      return { Icon: ArrowDown, cls: 'bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300', label: 'teacherInsights.bluebook.trend.declined' };
     case 'same':
-      return { Icon: ArrowRight, cls: 'bg-brand-surface text-brand-subtle-foreground', label: 'unchanged' };
+      return { Icon: ArrowRight, cls: 'bg-brand-surface text-brand-subtle-foreground', label: 'teacherInsights.bluebook.trend.unchanged' };
     default:
-      return { Icon: null, cls: '', label: '' };
+      return { Icon: null, cls: '', label: null };
   }
 };
 
@@ -61,6 +64,7 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
 }
 
 export default function BluebookGroupGridPage() {
+  const t = useT();
   const [groups, setGroups] = useState<BluebookGroupOption[]>([]);
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -87,7 +91,7 @@ export default function BluebookGroupGridPage() {
           firstLoad.current = false;
         }
       } catch {
-        if (!cancelled) setError('Could not load your groups.');
+        if (!cancelled) setError(t('teacherInsights.bluebook.loadGroupsFailed'));
       } finally {
         if (!cancelled) setGroupsLoading(false);
       }
@@ -105,8 +109,8 @@ export default function BluebookGroupGridPage() {
       setGrid(null);
       setError(
         e?.response?.status === 403
-          ? 'You do not have access to this group.'
-          : 'Could not load the Bluebook results for this group.',
+          ? t('teacherInsights.bluebook.noAccess')
+          : t('teacherInsights.bluebook.loadFailed'),
       );
     } finally {
       setLoading(false);
@@ -129,7 +133,7 @@ export default function BluebookGroupGridPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      setError('Export failed.');
+      setError(t('teacherInsights.bluebook.exportFailed'));
     } finally {
       setExporting(false);
     }
@@ -140,15 +144,15 @@ export default function BluebookGroupGridPage() {
     if (!grid) return null;
     const bits = [grid.group_name];
     if (grid.teacher_name) bits.push(grid.teacher_name);
-    if (grid.start_date) bits.push(`Start: ${grid.start_date}`);
+    if (grid.start_date) bits.push(t('teacherInsights.bluebook.start', { date: grid.start_date }));
     return bits.join('  ·  ');
-  }, [grid]);
+  }, [grid, t]);
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold">Bluebook results</h1>
+          <h1 className="text-xl font-semibold">{t('teacherInsights.bluebook.title')}</h1>
           {headerLine && <p className="text-sm text-muted-foreground mt-0.5">{headerLine}</p>}
         </div>
 
@@ -162,13 +166,13 @@ export default function BluebookGroupGridPage() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search group or teacher…"
-              aria-label="Search groups by name or teacher"
+              placeholder={t('teacherInsights.bluebook.searchPlaceholder')}
+              aria-label={t('teacherInsights.bluebook.searchAria')}
               className="pl-8 w-56"
             />
           </div>
 
-          <label htmlFor="bb-group" className="sr-only">Group</label>
+          <label htmlFor="bb-group" className="sr-only">{t('teacherInsights.bluebook.group')}</label>
           <select
             id="bb-group"
             className="rounded-md border border-input bg-background px-3 py-2 text-sm max-w-[22rem]"
@@ -176,7 +180,7 @@ export default function BluebookGroupGridPage() {
             onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : null)}
             disabled={groupsLoading || groups.length === 0}
           >
-            {groups.length === 0 && <option value="">No matching groups</option>}
+            {groups.length === 0 && <option value="">{t('teacherInsights.bluebook.noMatchingGroups')}</option>}
             {groups.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.teacher_name ? `${g.name} — ${g.teacher_name}` : g.name}
@@ -186,7 +190,7 @@ export default function BluebookGroupGridPage() {
 
           <Button size="sm" variant="secondary" onClick={handleExport} disabled={exporting || !grid}>
             <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
-            {exporting ? 'Exporting…' : 'Export'}
+            {exporting ? t('teacherInsights.bluebook.exporting') : t('teacherInsights.bluebook.export')}
           </Button>
         </div>
       </div>
@@ -194,13 +198,13 @@ export default function BluebookGroupGridPage() {
       {!groupsLoading && groups.length === 0 && (
         <Card><CardContent className="p-8 text-center text-muted-foreground">
           {search.trim()
-            ? `No SAT groups match “${search.trim()}”.`
-            : 'You have no SAT groups.'}
+            ? t('teacherInsights.bluebook.noGroupsMatch', { query: search.trim() })
+            : t('teacherInsights.bluebook.noGroups')}
         </CardContent></Card>
       )}
 
       {loading && (
-        <Card><CardContent className="p-8 text-center text-muted-foreground">Loading…</CardContent></Card>
+        <Card><CardContent className="p-8 text-center text-muted-foreground">{t('common.loading')}</CardContent></Card>
       )}
 
       {!loading && error && (
@@ -212,25 +216,25 @@ export default function BluebookGroupGridPage() {
       {/* ---- group statistics ---- */}
       {!loading && !error && grid && stats && (
         <div className="grid grid-cols-2 @lg:grid-cols-3 @4xl:grid-cols-6 gap-2">
-          <Stat label="Students" value={String(stats.student_count)}
-                hint={stats.students_with_no_results ? `${stats.students_with_no_results} with no results` : 'all have results'} />
-          <Stat label="Tests assigned" value={`${stats.tests_assigned} / ${stats.tests_available}`} />
-          <Stat label="Completion" value={pct(stats.completion_rate)}
-                hint={`${stats.submitted_count} of ${stats.expected_count}`} />
-          <Stat label="Avg latest" value={stats.average_latest_total?.toString() ?? '–'}
-                hint={stats.median_latest_total != null ? `median ${stats.median_latest_total}` : undefined} />
-          <Stat label="Best in group" value={stats.highest_total?.toString() ?? '–'}
-                hint={stats.lowest_latest_total != null ? `lowest ${stats.lowest_latest_total}` : undefined} />
-          <Stat label="Avg improvement"
+          <Stat label={t('teacherInsights.bluebook.stat.students')} value={String(stats.student_count)}
+                hint={stats.students_with_no_results ? t('teacherInsights.bluebook.stat.withNoResults', { count: stats.students_with_no_results }) : t('teacherInsights.bluebook.stat.allHaveResults')} />
+          <Stat label={t('teacherInsights.bluebook.stat.testsAssigned')} value={`${stats.tests_assigned} / ${stats.tests_available}`} />
+          <Stat label={t('teacherInsights.bluebook.stat.completion')} value={pct(stats.completion_rate)}
+                hint={t('teacherInsights.bluebook.stat.submittedOf', { submitted: stats.submitted_count, expected: stats.expected_count })} />
+          <Stat label={t('teacherInsights.bluebook.stat.avgLatest')} value={stats.average_latest_total?.toString() ?? '–'}
+                hint={stats.median_latest_total != null ? t('teacherInsights.bluebook.stat.median', { value: stats.median_latest_total }) : undefined} />
+          <Stat label={t('teacherInsights.bluebook.stat.best')} value={stats.highest_total?.toString() ?? '–'}
+                hint={stats.lowest_latest_total != null ? t('teacherInsights.bluebook.stat.lowest', { value: stats.lowest_latest_total }) : undefined} />
+          <Stat label={t('teacherInsights.bluebook.stat.avgImprovement')}
                 value={stats.average_improvement != null
                   ? `${stats.average_improvement > 0 ? '+' : ''}${stats.average_improvement}` : '–'}
-                hint={`${stats.improved_count} up · ${stats.declined_count} down`} />
+                hint={t('teacherInsights.bluebook.stat.upDown', { up: stats.improved_count, down: stats.declined_count })} />
         </div>
       )}
 
       {!loading && !error && grid && grid.rows.length === 0 && (
         <Card><CardContent className="p-8 text-center text-muted-foreground">
-          No students in this group yet.
+          {t('teacherInsights.bluebook.noStudents')}
         </CardContent></Card>
       )}
 
@@ -245,7 +249,7 @@ export default function BluebookGroupGridPage() {
                       rowSpan={2} scope="col"
                       className={`w-44 @2xl:w-64 sticky left-0 ${Z_STICKY_CORNER} bg-background border-r align-bottom`}
                     >
-                      Student
+                      {t('teacherInsights.bluebook.col.student')}
                     </TableHead>
                     {grid.columns.map((c) => (
                       <TableHead
@@ -255,43 +259,45 @@ export default function BluebookGroupGridPage() {
                         }`}
                       >
                         <div className="font-semibold">
-                          {c.is_baseline ? 'Baseline #5' : `Bluebook #${c.test_number}`}
+                          {c.is_baseline ? t('teacherInsights.bluebook.baseline') : t('teacherInsights.bluebook.testNumber', { number: c.test_number ?? '' })}
                         </div>
                         <div
                           className="text-[10px] font-normal text-muted-foreground"
-                          title={!c.is_baseline && c.lesson_number ? `Homework of lesson ${c.lesson_number}` : undefined}
+                          title={!c.is_baseline && c.lesson_number ? t('teacherInsights.bluebook.homeworkOfLesson', { number: c.lesson_number }) : undefined}
                         >
                           {c.is_baseline
-                            ? `${formatDayMonth(c.due_date) ?? '—'} · Assignment Zero`
+                            ? t('teacherInsights.bluebook.assignmentZero', { date: formatDayMonth(c.due_date) ?? '—' })
                             : c.is_assigned
-                              ? `${c.week_number ? `Week ${c.week_number} · ` : ''}${formatDayMonth(c.due_date) ?? 'no due date'}`
-                              : 'not assigned'}
+                              ? (c.week_number
+                                ? t('teacherInsights.bluebook.weekDue', { week: c.week_number, due: formatDayMonth(c.due_date) ?? t('teacherInsights.bluebook.noDueDate') })
+                                : formatDayMonth(c.due_date) ?? t('teacherInsights.bluebook.noDueDate'))
+                              : t('teacherInsights.bluebook.notAssignedHead')}
                         </div>
                       </TableHead>
                     ))}
                     <TableHead colSpan={4} scope="colgroup"
                                className="p-1 text-center border-l min-w-[220px] align-top bg-muted/30">
-                      <div className="font-semibold">Student summary</div>
+                      <div className="font-semibold">{t('teacherInsights.bluebook.studentSummary')}</div>
                     </TableHead>
                     <TableHead colSpan={2} scope="colgroup"
                                className="p-1 text-center border-l min-w-[120px] align-top bg-muted/30">
-                      <div className="font-semibold">Official result</div>
+                      <div className="font-semibold">{t('teacherInsights.bluebook.officialResult')}</div>
                     </TableHead>
                   </TableRow>
                   <TableRow>
                     {grid.columns.map((c) => (
                       <Fragment key={c.key}>
-                        <TableHead scope="col" className="text-center font-normal">Verbal</TableHead>
-                        <TableHead scope="col" className="text-center font-normal">Math</TableHead>
-                        <TableHead scope="col" className="text-center font-normal border-r">Score</TableHead>
+                        <TableHead scope="col" className="text-center font-normal">{t('teacherInsights.shared.verbal')}</TableHead>
+                        <TableHead scope="col" className="text-center font-normal">{t('teacherInsights.shared.math')}</TableHead>
+                        <TableHead scope="col" className="text-center font-normal border-r">{t('teacherInsights.bluebook.col.score')}</TableHead>
                       </Fragment>
                     ))}
-                    <TableHead scope="col" className="text-center font-normal border-l">Done</TableHead>
-                    <TableHead scope="col" className="text-center font-normal">Best</TableHead>
-                    <TableHead scope="col" className="text-center font-normal">Latest</TableHead>
-                    <TableHead scope="col" className="text-center font-normal">vs base</TableHead>
-                    <TableHead scope="col" className="text-center font-normal border-l">Score</TableHead>
-                    <TableHead scope="col" className="text-center font-normal">Date</TableHead>
+                    <TableHead scope="col" className="text-center font-normal border-l">{t('teacherInsights.bluebook.col.done')}</TableHead>
+                    <TableHead scope="col" className="text-center font-normal">{t('teacherInsights.bluebook.col.best')}</TableHead>
+                    <TableHead scope="col" className="text-center font-normal">{t('teacherInsights.bluebook.col.latest')}</TableHead>
+                    <TableHead scope="col" className="text-center font-normal">{t('teacherInsights.bluebook.col.vsBase')}</TableHead>
+                    <TableHead scope="col" className="text-center font-normal border-l">{t('teacherInsights.bluebook.col.score')}</TableHead>
+                    <TableHead scope="col" className="text-center font-normal">{t('teacherInsights.bluebook.col.date')}</TableHead>
                   </TableRow>
                 </TableHeader>
 
@@ -318,7 +324,7 @@ export default function BluebookGroupGridPage() {
                                   : 'text-amber-700 dark:text-amber-500'
                               }`}
                             >
-                              {notAssigned ? 'Not assigned' : 'Not submitted'}
+                              {notAssigned ? t('teacherInsights.bluebook.notAssigned') : t('teacherInsights.bluebook.notSubmitted')}
                             </TableCell>
                           );
                         }
@@ -335,7 +341,7 @@ export default function BluebookGroupGridPage() {
                                 {Icon && <Icon className="h-3 w-3" aria-hidden="true" />}
                                 {label && (
                                   <span className="sr-only">
-                                    {` ${label}${cell.delta != null ? ` by ${Math.abs(cell.delta)}` : ''}`}
+                                    {` ${cell.delta != null ? t('teacherInsights.bluebook.trendBy', { trend: t(label), delta: Math.abs(cell.delta) }) : t(label)}`}
                                   </span>
                                 )}
                               </span>
@@ -376,7 +382,7 @@ export default function BluebookGroupGridPage() {
                       nobody was asked to sit them. */}
                   <TableRow className="bg-muted/50 font-medium">
                     <TableCell className={`p-2 sticky left-0 ${Z_STICKY_CELL} bg-muted border-r`}>
-                      Average
+                      {t('teacherInsights.bluebook.average')}
                     </TableCell>
                     {grid.columns.map((c) => {
                       const s = grid.column_stats[c.key];
@@ -394,7 +400,7 @@ export default function BluebookGroupGridPage() {
 
                   <TableRow className="bg-muted/30 text-muted-foreground">
                     <TableCell className={`p-2 sticky left-0 ${Z_STICKY_CELL} bg-muted border-r`}>
-                      Submitted
+                      {t('teacherInsights.bluebook.submitted')}
                     </TableCell>
                     {grid.columns.map((c) => {
                       const s = grid.column_stats[c.key];

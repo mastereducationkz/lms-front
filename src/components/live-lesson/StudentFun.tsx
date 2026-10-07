@@ -10,12 +10,25 @@ import type { LiveApi } from '../../lib/liveLesson/api';
 import { liveErrorText, withReconnect } from '../../lib/liveLesson/resilience';
 import { cooldownLeft } from '../../lib/liveLesson/reactions';
 import type { LiveState, Person, ReactionKind } from '../../lib/liveLesson/types';
-import ReactionOrca, { REACTION_KINDS, REACTION_LABEL } from '../mascot/ReactionOrca';
+import ReactionOrca, { REACTION_KINDS } from '../mascot/ReactionOrca';
+import type { MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 
-const PAUSED_TEXT: Record<string, string> = {
-  teacher: 'Your teacher paused reactions for now.',
-  focus: 'Reactions are paused while you answer.',
-  timer: 'Reactions are paused while the timer runs.',
+const PAUSED_TEXT: Record<string, MessageKey> = {
+  teacher: 'chatLive.live.reactionPaused.teacher',
+  focus: 'chatLive.live.reactionPaused.focus',
+  timer: 'chatLive.live.reactionPaused.timer',
+};
+
+/** The reactions' names (ReactionOrca's REACTION_LABEL is the English one). */
+const REACTION_KEYS: Record<ReactionKind, MessageKey> = {
+  love: 'chatLive.live.reaction.love',
+  laugh: 'chatLive.live.reaction.laugh',
+  fire: 'chatLive.live.reaction.fire',
+  clap: 'chatLive.live.reaction.clap',
+  mindblown: 'chatLive.live.reaction.mindblown',
+  splash: 'chatLive.live.reaction.splash',
 };
 
 function useNow(active: boolean) {
@@ -42,6 +55,7 @@ function Ring({ left, size }: { left: number; size: number }) {
 }
 
 export function ReactionBar({ state, api, me }: { state: LiveState; api: LiveApi; me: Person | null }) {
+  const t = useT();
   const status = state.reactions ?? { on: true, paused: null };
   const [cool, setCool] = useState<{ until: number; total: number } | null>(null);
   const now = useNow(cool !== null);
@@ -64,7 +78,7 @@ export function ReactionBar({ state, api, me }: { state: LiveState; api: LiveApi
       <div className="grid grid-cols-6 place-items-center gap-1">
         {REACTION_KINDS.map((kind) => (
           <button key={kind} type="button" onClick={() => void send(kind)} disabled={!status.on}
-            aria-label={REACTION_LABEL[kind]} title={REACTION_LABEL[kind]}
+            aria-label={t(REACTION_KEYS[kind])} title={t(REACTION_KEYS[kind])}
             className={cn('relative rounded-full transition active:scale-90 disabled:opacity-40', left > 0 && 'opacity-70')}
             style={{ width: size, height: size }}>
             <ReactionOrca kind={kind} code={me?.mascot ?? null} userId={me?.user_id ?? null} size={size} />
@@ -72,12 +86,13 @@ export function ReactionBar({ state, api, me }: { state: LiveState; api: LiveApi
           </button>
         ))}
       </div>
-      {!status.on && status.paused && <p className="mt-2 text-center text-xs text-muted-foreground">{PAUSED_TEXT[status.paused]}</p>}
+      {!status.on && status.paused && PAUSED_TEXT[status.paused] && <p className="mt-2 text-center text-xs text-muted-foreground">{t(PAUSED_TEXT[status.paused])}</p>}
     </div>
   );
 }
 
 export function HandAndLost({ state, api }: { state: LiveState; api: LiveApi }) {
+  const t = useT();
   const mine = state.my_hand ?? null;
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -89,7 +104,7 @@ export function HandAndLost({ state, api }: { state: LiveState; api: LiveApi }) 
     try {
       // Up or down is the same twice over, so a blip is simply waited out.
       const result = await withReconnect(() => api.hand(state.lesson.id, !mine));
-      if (result && !result.accepted) setNote(`You can raise your hand again in ${Math.ceil(result.retry_in)} s.`);
+      if (result && !result.accepted) setNote(t('chatLive.live.handAgainIn', { seconds: Math.ceil(result.retry_in) }));
     } catch (e) {
       setNote(liveErrorText(e));
     } finally {
@@ -100,7 +115,7 @@ export function HandAndLost({ state, api }: { state: LiveState; api: LiveApi }) 
     try {
       const result = await api.lost(state.lesson.id);
       setLostUntil(Date.now() + (result.accepted ? 30_000 : result.retry_in * 1000));
-      setNote(result.accepted ? 'Your teacher sees that someone is lost (not who).' : null);
+      setNote(result.accepted ? t('chatLive.live.lostSent') : null);
     } catch {
       /* nothing to do */
     }
@@ -113,16 +128,16 @@ export function HandAndLost({ state, api }: { state: LiveState; api: LiveApi }) 
           className={cn('inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition',
             mine ? 'border-amber-400 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-100' : 'border-border bg-card text-foreground hover:bg-muted/60')}>
           <Hand className={cn('h-4 w-4', mine && 'live-hand-wave')} aria-hidden />
-          {mine ? `Hand up · #${mine.position} in line` : 'Raise hand'}
+          {mine ? t('chatLive.live.handUp', { position: mine.position }) : t('chatLive.live.raiseHand')}
         </button>
         <button type="button" onClick={() => void sayLost()} disabled={lostCooling}
           className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted/60 disabled:opacity-50">
-          <Frown className="h-4 w-4" aria-hidden />I'm lost
+          <Frown className="h-4 w-4" aria-hidden />{t('chatLive.live.imLost')}
         </button>
       </div>
-      {mine && <p className="text-center text-xs text-muted-foreground">Tap again to lower your hand.</p>}
+      {mine && <p className="text-center text-xs text-muted-foreground">{t('chatLive.live.lowerHand')}</p>}
       {note && <p className="text-center text-xs text-muted-foreground">{note}</p>}
-      <p className="text-center text-[11px] text-muted-foreground">«I'm lost» is private: only your teacher sees how many, never who.</p>
+      <p className="text-center text-[11px] text-muted-foreground">{t('chatLive.live.lostPrivate')}</p>
     </div>
   );
 }

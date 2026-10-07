@@ -1,5 +1,16 @@
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { QUICK_REACTIONS, EMOJI_GROUPS } from './chatEmojis';
+import type { MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
+
+// chatEmojis keeps plain English group names; these are what the picker shows.
+const GROUP_KEYS: Record<string, MessageKey> = {
+  Smileys: 'chatLive.emoji.smileys',
+  Gestures: 'chatLive.emoji.gestures',
+  'Hearts & symbols': 'chatLive.emoji.hearts',
+  Objects: 'chatLive.emoji.objects',
+};
 
 interface EmojiPickerProps {
   open: boolean;
@@ -14,6 +25,7 @@ interface EmojiPickerProps {
  * grouped grid of "any emoji". Anchored to whatever `children` trigger is passed.
  */
 export function EmojiPicker({ open, onOpenChange, onSelect, children, align = 'center' }: EmojiPickerProps) {
+  const t = useT();
   const pick = (emoji: string) => {
     onSelect(emoji);
     onOpenChange(false);
@@ -30,7 +42,7 @@ export function EmojiPicker({ open, onOpenChange, onSelect, children, align = 'c
               type="button"
               onClick={() => pick(emoji)}
               className="text-2xl leading-none p-1 rounded-full hover:bg-muted transition-transform hover:scale-125"
-              aria-label={`React ${emoji}`}
+              aria-label={t('chatLive.chat.reactWith', { emoji })}
             >
               {emoji}
             </button>
@@ -40,7 +52,7 @@ export function EmojiPicker({ open, onOpenChange, onSelect, children, align = 'c
           {EMOJI_GROUPS.map((group) => (
             <div key={group.label} className="mb-2">
               <p className="text-[11px] font-semibold uppercase text-gray-400 dark:text-muted-foreground px-1 mb-1">
-                {group.label}
+                {GROUP_KEYS[group.label] ? t(GROUP_KEYS[group.label]) : group.label}
               </p>
               <div className="grid grid-cols-8 gap-0.5">
                 {group.emojis.map((emoji) => (
@@ -49,7 +61,7 @@ export function EmojiPicker({ open, onOpenChange, onSelect, children, align = 'c
                     type="button"
                     onClick={() => pick(emoji)}
                     className="text-xl leading-none p-1 rounded hover:bg-muted"
-                    aria-label={`React ${emoji}`}
+                    aria-label={t('chatLive.chat.reactWith', { emoji })}
                   >
                     {emoji}
                   </button>

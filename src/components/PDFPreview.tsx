@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { X, Download, Maximize2, FileText } from 'lucide-react';
 import { Button } from './ui/button';
+import { useT } from '@/lib/i18n/react';
+import type { MessageKey } from '@/lib/i18n';
+import '@/lib/i18n/catalogs/courseAuthoring';
+
+const SIZE_KEYS: MessageKey[] = ['courseAuthoring.size.bytes', 'courseAuthoring.size.kb', 'courseAuthoring.size.mb', 'courseAuthoring.size.gb'];
 
 interface PDFPreviewProps {
   filename: string;
@@ -17,16 +22,16 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({
   onClose,
   showFullPreview = false
 }) => {
+  const t = useT();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return t('courseAuthoring.size.bytes', { size: 0 });
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return t(SIZE_KEYS[i], { size: parseFloat((bytes / Math.pow(k, i)).toFixed(2)) });
   };
 
   const fullUrl = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${fileUrl}`;
@@ -55,7 +60,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({
             <div className="absolute inset-0 flex items-center justify-center bg-muted text-muted-foreground">
               <div className="text-center">
                 <FileText className="mx-auto mb-2 h-6 w-6" aria-hidden="true" />
-                <div className="text-xs">PDF Preview</div>
+                <div className="text-xs">{t('courseAuthoring.pdf.preview')}</div>
               </div>
             </div>
           ) : (
@@ -114,7 +119,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({
                   >
                     <a href={fullUrl} target="_blank" rel="noopener noreferrer">
                       <Download className="h-4 w-4 mr-2" />
-                      Download
+                      {t('courseAuthoring.pdf.download')}
                     </a>
                   </Button>
                   <Button
@@ -156,7 +161,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({
           >
             <a href={fullUrl} target="_blank" rel="noopener noreferrer">
               <Download className="h-4 w-4 mr-1" />
-              Download
+              {t('courseAuthoring.pdf.download')}
             </a>
           </Button>
           {onClose && (

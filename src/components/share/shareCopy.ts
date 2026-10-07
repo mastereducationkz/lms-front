@@ -1,9 +1,14 @@
 /**
  * «Share achievement» copy (owner, 2026-10-04): every word on the story card, in one place.
  * First person — the student is the one posting it — warm and confident, never shouty.
- * English (SH3): achievement names are English, and Russian would need gendered verbs.
+ * The card speaks the student's language (since Q27 anyone may pick Русский); the Russian lines
+ * avoid first-person past-tense verbs, which would need the student's gender.
  */
+import { activeLocale, formatDate, hasMessage, t, type Locale, type MessageKey } from '@/lib/i18n';
+import { achievementField } from '@/lib/achievements';
 import type { AchievementTier } from '@/services/api/achievementsUi';
+import '@/lib/i18n/catalogs/sharedUi';
+import '@/lib/i18n/catalogs/studentHome';
 
 export type ShareKind = 'achievement' | 'star' | 'kasatik_lesson';
 export type NameMode = 'short' | 'full' | 'none';
@@ -18,46 +23,25 @@ export interface CardText {
   accent: CardAccent;
 }
 
-/** One proud line per achievement, in the student's own voice (key → line). */
-export const PROUD_LINES: Record<string, string> = {
-  hello_kasatik: 'Made my orca my own.',
-  first_splash: 'Showed up for my very first lesson.',
-  hand_in_hero: 'Handed in my first homework.',
-  live_wire: 'Answered live in class.',
-  first_checkpoint: 'Took my first SAT checkpoint.',
-  on_time_5: 'Five homeworks in. All on time.',
-  on_time_20: 'Twenty homeworks. Every single one on time.',
-  early_bird: 'Five homeworks done a full day early.',
-  perfect_month: 'A whole month without missing a lesson.',
-  weekly_warrior: 'Four weekly tests, four weeks in a row.',
-  score_climber: 'My weekly-test score went up three times in a row.',
-  full_marks_3: 'Every homework on time, four weeks running.',
-  live_ace: 'Twenty right answers in live lessons.',
-  checkpoint_pro: 'Five checkpoints, each one before the deadline.',
-  streak_7: 'Seven learning days in a row.',
-  streak_30: 'Thirty learning days in a row.',
-  comeback: 'Took a break. Came back stronger.',
-  graduate_gold: 'Finished my course — and showed up for all of it.',
-  verified_score: 'My official exam score is in, and verified.',
-  top_score: 'A top score on the real exam.',
-  streak_100: 'One hundred learning days in a row.',
-  star_of_week: 'Named Star of the Week.',
-  star_of_week_3: 'Star of the Week, three times over.',
-  team_spirit: 'My whole group showed up, all month long.',
-  nauryz: 'Kept learning right through Nauryz.',
-  winter_lights: 'Kept learning through the winter holidays.',
-  test_day_ready: 'Showed up right before test day.',
+/** One proud line per achievement, in the student's own voice (sharedUi.shareCard.proud.<key>); null for one without. */
+export function proudLine(key: string, locale: Locale = activeLocale()): string | null {
+  const id = `sharedUi.shareCard.proud.${key}`;
+  return hasMessage(id) ? t(id, undefined, locale) : null;
+}
+
+export const TIER_PILL: Record<AchievementTier, MessageKey> = {
+  earned: 'sharedUi.shareCard.pill.achievement',
+  rare: 'sharedUi.shareCard.pill.rare',
+  legendary: 'sharedUi.shareCard.pill.legendary',
+  social: 'sharedUi.shareCard.pill.achievement',
+  seasonal: 'sharedUi.shareCard.pill.seasonal',
 };
 
-export const TIER_PILL: Record<AchievementTier, string> = {
-  earned: 'Achievement',
-  rare: 'Rare achievement',
-  legendary: 'Legendary achievement',
-  social: 'Achievement',
-  seasonal: 'Seasonal achievement',
+const CHOSEN_BY: Record<string, MessageKey> = {
+  teacher: 'sharedUi.shareCard.star.chosenByTeacher',
+  curator: 'sharedUi.shareCard.star.chosenByCurator',
+  admin: 'sharedUi.shareCard.star.chosenByTeacher',
 };
-
-const ROLE_WORD: Record<string, string> = { teacher: 'teacher', curator: 'curator', admin: 'teacher' };
 
 /** What the card prints for a name: «short» = first word + the last word's initial («Аружан К.»).
  *  Names are typed free-form, so the preview shows exactly this and the student can switch. */
@@ -68,43 +52,44 @@ export function formatShareName(name: string | null | undefined, mode: NameMode)
   return `${words[0]} ${words[words.length - 1][0].toUpperCase()}.`;
 }
 
-export function achievementText(a: { key: string; title: string; tier: AchievementTier; description?: string | null }): CardText {
+export function achievementText(
+  a: { key: string; title: string; tier: AchievementTier; description?: string | null },
+  locale: Locale = activeLocale(),
+): CardText {
   return {
-    pill: TIER_PILL[a.tier] ?? 'Achievement',
-    lead: 'I just unlocked',
-    title: a.title,
-    line: PROUD_LINES[a.key] ?? a.description ?? null,
+    pill: t(TIER_PILL[a.tier] ?? 'sharedUi.shareCard.pill.achievement', undefined, locale),
+    lead: t('sharedUi.shareCard.unlockedLead', undefined, locale),
+    title: achievementField(a, 'title', locale),
+    line: proudLine(a.key, locale) ?? achievementField(a, 'description', locale) ?? null,
     accent: a.tier === 'legendary' ? 'gold' : a.tier === 'seasonal' ? 'emerald' : 'blue',
   };
 }
 
-export function starText(s: { reason: string; awarded_by_role: string }): CardText {
+export function starText(s: { reason: string; awarded_by_role: string }, locale: Locale = activeLocale()): CardText {
   const reason = s.reason.trim().replace(/[.!…]+$/u, '');
   return {
-    pill: `Chosen by my ${ROLE_WORD[s.awarded_by_role] ?? 'teacher'}`,
+    pill: t(CHOSEN_BY[s.awarded_by_role] ?? 'sharedUi.shareCard.star.chosenByTeacher', undefined, locale),
     lead: null,
-    title: 'Star of the Week',
-    line: reason ? `“${reason}.”` : null,
+    title: t('sharedUi.shareCard.star.title', undefined, locale),
+    line: reason ? t('sharedUi.shareCard.star.reason', { reason }, locale) : null,
     accent: 'gold',
   };
 }
 
-const LESSON_DATE = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-
-export function crownText(c: { lesson_title: string | null; lesson_date: string | null }): CardText {
-  const when = c.lesson_date ? LESSON_DATE.format(new Date(`${c.lesson_date}T00:00:00Z`)) : null;
+export function crownText(c: { lesson_title: string | null; lesson_date: string | null }, locale: Locale = activeLocale()): CardText {
+  const when = c.lesson_date ? formatDate(c.lesson_date, { day: 'numeric', month: 'short' }, locale) : null;
   return {
-    pill: when ? `Live lesson · ${when}` : 'Live lesson',
-    lead: 'My teacher crowned me',
-    title: 'Kasatik of the Lesson',
+    pill: when ? t('sharedUi.shareCard.crown.pillDated', { date: when }, locale) : t('sharedUi.shareCard.crown.pill', undefined, locale),
+    lead: t('sharedUi.shareCard.crown.lead', undefined, locale),
+    title: t('sharedUi.shareCard.crown.title', undefined, locale),
     line: c.lesson_title?.trim() || null,
     accent: 'gold',
   };
 }
 
 /** The share-sheet caption that rides along with the image (some apps show it, Stories don't). */
-export const SHARE_CAPTION = 'Tag @master.education in your story!';
-export const TAG_PROMPT = 'Tag @master.education in your story to get featured!';
+export const shareCaption = (locale: Locale = activeLocale()) => t('sharedUi.shareCard.caption', undefined, locale);
+export const tagPrompt = (locale: Locale = activeLocale()) => t('studentHome.share.tagPrompt', undefined, locale);
 
 /** How a card left the device: the system share sheet, or saved as an image. */
 export type ShareMethod = 'native' | 'download';
@@ -127,12 +112,12 @@ export function saveMethod(env: { ios: boolean; canShareFiles: boolean }): 'shee
   return env.ios && env.canShareFiles ? 'sheet' : 'download';
 }
 
-export const DESKTOP_HINT = 'Open the LMS on your phone to post it to your story.';
+export const desktopHint = (locale: Locale = activeLocale()) => t('studentHome.share.desktopHint', undefined, locale);
 
 /** A share attempt's outcome, worded honestly: a closed sheet isn't an error, a failure isn't «cancelled». */
-export function shareErrorMessage(error: unknown): string | null {
+export function shareErrorMessage(error: unknown, locale: Locale = activeLocale()): string | null {
   const name = (error as { name?: string } | null)?.name;
   if (name === 'AbortError') return null;
-  if (name === 'NotAllowedError') return 'Your browser blocked the share sheet — tap Share again, or use Download.';
-  return 'Couldn’t open sharing here — use Download instead.';
+  if (name === 'NotAllowedError') return t('studentHome.share.blocked', undefined, locale);
+  return t('studentHome.share.failed', undefined, locale);
 }

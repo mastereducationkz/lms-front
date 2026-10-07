@@ -38,12 +38,12 @@ import {
   getUsers
 } from '../services/api';
 import type { Event, CreateEventRequest, UpdateEventRequest, EventType, Group, Course, CourseModule, Lesson } from '../types';
-import { EVENT_TYPE_LABELS } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { toDatetimeLocal, fromDatetimeLocalKZ } from '../lib/datetime';
 import { roleLabel } from '@/lib/roleLabel';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/adminTools';
+import '@/lib/i18n/catalogs/adminPages';
 
 interface EventFormProps {
   event?: Event;
@@ -198,36 +198,36 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
 
   const validateForm = (): string | null => {
     if (!formData.title.trim()) {
-      return 'Event title is required';
+      return t('adminPages.events.form.titleRequired');
     }
     
     if (!formData.start_datetime) {
-      return 'Start date and time are required';
+      return t('adminPages.events.form.startRequired');
     }
     
     if (!formData.end_datetime) {
-      return 'End date and time are required';
+      return t('adminPages.events.form.endRequired');
     }
     
     const startDate = new Date(formData.start_datetime);
     const endDate = new Date(formData.end_datetime);
     
     if (startDate >= endDate) {
-      return 'Start time must be before end time';
+      return t('adminPages.events.form.startBeforeEnd');
     }
     
     if (formData.group_ids.length === 0 && formData.course_ids.length === 0) {
-      return 'Select at least one group or course';
+      return t('adminPages.events.form.audienceRequired');
     }
     
     if (formData.event_type === 'webinar' && formData.max_participants && formData.max_participants < 1) {
-      return 'Maximum participants must be greater than 0';
+      return t('adminPages.events.form.maxParticipantsPositive');
     }
 
     // Without an end date a series' later webinars are never created: no Meet room, no recording,
     // no pay for the host (2026-10-04). The server refuses it too.
     if (formData.event_type === 'webinar' && formData.is_recurring && !formData.recurrence_end_date) {
-      return 'A recurring webinar needs an end date — later webinars are only created up to it';
+      return t('adminPages.events.form.webinarEndRequired');
     }
 
     if (formData.is_recurring && formData.recurrence_end_date) {
@@ -235,7 +235,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
       const eventEnd = new Date(formData.end_datetime);
       
       if (recurrenceEnd <= eventEnd) {
-        return 'Recurrence end date must be after the event end date';
+        return t('adminPages.events.form.recurrenceAfterEnd');
       }
     }
 
@@ -299,10 +299,10 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground dark:text-foreground">
-            {event ? 'Edit Event' : 'Create Event'}
+            {event ? t('adminPages.events.form.editTitle') : t('adminPages.events.createEvent')}
           </h1>
           <p className="text-muted-foreground">
-            {event ? 'Make changes to the event' : 'Fill in information about the new event'}
+            {event ? t('adminPages.events.form.editSubtitle') : t('adminPages.events.form.createSubtitle')}
           </p>
         </div>
         <Button
@@ -312,7 +312,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
           disabled={loading}
         >
           <X className="w-4 h-4 mr-2" />
-          Exit
+          {t('adminPages.events.form.exit')}
         </Button>
       </div>
 
@@ -331,37 +331,37 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-5 h-5" />
-              Basic Information
+              {t('adminPages.events.form.basicInfo')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Title */}
             <div>
-              <Label htmlFor="title">Event Title *</Label>
+              <Label htmlFor="title">{t('adminPages.events.form.titleLabel')}</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
-                placeholder="Enter event title"
+                placeholder={t('adminPages.events.form.titlePlaceholder')}
                 required
               />
             </div>
 
             {/* Description */}
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('adminPages.events.form.description')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Event description (optional)"
+                placeholder={t('adminPages.events.form.descriptionPlaceholder')}
                 rows={3}
               />
             </div>
 
             {/* Event Type */}
             <div>
-              <Label htmlFor="event_type">Event Type *</Label>
+              <Label htmlFor="event_type">{t('adminPages.events.form.typeLabel')}</Label>
               <Select value={formData.event_type} onValueChange={(value) => handleInputChange('event_type', value)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -370,19 +370,19 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
                   <SelectItem value="class">
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4" />
-                      {EVENT_TYPE_LABELS.class}
+                      {t('adminPages.events.type.class')}
                     </div>
                   </SelectItem>
                   <SelectItem value="weekly_test">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4" />
-                      {EVENT_TYPE_LABELS.weekly_test}
+                      {t('adminPages.events.type.weeklyTest')}
                     </div>
                   </SelectItem>
                   <SelectItem value="webinar">
                     <div className="flex items-center gap-2">
                       <Video className="w-4 h-4" />
-                      {EVENT_TYPE_LABELS.webinar}
+                      {t('adminPages.events.type.webinar')}
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -397,23 +397,23 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-brand">
                 <BookOpen className="w-5 h-5" />
-                Link to Course Lesson (Optional)
+                {t('adminPages.events.form.linkLesson')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-brand mb-2">
-                If this lesson corresponds to a specific item in your course catalog, you can link it here.
+                {t('adminPages.events.form.linkLessonHint')}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Course Select */}
                 <div>
-                  <Label htmlFor="lesson_course">Course</Label>
+                  <Label htmlFor="lesson_course">{t('adminPages.events.form.course')}</Label>
                   <Select 
                     value={selectedCourseForLesson} 
                     onValueChange={handleLessonCourseChange}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select course" />
+                      <SelectValue placeholder={t('adminPages.events.form.selectCourse')} />
                     </SelectTrigger>
                     <SelectContent>
                       {courses.map(course => (
@@ -427,14 +427,14 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
 
                 {/* Module Select */}
                 <div>
-                  <Label htmlFor="lesson_module">Module</Label>
+                  <Label htmlFor="lesson_module">{t('adminPages.events.form.module')}</Label>
                   <Select 
                     value={selectedModuleForLesson} 
                     onValueChange={handleLessonModuleChange}
                     disabled={!selectedCourseForLesson}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select module" />
+                      <SelectValue placeholder={t('adminPages.events.form.selectModule')} />
                     </SelectTrigger>
                     <SelectContent>
                       {modules.map(module => (
@@ -448,14 +448,14 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
 
                 {/* Lesson Select */}
                 <div>
-                  <Label htmlFor="lesson_select">Lesson</Label>
+                  <Label htmlFor="lesson_select">{t('adminPages.events.form.lesson')}</Label>
                   <Select 
                     value={formData.lesson_id?.toString() || ''} 
                     onValueChange={handleLessonChange}
                     disabled={!selectedModuleForLesson}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select lesson" />
+                      <SelectValue placeholder={t('adminPages.events.form.selectLesson')} />
                     </SelectTrigger>
                     <SelectContent>
                       {lessons.map(lesson => (
@@ -470,16 +470,16 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
 
             {/* Teacher Selection */}
             <div>
-              <Label htmlFor="teacher_id">Assigned Teacher (Optional)</Label>
+              <Label htmlFor="teacher_id">{t('adminPages.events.form.teacher')}</Label>
               <Select 
                 value={formData.teacher_id?.toString() || 'none'} 
                 onValueChange={(value) => handleInputChange('teacher_id', value === 'none' ? undefined : parseInt(value))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select teacher" />
+                  <SelectValue placeholder={t('adminPages.events.form.selectTeacher')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No teacher assigned</SelectItem>
+                  <SelectItem value="none">{t('adminPages.events.form.noTeacher')}</SelectItem>
                   {teachers.map(teacher => (
                     <SelectItem key={teacher.id} value={teacher.id.toString()}>
                       {teacher.name} ({roleLabel(teacher.role)})
@@ -497,13 +497,13 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="w-5 h-5" />
-              Date and Time
+              {t('adminPages.events.form.dateTime')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="start_datetime">Start Time *</Label>
+                <Label htmlFor="start_datetime">{t('adminPages.events.form.startTime')}</Label>
                 <Input
                   id="start_datetime"
                   type="datetime-local"
@@ -513,7 +513,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
                 />
               </div>
               <div>
-                <Label htmlFor="end_datetime">End Time *</Label>
+                <Label htmlFor="end_datetime">{t('adminPages.events.form.endTime')}</Label>
                 <Input
                   id="end_datetime"
                   type="datetime-local"
@@ -533,14 +533,14 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
               />
               <Label htmlFor="is_recurring" className="flex items-center gap-2">
                 <Repeat className="w-4 h-4" />
-                Recurring Event
+                {t('adminPages.events.form.recurring')}
               </Label>
             </div>
 
             {formData.is_recurring && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6">
                 <div>
-                  <Label htmlFor="recurrence_pattern">Frequency</Label>
+                  <Label htmlFor="recurrence_pattern">{t('adminPages.events.form.frequency')}</Label>
                   <Select 
                     value={formData.recurrence_pattern} 
                     onValueChange={(value) => handleInputChange('recurrence_pattern', value)}
@@ -549,16 +549,16 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="biweekly">Biweekly (Every 2 weeks)</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="daily">{t('adminPages.events.form.daily')}</SelectItem>
+                      <SelectItem value="weekly">{t('adminPages.events.form.weekly')}</SelectItem>
+                      <SelectItem value="biweekly">{t('adminPages.events.form.biweekly')}</SelectItem>
+                      <SelectItem value="monthly">{t('adminPages.events.form.monthly')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
                   <Label htmlFor="recurrence_end_date">
-                    End Date{formData.event_type === 'webinar' ? ' *' : ''}
+                    {t('adminPages.events.form.endDate')}{formData.event_type === 'webinar' ? ' *' : ''}
                   </Label>
                   <Input
                     id="recurrence_end_date"
@@ -578,7 +578,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="w-5 h-5" />
-              Location
+              {t('adminPages.events.form.location')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -590,25 +590,25 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
               />
               <Label htmlFor="is_online" className="flex items-center gap-2">
                 <Video className="w-4 h-4" />
-                Online Event
+                {t('adminPages.events.form.online')}
               </Label>
             </div>
 
             <div>
               <Label htmlFor="location">
-                {formData.is_online ? 'Meeting Link' : 'Location'}
+                {formData.is_online ? t('adminPages.events.form.meetingLink') : t('adminPages.events.form.location')}
               </Label>
               <Input
                 id="location"
                 value={formData.location}
                 onChange={(e) => handleInputChange('location', e.target.value)}
-                placeholder={formData.is_online ? 'https://zoom.us/j/...' : 'Room 101'}
+                placeholder={formData.is_online ? 'https://zoom.us/j/...' : t('adminPages.events.form.roomPlaceholder')}
               />
             </div>
 
             {formData.is_online && (
               <div>
-                <Label htmlFor="meeting_url">Additional Link</Label>
+                <Label htmlFor="meeting_url">{t('adminPages.events.form.additionalLink')}</Label>
                 <Input
                   id="meeting_url"
                   value={formData.meeting_url}
@@ -626,19 +626,19 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
             <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Video className="w-5 h-5" />
-              Webinar Settings
+              {t('adminPages.events.form.webinarSettings')}
             </CardTitle>
             </CardHeader>
             <CardContent>
               <div>
-                <Label htmlFor="max_participants">Maximum Participants</Label>
+                <Label htmlFor="max_participants">{t('adminPages.events.form.maxParticipants')}</Label>
                 <Input
                   id="max_participants"
                   type="number"
                   min="1"
                   value={formData.max_participants || ''}
                   onChange={(e) => handleInputChange('max_participants', e.target.value ? parseInt(e.target.value) : undefined)}
-                  placeholder="No limit"
+                  placeholder={t('adminPages.events.form.noLimit')}
                 />
               </div>
             </CardContent>
@@ -650,15 +650,15 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
-              Participants
+              {t('adminPages.events.participants')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
 
             {/* Courses Selection */}
             <div className="space-y-2">
-              <Label className="text-base font-semibold">Courses</Label>
-              <p className="text-sm text-muted-foreground mb-2">Assign to all students enrolled in these courses</p>
+              <Label className="text-base font-semibold">{t('adminPages.events.form.courses')}</Label>
+              <p className="text-sm text-muted-foreground mb-2">{t('adminPages.events.form.coursesHint')}</p>
               {courses.map(course => (
                 <div key={course.id} className="flex items-center space-x-2">
                   <Checkbox
@@ -675,15 +675,15 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
                 </div>
               ))}
               {courses.length === 0 && (
-                <p className="text-muted-foreground text-sm">No courses found</p>
+                <p className="text-muted-foreground text-sm">{t('adminPages.events.form.noCourses')}</p>
               )}
             </div>
             <div className="border-t dark:border-border pt-2"></div>
 
             {/* Groups Selection */}
             <div className="space-y-1">
-              <Label className="text-base font-semibold">Groups</Label>
-              <p className="text-sm text-muted-foreground mb-2">Assign to specific student groups</p>
+              <Label className="text-base font-semibold">{t('adminPages.events.form.groups')}</Label>
+              <p className="text-sm text-muted-foreground mb-2">{t('adminPages.events.form.groupsHint')}</p>
               {groups.map(group => (
                 <div key={group.id} className="flex items-center space-x-2">
                   <Checkbox
@@ -694,13 +694,13 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
                   <Label htmlFor={`group-${group.id}`} className="flex items-center gap-2 cursor-pointer">
                     {group.name}
                     <Badge variant="outline" className="text-xs">
-                      {group.student_count} students
+                      {t('common.students', { count: group.student_count })}
                     </Badge>
                   </Label>
                 </div>
               ))}
               {groups.length === 0 && (
-                <p className="text-muted-foreground text-sm">No groups found</p>
+                <p className="text-muted-foreground text-sm">{t('adminPages.events.form.noGroups')}</p>
               )}
             </div>
 
@@ -712,7 +712,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
         <div className="flex justify-end gap-4">
           <Button type="submit" disabled={loading}>
             <Save className="w-4 h-4 mr-2" />
-            {loading ? 'Saving...' : event ? 'Update' : 'Create'}
+            {loading ? t('adminPages.events.form.saving') : event ? t('adminPages.events.form.update') : t('adminPages.events.form.create')}
           </Button>
         </div>
       </form>

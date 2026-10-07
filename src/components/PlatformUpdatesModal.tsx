@@ -8,40 +8,46 @@ import {
   DialogFooter,
 } from './ui/dialog';
 import { Button } from './ui/button';
+import { formatDate, type MessageKey } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 
 interface UpdateItem {
-  title: string;
-  description: string;
+  title: MessageKey;
+  description: MessageKey;
   type: 'new' | 'improvement' | 'fix';
 }
 
 interface UpdateRelease {
   version: string;
+  /** YYYY-MM-DD, shown in the reader's language. */
   date: string;
-  title: string;
+  title: MessageKey;
   updates: UpdateItem[];
 }
+
+const RELEASE_DATE: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
 
 // Platform updates changelog - add new releases at the top
 const RELEASES: UpdateRelease[] = [
   {
     version: '2026.01.04',
-    date: 'January 4, 2026',
-    title: 'File + Text Tasks & Improvements',
+    date: '2026-01-04',
+    title: 'studentHome.updates.r20260104.title',
     updates: [
       {
-        title: 'New Task Type: File + Text',
-        description: 'Upload reference files (PDF, DOC, images) and have students write text responses with keyword-based grading.',
+        title: 'studentHome.updates.r20260104.fileText.title',
+        description: 'studentHome.updates.r20260104.fileText.description',
         type: 'new',
       },
       {
-        title: 'Extended File Support',
-        description: 'Now supports PDF, DOC, DOCX, JPG, PNG, and GIF files for assignments.',
+        title: 'studentHome.updates.r20260104.fileTypes.title',
+        description: 'studentHome.updates.r20260104.fileTypes.description',
         type: 'improvement',
       },
       {
-        title: 'Keywords for Auto-Grading',
-        description: 'Add keywords to text tasks for automatic answer validation.',
+        title: 'studentHome.updates.r20260104.keywords.title',
+        description: 'studentHome.updates.r20260104.keywords.description',
         type: 'new',
       },
     ],
@@ -49,15 +55,10 @@ const RELEASES: UpdateRelease[] = [
   // Add more releases here as needed
 ];
 
-const getTypeLabel = (type: UpdateItem['type']) => {
-  switch (type) {
-    case 'new':
-      return 'New';
-    case 'improvement':
-      return 'Improved';
-    case 'fix':
-      return 'Fixed';
-  }
+const TYPE_LABEL: Record<UpdateItem['type'], MessageKey> = {
+  new: 'studentHome.updates.type.new',
+  improvement: 'studentHome.updates.type.improvement',
+  fix: 'studentHome.updates.type.fix',
 };
 
 interface PlatformUpdatesModalProps {
@@ -74,6 +75,7 @@ export default function PlatformUpdatesModal({
   onClose,
   userRole 
 }: PlatformUpdatesModalProps) {
+  const t = useT();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedRelease, setSelectedRelease] = useState<UpdateRelease | null>(RELEASES[0] || null);
 
@@ -110,9 +112,9 @@ export default function PlatformUpdatesModal({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-xl">What's New</DialogTitle>
+          <DialogTitle className="text-xl">{t('studentHome.updates.title')}</DialogTitle>
           <DialogDescription>
-            Platform updates and new features
+            {t('studentHome.updates.subtitle')}
           </DialogDescription>
         </DialogHeader>
 
@@ -132,7 +134,7 @@ export default function PlatformUpdatesModal({
                     }`}
                   >
                     <div className="text-sm font-medium">{release.version}</div>
-                    <div className="text-xs text-muted-foreground">{release.date}</div>
+                    <div className="text-xs text-muted-foreground">{formatDate(release.date, RELEASE_DATE)}</div>
                   </button>
                 ))}
               </div>
@@ -145,9 +147,9 @@ export default function PlatformUpdatesModal({
               <div className="space-y-4">
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">
-                    {selectedRelease.title}
+                    {t(selectedRelease.title)}
                   </h3>
-                  <p className="text-sm text-muted-foreground">{selectedRelease.date}</p>
+                  <p className="text-sm text-muted-foreground">{formatDate(selectedRelease.date, RELEASE_DATE)}</p>
                 </div>
 
                 <div className="space-y-3">
@@ -158,14 +160,14 @@ export default function PlatformUpdatesModal({
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium text-foreground">
-                          {update.title}
+                          {t(update.title)}
                         </span>
                         <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded">
-                          {getTypeLabel(update.type)}
+                          {t(TYPE_LABEL[update.type])}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {update.description}
+                        {t(update.description)}
                       </p>
                     </div>
                   ))}
@@ -178,7 +180,7 @@ export default function PlatformUpdatesModal({
 
         <DialogFooter className="border-t pt-4 mt-4">
           <Button onClick={handleClose}>
-            Got it
+            {t('studentHome.updates.gotIt')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -188,6 +190,7 @@ export default function PlatformUpdatesModal({
 
 // Export a button component to manually trigger the modal
 export function WhatsNewButton({ userRole }: { userRole?: string }) {
+  const t = useT();
   const [showModal, setShowModal] = useState(false);
 
   // Only show to teachers and admins
@@ -203,7 +206,7 @@ export function WhatsNewButton({ userRole }: { userRole?: string }) {
         onClick={() => setShowModal(true)}
         className="font-medium border-gray-300 dark:border-input hover:border-gray-400 text-gray-700 dark:text-foreground hover:text-foreground"
       >
-        What's New
+        {t('studentHome.updates.title')}
       </Button>
       
       {showModal && (

@@ -4,6 +4,8 @@ import { verdictHint, verdictText } from '../../lib/meetAttendance';
 import type { MeetStudentVerdict } from '../../services/api/meetAttendance';
 import { registerNote } from '../../lib/meetRegister';
 import type { StudentRegister } from '../../services/api/meetRegister';
+import { t } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/meetViews';
 
 const TONE: Record<string, string> = {
   present: 'text-emerald-700 dark:text-emerald-300',
@@ -17,7 +19,7 @@ const MARK: Record<string, LucideIcon> = { present: Check, absent: X };
 
 /** The journal cell's hover line: what Meet says about this student in this lesson. */
 export function verdictNote(verdict: MeetStudentVerdict | undefined, locale: 'en' | 'ru'): string | null {
-  return verdict ? [`Meet: ${verdictText(verdict, locale)}`, verdictHint(verdict, locale)].filter(Boolean).join('\n') : null;
+  return verdict ? [t('meetViews.verdict.meetSays', { verdict: verdictText(verdict, locale) }, locale), verdictHint(verdict, locale)].filter(Boolean).join('\n') : null;
 }
 
 /**

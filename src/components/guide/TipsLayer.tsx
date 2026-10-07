@@ -6,9 +6,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { visibleInViewport } from '@/lib/guide/geometry';
+import { useT } from '@/lib/i18n/react';
 import { findShown, isShown, otherDialogOpen, viewportSize } from './dom';
 import { TipCard } from './GuideCards';
-import { tipGotIt, tipsFor, type TipDefinition } from './tips';
+import { tipsFor, type TipDefinition } from './tips';
 import { tourStore } from './tourStore';
 import { useAnchoredCard } from './useAnchoredCard';
 
@@ -27,14 +28,14 @@ interface Props {
 }
 
 function TipBubble({ tip, el, onGotIt }: { tip: TipDefinition; el: HTMLElement; onGotIt: () => void }) {
+  const t = useT();
   const floating = useAnchoredCard(el, tip.placement, 12);
   return (
     <TipCard
       ref={floating.refs.setFloating}
       tipKey={tip.key}
-      title={tip.title}
-      body={tip.body}
-      gotIt={tipGotIt(tip.locale)}
+      title={t(tip.title)}
+      body={t(tip.body)}
       side={floating.side}
       style={floating.floatingStyles}
       hidden={!floating.isPositioned || floating.referenceHidden}

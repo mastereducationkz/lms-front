@@ -7,6 +7,8 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { cn } from '../../lib/utils';
 import { capList, shuffleDelay, shuffleSequence } from '../../lib/liveLesson/orcas';
 import type { Person } from '../../lib/liveLesson/types';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 
 const UserAvatar = lazy(() => import('../mascot/UserAvatar'));
 
@@ -33,11 +35,12 @@ export function LiveAvatar({ person, size = 28, className }: { person: Person; s
 export function OrcaStack({ people, size = 32, max = 12, pop = false, className }: {
   people: Person[]; size?: number; max?: number; pop?: boolean; className?: string;
 }) {
+  const t = useT();
   const { shown, more } = capList(people, max);
   if (!people.length) return null;
   const overlap = Math.round(size * 0.28);
   return (
-    <div className={cn('flex items-center', className)} aria-label={`${people.length} student${people.length === 1 ? '' : 's'}`}>
+    <div className={cn('flex items-center', className)} aria-label={t('chatLive.live.studentCount', { count: people.length })}>
       {shown.map((person, i) => (
         <span key={person.user_id} title={person.name ?? undefined} style={{ marginLeft: i ? -overlap : 0, zIndex: shown.length - i }}
           className={cn('relative rounded-full ring-2 ring-background', pop && 'live-orca-pop')}>

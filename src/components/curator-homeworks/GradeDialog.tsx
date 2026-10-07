@@ -15,6 +15,9 @@ import { StatusBadge } from './StatusBadge';
 import { AudioPlayer, isAudioUrl } from '../AudioPlayer';
 import { safeUploadUrl } from '../../lib/mediaUrl';
 import type { StudentProgress, AssignmentData, SubmissionDetails } from './types';
+import { formatDateTime } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherDesk';
 
 interface GradeDialogProps {
   open: boolean;
@@ -33,7 +36,7 @@ interface GradeDialogProps {
 
 const formatDate = (dateString: string | null): string => {
   if (!dateString) return '—';
-  return new Date(dateString).toLocaleString('en-US', {
+  return formatDateTime(dateString, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -56,12 +59,13 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
   onSubmit,
   isLoading,
 }) => {
+  const t = useT();
   const renderSubmissionContent = () => {
     if (isLoadingSubmission) {
       return (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-          <span className="ml-2 text-muted-foreground">Loading submission...</span>
+          <span className="ml-2 text-muted-foreground">{t('teacherDesk.gradeDialog.loading')}</span>
         </div>
       );
     }
@@ -69,7 +73,7 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
     if (!submissionDetails) {
       return (
         <div className="text-center py-8 text-muted-foreground">
-          No submission content available
+          {t('teacherDesk.gradeDialog.noContent')}
         </div>
       );
     }
@@ -90,7 +94,7 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
             <FileText className="w-5 h-5 text-blue-600 mr-3" />
             <div className="flex-1">
               <div className="font-medium">
-                {submissionDetails.submitted_file_name || 'Attached File'}
+                {submissionDetails.submitted_file_name || t('teacherDesk.grading.attachedFile')}
               </div>
             </div>
             {resolvedFileUrl && (
@@ -101,7 +105,7 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
                 className="text-blue-600 hover:underline text-sm font-medium flex items-center"
               >
                 <Download className="w-4 h-4 mr-1" />
-                Download
+                {t('teacherDesk.gradeDialog.download')}
               </a>
             )}
           </div>
@@ -120,9 +124,9 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
             {submissionDetails.answers.tasks.map((task: any, idx: number) => (
               <div key={idx} className="bg-white dark:bg-card p-4 rounded-lg border dark:border-border">
                 <div className="text-sm font-medium text-muted-foreground mb-2">
-                  Task {idx + 1}
+                  {t('teacherDesk.gradeDialog.task', { number: idx + 1 })}
                 </div>
-                <div className="whitespace-pre-wrap">{task.answer || 'No answer provided'}</div>
+                <div className="whitespace-pre-wrap">{task.answer || t('teacherDesk.grading.noAnswer')}</div>
               </div>
             ))}
           </div>
@@ -133,7 +137,7 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
           !submissionDetails.answers?.text &&
           !submissionDetails.answers?.tasks && (
             <div className="text-center py-4 text-muted-foreground">
-              No submission content available
+              {t('teacherDesk.gradeDialog.noContent')}
             </div>
           )}
       </div>
@@ -144,7 +148,7 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Grade Submission — {student?.student_name}</DialogTitle>
+          <DialogTitle>{t('teacherDesk.gradeDialog.title', { name: student?.student_name ?? '' })}</DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 py-4">
@@ -153,19 +157,19 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
             {/* Student Info Header */}
             <div className="grid grid-cols-2 gap-3 bg-muted/50 p-3 rounded-lg text-sm">
               <div>
-                <span className="text-muted-foreground">Student:</span>
+                <span className="text-muted-foreground">{t('teacherDesk.gradeDialog.student')}</span>
                 <p className="font-medium">{student?.student_name}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Submitted:</span>
+                <span className="text-muted-foreground">{t('teacherDesk.gradeDialog.submitted')}</span>
                 <p className="font-medium">{formatDate(student?.submitted_at || null)}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Assignment:</span>
+                <span className="text-muted-foreground">{t('teacherDesk.gradeDialog.assignment')}</span>
                 <p className="font-medium">{assignment?.title}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Status:</span>
+                <span className="text-muted-foreground">{t('teacherDesk.gradeDialog.status')}</span>
                 <div className="mt-1">
                   {student && assignment && (
                     <StatusBadge
@@ -181,7 +185,7 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
             {/* Submission Content */}
             <div className="rounded-lg border border-border bg-slate-50 p-4 text-slate-900 dark:bg-zinc-900 dark:text-zinc-100 dark:border-border">
               <h3 className="mb-3 flex items-center text-sm font-semibold text-slate-900 dark:text-zinc-100">
-                Student's Work
+                {t('teacherDesk.gradeDialog.studentWork')}
               </h3>
               {renderSubmissionContent()}
             </div>
@@ -190,11 +194,11 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
           {/* Right side - Grading Controls (2/5 width) */}
           <div className="lg:col-span-2">
             <div className="bg-white dark:bg-card p-4 border border-border rounded-lg sticky top-4 space-y-4">
-              <h3 className="font-semibold">Grading</h3>
+              <h3 className="font-semibold">{t('teacherDesk.gradeDialog.grading')}</h3>
 
               <div className="space-y-2">
                 <Label htmlFor="gradeScore">
-                  Score (Max: {assignment?.max_score || 100})
+                  {t('teacherDesk.gradeDialog.scoreMax', { max: assignment?.max_score || 100 })}
                 </Label>
                 <Input
                   id="gradeScore"
@@ -203,17 +207,17 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
                   max={assignment?.max_score || 100}
                   value={gradeValue}
                   onChange={(e) => setGradeValue(e.target.value)}
-                  placeholder="Enter score"
+                  placeholder={t('teacherDesk.gradeDialog.enterScore')}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="gradeFeedback">Feedback (optional)</Label>
+                <Label htmlFor="gradeFeedback">{t('teacherDesk.gradeDialog.feedback')}</Label>
                 <Textarea
                   id="gradeFeedback"
                   value={feedbackValue}
                   onChange={(e) => setFeedbackValue(e.target.value)}
-                  placeholder="Provide feedback to the student..."
+                  placeholder={t('teacherDesk.gradeDialog.feedbackPlaceholder')}
                   className="min-h-[150px]"
                   rows={6}
                 />
@@ -224,10 +228,10 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button onClick={onSubmit} disabled={isLoading}>
-            {isLoading ? 'Saving...' : 'Save Grade'}
+            {isLoading ? t('teacherDesk.grading.saving') : t('teacherDesk.grading.saveGrade')}
           </Button>
         </DialogFooter>
       </DialogContent>

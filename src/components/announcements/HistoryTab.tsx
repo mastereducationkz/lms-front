@@ -16,6 +16,8 @@ import {
   recallAnnouncement,
 } from '../../services/api/announcements';
 import type { Announcement, AnnouncementDetail } from '../../services/api/announcements';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/announcements';
 
 /** How often to refresh while a broadcast is still going out. */
 const POLL_MS = 5000;
@@ -25,6 +27,7 @@ interface HistoryTabProps {
 }
 
 export function HistoryTab({ onSendAgain }: HistoryTabProps) {
+  const t = useT();
   const [rows, setRows] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<AnnouncementDetail | null>(null);
@@ -35,11 +38,11 @@ export function HistoryTab({ onSendAgain }: HistoryTabProps) {
       const response = await getAnnouncements();
       setRows(response.announcements);
     } catch (error) {
-      toast(errorMessage(error, 'Failed to load announcements'), 'error');
+      toast(errorMessage(error, t('announcements.history.loadFailed')), 'error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load();
@@ -58,44 +61,42 @@ export function HistoryTab({ onSendAgain }: HistoryTabProps) {
     try {
       setSelected(await getAnnouncement(id));
     } catch (error) {
-      toast(errorMessage(error, 'Failed to load the announcement'), 'error');
+      toast(errorMessage(error, t('announcements.history.loadOneFailed')), 'error');
     }
   };
 
   const handleCancel = async (id: number) => {
-    if (!window.confirm('Cancel this scheduled announcement?')) return;
+    if (!window.confirm(t('announcements.history.cancelConfirm'))) return;
     setBusy(true);
     try {
       await cancelAnnouncement(id);
-      toast('Announcement canceled', 'success');
+      toast(t('announcements.history.canceled'), 'success');
       setSelected(null);
       load();
     } catch (error) {
-      toast(errorMessage(error, 'Failed to cancel'), 'error');
+      toast(errorMessage(error, t('announcements.history.cancelFailed')), 'error');
     } finally {
       setBusy(false);
     }
   };
 
   const handleRecall = async (id: number) => {
-    const confirmed = window.confirm(
-      'Delete this announcement from every chat that still allows it? Messages older than about 48 hours cannot be removed.',
-    );
+    const confirmed = window.confirm(t('announcements.history.recallConfirm'));
     if (!confirmed) return;
     setBusy(true);
     try {
       const updated = await recallAnnouncement(id);
       setSelected(updated);
-      const stuck = updated.targets.filter((t) => t.error?.startsWith('recall:')).length;
+      const stuck = updated.targets.filter((target) => target.error?.startsWith('recall:')).length;
       toast(
         stuck > 0
-          ? `Recalled, but ${stuck} chat${stuck > 1 ? 's' : ''} could not be cleared`
-          : 'Announcement recalled',
+          ? t('announcements.history.recalledPartly', { count: stuck })
+          : t('announcements.history.recalled'),
         stuck > 0 ? 'info' : 'success',
       );
       load();
     } catch (error) {
-      toast(errorMessage(error, 'Failed to recall'), 'error');
+      toast(errorMessage(error, t('announcements.history.recallFailed')), 'error');
     } finally {
       setBusy(false);
     }
@@ -106,7 +107,7 @@ export function HistoryTab({ onSendAgain }: HistoryTabProps) {
     try {
       onSendAgain(await getAnnouncement(id));
     } catch (error) {
-      toast(errorMessage(error, 'Failed to load the announcement recipients'), 'error');
+      toast(errorMessage(error, t('announcements.history.loadRecipientsFailed')), 'error');
     } finally {
       setBusy(false);
     }
@@ -115,9 +116,9 @@ export function HistoryTab({ onSendAgain }: HistoryTabProps) {
   const handleCopyMessage = async (body: string) => {
     try {
       await copyAnnouncementHtml(body);
-      toast('HTML message copied — paste it into Compose', 'success');
+      toast(t('announcements.history.copied'), 'success');
     } catch (error) {
-      toast(errorMessage(error, 'Could not copy the message'), 'error');
+      toast(errorMessage(error, t('announcements.history.copyFailed')), 'error');
     }
   };
 
@@ -137,19 +138,19 @@ export function HistoryTab({ onSendAgain }: HistoryTabProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Message</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Delivered</TableHead>
-                  <TableHead>Author</TableHead>
-                  <TableHead>When</TableHead>
+                  <TableHead>{t('announcements.history.colMessage')}</TableHead>
+                  <TableHead>{t('announcements.history.colStatus')}</TableHead>
+                  <TableHead>{t('announcements.history.colDelivered')}</TableHead>
+                  <TableHead>{t('announcements.history.colAuthor')}</TableHead>
+                  <TableHead>{t('announcements.history.colWhen')}</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading && rows.length === 0
-                  ? emptyRow('Loading…')
+                  ? emptyRow(t('common.loading'))
                   : rows.length === 0
-                    ? emptyRow('No announcements yet.')
+                    ? emptyRow(t('announcements.history.empty'))
                     : rows.map((row) => (
                         <TableRow key={row.id} className="cursor-pointer" onClick={() => openDetail(row.id)}>
                           <TableCell className="max-w-md">
@@ -157,18 +158,18 @@ export function HistoryTab({ onSendAgain }: HistoryTabProps) {
                                 shows the words, not the tags. */}
                             <div className="truncate text-foreground">
                               {visibleText(row.body) || (
-                                <span className="text-muted-foreground">(images only)</span>
+                                <span className="text-muted-foreground">{t('announcements.history.imagesOnly')}</span>
                               )}
                             </div>
                             {row.images.length > 0 && (
                               <span className="text-xs text-muted-foreground">
-                                {row.images.length} image{row.images.length > 1 ? 's' : ''}
+                                {t('announcements.history.images', { count: row.images.length })}
                               </span>
                             )}
                           </TableCell>
                           <TableCell>
                             <Badge className={STATUS_STYLES[row.status]} variant="secondary">
-                              {STATUS_LABELS[row.status]}
+                              {t(STATUS_LABELS[row.status])}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -177,7 +178,7 @@ export function HistoryTab({ onSendAgain }: HistoryTabProps) {
                             </span>
                             {row.failed_count > 0 && (
                               <span className="ml-1 text-xs text-muted-foreground">
-                                ({row.failed_count} failed)
+                                {t('announcements.history.failedCount', { count: row.failed_count })}
                               </span>
                             )}
                           </TableCell>
@@ -193,20 +194,20 @@ export function HistoryTab({ onSendAgain }: HistoryTabProps) {
                               size="sm"
                               onClick={() => handleCopyMessage(row.body)}
                               disabled={busy || !row.body}
-                              aria-label="Copy message as HTML"
+                              aria-label={t('announcements.history.copyAsHtml')}
                             >
                               <Copy className="mr-1 h-4 w-4" />
-                              Copy message
+                              {t('announcements.history.copyMessage')}
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleSendAgain(row.id)}
                               disabled={busy}
-                              aria-label="Send again to the same recipients"
+                              aria-label={t('announcements.history.sendAgainLabel')}
                             >
                               <Repeat2 className="mr-1 h-4 w-4" />
-                              Send again
+                              {t('announcements.history.sendAgain')}
                             </Button>
                             {row.status === 'scheduled' && (
                               <Button
@@ -214,7 +215,7 @@ export function HistoryTab({ onSendAgain }: HistoryTabProps) {
                                 size="sm"
                                 onClick={() => handleCancel(row.id)}
                                 disabled={busy}
-                                aria-label="Cancel scheduled announcement"
+                                aria-label={t('announcements.history.cancelLabel')}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -225,7 +226,7 @@ export function HistoryTab({ onSendAgain }: HistoryTabProps) {
                                 size="sm"
                                 onClick={() => handleRecall(row.id)}
                                 disabled={busy}
-                                aria-label="Recall announcement"
+                                aria-label={t('announcements.history.recallLabel')}
                               >
                                 <Undo2 className="h-4 w-4" />
                               </Button>

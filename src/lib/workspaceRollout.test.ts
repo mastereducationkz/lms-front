@@ -28,10 +28,18 @@ describe('addresses and names', () => {
   });
 
   it('asks for English names', () => {
-    expect(nameProblem('First name', 'Yernur')).toBeNull();
-    expect(nameProblem('Last name', "O'Brien-Smith")).toBeNull();
-    expect(nameProblem('First name', 'Ернур')).toMatch(/English/);
-    expect(nameProblem('Last name', '  ')).toMatch(/empty/);
+    expect(nameProblem('first', 'Yernur')).toBeNull();
+    expect(nameProblem('last', "O'Brien-Smith")).toBeNull();
+    expect(nameProblem('first', 'Ернур')).toMatch(/English/);
+    expect(nameProblem('last', '  ')).toMatch(/empty/);
+  });
+
+  it('says what is wrong in the admin’s language', () => {
+    expect(addressProblem('', 'ru')).toBe('Введите адрес в Workspace');
+    expect(addressProblem('nuray@gmail.com', 'ru')).toBe('Адрес должен заканчиваться на @mastereducation.kz');
+    expect(nameProblem('first', 'Ернур', 'ru')).toBe('Имя нужно написать латиницей');
+    expect(nameProblem('last', '  ', 'ru')).toBe('Фамилия не заполнена');
+    expect(nameProblem('first', 'A'.repeat(61), 'en')).toBe('First name is longer than 60 characters');
   });
 });
 

@@ -6,6 +6,8 @@ import { hasCurator } from './curator';
 import { PROGRAM_CHIP_LABELS, PROGRAM_ORDER, detectPrograms } from './programs';
 import type { ProgramKey } from './programs';
 import type { TelegramGroup } from '../../services/api/announcements';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/announcements';
 
 /**
  * Search, program and curator filters for lists of Telegram groups.
@@ -122,6 +124,7 @@ export type GroupFilters = ReturnType<typeof useGroupFilters>;
 
 /** The search box, the SAT / IELTS / NUET / GE chips and the curator chips. */
 export function GroupFilterBar({ filters }: { filters: GroupFilters }) {
+  const t = useT();
   const {
     search,
     setSearch,
@@ -142,15 +145,15 @@ export function GroupFilterBar({ filters }: { filters: GroupFilters }) {
           onKeyDown={(event) => {
             if (event.key === 'Escape') setSearch('');
           }}
-          placeholder="Search groups by name…"
-          aria-label="Search groups by name"
+          placeholder={t('announcements.filters.search')}
+          aria-label={t('announcements.filters.searchLabel')}
           className="pl-9 pr-9"
         />
         {search && (
           <button
             type="button"
             onClick={() => setSearch('')}
-            aria-label="Clear search"
+            aria-label={t('announcements.filters.clearSearch')}
             className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
@@ -159,9 +162,9 @@ export function GroupFilterBar({ filters }: { filters: GroupFilters }) {
       </div>
 
       <div className="space-y-2">
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by program">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('announcements.filters.byProgram')}>
           <FilterChip
-            label="All"
+            label={t('common.all')}
             count={programCounts.all}
             active={programFilter.size === 0}
             onClick={filters.showAllPrograms}
@@ -180,7 +183,7 @@ export function GroupFilterBar({ filters }: { filters: GroupFilters }) {
               chats whose names carry no program. */}
           {(programCounts.other > 0 || programFilter.has('other')) && (
             <FilterChip
-              label="Other"
+              label={t('announcements.filters.other')}
               count={programCounts.other}
               active={programFilter.has('other')}
               onClick={() => toggleProgram('other')}
@@ -189,15 +192,15 @@ export function GroupFilterBar({ filters }: { filters: GroupFilters }) {
         </div>
 
         {/* No "All" chip here: with neither picked, the filter is simply off. */}
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by curator">
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('announcements.filters.byCurator')}>
           <FilterChip
-            label="With curator"
+            label={t('announcements.filters.withCurator')}
             count={curatorCounts.with}
             active={curatorFilter === 'with'}
             onClick={() => toggleCurator('with')}
           />
           <FilterChip
-            label="Without curator"
+            label={t('announcements.filters.withoutCurator')}
             count={curatorCounts.without}
             active={curatorFilter === 'without'}
             onClick={() => toggleCurator('without')}

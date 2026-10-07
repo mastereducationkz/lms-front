@@ -5,6 +5,8 @@ import { Input } from '../ui/input';
 import { TableCell, TableRow } from '../ui/table';
 import type { AccountState, Draft, Intent } from '../../lib/workspaceRollout';
 import type { RecordingTeacher } from '../../services/api/recordingsAdmin';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/adminPages';
 
 interface Props {
   teacher: RecordingTeacher;
@@ -33,19 +35,20 @@ const TONES = {
 };
 
 function AccountChip({ state }: { state: AccountState }) {
+  const t = useT();
   const [tone, label] = ((): [keyof typeof TONES, string] => {
     switch (state.kind) {
       case 'exists':
-        if (state.signedIn === false) return ['amber', 'Account exists · never signed in'];
-        return ['green', state.signedIn ? 'Account exists · signed in' : 'Account exists'];
+        if (state.signedIn === false) return ['amber', t('adminPages.recordingsRollout.row.existsNeverSignedIn')];
+        return ['green', state.signedIn ? t('adminPages.recordingsRollout.row.existsSignedIn') : t('adminPages.recordingsRollout.row.exists')];
       case 'new':
-        return ['sky', 'New account → import'];
+        return ['sky', t('adminPages.recordingsRollout.row.new')];
       case 'suspended':
-        return ['red', 'Suspended in Workspace'];
+        return ['red', t('adminPages.recordingsRollout.row.suspended')];
       case 'taken':
-        return ['red', `Connected to ${state.by}`];
+        return ['red', t('adminPages.recordingsRollout.row.taken', { name: state.by })];
       default:
-        return ['gray', 'Not checked — no users list'];
+        return ['gray', t('adminPages.recordingsRollout.row.unchecked')];
     }
   })();
   return <span className={`${CHIP} ${TONES[tone]}`}>{label}</span>;
@@ -55,6 +58,7 @@ export default function TeacherRolloutRow({
   teacher, draft, state, intent, canWrite, selected, busy,
   onToggle, onEdit, onConnect, onDisconnect, onSkip, onCopyInstructions,
 }: Props) {
+  const t = useT();
   const connected = !!teacher.workspace_email;
   const editable = canWrite && !connected && !teacher.skipped;
   const official = teacher.official_full_name && teacher.official_full_name !== teacher.name
@@ -66,22 +70,22 @@ export default function TeacherRolloutRow({
     <TableRow className={teacher.skipped ? 'opacity-60' : undefined}>
       {canWrite && (
         <TableCell className="w-8">
-          {editable && <Checkbox checked={selected} onCheckedChange={onToggle} aria-label={`Select ${teacher.name}`} />}
+          {editable && <Checkbox checked={selected} onCheckedChange={onToggle} aria-label={t('adminPages.recordingsRollout.row.select', { name: teacher.name })} />}
         </TableCell>
       )}
       <TableCell className="min-w-[12rem]">
         <div className="font-medium text-foreground">{teacher.name}</div>
         {official && <div className="text-xs text-muted-foreground">{official}</div>}
         <div className="text-xs text-muted-foreground">{teacher.email}</div>
-        {teacher.skipped && <span className={`${CHIP} ${TONES.gray} mt-1`}>Skipped</span>}
+        {teacher.skipped && <span className={`${CHIP} ${TONES.gray} mt-1`}>{t('adminPages.recordingsRollout.row.skipped')}</span>}
       </TableCell>
       <TableCell className="min-w-[14rem]">
         {editable ? (
           <div className="flex gap-1">
             <Input value={draft.firstName} onChange={(e) => onEdit('firstName', e.target.value)}
-              placeholder="First name" className="h-8 text-xs" disabled={busy} aria-label="First name" />
+              placeholder={t('adminPages.recordingsRollout.row.firstName')} className="h-8 text-xs" disabled={busy} aria-label={t('adminPages.recordingsRollout.row.firstName')} />
             <Input value={draft.lastName} onChange={(e) => onEdit('lastName', e.target.value)}
-              placeholder="Last name" className="h-8 text-xs" disabled={busy} aria-label="Last name" />
+              placeholder={t('adminPages.recordingsRollout.row.lastName')} className="h-8 text-xs" disabled={busy} aria-label={t('adminPages.recordingsRollout.row.lastName')} />
           </div>
         ) : (
           <span className="text-sm text-foreground">{`${draft.firstName} ${draft.lastName}`.trim() || '—'}</span>
@@ -91,20 +95,20 @@ export default function TeacherRolloutRow({
         {editable ? (
           <Input value={draft.email} onChange={(e) => onEdit('email', e.target.value)}
             placeholder="name@mastereducation.kz" className="h-8 font-mono text-xs" disabled={busy}
-            aria-label="Workspace email" />
+            aria-label={t('adminPages.recordingsRollout.row.workspaceEmail')} />
         ) : (
           <div className="font-mono text-xs text-foreground">{teacher.workspace_email ?? (draft.email || '—')}</div>
         )}
         <div className="flex flex-wrap items-center gap-1">
           {connected && teacher.account.status === 'missing' ? (
-            <span className={`${CHIP} ${TONES.amber}`}>Not in the uploaded users list</span>
+            <span className={`${CHIP} ${TONES.amber}`}>{t('adminPages.recordingsRollout.row.notInList')}</span>
           ) : (
             <AccountChip state={state} />
           )}
         </div>
         {showSimilar && (
           <div className="text-[11px] text-amber-700 dark:text-amber-400">
-            Existing account with this first name: {teacher.similar_accounts.join(', ')} — same person?
+            {t('adminPages.recordingsRollout.row.similar', { names: teacher.similar_accounts.join(', ') })}
           </div>
         )}
         {blockedReason && <div className="text-[11px] text-red-600 dark:text-red-400">{blockedReason}</div>}
@@ -120,7 +124,7 @@ export default function TeacherRolloutRow({
               <span key={g.id} className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] ${
                 g.telegram_linked ? TONES.gray : TONES.amber}`}>
                 {g.name}
-                {!g.telegram_linked && ' · no chat'}
+                {!g.telegram_linked && ` · ${t('adminPages.recordingsRollout.row.noChat')}`}
               </span>
             ))}
           </div>
@@ -131,23 +135,23 @@ export default function TeacherRolloutRow({
           <div className="flex flex-wrap justify-end gap-1">
             {connected && (
               <Button variant="ghost" size="sm" onClick={onDisconnect} disabled={busy}>
-                <Unlink className="mr-1 h-4 w-4" />Disconnect
+                <Unlink className="mr-1 h-4 w-4" />{t('adminPages.recordingsRollout.disconnect')}
               </Button>
             )}
             {editable && (
               <Button size="sm" onClick={onConnect} disabled={busy || intent?.kind !== 'connect'}
-                title={intent?.kind === 'import' ? 'Create the account with the Google import first' : undefined}>
-                <Check className="mr-1 h-4 w-4" />Connect
+                title={intent?.kind === 'import' ? t('adminPages.recordingsRollout.row.importFirst') : undefined}>
+                <Check className="mr-1 h-4 w-4" />{t('adminPages.recordingsRollout.connect')}
               </Button>
             )}
             {(connected || state.kind === 'exists' || state.kind === 'new') && !teacher.skipped && (
-              <Button variant="ghost" size="sm" onClick={onCopyInstructions} title="Copy instructions for the teacher">
+              <Button variant="ghost" size="sm" onClick={onCopyInstructions} title={t('adminPages.recordingsRollout.row.copyInstructions')}>
                 <Copy className="h-4 w-4" />
               </Button>
             )}
             {!connected && (
               <Button variant="ghost" size="sm" onClick={onSkip} disabled={busy}
-                title={teacher.skipped ? 'Include in the rollout again' : 'Leave out of the rollout'}>
+                title={teacher.skipped ? t('adminPages.recordingsRollout.row.include') : t('adminPages.recordingsRollout.row.leaveOut')}>
                 {teacher.skipped ? <Undo2 className="h-4 w-4" /> : <UserX className="h-4 w-4" />}
               </Button>
             )}

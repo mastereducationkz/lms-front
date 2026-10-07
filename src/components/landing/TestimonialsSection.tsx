@@ -1,47 +1,50 @@
 import { Card, CardContent } from "../ui/card";
 import { Star, Quote } from "lucide-react";
+import { useT } from "../../lib/i18n/react";
+import '@/lib/i18n/catalogs/publicPages';
 
 export function TestimonialsSection() {
+  const t = useT();
   const testimonials = [
     {
       name: "Bekzhan Yerlanov",
-      role: "MasterSAT Student",
-      content: "Master Education helped me achieve my dream score of 1520 on the SAT. The structured approach and expert guidance made all the difference.",
+      role: t('publicPages.landing.testimonials.roleSatStudent'),
+      content: t('publicPages.landing.testimonials.quoteSat'),
       rating: 5,
       avatar: "SJ"
     },
     {
       name: "Ruslan Zainullin",
-      role: "MasterIELTS Student",
-      content: "I got 8.5 on IELTS thanks to the comprehensive preparation materials and personalized feedback from my instructors.",
+      role: t('publicPages.landing.testimonials.roleIeltsStudent'),
+      content: t('publicPages.landing.testimonials.quoteIelts'),
       rating: 5,
       avatar: "AR"
     },
     {
       name: "Rakhat Zhanibekov",
-      role: "MasterAdmissions Student",
-      content: "The platform's analytics helped me track my progress and identify areas for improvement. Now I'm at my dream university!",
+      role: t('publicPages.landing.testimonials.roleAdmissionsStudent'),
+      content: t('publicPages.landing.testimonials.quoteAdmissions'),
       rating: 5,
       avatar: "MG"
     },
     {
       name: "Shyngys Baurzhanov",
-      role: "Parent",
-      content: "As a parent, I'm impressed by the transparency and detailed progress reports. My daughter's confidence has grown tremendously.",
+      role: t('publicPages.landing.testimonials.roleParent'),
+      content: t('publicPages.landing.testimonials.quoteParent'),
       rating: 5,
       avatar: "DC"
     },
     {
       name: "Rustem Zhumashev",
-      role: "Teacher",
-      content: "The teaching tools are intuitive and powerful. I can create engaging content and track student progress effectively.",
+      role: t('publicPages.landing.testimonials.roleTeacher'),
+      content: t('publicPages.landing.testimonials.quoteTeacher'),
       rating: 5,
       avatar: "ER"
     },
     {
       name: "Ruslan Zainullin",
-      role: "MasterSAT Teacher",
-      content: "The platform's scalability and security features give us confidence in managing our growing student body.",
+      role: t('publicPages.landing.testimonials.roleSatTeacher'),
+      content: t('publicPages.landing.testimonials.quoteSatTeacher'),
       rating: 5,
       avatar: "JW"
     }
@@ -51,9 +54,9 @@ export function TestimonialsSection() {
     <section className="py-20 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-balance mb-6">What Our Community Says</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-balance mb-6">{t('publicPages.landing.testimonials.title')}</h2>
           <p className="text-lg text-muted-foreground text-balance leading-relaxed">
-            Real stories from students, teachers, and parents who've achieved their goals with Master Education
+            {t('publicPages.landing.testimonials.intro')}
           </p>
         </div>
 

@@ -11,6 +11,8 @@
 // where the shared Zitadel session still completes "Continue with Master Education".
 import type { CourseType } from '../types';
 import { mintHandoff, type HandoffPlatform } from '../services/api/handoff';
+import { activeLocale, t, type Locale, type MessageKey } from './i18n';
+import '@/lib/i18n/catalogs/studentHome';
 
 export type PlatformTrack = Extract<CourseType, 'sat' | 'nuet' | 'ielts'>;
 
@@ -29,10 +31,10 @@ export const PLATFORM_URLS: Record<PlatformTrack, string> = {
   ielts: env.VITE_IELTS_PLATFORM_URL || 'https://ielts.mastereducation.kz',
 };
 
-const PLATFORM_DESCRIPTIONS: Record<PlatformTrack, string> = {
-  sat: 'Practice tests, question bank and score analytics',
-  nuet: 'NUET practice sets and mock exams',
-  ielts: 'Speaking, writing and full mock tests',
+const PLATFORM_DESCRIPTIONS: Record<PlatformTrack, MessageKey> = {
+  sat: 'studentHome.programs.description.sat',
+  nuet: 'studentHome.programs.description.nuet',
+  ielts: 'studentHome.programs.description.ielts',
 };
 
 const TRACK_ORDER: PlatformTrack[] = ['sat', 'nuet', 'ielts'];
@@ -49,6 +51,7 @@ const isPlatformTrack = (value: unknown): value is PlatformTrack =>
  */
 export const platformLinksForTracks = (
   tracks: Iterable<CourseType | string | undefined | null>,
+  locale: Locale = activeLocale(),
 ): PlatformLink[] => {
   const seen = new Set<PlatformTrack>();
   for (const track of tracks) {
@@ -58,7 +61,7 @@ export const platformLinksForTracks = (
     track,
     url: PLATFORM_URLS[track],
     label: track.toUpperCase(),
-    description: PLATFORM_DESCRIPTIONS[track],
+    description: t(PLATFORM_DESCRIPTIONS[track], undefined, locale),
   }));
 };
 

@@ -70,6 +70,7 @@ export const curatorPages = {
   'curatorPages.curatorDetail.leaderboard': 'Leaderboard',
   'curatorPages.curatorDetail.noStudents': 'No students found.',
   'curatorPages.curatorDetail.student': 'Student',
+  'curatorPages.curatorDetail.email': 'Email',
   'curatorPages.curatorDetail.progress': 'Progress',
 
   // /curator/tasks and /curator/onboarding → CRM

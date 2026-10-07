@@ -10,7 +10,9 @@ import { EYEWEAR_ART } from './art/eyewear';
 import { FRAME_ART, FRAME_PAD } from './art/frames';
 import { HAT_ART } from './art/hats';
 import { PROP_ART } from './art/props';
-import { CATEGORY_PARTS, type MascotConfig } from './config';
+import { partLabel, type MascotConfig } from './config';
+import { t } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/studentHome';
 
 interface OrcaProps {
   config: MascotConfig;
@@ -26,7 +28,7 @@ export default function Orca({ config, size = 40, className, title, idPrefix }: 
   const uid = idPrefix ?? `o${reactId.replace(/[^a-zA-Z0-9]/g, '')}`;
   const hat = HAT_ART[config.hat] ?? {};
   const prop = PROP_ART[config.prop] ?? {};
-  const label = title ?? `Orca: ${CATEGORY_PARTS.hat[config.hat]?.label ?? ''}`;
+  const label = title ?? t('studentHome.mascot.orcaWith', { part: partLabel('hat', config.hat) });
   const frame = config.frame ? FRAME_ART[config.frame] : undefined;
   // Unframed orcas keep the exact 0–200 box; a frame widens it so the ring sits outside the circle.
   const viewBox = frame ? `${-FRAME_PAD} ${-FRAME_PAD} ${200 + 2 * FRAME_PAD} ${200 + 2 * FRAME_PAD}` : '0 0 200 200';

@@ -4,31 +4,56 @@
  * achievements.test.ts.
  */
 import { applyPart } from '../components/mascot/config';
-import { activeLocale, t, type Locale } from './i18n';
+import { activeLocale, hasMessage, t, type Locale, type MessageKey } from './i18n';
 import type { Achievement, AchievementReward, AchievementTier, GroupStars, StarAward } from '../services/api/achievementsUi';
 import '@/lib/i18n/catalogs/achievements';
+import '@/lib/i18n/catalogs/studentHome';
 
 export const TOTAL_LABEL = (list: Achievement[]) => `${list.filter((a) => a.unlocked).length} / ${list.length}`;
 
 /** Categories in page order, with their student-facing names. Unknown categories go last. */
-export const CATEGORY_ORDER: { key: string; label: string }[] = [
-  { key: 'getting_started', label: 'Getting started' },
-  { key: 'consistency', label: 'Consistency' },
-  { key: 'weekly_tests', label: 'Weekly tests' },
-  { key: 'mastery', label: 'Mastery' },
-  { key: 'streaks', label: 'Streaks' },
-  { key: 'milestones', label: 'Milestones' },
-  { key: 'social', label: 'Social' },
-  { key: 'seasonal', label: 'Seasonal' },
+export const CATEGORY_ORDER: { key: string; label: MessageKey }[] = [
+  { key: 'getting_started', label: 'studentHome.achievements.category.gettingStarted' },
+  { key: 'consistency', label: 'studentHome.achievements.category.consistency' },
+  { key: 'weekly_tests', label: 'studentHome.achievements.category.weeklyTests' },
+  { key: 'mastery', label: 'studentHome.achievements.category.mastery' },
+  { key: 'streaks', label: 'studentHome.achievements.category.streaks' },
+  { key: 'milestones', label: 'studentHome.achievements.category.milestones' },
+  { key: 'social', label: 'studentHome.achievements.category.social' },
+  { key: 'seasonal', label: 'studentHome.achievements.category.seasonal' },
 ];
 
-export const TIER_LABEL: Record<AchievementTier, string> = {
-  earned: 'Earned',
-  rare: 'Rare',
-  legendary: 'Legendary',
-  social: 'Social',
-  seasonal: 'Seasonal',
+const TIER_LABEL: Record<AchievementTier, MessageKey> = {
+  earned: 'achievements.tier.earned',
+  rare: 'achievements.tier.rare',
+  legendary: 'achievements.tier.legendary',
+  social: 'achievements.tier.social',
+  seasonal: 'achievements.tier.seasonal',
 };
+
+/** A tier's name for the badge on a card ('Rare' / «Редкое»); an unknown tier shows as sent. */
+export function tierLabel(tier: AchievementTier, locale: Locale = activeLocale()): string {
+  return TIER_LABEL[tier] ? t(TIER_LABEL[tier], undefined, locale) : tier;
+}
+
+type CopyField = 'title' | 'description' | 'how_to' | 'hint';
+const COPY_SUFFIX: Record<CopyField, string> = { title: 'title', description: 'description', how_to: 'howTo', hint: 'hint' };
+type AchievementCopySource = { key: string; title: string; description?: string | null; how_to?: string | null; hint?: string | null };
+
+/**
+ * An achievement's own words in the reader's language. The server sends them in English and stays
+ * the source of truth for English; Russian comes from the catalog by the achievement's key, and an
+ * achievement the catalog doesn't know yet keeps the server's words. What the server left out
+ * (a secret's rules, an unlocked one's hint) stays out.
+ */
+export function achievementField(a: AchievementCopySource, field: 'title', locale?: Locale): string;
+export function achievementField(a: AchievementCopySource, field: Exclude<CopyField, 'title'>, locale?: Locale): string | null;
+export function achievementField(a: AchievementCopySource, field: CopyField, locale: Locale = activeLocale()): string | null {
+  const server = a[field] ?? null;
+  if (server === null || locale === 'en') return server;
+  const key = `studentHome.achievement.${a.key}.${COPY_SUFFIX[field]}`;
+  return hasMessage(key) ? t(key, undefined, locale) : server;
+}
 
 /** How exciting a tier is — the celebration dresses the orca in the most exciting reward first. */
 const TIER_RANK: Record<AchievementTier, number> = { legendary: 0, rare: 1, social: 2, seasonal: 3, earned: 4 };
@@ -57,11 +82,11 @@ export function nextAchievement(list: Achievement[]): Achievement | null {
   return almostThere(list, 1)[0] ?? list.find((a) => !a.unlocked && !a.secret) ?? null;
 }
 
-export function groupByCategory(list: Achievement[]): { key: string; label: string; items: Achievement[] }[] {
+export function groupByCategory(list: Achievement[], locale: Locale = activeLocale()): { key: string; label: string; items: Achievement[] }[] {
   const known = new Set(CATEGORY_ORDER.map((c) => c.key));
-  const groups = CATEGORY_ORDER.map((c) => ({ ...c, items: list.filter((a) => a.category === c.key) }));
+  const groups = CATEGORY_ORDER.map((c) => ({ key: c.key, label: t(c.label, undefined, locale), items: list.filter((a) => a.category === c.key) }));
   const other = list.filter((a) => !known.has(a.category));
-  if (other.length) groups.push({ key: 'other', label: 'More', items: other });
+  if (other.length) groups.push({ key: 'other', label: t('studentHome.achievements.category.more', undefined, locale), items: other });
   return groups.filter((g) => g.items.length > 0);
 }
 
@@ -109,8 +134,10 @@ export function shouldShowCelebration(i: CelebrationInput): boolean {
   return i.unseen.some((k) => !i.celebrated.has(k));
 }
 
-export const celebrationTitle = (count: number) =>
-  count <= 1 ? 'Achievement unlocked!' : `You unlocked ${count} achievements!`;
+export const celebrationTitle = (count: number, locale: Locale = activeLocale()) =>
+  count <= 1
+    ? t('studentHome.achievements.celebration.titleOne', undefined, locale)
+    : t('studentHome.achievements.celebration.titleMany', { count }, locale);
 
 // ── the bell ────────────────────────────────────────────────────────────────────────────
 
@@ -160,8 +187,10 @@ export function validStarReason(reason: string): boolean {
 }
 
 /** «from your curator Aida» — how a student sees who gave the star. */
-export function starFromLabel(award: Pick<StarAward, 'awarded_by_role' | 'awarded_by_name'>): string {
+export function starFromLabel(award: Pick<StarAward, 'awarded_by_role' | 'awarded_by_name'>, locale: Locale = activeLocale()): string {
   const first = (award.awarded_by_name || '').trim().split(/\s+/)[0] || '';
-  const who = award.awarded_by_role === 'curator' ? 'your curator' : award.awarded_by_role === 'teacher' ? 'your teacher' : 'Master Education';
-  return first && who !== 'Master Education' ? `from ${who} ${first}` : `from ${who}`;
+  const role = award.awarded_by_role;
+  if (role !== 'curator' && role !== 'teacher') return t('studentHome.achievements.starFrom.school', undefined, locale);
+  if (!first) return t(role === 'curator' ? 'studentHome.achievements.starFrom.curator' : 'studentHome.achievements.starFrom.teacher', undefined, locale);
+  return t(role === 'curator' ? 'studentHome.achievements.starFrom.curatorNamed' : 'studentHome.achievements.starFrom.teacherNamed', { name: first }, locale);
 }

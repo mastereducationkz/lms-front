@@ -1,8 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+
+// useT() reads AuthContext, whose module pulls the API client in (localStorage at module scope).
+// No provider here, so the hook falls back to activeLocale().
+vi.mock('../../contexts/AuthContext', async () => {
+  const { createContext } = await import('react');
+  return { default: createContext(undefined) };
+});
+
 import { ChatAttachment } from './ChatAttachment';
 import { backendBase } from '../../lib/mediaUrl';
+import { setActiveLocale } from '../../lib/i18n';
 
 // Rendered with react-dom/server (see SubmissionFileDownloadLink.test.ts for why): this repo's
 // vitest runs in a plain Node environment with no jsdom/testing-library. A rejected fileUrl
@@ -20,6 +29,8 @@ const HOSTILE_URLS = [
 ];
 
 describe('ChatAttachment', () => {
+  afterEach(() => setActiveLocale('en'));
+
   it('renders no <img> and no off-host <a> for a hostile fileUrl', () => {
     for (const fileUrl of HOSTILE_URLS) {
       const html = renderToStaticMarkup(createElement(ChatAttachment, { fileUrl }));
@@ -28,6 +39,11 @@ describe('ChatAttachment', () => {
       expect(html).not.toContain('javascript:');
       expect(html).toContain('Attachment unavailable');
     }
+  });
+
+  it('says it in Russian for a Russian reader', () => {
+    setActiveLocale('ru');
+    expect(renderToStaticMarkup(createElement(ChatAttachment, { fileUrl: '//evil.tld/x' }))).toContain('Вложение недоступно');
   });
 
   it('renders a real image preview for a safe upload path', () => {

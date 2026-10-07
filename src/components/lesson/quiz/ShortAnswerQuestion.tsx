@@ -1,4 +1,6 @@
 import React from 'react';
+import { useT } from '../../../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 interface ShortAnswerQuestionProps {
   question: any;
@@ -17,6 +19,7 @@ export const ShortAnswerQuestion: React.FC<ShortAnswerQuestionProps> = ({
   showResult,
   revealCorrect
 }) => {
+  const t = useT();
   const expectedAnswers = (question.correct_answer || '').toString().split('|').map((a: string) => a.trim()).filter((a: string) => a.length > 0);
   const correctAnswers = expectedAnswers.map((a: string) => a.toLowerCase());
   const userVal = (value || '').toString().trim().toLowerCase();
@@ -28,7 +31,7 @@ export const ShortAnswerQuestion: React.FC<ShortAnswerQuestionProps> = ({
         type="text"
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Enter your answer..."
+        placeholder={t('lessonPlayer.shortAnswer.placeholder')}
         className={`w-full p-4 border-2 rounded-lg focus:outline-none ${
           showResult
             ? isCorrect
@@ -40,8 +43,8 @@ export const ShortAnswerQuestion: React.FC<ShortAnswerQuestionProps> = ({
       />
       {revealCorrect && !isCorrect && expectedAnswers.length > 0 && (
         <p className="text-sm">
-          <span className="font-medium text-foreground">Correct answer: </span>
-          <span className="text-green-700 dark:text-green-400">{expectedAnswers.join(' or ')}</span>
+          <span className="font-medium text-foreground">{t('lessonPlayer.shortAnswer.correctLabel')} </span>
+          <span className="text-green-700 dark:text-green-400">{expectedAnswers.join(` ${t('lessonPlayer.shortAnswer.or')} `)}</span>
         </p>
       )}
     </div>

@@ -15,6 +15,8 @@ import {
 } from '../../lib/meetSync';
 import type { MeetSync, MeetWaiting } from '../../services/api/meetAttendance';
 import BrandMark from '../BrandMark';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/meetViews';
 
 /**
  * A lesson waiting on Google Meet, shown as what it is (2026-09-15): the stage it is in, how long it
@@ -71,10 +73,11 @@ export function MeetSyncLine({ status, className }: { status: SyncStatus; classN
 
 /** A waiting lesson in a list row: its stage, how long it has waited, and why. */
 export function MeetWaitingSummary({ waiting, now }: { waiting?: MeetWaiting | null; now: number }) {
+  const t = useT();
   if (!waiting) {
     return (
       <div className="flex items-center gap-2 text-[13px] font-medium text-foreground">
-        <WorkingMark /> Waiting for Google Meet
+        <WorkingMark /> {t('meetViews.sync.waiting')}
       </div>
     );
   }
@@ -94,6 +97,7 @@ export function MeetWaitingSummary({ waiting, now }: { waiting?: MeetWaiting | n
  * record opening — each done, under way or still to come — and the check with Google Meet.
  */
 export function MeetWaitingProgress({ waiting, sync, className }: { waiting: MeetWaiting; sync?: MeetSync | null; className?: string }) {
+  const t = useT();
   const now = useNow();
   const steps = waitingSteps(waiting, sync, now);
   const status = syncStatus(sync, now);
@@ -107,7 +111,7 @@ export function MeetWaitingProgress({ waiting, sync, className }: { waiting: Mee
         </div>
         <p className="mt-1 text-sm text-muted-foreground">{stageText(waiting)}</p>
       </div>
-      <ol className="space-y-0" aria-label="Progress">
+      <ol className="space-y-0" aria-label={t('meetViews.sync.progress')}>
         {steps.map((step, i) => (
           <li key={step.key} className="relative flex gap-3 pb-3 last:pb-0">
             {i < steps.length - 1 && (
@@ -121,7 +125,7 @@ export function MeetWaitingProgress({ waiting, sync, className }: { waiting: Mee
             <div className="min-w-0">
               <div className={cn('text-sm leading-5', step.status === 'todo' ? 'text-muted-foreground' : 'text-foreground', step.status === 'active' && 'font-medium')}>
                 {step.label}
-                <span className="sr-only">{step.status === 'done' ? ' (done)' : step.status === 'active' ? ' (in progress)' : ' (to come)'}</span>
+                <span className="sr-only">{' '}{t(step.status === 'done' ? 'meetViews.sync.stepDone' : step.status === 'active' ? 'meetViews.sync.stepActive' : 'meetViews.sync.stepTodo')}</span>
               </div>
               {step.detail && <div className="text-xs tabular-nums text-muted-foreground">{step.detail}</div>}
             </div>
@@ -154,6 +158,7 @@ interface BannerProps {
 
 /** The review page's line about Google Meet: which lessons are not final yet and why, what the check is doing, and a refresh. */
 export function MeetSyncBanner({ sync, waiting, updatedAt, refreshing, onRefresh, onShowWaiting, onShowAll }: BannerProps) {
+  const t = useT();
   const now = useNow();
   const status = syncStatus(sync, now);
   if (!waiting.length && !status?.tone.match(/active|slow/)) return null;
@@ -161,7 +166,7 @@ export function MeetSyncBanner({ sync, waiting, updatedAt, refreshing, onRefresh
 
   return (
     <section
-      aria-label="Google Meet sync"
+      aria-label={t('meetViews.sync.section')}
       className={cn(
         'flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border px-4 py-3',
         slow ? 'border-amber-200 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/30'
@@ -176,13 +181,13 @@ export function MeetSyncBanner({ sync, waiting, updatedAt, refreshing, onRefresh
             {waiting.length > 0 && onShowWaiting && (
               <button type="button" onClick={onShowWaiting}
                 className="ml-2 text-[13px] font-medium text-sky-700 underline-offset-4 hover:underline dark:text-sky-300">
-                Show {waiting.length === 1 ? 'it' : 'them'}
+                {t(waiting.length === 1 ? 'meetViews.sync.showIt' : 'meetViews.sync.showThem')}
               </button>
             )}
             {onShowAll && (
               <button type="button" onClick={onShowAll}
                 className="ml-2 text-[13px] font-medium text-sky-700 underline-offset-4 hover:underline dark:text-sky-300">
-                Show all lessons
+                {t('meetViews.sync.showAll')}
               </button>
             )}
           </div>
@@ -191,8 +196,8 @@ export function MeetSyncBanner({ sync, waiting, updatedAt, refreshing, onRefresh
       </div>
       <div className="flex items-center gap-3">
         {updatedAt && (
-          <span className="text-xs tabular-nums text-muted-foreground" title="The list refreshes itself every minute while lessons are waiting">
-            Updated {clock(new Date(updatedAt).toISOString())} · refreshes every minute
+          <span className="text-xs tabular-nums text-muted-foreground" title={t('meetViews.sync.refreshHint')}>
+            {t('meetViews.sync.updated', { time: clock(new Date(updatedAt).toISOString()) })}
           </span>
         )}
         <button
@@ -202,7 +207,7 @@ export function MeetSyncBanner({ sync, waiting, updatedAt, refreshing, onRefresh
           className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[13px] font-medium text-foreground transition hover:bg-muted disabled:opacity-60"
         >
           <RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} aria-hidden />
-          Refresh
+          {t('meetViews.sync.refresh')}
         </button>
       </div>
     </section>

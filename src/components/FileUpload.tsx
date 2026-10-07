@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X, File, Download, FileImage, FileText, Paperclip, type LucideIcon } from 'lucide-react';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/courseAuthoring';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -24,6 +26,7 @@ export default function FileUpload({
   disabled = false,
   className = ''
 }: FileUploadProps) {
+  const t = useT();
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -62,14 +65,14 @@ export default function FileUpload({
     // Check file type
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     if (fileExtension && !allowedTypes.includes(fileExtension)) {
-      setError(`File type .${fileExtension} is not allowed. Allowed types: ${allowedTypes.join(', ')}`);
+      setError(t('courseAuthoring.upload.typeNotAllowed', { ext: fileExtension, types: allowedTypes.join(', ') }));
       return;
     }
 
     // Check file size
     const fileSizeMB = file.size / (1024 * 1024);
     if (fileSizeMB > maxSizeMB) {
-      setError(`File size ${fileSizeMB.toFixed(1)}MB exceeds maximum allowed size of ${maxSizeMB}MB`);
+      setError(t('courseAuthoring.upload.tooLarge', { size: fileSizeMB.toFixed(1), max: maxSizeMB }));
       return;
     }
 
@@ -132,10 +135,10 @@ export default function FileUpload({
           
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-900">
-              {dragActive ? 'Drop file here' : 'Click to upload or drag and drop'}
+              {dragActive ? t('courseAuthoring.upload.dropHere') : t('courseAuthoring.upload.clickOrDrag')}
             </p>
             <p className="text-xs text-gray-500">
-              {allowedTypes.join(', ').toUpperCase()} up to {maxSizeMB}MB
+              {t('courseAuthoring.upload.typesUpTo', { types: allowedTypes.join(', ').toUpperCase(), max: maxSizeMB })}
             </p>
           </div>
         </div>
@@ -149,7 +152,7 @@ export default function FileUpload({
             <div>
               <p className="text-sm font-medium text-gray-900">{selectedFile.name}</p>
               <p className="text-xs text-gray-500">
-                {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB
+                {t('courseAuthoring.size.mb', { size: (selectedFile.size / (1024 * 1024)).toFixed(1) })}
               </p>
             </div>
           </div>
@@ -170,9 +173,9 @@ export default function FileUpload({
             <UploadedFileIcon className="h-5 w-5 shrink-0 text-green-700 dark:text-green-400" aria-hidden="true" />
             <div className="min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100 break-words">
-                {uploadedFileName || 'Uploaded file'}
+                {uploadedFileName || t('courseAuthoring.upload.uploadedFile')}
               </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">File uploaded successfully</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">{t('courseAuthoring.upload.uploaded')}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -180,7 +183,7 @@ export default function FileUpload({
               href={uploadedFileUrl}
               download
               className="p-1 text-green-600 hover:text-green-700"
-              title="Download file"
+              title={t('courseAuthoring.upload.downloadFile')}
             >
               <Download className="h-4 w-4" />
             </a>

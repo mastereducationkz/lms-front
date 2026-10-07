@@ -10,6 +10,8 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import { money } from '../../lib/discipline';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherInsights';
 
 /**
  * Confirming that a half-month is finished.
@@ -33,6 +35,7 @@ export default function ClosePeriodDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const t = useT();
   const blocked = unpriced > 0;
 
   return (
@@ -40,20 +43,20 @@ export default function ClosePeriodDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lock className="h-4 w-4" /> Close {label}?
+            <Lock className="h-4 w-4" /> {t('teacherInsights.discipline.close.title', { label })}
           </DialogTitle>
           <DialogDescription>
-            The totals freeze and stop recomputing. Payroll is paid on them.
+            {t('teacherInsights.discipline.close.hint')}
           </DialogDescription>
         </DialogHeader>
 
         <dl className="space-y-1 rounded-md bg-muted p-3 text-sm">
           <div className="flex justify-between">
-            <dt className="text-muted-foreground">Fines</dt>
+            <dt className="text-muted-foreground">{t('teacherInsights.discipline.close.fines')}</dt>
             <dd className="font-medium tabular-nums">{money(fine)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-muted-foreground">Teachers</dt>
+            <dt className="text-muted-foreground">{t('teacherInsights.discipline.close.teachers')}</dt>
             <dd className="font-medium tabular-nums">{teachers}</dd>
           </div>
         </dl>
@@ -61,17 +64,15 @@ export default function ClosePeriodDialog({
         {/* The server refuses in this case; saying so here saves a round trip and an error. */}
         {blocked && (
           <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-            {unpriced} finding{unpriced === 1 ? '' : 's'} still {unpriced === 1 ? 'has' : 'have'} no
-            amount. Price {unpriced === 1 ? 'it' : 'them'} before closing — a frozen period cannot
-            take a number later.
+            {t('teacherInsights.discipline.close.unpriced', { count: unpriced })}
           </p>
         )}
 
         <DialogFooter>
-          <Button variant="ghost" onClick={onCancel} disabled={busy}>Cancel</Button>
+          <Button variant="ghost" onClick={onCancel} disabled={busy}>{t('common.cancel')}</Button>
           <Button onClick={onConfirm} disabled={busy || blocked}>
             {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Close the period
+            {t('teacherInsights.discipline.close.confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>

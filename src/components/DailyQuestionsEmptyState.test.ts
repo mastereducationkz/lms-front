@@ -1,6 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+
+// useT() reads AuthContext, whose module pulls the API client in (localStorage at module scope).
+// No provider here, so the hook falls back to activeLocale().
+vi.mock('../contexts/AuthContext', async () => {
+  const { createContext } = await import('react');
+  return { default: createContext(undefined) };
+});
+
+import { setActiveLocale } from '../lib/i18n';
 import { DailyQuestionsEmptyState } from './DailyQuestionsEmptyState';
 
 // Rendered with react-dom/server rather than mounted in a browser DOM: this repo's vitest
@@ -22,5 +31,14 @@ describe('DailyQuestionsEmptyState', () => {
   it('renders a Close button', () => {
     const html = renderToStaticMarkup(createElement(DailyQuestionsEmptyState, { onDismiss: () => {} }));
     expect(html).toContain('Close');
+  });
+
+  afterEach(() => setActiveLocale('en'));
+
+  it('speaks Russian to a user who chose it', () => {
+    setActiveLocale('ru');
+    const html = renderToStaticMarkup(createElement(DailyQuestionsEmptyState, { onDismiss: () => {} }));
+    expect(html).toContain('Вопросов дня пока нет');
+    expect(html).toContain('Закрыть');
   });
 });

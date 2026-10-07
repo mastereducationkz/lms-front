@@ -7,11 +7,15 @@ import Breadcrumbs from '../components/Breadcrumbs.tsx';
 import Skeleton from '../components/Skeleton.tsx';
 import type { CourseModule, Lesson, Course } from '../types';
 import { Clock, Play } from 'lucide-react';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/learning';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 export default function ModulePage() {
   const { courseId, moduleId } = useParams<{ courseId: string; moduleId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const t = useT();
   const [course, setCourse] = useState<Course | null>(null);
   const [module, setModule] = useState<CourseModule | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -53,7 +57,7 @@ export default function ModulePage() {
       
       if (!targetModule) {
         console.error('Module not found. Available modules:', modules.map(m => ({ id: m.id, title: m.title })));
-        setError(`Module not found. Available modules: ${modules.map(m => m.title).join(', ')}`);
+        setError(t('lessonPlayer.module.notFoundAvailable', { modules: modules.map(m => m.title).join(', ') }));
         return;
       }
 
@@ -77,7 +81,7 @@ export default function ModulePage() {
       }
       
     } catch (err) {
-      setError((err as any).message || 'Failed to load module data');
+      setError((err as any).message || t('lessonPlayer.module.loadFailed'));
       console.error('Failed to load module data:', err);
     } finally {
       setLoading(false);
@@ -90,22 +94,22 @@ export default function ModulePage() {
 
   // Helper function to get lesson type from steps or fallback
   const getLessonType = (lesson: any): string => {
-    if (!lesson) return 'Video lesson';
+    if (!lesson) return t('lessonPlayer.module.typeVideo');
     
     // Try to get from steps first
     if (Array.isArray(lesson.steps) && lesson.steps.length > 0) {
       const stepType = lesson.steps[0].content_type;
       // Map step content_type to display name
       switch (stepType) {
-        case 'video_text': return 'Video lesson';
-        case 'text': return 'Text lesson';
-        case 'quiz': return 'Quiz lesson';
-        default: return 'Video lesson';
+        case 'video_text': return t('lessonPlayer.module.typeVideo');
+        case 'text': return t('lessonPlayer.module.typeText');
+        case 'quiz': return t('lessonPlayer.module.typeQuiz');
+        default: return t('lessonPlayer.module.typeVideo');
       }
     }
     
     // Fallback to legacy content_type
-    return (lesson as any).content_type || 'Video lesson';
+    return (lesson as any).content_type || t('lessonPlayer.module.typeVideo');
   };
 
   if (loading) {
@@ -138,13 +142,13 @@ export default function ModulePage() {
     return (
       <div className="space-y-8">
         <div className="bg-red-50 border border-red-200 rounded p-4 dark:bg-red-950/30 dark:border-red-900">
-          <h3 className="font-semibold text-red-800 dark:text-red-200">Error loading module</h3>
+          <h3 className="font-semibold text-red-800 dark:text-red-200">{t('lessonPlayer.module.errorTitle')}</h3>
           <p className="text-red-600 dark:text-red-300">{error}</p>
           <button 
             onClick={loadModuleData}
             className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           >
-            Retry
+            {t('lessonPlayer.error.retry')}
           </button>
         </div>
       </div>
@@ -152,14 +156,14 @@ export default function ModulePage() {
   }
 
   if (!module || !course) {
-    return <div className="text-muted-foreground">Module not found</div>;
+    return <div className="text-muted-foreground">{t('lessonPlayer.module.notFound')}</div>;
   }
 
   return (
     <div className="space-y-8">
       <Breadcrumbs items={[
-        { to: '/dashboard', label: 'Dashboard' }, 
-        { to: '/courses', label: 'Courses' }, 
+        { to: '/dashboard', label: t('lessonPlayer.module.dashboard') }, 
+        { to: '/courses', label: t('learning.courses.title') }, 
         { to: `/course/${courseId}`, label: course.title },
         { label: module.title }
       ]} />
@@ -170,7 +174,7 @@ export default function ModulePage() {
         {user?.role === 'student' && (
           <div className="mt-4 card p-5">
             <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-              <span>Module Progress</span>
+              <span>{t('lessonPlayer.module.progress')}</span>
               <span>{progress}%</span>
             </div>
             <ProgressBar value={progress} />
@@ -179,11 +183,11 @@ export default function ModulePage() {
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-4">Lessons</h2>
+        <h2 className="text-xl font-semibold mb-4">{t('learning.lesson.lessons')}</h2>
         {lessons.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            <p>No lessons available</p>
-            <p className="text-sm mt-2">This module doesn't have any lessons yet</p>
+            <p>{t('lessonPlayer.module.empty')}</p>
+            <p className="text-sm mt-2">{t('lessonPlayer.module.emptyHint')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -202,7 +206,7 @@ export default function ModulePage() {
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <Clock className="h-3.5 w-3.5 opacity-60" aria-hidden="true" />
-                        {lesson.duration_minutes || 0} minutes
+                        {t('lessonPlayer.common.minutesLong', { count: lesson.duration_minutes || 0 })}
                       </span>
                     </div>
                   </div>
@@ -211,7 +215,7 @@ export default function ModulePage() {
                   to={`/lecture/${lesson.id}`} 
                   className="btn-primary text-sm"
                 >
-                  {getLessonStatus(lesson.id) === 'completed' ? 'Review' : 'Start'}
+                  {getLessonStatus(lesson.id) === 'completed' ? t('lessonPlayer.module.review') : t('lessonPlayer.common.start')}
                 </Link>
               </div>
             ))}

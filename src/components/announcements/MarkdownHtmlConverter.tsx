@@ -28,16 +28,16 @@ export function MarkdownHtmlConverter({ onUse }: MarkdownHtmlConverterProps) {
     event.preventDefault();
     setSource(event.clipboardData.getData('text/plain') || converted);
     setRichHtml(converted);
-    toast('Rich formatting detected and converted', 'success');
+    toast(t('announcements.converter.richConverted'), 'success');
   };
 
   const copy = async () => {
     if (!html) return;
     try {
       await copyAnnouncementHtml(html);
-      toast('HTML copied to clipboard', 'success');
+      toast(t('announcements.converter.htmlCopied'), 'success');
     } catch {
-      toast('Could not access the clipboard', 'error');
+      toast(t('announcements.converter.clipboardFailed'), 'error');
     }
   };
 
@@ -56,19 +56,19 @@ export function MarkdownHtmlConverter({ onUse }: MarkdownHtmlConverterProps) {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <FileCode2 className="h-4 w-4" />
-          Paste formatted text
+          {t('announcements.converter.title')}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Paste rich text or Markdown like <code>**bold**</code>, <code>[link](https://...)</code> or <code>`code`</code>.
-          The formatter preserves rich clipboard formatting when available.
+          {t('announcements.converter.introExamples')} <code>{t('announcements.converter.exampleBold')}</code>,{' '}
+          <code>{t('announcements.converter.exampleLink')}</code>, <code>{t('announcements.converter.exampleCode')}</code>.{' '}
+          {t('announcements.converter.introRich')}
         </p>
       </CardHeader>
       <CardContent className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="markdown-source">Formatted text</Label>
+          <Label htmlFor="markdown-source">{t('announcements.converter.sourceLabel')}</Label>
           <p className="text-xs text-muted-foreground">
-            Links are preserved only when you paste the rich link itself. If you only have visible
-            link text, add the URL with the Link button or use <code>[text](https://...)</code>.
+            {t('announcements.converter.linksHint')} <code>{t('announcements.converter.exampleTextLink')}</code>.
           </p>
           <Textarea
             id="markdown-source"
@@ -83,23 +83,23 @@ export function MarkdownHtmlConverter({ onUse }: MarkdownHtmlConverterProps) {
           />
         </div>
         <div className="space-y-2">
-          <Label>Preview</Label>
+          <Label>{t('announcements.editor.preview')}</Label>
           <div className="min-h-[180px] whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-3 text-sm leading-relaxed [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono">
-            {html ? <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderPreviewHtml(html)) }} /> : <span className="text-muted-foreground">Nothing to preview yet.</span>}
+            {html ? <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderPreviewHtml(html)) }} /> : <span className="text-muted-foreground">{t('announcements.editor.nothingToPreview')}</span>}
           </div>
         </div>
         <div className="flex flex-wrap gap-2 lg:col-span-2">
           <Button type="button" onClick={() => onUse(html)} disabled={!html}>
             <Sparkles className="mr-2 h-4 w-4" />
-            Use in message
+            {t('announcements.converter.useInMessage')}
           </Button>
           <Button type="button" variant="outline" onClick={() => void copy()} disabled={!html}>
             <Clipboard className="mr-2 h-4 w-4" />
-            Copy HTML
+            {t('announcements.converter.copyHtml')}
           </Button>
           <Button type="button" variant="outline" onClick={download} disabled={!html}>
             <Download className="mr-2 h-4 w-4" />
-            Download .html
+            {t('announcements.converter.downloadHtml')}
           </Button>
         </div>
       </CardContent>

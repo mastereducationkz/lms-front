@@ -4,6 +4,9 @@
 // news in as few characters as possible, and says the rest on hover. A day the LMS could not watch
 // gets its own mark: it is not a clean day, and must never read like one.
 
+import { activeLocale, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/teacherInsights';
+
 /** The day the rule took effect; the register never goes further back. */
 export const RULE_START = '2026-09-16';
 
@@ -70,20 +73,21 @@ export function cellTone(cell: DisciplineCell): CellTone {
 }
 
 /** The sentence behind a cell, for the tooltip: lessons, what happened, and what it costs. */
-export function cellTitle(cell: DisciplineCell): string {
-  if (!cell.lessons) return 'no lessons';
-  const parts = [`${cell.lessons} lesson${cell.lessons === 1 ? '' : 's'}`];
-  if (cell.misses) parts.push(`${cell.misses} missed`);
+export function cellTitle(cell: DisciplineCell, locale: Locale = activeLocale()): string {
+  if (!cell.lessons) return t('teacherInsights.discipline.cell.noLessons', undefined, locale);
+  const parts = [t('common.lessons', { count: cell.lessons }, locale)];
+  if (cell.misses) parts.push(t('teacherInsights.discipline.cell.missed', { count: cell.misses }, locale));
   if (cell.late_minutes) {
     const back = madeUp(cell);
+    const minutes = cell.late_minutes;
     parts.push(back >= cell.late_minutes
-      ? `${cell.late_minutes} min late, made up in full`
-      : back > 0 ? `${cell.late_minutes} min late (${back} made up)`
-        : `${cell.late_minutes} min late`);
+      ? t('teacherInsights.discipline.cell.lateMadeUpFull', { minutes }, locale)
+      : back > 0 ? t('teacherInsights.discipline.cell.latePartlyMadeUp', { minutes, back }, locale)
+        : t('teacherInsights.discipline.cell.late', { minutes }, locale));
   }
-  if (cell.early_minutes) parts.push(`${cell.early_minutes} min short`);
-  if (cell.unmeasurable && !cell.measured) parts.push('no Meet room, nothing to judge');
-  if (cell.unpriced) parts.push('not priced yet');
+  if (cell.early_minutes) parts.push(t('teacherInsights.discipline.cell.short', { minutes: cell.early_minutes }, locale));
+  if (cell.unmeasurable && !cell.measured) parts.push(t('teacherInsights.discipline.cell.noRoom', undefined, locale));
+  if (cell.unpriced) parts.push(t('teacherInsights.discipline.cell.notPriced', undefined, locale));
   else if (cell.fine) parts.push(money(cell.fine));
   return parts.join(' · ');
 }

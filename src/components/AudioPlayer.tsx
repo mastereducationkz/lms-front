@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Play, Pause } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 const AUDIO_EXTENSIONS = ['webm', 'ogg', 'mp3', 'm4a', 'wav', 'aac', 'oga', 'opus'];
 
@@ -49,6 +51,7 @@ interface AudioPlayerProps {
  * listener.
  */
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className, onError, resumeAt }) => {
+  const t = useT();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -228,7 +231,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className, onErro
         type="button"
         onClick={togglePlay}
         className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
-        aria-label={isPlaying ? 'Pause' : 'Play'}
+        aria-label={isPlaying ? t('lessonPlayer.audio.pause') : t('lessonPlayer.audio.play')}
       >
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4" />}
       </button>
@@ -241,7 +244,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className, onErro
         value={seekValue}
         onChange={handleSeek}
         disabled={duration === null}
-        aria-label="Seek"
+        aria-label={t('lessonPlayer.audio.seek')}
         className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full accent-primary disabled:cursor-not-allowed disabled:opacity-50"
         style={{
           background: `linear-gradient(to right, hsl(var(--primary)) ${progressPercent}%, hsl(var(--muted)) ${progressPercent}%)`,

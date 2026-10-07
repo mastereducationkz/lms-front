@@ -4,6 +4,8 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/homeworkStaff';
 
 interface TextTaskEditorProps {
   content: any;
@@ -11,6 +13,7 @@ interface TextTaskEditorProps {
 }
 
 export default function TextTaskEditor({ content, onContentChange }: TextTaskEditorProps) {
+  const t = useT();
   const [question, setQuestion] = useState(content.question || '');
   const [maxLength, setMaxLength] = useState(content.max_length || 1000);
   const [keywords, setKeywords] = useState(content.keywords?.join(', ') || '');
@@ -71,19 +74,19 @@ export default function TextTaskEditor({ content, onContentChange }: TextTaskEdi
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="text-question">Question/Prompt *</Label>
+        <Label htmlFor="text-question">{t('homeworkStaff.editor.questionPrompt')}</Label>
         <Textarea
           id="text-question"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Enter the question or prompt for the text response..."
+          placeholder={t('homeworkStaff.text.questionPlaceholder')}
           rows={4}
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="max-length">Maximum Length (characters)</Label>
+          <Label htmlFor="max-length">{t('homeworkStaff.text.maxLength')}</Label>
           <Input
             id="max-length"
             type="number"
@@ -95,15 +98,15 @@ export default function TextTaskEditor({ content, onContentChange }: TextTaskEdi
         </div>
 
         <div>
-          <Label htmlFor="keywords">Keywords for Auto-Grading (Optional)</Label>
+          <Label htmlFor="keywords">{t('homeworkStaff.text.keywords')}</Label>
           <Input
             id="keywords"
             type="text"
             value={keywords}
             onChange={(e) => setKeywords(e.target.value)}
-            placeholder="keyword1, keyword2, keyword3"
+            placeholder={t('homeworkStaff.editor.keywordsPlaceholder')}
           />
-          <p className="text-xs text-muted-foreground  mt-1">Comma-separated keywords to check in the answer</p>
+          <p className="text-xs text-muted-foreground  mt-1">{t('homeworkStaff.text.keywordsHint')}</p>
         </div>
       </div>
 
@@ -111,9 +114,9 @@ export default function TextTaskEditor({ content, onContentChange }: TextTaskEdi
       <div className="pt-4 border-t">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <Label className="text-sm font-semibold">Answer Fields (Auto-Check)</Label>
+            <Label className="text-sm font-semibold">{t('homeworkStaff.answerFields.title')}</Label>
             <p className="text-xs text-muted-foreground  mt-0.5">
-              Students will enter answers; system will auto-check them.
+              {t('homeworkStaff.answerFields.hint')}
             </p>
           </div>
           <Button
@@ -123,7 +126,7 @@ export default function TextTaskEditor({ content, onContentChange }: TextTaskEdi
             onClick={addAnswerField}
           >
             <Plus className="w-4 h-4 mr-1" />
-            Add Field
+            {t('homeworkStaff.answerFields.add')}
           </Button>
         </div>
 
@@ -141,7 +144,7 @@ export default function TextTaskEditor({ content, onContentChange }: TextTaskEdi
                       updateAnswerField(index, 'label', `${index + 1}`);
                     }
                   }}
-                  placeholder="Enter correct answer..."
+                  placeholder={t('homeworkStaff.answerFields.correctPlaceholder')}
                   className="text-sm font-mono flex-1"
                 />
                 <Button
@@ -160,8 +163,8 @@ export default function TextTaskEditor({ content, onContentChange }: TextTaskEdi
 
         {answerFields.length === 0 && (
           <div className="text-center py-6 bg-muted dark:bg-secondary border border-dashed dark:border-border rounded-lg">
-            <p className="text-sm text-muted-foreground">No answer fields added yet</p>
-            <p className="text-xs text-muted-foreground  mt-1">Click "Add Field" to create an answer field</p>
+            <p className="text-sm text-muted-foreground">{t('homeworkStaff.answerFields.empty')}</p>
+            <p className="text-xs text-muted-foreground  mt-1">{t('homeworkStaff.answerFields.emptyHint')}</p>
           </div>
         )}
       </div>

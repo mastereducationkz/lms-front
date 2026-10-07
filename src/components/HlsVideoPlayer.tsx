@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 import Hls from 'hls.js';
 
 interface HlsVideoPlayerProps {
@@ -21,13 +23,14 @@ interface HlsVideoPlayerProps {
  */
 export default function HlsVideoPlayer({
   url,
-  title = 'Lesson Video',
+  title,
   className = '',
   onError,
   onProgress,
   poster,
   autoPlay = false,
 }: HlsVideoPlayerProps) {
+  const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   const onProgressRef = useRef<typeof onProgress>();
   const [failed, setFailed] = useState(false);
@@ -68,7 +71,7 @@ export default function HlsVideoPlayer({
             hls?.recoverMediaError();
           } else {
             setFailed(true);
-            onError?.('Unable to play the video. Please try again.');
+            onError?.(t('lessonPlayer.hls.playFailed'));
           }
         }
       });
@@ -78,7 +81,7 @@ export default function HlsVideoPlayer({
       video.addEventListener('loadedmetadata', start, { once: true });
     } else {
       setFailed(true);
-      onError?.('This browser cannot play the video.');
+      onError?.(t('lessonPlayer.hls.unsupported'));
     }
 
     return () => {
@@ -99,7 +102,7 @@ export default function HlsVideoPlayer({
   if (failed) {
     return (
       <div className={`bg-muted rounded-lg p-6 text-center ${className}`}>
-        <p className="text-sm text-muted-foreground">Video is temporarily unavailable.</p>
+        <p className="text-sm text-muted-foreground">{t('lessonPlayer.hls.unavailable')}</p>
       </div>
     );
   }
@@ -114,7 +117,7 @@ export default function HlsVideoPlayer({
           preload={autoPlay ? 'auto' : 'metadata'}
           poster={posterSrc}
           autoPlay={autoPlay}
-          title={title}
+          title={title || t('lessonPlayer.video.fallbackTitle')}
           className="w-full h-full"
           onTimeUpdate={handleTimeUpdate}
           onEnded={handleEnded}

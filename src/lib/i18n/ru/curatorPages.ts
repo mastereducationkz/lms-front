@@ -69,6 +69,7 @@ export const curatorPages: RuTable<typeof en> = {
   'curatorPages.curatorDetail.leaderboard': 'Лидерборд',
   'curatorPages.curatorDetail.noStudents': 'Студентов не найдено.',
   'curatorPages.curatorDetail.student': 'Студент',
+  'curatorPages.curatorDetail.email': 'Почта',
   'curatorPages.curatorDetail.progress': 'Прогресс',
 
   'curatorPages.crmRedirect.onboardingTitle': 'Онбординг учеников — в CRM',

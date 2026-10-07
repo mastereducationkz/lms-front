@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CheckCircle2, Loader2, MonitorPlay, ShieldAlert, XCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +7,8 @@ import {
 } from '../lib/meetAddonLink';
 import { answerHandoff, describeHandoff, HandoffRequestError } from '../services/api/meetAddonHandoff';
 import { requestPairSecret } from '../lib/addonPairing';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/publicPages';
 
 /**
  * `/meet-addon/link?h=<id>` — the popup the Meet side panel opens (owner, 2026-09-28). The teacher
@@ -16,6 +18,7 @@ import { requestPairSecret } from '../lib/addonPairing';
  */
 export default function MeetAddonLinkPage() {
   const { loading, isAuthenticated, user } = useAuth();
+  const t = useT();
   const location = useLocation();
   const navigate = useNavigate();
   const id = handoffIdFrom(location.search);
@@ -71,7 +74,7 @@ export default function MeetAddonLinkPage() {
     return <Frame><Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" /></Frame>;
   }
   if (!id) {
-    return <Frame><Message icon={<XCircle className="h-8 w-8 text-muted-foreground" />} title="This link is incomplete" text="Open the LMS panel in Google Meet and press «Sign in with LMS» again." /></Frame>;
+    return <Frame><Message icon={<XCircle className="h-8 w-8 text-muted-foreground" />} title={t('publicPages.meetLink.incompleteTitle')} text={t('publicPages.meetLink.reopenText')} /></Frame>;
   }
 
   return (
@@ -80,22 +83,22 @@ export default function MeetAddonLinkPage() {
       {(state.kind === 'ask' || state.kind === 'other_network') && (
         <div className="text-center">
           <MonitorPlay className="mx-auto h-10 w-10 text-brand" aria-hidden />
-          <h1 className="mt-3 text-lg font-semibold text-foreground">Connect the LMS panel in Google Meet?</h1>
+          <h1 className="mt-3 text-lg font-semibold text-foreground">{t('publicPages.meetLink.askTitle')}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            The Meet side panel{state.info.meeting_code ? <> in meeting <b className="font-mono">{state.info.meeting_code}</b></> : null} will
-            act as <b>{user?.name || user?.email}</b>: it shows the lesson's room, scores, notes and materials, and saves scores and notes.
+            {fill(t(state.info.meeting_code ? 'publicPages.meetLink.askTextInMeeting' : 'publicPages.meetLink.askText'), {
+              code: <b className="font-mono">{state.info.meeting_code}</b>,
+              name: <b>{user?.name || user?.email}</b>,
+            })}
           </p>
           {state.kind === 'other_network' ? (
             <div className="mt-4 flex gap-2 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/15 p-3 text-left text-sm text-amber-900 dark:text-amber-300">
               <ShieldAlert className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
               <span>
-                This request came from a different network than this window, and this window was not opened by the LMS panel
-                in Meet. To connect, press «Open the LMS sign-in page» in the panel itself. If you did not just open the LMS
-                panel in Meet, deny it.
+                {t('publicPages.meetLink.otherNetworkWarning')}
               </span>
             </div>
           ) : (
-            <p className="mt-3 text-xs text-muted-foreground">Only allow it if you just pressed «Sign in with LMS» in Meet yourself.</p>
+            <p className="mt-3 text-xs text-muted-foreground">{t('publicPages.meetLink.onlyAllowIfYou')}</p>
           )}
           <div className="mt-5 flex justify-center gap-2">
             <button
@@ -104,7 +107,7 @@ export default function MeetAddonLinkPage() {
               onClick={() => void answer(false)}
               className="rounded-full border border-border px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50"
             >
-              Deny
+              {t('publicPages.meetLink.deny')}
             </button>
             {state.kind === 'ask' && (
               <button
@@ -113,7 +116,7 @@ export default function MeetAddonLinkPage() {
                 onClick={() => void answer(true)}
                 className="inline-flex items-center gap-2 rounded-full bg-brand-solid px-5 py-2 text-sm font-semibold text-white hover:bg-brand-solid-hover disabled:opacity-50"
               >
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />}Allow
+                {busy && <Loader2 className="h-4 w-4 animate-spin" />}{t('publicPages.meetLink.allow')}
               </button>
             )}
           </div>
@@ -122,16 +125,24 @@ export default function MeetAddonLinkPage() {
       {state.kind === 'done' && (
         <Message
           icon={state.approved ? <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-emerald-400" /> : <XCircle className="h-10 w-10 text-muted-foreground" />}
-          title={state.approved ? 'Done — return to Meet' : 'Denied'}
-          text={state.approved ? 'The panel signs in within a few seconds. You can close this window.' : 'The Meet panel was not connected. You can close this window.'}
+          title={state.approved ? t('publicPages.meetLink.doneTitle') : t('publicPages.meetLink.deniedTitle')}
+          text={state.approved ? t('publicPages.meetLink.doneText') : t('publicPages.meetLink.deniedText')}
         />
       )}
-      {state.kind === 'answered' && <Message icon={<CheckCircle2 className="h-10 w-10 text-muted-foreground" />} title="Already answered" text="This request was already allowed or denied. You can close this window." />}
-      {state.kind === 'expired' && <Message icon={<XCircle className="h-10 w-10 text-muted-foreground" />} title="This link has expired" text="Open the LMS panel in Google Meet and press «Sign in with LMS» again." />}
-      {state.kind === 'staff_only' && <Message icon={<ShieldAlert className="h-10 w-10 text-muted-foreground" />} title="For teachers only" text="The LMS panel in Google Meet is for teachers, head teachers and admins." />}
-      {state.kind === 'error' && <Message icon={<XCircle className="h-10 w-10 text-rose-500 dark:text-rose-400" />} title="Could not connect the panel" text={state.message} />}
+      {state.kind === 'answered' && <Message icon={<CheckCircle2 className="h-10 w-10 text-muted-foreground" />} title={t('publicPages.meetLink.answeredTitle')} text={t('publicPages.meetLink.answeredText')} />}
+      {state.kind === 'expired' && <Message icon={<XCircle className="h-10 w-10 text-muted-foreground" />} title={t('publicPages.meetLink.expiredTitle')} text={t('publicPages.meetLink.reopenText')} />}
+      {state.kind === 'staff_only' && <Message icon={<ShieldAlert className="h-10 w-10 text-muted-foreground" />} title={t('publicPages.meetLink.staffOnlyTitle')} text={t('publicPages.meetLink.staffOnlyText')} />}
+      {state.kind === 'error' && <Message icon={<XCircle className="h-10 w-10 text-rose-500 dark:text-rose-400" />} title={t('publicPages.meetLink.errorTitle')} text={state.message} />}
     </Frame>
   );
+}
+
+/** A message with {name} placeholders, each drawn as the given node (a bold name, a meeting code). */
+function fill(text: string, nodes: Record<string, ReactNode>): ReactNode[] {
+  return text.split(/(\{\w+\})/).map((part, i) => {
+    const name = /^\{(\w+)\}$/.exec(part)?.[1];
+    return <Fragment key={i}>{name && name in nodes ? nodes[name] : part}</Fragment>;
+  });
 }
 
 function Frame({ children }: { children: ReactNode }) {

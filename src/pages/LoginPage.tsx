@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { SignInPage, Testimonial } from '../components/SignInPage.tsx';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/publicPages';
 
 export default function LoginPage() {
+  const t = useT();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -30,10 +33,10 @@ export default function LoginPage() {
       if (result.success) {
         navigate(from, { replace: true });
       } else {
-        setError(result.error || 'Login failed');
+        setError(result.error || t('publicPages.login.failed'));
       }
     } catch (err: any) {
-      setError(err.message || 'Login failed');
+      setError(err.message || t('publicPages.login.failed'));
     } finally {
       setLoading(false);
     }
@@ -46,8 +49,8 @@ export default function LoginPage() {
   return (
     <div className="bg-background text-foreground">
       <SignInPage
-        title={<span className="font-light text-foreground tracking-tighter">Welcome to LMS</span>}
-        description="Access your account and continue your learning journey with us"
+        title={<span className="font-light text-foreground tracking-tighter">{t('publicPages.login.title')}</span>}
+        description={t('publicPages.login.description')}
         heroImageSrc="https://images.unsplash.com/photo-1642615835477-d303d7dc9ee9?w=2160&q=80"
         onSignIn={handleSignIn}
         onBackToHome={handleBackToHome}

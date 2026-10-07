@@ -28,6 +28,8 @@
   import { AudioPlayer, isAudioUrl } from '../../components/AudioPlayer';
   import { safeUploadUrl } from '../../lib/mediaUrl';
   import { formatDate, formatDateTime } from '../../lib/i18n';
+  import { useT } from '../../lib/i18n/react';
+  import '@/lib/i18n/catalogs/homeworkStaff';
   import type { AssignmentExtension } from '../../types/index';
 
   // A submission file reference is untrusted (student-supplied); this resolves it to a
@@ -92,6 +94,7 @@
     const { id } = useParams<{ id: string }>();
     const { user } = useAuth();
     const navigate = useNavigate();
+    const t = useT();
     const [data, setData] = useState<AssignmentStudentProgress | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string>('');
@@ -141,7 +144,7 @@
         if (extensionsData) setExtensions(extensionsData);
       } catch (err: any) {
         console.error('Failed to load assignment progress:', err);
-        setError(err.message || 'Failed to load assignment progress');
+        setError(err.message || t('homeworkStaff.progress.loadError'));
       } finally {
         setLoading(false);
       }
@@ -168,11 +171,11 @@
       try {
         setSavingExtension(true);
         await apiClient.grantExtension(id, extensionDialog.studentId, extensionDeadline, extensionReason);
-        toast('Extension granted successfully', 'success');
+        toast(t('homeworkStaff.extension.granted'), 'success');
         setExtensionDialog({ open: false, studentId: null, studentName: '' });
         loadAssignmentProgress(); // Reload to get updated extensions
       } catch (error) {
-        toast('Failed to grant extension', 'error');
+        toast(t('homeworkStaff.extension.grantFailed'), 'error');
       } finally {
         setSavingExtension(false);
       }
@@ -181,15 +184,15 @@
     const handleRevokeExtension = async (studentId: number) => {
       if (!id) return;
       
-      if (!confirm('Are you sure you want to revoke this extension?')) return;
+      if (!confirm(t('homeworkStaff.extension.revokeConfirm'))) return;
 
       try {
         await apiClient.revokeExtension(id, studentId);
-        toast('Extension revoked successfully', 'success');
+        toast(t('homeworkStaff.extension.revoked'), 'success');
         setExtensionDialog({ open: false, studentId: null, studentName: '' });
         loadAssignmentProgress(); // Reload
       } catch (error) {
-        toast('Failed to revoke extension', 'error');
+        toast(t('homeworkStaff.extension.revokeFailed'), 'error');
       }
     };
 
@@ -201,7 +204,7 @@
         // submissions N+1 on every grade-dialog open).
         const sub = await apiClient.getSubmission(id!, String(submissionId));
         if (!sub?.is_current) {
-          toast('Only the latest attempt can be graded.', 'error');
+          toast(t('homeworkStaff.grade.onlyLatest'), 'error');
           setGradingDialog({ open: false, submissionId: null });
           return;
         }
@@ -227,7 +230,7 @@
         setSelectedSubmission(null);
       } catch (e: any) {
         console.error('Failed to save grade:', e);
-        alert(e?.message || 'Failed to save grade');
+        alert(e?.message || t('homeworkStaff.grade.saveFailed'));
       } finally {
         setSavingGrade(false);
       }
@@ -237,7 +240,7 @@
     const downloadFile = async (fileUrl: string, fileName: string) => {
       const fullUrl = buildFileUrl(fileUrl);
       if (!fullUrl) {
-        alert('This file cannot be opened.');
+        alert(t('homeworkStaff.progress.fileCannotOpen'));
         return;
       }
       try {
@@ -253,7 +256,7 @@
         document.body.removeChild(a);
       } catch (error) {
         console.error('Failed to download file:', error);
-        alert('Failed to download file');
+        alert(t('homeworkStaff.progress.downloadFailed'));
       }
     };
 
@@ -268,28 +271,28 @@
           return (
             <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/30">
               <CheckCircle className="w-3 h-3 mr-1" />
-              Graded
+              {t('homeworkStaff.status.graded')}
             </Badge>
           );
         case 'submitted':
           return (
             <Badge variant="default" className="bg-brand-subtle text-brand-subtle-foreground hover:bg-brand-subtle">
               <Clock className="w-3 h-3 mr-1" />
-              Submitted
+              {t('homeworkStaff.status.submitted')}
             </Badge>
           );
         case 'overdue':
           return (
             <Badge variant="destructive">
               <AlertCircle className="w-3 h-3 mr-1" />
-              Overdue
+              {t('homeworkStaff.status.overdue')}
             </Badge>
           );
         default:
           return (
             <Badge variant="secondary">
               <FileText className="w-3 h-3 mr-1" />
-              Not Submitted
+              {t('homeworkStaff.status.notSubmitted')}
             </Badge>
           );
       }
@@ -324,19 +327,19 @@
           <div className="flex items-center gap-4">
             <Button variant="outline" onClick={() => navigate('/homework')}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Homework
+              {t('homeworkStaff.progress.backToHomework')}
             </Button>
-            <h1 className="text-3xl font-bold text-foreground">Student Progress</h1>
+            <h1 className="text-3xl font-bold text-foreground">{t('homeworkStaff.progress.title')}</h1>
           </div>
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
                 <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mr-2" />
-                <h3 className="font-semibold text-red-800 dark:text-red-400">Error</h3>
+                <h3 className="font-semibold text-red-800 dark:text-red-400">{t('homeworkStaff.progress.error')}</h3>
               </div>
               <p className="text-red-600 dark:text-red-400 mt-1">{error}</p>
               <Button onClick={loadAssignmentProgress} className="mt-3">
-                Try Again
+                {t('common.retry')}
               </Button>
             </CardContent>
           </Card>
@@ -350,13 +353,13 @@
           <div className="flex items-center gap-4">
             <Button variant="outline" onClick={() => navigate('/homework')}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Homework
+              {t('homeworkStaff.progress.backToHomework')}
             </Button>
-            <h1 className="text-3xl font-bold text-foreground">Student Progress</h1>
+            <h1 className="text-3xl font-bold text-foreground">{t('homeworkStaff.progress.title')}</h1>
           </div>
           <Card>
             <CardContent className="p-6 text-center">
-              <p className="text-muted-foreground">No data available</p>
+              <p className="text-muted-foreground">{t('homeworkStaff.progress.noData')}</p>
             </CardContent>
           </Card>
         </div>
@@ -370,7 +373,7 @@
           <div className="flex items-center gap-4">
             <Button variant="outline" onClick={() => navigate('/homework')}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Homework
+              {t('homeworkStaff.progress.backToHomework')}
             </Button>
             <div>
               <h1 className="text-3xl font-bold text-foreground">{data.assignment.title}</h1>
@@ -378,12 +381,12 @@
           </div>
           {(user?.role === 'teacher' || user?.role === 'admin') && (
             <div className="text-right">
-              <Badge className="mb-1" variant="secondary">New</Badge>
+              <Badge className="mb-1" variant="secondary">{t('homeworkStaff.progress.new')}</Badge>
               <Button onClick={() => navigate(`/homework/${id}/grade`)}>
                 <History className="w-4 h-4 mr-2" />
-                Submission history
+                {t('homeworkStaff.progress.submissionHistory')}
               </Button>
-              <p className="text-xs text-muted-foreground mt-1">Review every attempt</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('homeworkStaff.progress.reviewEveryAttempt')}</p>
             </div>
           )}
         </div>
@@ -393,13 +396,13 @@
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5" />
-              Assignment Details
+              {t('homeworkStaff.progress.details')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">Due Date</p>
+                <p className="text-sm text-muted-foreground">{t('homeworkStaff.progress.dueDate')}</p>
                 <p className="font-medium">
                   {data.assignment.due_date ? (
                     <span className={`flex items-center ${isOverdue(data.assignment.due_date) ? 'text-red-600 dark:text-red-400' : ''}`}>
@@ -408,25 +411,25 @@
                       {isOverdue(data.assignment.due_date) && <AlertCircle className="w-4 h-4 ml-1" />}
                     </span>
                   ) : (
-                    'No deadline'
+                    t('homeworkStaff.progress.noDeadline')
                   )}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Max Score</p>
-                <p className="font-medium">{data.assignment.max_score} points</p>
+                <p className="text-sm text-muted-foreground">{t('homeworkStaff.progress.maxScore')}</p>
+                <p className="font-medium">{t('homeworkStaff.progress.points', { count: data.assignment.max_score })}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Students</p>
-                <p className="font-medium">{data.summary.total_students} students</p>
+                <p className="text-sm text-muted-foreground">{t('homeworkStaff.progress.totalStudents')}</p>
+                <p className="font-medium">{t('homeworkStaff.progress.students', { count: data.summary.total_students })}</p>
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground">Late Penalty</p>
+                <p className="text-sm text-muted-foreground">{t('homeworkStaff.progress.latePenalty')}</p>
                 <p className="font-medium">
                   {data.assignment.late_penalty_enabled 
-                    ? `${data.assignment.late_penalty_multiplier}x multiplier` 
-                    : 'Disabled'}
+                    ? t('homeworkStaff.progress.multiplier', { multiplier: data.assignment.late_penalty_multiplier ?? '' }) 
+                    : t('homeworkStaff.progress.disabled')}
                 </p>
               </div>
             </div>
@@ -440,7 +443,7 @@
               <div className="flex items-center">
                 <FileText className="w-6 h-6 text-muted-foreground mr-2" />
                 <div>
-                  <div className="text-sm text-muted-foreground">Not Submitted</div>
+                  <div className="text-sm text-muted-foreground">{t('homeworkStaff.status.notSubmitted')}</div>
                   <div className="text-xl font-bold">{data.summary.not_submitted}</div>
                 </div>
               </div>
@@ -452,7 +455,7 @@
               <div className="flex items-center">
                 <Clock className="w-6 h-6 text-brand mr-2" />
                 <div>
-                  <div className="text-sm text-muted-foreground">Submitted</div>
+                  <div className="text-sm text-muted-foreground">{t('homeworkStaff.status.submitted')}</div>
                   <div className="text-xl font-bold">{data.summary.submitted}</div>
                 </div>
               </div>
@@ -464,7 +467,7 @@
               <div className="flex items-center">
                 <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400 mr-2" />
                 <div>
-                  <div className="text-sm text-muted-foreground">Graded</div>
+                  <div className="text-sm text-muted-foreground">{t('homeworkStaff.status.graded')}</div>
                   <div className="text-xl font-bold">{data.summary.graded}</div>
                 </div>
               </div>
@@ -476,7 +479,7 @@
               <div className="flex items-center">
                 <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 mr-2" />
                 <div>
-                  <div className="text-sm text-muted-foreground">Overdue</div>
+                  <div className="text-sm text-muted-foreground">{t('homeworkStaff.status.overdue')}</div>
                   <div className="text-xl font-bold">{data.summary.overdue}</div>
                 </div>
               </div>
@@ -489,7 +492,7 @@
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                Assignment Distribution
+                {t('homeworkStaff.progress.distribution')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -497,11 +500,11 @@
                 {data.source_breakdown.course && (
                   <div className="flex items-center justify-between p-3 bg-brand-surface rounded-lg">
                     <div>
-                      <div className="text-sm text-brand">Course Students</div>
+                      <div className="text-sm text-brand">{t('homeworkStaff.progress.courseStudents')}</div>
                       <div className="text-lg font-bold text-brand-subtle-foreground">{data.source_breakdown.course}</div>
                     </div>
                     <div className="w-8 h-8 bg-brand-subtle rounded-full flex items-center justify-center">
-                      <span className="text-brand text-sm font-medium">C</span>
+                      <span className="text-brand text-sm font-medium">{t('homeworkStaff.progress.courseShort')}</span>
                     </div>
                   </div>
                 )}
@@ -509,11 +512,11 @@
                 {data.source_breakdown.group && (
                   <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/10 rounded-lg">
                     <div>
-                      <div className="text-sm text-green-600 dark:text-green-400">Group Students</div>
+                      <div className="text-sm text-green-600 dark:text-green-400">{t('homeworkStaff.progress.groupStudents')}</div>
                       <div className="text-lg font-bold text-green-800 dark:text-green-400">{data.source_breakdown.group}</div>
                     </div>
                     <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-green-600 dark:text-green-400 text-sm font-medium">G</span>
+                      <span className="text-green-600 dark:text-green-400 text-sm font-medium">{t('homeworkStaff.progress.groupShort')}</span>
                     </div>
                   </div>
                 )}
@@ -521,11 +524,11 @@
                 {data.source_breakdown.both && (
                   <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
                     <div>
-                      <div className="text-sm text-purple-600 dark:text-purple-400">Course & Group</div>
+                      <div className="text-sm text-purple-600 dark:text-purple-400">{t('homeworkStaff.progress.courseAndGroup')}</div>
                       <div className="text-lg font-bold text-purple-800 dark:text-purple-400">{data.source_breakdown.both}</div>
                     </div>
                     <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-purple-600 dark:text-purple-400 text-sm font-medium">B</span>
+                      <span className="text-purple-600 dark:text-purple-400 text-sm font-medium">{t('homeworkStaff.progress.bothShort')}</span>
                     </div>
                   </div>
                 )}
@@ -533,7 +536,7 @@
                 {data.source_breakdown.unknown && (
                   <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                     <div>
-                      <div className="text-sm text-muted-foreground">Unknown Source</div>
+                      <div className="text-sm text-muted-foreground">{t('homeworkStaff.progress.unknownSource')}</div>
                       <div className="text-lg font-bold text-foreground">{data.source_breakdown.unknown}</div>
                     </div>
                     <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
@@ -550,35 +553,35 @@
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              Student Progress
+              {t('homeworkStaff.progress.title')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs value={filter} onValueChange={(value) => setFilter(value as any)}>
               <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="all">All ({data.summary.total_students})</TabsTrigger>
-                <TabsTrigger value="not_submitted">Not Submitted ({data.summary.not_submitted})</TabsTrigger>
-                <TabsTrigger value="submitted">Submitted ({data.summary.submitted})</TabsTrigger>
-                <TabsTrigger value="graded">Graded ({data.summary.graded})</TabsTrigger>
-                <TabsTrigger value="overdue">Overdue ({data.summary.overdue})</TabsTrigger>
+                <TabsTrigger value="all">{t('homeworkStaff.progress.tabAll', { count: data.summary.total_students })}</TabsTrigger>
+                <TabsTrigger value="not_submitted">{t('homeworkStaff.progress.tabNotSubmitted', { count: data.summary.not_submitted })}</TabsTrigger>
+                <TabsTrigger value="submitted">{t('homeworkStaff.progress.tabSubmitted', { count: data.summary.submitted })}</TabsTrigger>
+                <TabsTrigger value="graded">{t('homeworkStaff.progress.tabGraded', { count: data.summary.graded })}</TabsTrigger>
+                <TabsTrigger value="overdue">{t('homeworkStaff.progress.tabOverdue', { count: data.summary.overdue })}</TabsTrigger>
               </TabsList>
               
               <TabsContent value={filter} className="mt-6">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Student</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Score</TableHead>
-                      <TableHead>Submitted</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>{t('homeworkStaff.progress.student')}</TableHead>
+                      <TableHead>{t('homeworkStaff.progress.status')}</TableHead>
+                      <TableHead>{t('homeworkStaff.grade.score')}</TableHead>
+                      <TableHead>{t('homeworkStaff.progress.submitted')}</TableHead>
+                      <TableHead>{t('homeworkStaff.progress.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredStudents.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                          No students found with this status
+                          {t('homeworkStaff.progress.noStudents')}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -593,7 +596,7 @@
                               {studentExtension && (
                                 <div className="text-sm text-green-600 dark:text-green-400 flex items-center mt-1">
                                   <Calendar className="w-3 h-3 mr-1" />
-                                  Extended: {formatDate(new Date(studentExtension.extended_deadline))}
+                                  {t('homeworkStaff.progress.extended', { date: formatDate(new Date(studentExtension.extended_deadline)) })}
                                   {studentExtension.reason && ` - ${studentExtension.reason}`}
                                 </div>
                               )}
@@ -623,7 +626,7 @@
                                 </div>
                                 {student.is_late && (
                                   <Badge variant="outline" className="mt-1 w-fit border-amber-500 dark:border-amber-600 text-amber-600 dark:text-amber-400 px-1 py-0 text-[10px]">
-                                    Late
+                                    {t('homeworkStaff.progress.late')}
                                   </Badge>
                                 )}
                               </div>
@@ -637,20 +640,20 @@
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  title={studentExtension ? "Edit extension" : "Grant extension"}
-                                  aria-label={studentExtension ? "Edit extension" : "Grant extension"}
+                                  title={studentExtension ? t('homeworkStaff.extension.editTitle') : t('homeworkStaff.extension.grantTitle')}
+                                  aria-label={studentExtension ? t('homeworkStaff.extension.editTitle') : t('homeworkStaff.extension.grantTitle')}
                                   onClick={() => openExtensionDialog(student.id, student.name)}
                                 >
                                   <Calendar className="w-4 h-4 mr-1" />
-                                  {studentExtension ? 'Edit' : 'Extend'}
+                                  {studentExtension ? t('common.edit') : t('homeworkStaff.extension.extend')}
                                 </Button>
                                 {student.submission_id && (
                                   <>
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    title="Grade current attempt"
-                                    aria-label="Grade current attempt"
+                                    title={t('homeworkStaff.progress.gradeCurrent')}
+                                    aria-label={t('homeworkStaff.progress.gradeCurrent')}
                                     onClick={() => openGradeDialog(student.submission_id!)}
                                   >
                                     <Pencil className="w-4 h-4" />
@@ -676,16 +679,16 @@
         <Dialog open={gradingDialog.open} onOpenChange={(open) => { if (!open) { setGradingDialog({ open, submissionId: null }); setSelectedSubmission(null);} }}>
           <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
             <DialogHeader>
-              <DialogTitle>Grade Submission</DialogTitle>
-              <DialogDescription>Only the latest attempt can be graded.</DialogDescription>
+              <DialogTitle>{t('homeworkStaff.grade.dialogTitle')}</DialogTitle>
+              <DialogDescription>{t('homeworkStaff.grade.onlyLatest')}</DialogDescription>
             </DialogHeader>
             <Button variant="outline" size="sm" className="w-fit" onClick={() => navigate(`/homework/${id}/grade`)}>
               <History className="w-4 h-4 mr-2" />
-              Show previous attempts
+              {t('homeworkStaff.progress.showPrevious')}
             </Button>
             <div className="p-2 h-full overflow-y-auto">
               {loadingSubmission ? (
-                <div className="text-sm text-muted-foreground">Loading submission...</div>
+                <div className="text-sm text-muted-foreground">{t('homeworkStaff.progress.loadingSubmission')}</div>
               ) : selectedSubmission ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
                   {/* Left side - Student info and submission details */}
@@ -693,7 +696,7 @@
                     {/* Multi-Task Submission View */}
                     {data?.assignment.assignment_type === 'multi_task' && (
                       <div className="mb-6">
-                        <h3 className="text-sm font-medium text-muted-foreground mb-2">Student's Work</h3>
+                        <h3 className="text-sm font-medium text-muted-foreground mb-2">{t('homeworkStaff.grade.studentWork')}</h3>
                         <div className="border rounded-lg p-4 bg-card dark:border-border">
                           <MultiTaskSubmission 
                             assignment={data.assignment}
@@ -709,7 +712,7 @@
                     {/* File Upload View (Legacy or mixed) */}
                     {(selectedSubmission.file_url || (selectedSubmission.answers?.files && selectedSubmission.answers.files.length > 0)) && (
                       <div className="space-y-4">
-                        <div className="text-sm font-medium text-muted-foreground">Submitted Files</div>
+                        <div className="text-sm font-medium text-muted-foreground">{t('homeworkStaff.progress.submittedFiles')}</div>
                         
                         {/* Multiple Files List */}
                         {selectedSubmission.answers?.files && selectedSubmission.answers.files.length > 0 ? (
@@ -720,7 +723,7 @@
                                     <div key={index} className="bg-muted p-3 rounded border dark:border-border">
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="text-sm font-medium">
-                                                {file.file_name || file.submitted_file_name || `File ${index + 1}`}
+                                                {file.file_name || file.submitted_file_name || t('homeworkStaff.progress.fileNumber', { number: index + 1 })}
                                             </div>
                                             {fileHref && (
                                               <Button
@@ -729,7 +732,7 @@
                                                   onClick={() => downloadFile(file.file_url, file.file_name || file.submitted_file_name || 'submission_file')}
                                               >
                                                   <Download className="w-4 h-4 mr-2" />
-                                                  Download
+                                                  {t('homeworkStaff.files.download')}
                                               </Button>
                                             )}
                                         </div>
@@ -740,7 +743,7 @@
                                         {!fileHref ? null : file.file_name?.toLowerCase().endsWith('.pdf') ? (
                                              <div className="mt-2 text-xs text-brand">
                                                 <a href={fileHref} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                                                    Open PDF in new tab
+                                                    {t('homeworkStaff.progress.openPdf')}
                                                 </a>
                                              </div>
                                         ) : /\.(jpg|jpeg|png|gif|webp)$/i.test(file.file_name || '') ? (
@@ -761,7 +764,7 @@
                                                     rel="noopener noreferrer"
                                                     className="text-brand hover:text-brand-subtle-foreground text-sm underline"
                                                 >
-                                                    Open file in new tab
+                                                    {t('homeworkStaff.progress.openFile')}
                                                 </a>
                                             </div>
                                         )}
@@ -776,7 +779,7 @@
             <div className="bg-muted p-3 rounded border dark:border-border">
                 <div className="flex items-center justify-between mb-2">
                     <div className="text-sm">
-                    {selectedSubmission.submitted_file_name || 'Download file'}
+                    {selectedSubmission.submitted_file_name || t('homeworkStaff.progress.downloadFileFallback')}
                                     </div>
                                     {legacyHref && (
                                     <Button
@@ -785,7 +788,7 @@
                                     onClick={() => downloadFile(selectedSubmission.file_url, selectedSubmission.submitted_file_name || 'submission_file')}
                                     >
                                     <Download className="w-4 h-4 mr-2" />
-                                    Download
+                                    {t('homeworkStaff.files.download')}
                                     </Button>
                                     )}
                                 </div>
@@ -797,14 +800,14 @@
                                 {/* PDF Viewer */}
                                 {selectedSubmission.submitted_file_name?.toLowerCase().endsWith('.pdf') && (
                                     <div className="mt-3">
-                                    <div className="text-xs text-muted-foreground mb-2">PDF Preview:</div>
+                                    <div className="text-xs text-muted-foreground mb-2">{t('homeworkStaff.progress.pdfPreview')}</div>
                                     <div className="border rounded overflow-hidden h-[60vh]">
                                         <iframe
                                         src={`${legacyHref}#toolbar=0&navpanes=0&scrollbar=0`}
                                         width="100%"
                                         height="100%"
                                         style={{ border: 'none' }}
-                                        title="PDF Preview"
+                                        title={t('homeworkStaff.progress.pdfPreviewTitle')}
                                         />
                                     </div>
                                     </div>
@@ -825,7 +828,7 @@
                                         rel="noopener noreferrer"
                                         className="text-brand hover:text-brand-subtle-foreground text-sm underline"
                                     >
-                                        Open file in new tab
+                                        {t('homeworkStaff.progress.openFile')}
                                     </a>
                                     </div>
                                 )}
@@ -841,12 +844,12 @@
                   {/* Right side - Grading form */}
                   <div className="space-y-4 h-full overflow-auto p-4">
                   <div className="space-y-2">
-                      <div className="text-sm font-medium text-muted-foreground">Student Information</div>
+                      <div className="text-sm font-medium text-muted-foreground">{t('homeworkStaff.progress.studentInfo')}</div>
                       <div className="bg-muted p-3 rounded border dark:border-border">
-                        <div className="font-medium">{selectedSubmission.user_name || 'Student #' + selectedSubmission.user_id}</div>
+                        <div className="font-medium">{selectedSubmission.user_name || t('homeworkStaff.progress.studentFallback', { id: selectedSubmission.user_id })}</div>
                         {selectedSubmission.submitted_at && (
                           <div className="text-sm text-muted-foreground mt-1">
-                            Submitted: {formatDateTime(new Date(selectedSubmission.submitted_at))}
+                            {t('homeworkStaff.grade.submittedAt', { date: formatDateTime(new Date(selectedSubmission.submitted_at)) })}
                           </div>
                         )}
                       </div>
@@ -857,13 +860,13 @@
                       {selectedSubmission.answers?.auto_check_result && (
                         <div className="p-4 bg-brand-surface rounded-lg border border-brand-border">
                           <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm font-semibold text-brand-surface-foreground">Auto-Check Results</span>
+                            <span className="text-sm font-semibold text-brand-surface-foreground">{t('homeworkStaff.progress.autoCheck')}</span>
                             <Badge variant="outline" className={
                               selectedSubmission.answers.auto_check_result.correct_count === selectedSubmission.answers.auto_check_result.total_count
                                 ? 'border-green-500 text-green-700 dark:text-green-400'
                                 : 'border-amber-500 text-amber-700 dark:text-amber-400'
                             }>
-                              {selectedSubmission.answers.auto_check_result.correct_count}/{selectedSubmission.answers.auto_check_result.total_count} correct
+                              {t('homeworkStaff.progress.correctCount', { correct: selectedSubmission.answers.auto_check_result.correct_count, total: selectedSubmission.answers.auto_check_result.total_count })}
                             </Badge>
                           </div>
                           
@@ -872,7 +875,7 @@
                             <div className="space-y-2">
                               {data.assignment.content.answer_fields.map((field: any) => {
                                 const isCorrect = selectedSubmission.answers.auto_check_result.details?.[field.id];
-                                const studentAnswer = selectedSubmission.answers.field_answers?.[field.id] || '(no answer)';
+                                const studentAnswer = selectedSubmission.answers.field_answers?.[field.id] || t('homeworkStaff.progress.noAnswer');
                                 return (
                                   <div 
                                     key={field.id} 
@@ -889,7 +892,7 @@
                                     <div className="flex items-center gap-2">
                                       {!isCorrect && (
                                         <span className="text-xs text-muted-foreground">
-                                          (correct: <span className="font-mono">{field.correct_answer}</span>)
+                                          ({t('homeworkStaff.progress.correctLabel')} <span className="font-mono">{field.correct_answer}</span>)
                                         </span>
                                       )}
                                       {isCorrect 
@@ -906,7 +909,7 @@
                       )}
 
                       <div>
-                        <label className="text-sm text-muted-foreground">Score</label>
+                        <label className="text-sm text-muted-foreground">{t('homeworkStaff.grade.score')}</label>
                         <Input
                           type="number"
                           min={0}
@@ -915,16 +918,16 @@
                           onChange={(e) => setScoreInput(e.target.value)}
                           className="mt-1"
                         />
-                        <div className="text-xs text-muted-foreground mt-1">Max score: {data?.assignment.max_score}</div>
+                        <div className="text-xs text-muted-foreground mt-1">{t('homeworkStaff.progress.maxScoreLine', { max: data?.assignment.max_score ?? '' })}</div>
                       </div>
                       
                       <div>
-                        <label className="text-sm text-muted-foreground">Feedback</label>
+                        <label className="text-sm text-muted-foreground">{t('homeworkStaff.grade.feedback')}</label>
                         <Textarea
                           rows={6}
                           value={feedbackInput}
                           onChange={(e) => setFeedbackInput(e.target.value)}
-                          placeholder="Enter feedback for the student..."
+                          placeholder={t('homeworkStaff.progress.feedbackPlaceholder')}
                           className="mt-1"
                         />
                       </div>
@@ -935,19 +938,19 @@
                         variant="outline" 
                         onClick={() => setGradingDialog({ open: false, submissionId: null })}
                       >
-                        Cancel
+                        {t('common.cancel')}
                       </Button>
                       <Button 
                         onClick={submitGrade} 
                         disabled={savingGrade || !scoreInput}
                       >
-                        {savingGrade ? 'Saving...' : 'Save Grade'}
+                        {savingGrade ? t('homeworkStaff.grade.saving') : t('homeworkStaff.grade.save')}
                       </Button>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground">Select a submission to grade.</div>
+                <div className="text-sm text-muted-foreground">{t('homeworkStaff.progress.selectSubmission')}</div>
               )}
             </div>
           </DialogContent>
@@ -957,15 +960,15 @@
         <Dialog open={extensionDialog.open} onOpenChange={(open) => setExtensionDialog({ ...extensionDialog, open })}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Grant Deadline Extension</DialogTitle>
+              <DialogTitle>{t('homeworkStaff.extension.dialogTitle')}</DialogTitle>
               <DialogDescription>
-                Set a new deadline for {extensionDialog.studentName} to submit their work.
+                {t('homeworkStaff.extension.dialogHintNamed', { name: extensionDialog.studentName })}
               </DialogDescription>
             </DialogHeader>
             
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="extension-deadline">Extended Deadline</Label>
+                <Label htmlFor="extension-deadline">{t('homeworkStaff.extension.deadline')}</Label>
                 <Input
                   id="extension-deadline"
                   type="datetime-local"
@@ -974,24 +977,24 @@
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="extension-reason">Reason (Optional)</Label>
+                <Label htmlFor="extension-reason">{t('homeworkStaff.extension.reason')}</Label>
                 <Textarea
                   id="extension-reason"
                   value={extensionReason}
                   onChange={(e) => setExtensionReason(e.target.value)}
-                  placeholder="Reason for the extension..."
+                  placeholder={t('homeworkStaff.extension.reasonPlaceholder')}
                   className="min-h-[80px]"
                 />
               </div>
               {extensionDialog.studentId && extensions.find(ext => ext.student_id === extensionDialog.studentId) && (
                 <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                  <span className="text-sm text-yellow-800 dark:text-yellow-400">This student already has an extension</span>
+                  <span className="text-sm text-yellow-800 dark:text-yellow-400">{t('homeworkStaff.extension.alreadyHas')}</span>
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => handleRevokeExtension(extensionDialog.studentId!)}
                   >
-                    Revoke
+                    {t('homeworkStaff.extension.revoke')}
                   </Button>
                 </div>
               )}
@@ -999,10 +1002,10 @@
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setExtensionDialog({ open: false, studentId: null, studentName: '' })}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button onClick={handleGrantExtension} disabled={savingExtension || !extensionDeadline}>
-                {savingExtension ? 'Saving...' : 'Grant Extension'}
+                {savingExtension ? t('homeworkStaff.grade.saving') : t('homeworkStaff.extension.grant')}
               </Button>
             </DialogFooter>
           </DialogContent>

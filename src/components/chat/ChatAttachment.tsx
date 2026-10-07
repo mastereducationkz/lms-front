@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Download, Image as ImageIcon, Paperclip } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import { fileNameFromUrl, safeUploadUrl } from '../../lib/mediaUrl';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 
 // Every image type the app accepts, matching the mobile client. The test allows a
 // query string / fragment after the extension (signed URLs).
@@ -15,6 +17,7 @@ const BROWSER_DECODABLE_RE = /\.(jpe?g|png|gif|webp|bmp|avif)(\?|#|$)/i;
 /** Renders a message attachment: inline image preview (click to open a lightbox),
  * an "image we can't decode" card, or a file download link. */
 export function ChatAttachment({ fileUrl }: { fileUrl: string }) {
+  const t = useT();
   const [lightboxOpen, setLightboxOpen] = useState(false);
   // Flips to true when the browser refuses to decode an image we expected it to handle.
   const [decodeFailed, setDecodeFailed] = useState(false);
@@ -29,7 +32,7 @@ export function ChatAttachment({ fileUrl }: { fileUrl: string }) {
     return (
       <div className="flex items-center gap-2 mb-1 px-2 py-1.5 rounded-lg bg-black/10 dark:bg-white/10 max-w-[220px] text-muted-foreground">
         <ImageIcon className="w-4 h-4 shrink-0" />
-        <span className="text-xs truncate">Attachment unavailable</span>
+        <span className="text-xs truncate">{t('chatLive.chat.attachmentUnavailable')}</span>
       </div>
     );
   }
@@ -44,7 +47,7 @@ export function ChatAttachment({ fileUrl }: { fileUrl: string }) {
           type="button"
           onClick={() => setLightboxOpen(true)}
           className="block mb-1 rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-ring"
-          aria-label={`Open image ${fileName}`}
+          aria-label={t('chatLive.chat.openImage', { name: fileName })}
         >
           <img
             src={url}
@@ -92,7 +95,7 @@ export function ChatAttachment({ fileUrl }: { fileUrl: string }) {
         <ImageIcon className="w-4 h-4 shrink-0" />
         <span className="min-w-0">
           <span className="block text-xs truncate">{fileName}</span>
-          <span className="block text-[10px] opacity-70">Preview unavailable — open to view</span>
+          <span className="block text-[10px] opacity-70">{t('chatLive.chat.previewUnavailable')}</span>
         </span>
       </a>
     );

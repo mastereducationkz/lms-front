@@ -6,8 +6,10 @@
  * teachers, head teachers, admins) reads English. Nothing else in the app may look at a role to
  * pick a language: it asks `uiLocale` (or the `useLocale` hook, which asks it).
  *
- * A per-user language switch plugs in here: `userLanguagePreference` returns the user's own
- * choice once the backend stores one, and `uiLocale` lets that choice win over the role.
+ * Since Q27 (2026-10-07) everyone may choose English or Русский in Settings
+ * (`users.ui_language`); the choice wins over the role. Before anyone signs in, the sign-in and
+ * reset pages use the language last used on this device (Q31). The backend applies the same rule
+ * in lms-backend src/utils/ui_locale.py — keep the two in step.
  */
 
 export type Locale = 'en' | 'ru';
@@ -20,23 +22,44 @@ export function isLocale(value: unknown): value is Locale {
   return value === 'en' || value === 'ru';
 }
 
-/** THE rule: the user's own choice first (none exists yet), then Russian for curator roles. */
+/** THE rule: the user's own choice first, then Russian for curator roles, English for the rest. */
 export function uiLocale(role?: string | null, preference?: Locale | null): Locale {
   if (isLocale(preference)) return preference;
   return role && RUSSIAN_UI_ROLES.has(role) ? 'ru' : 'en';
 }
 
-/**
- * The user's own language choice. There is none yet, so this is always undefined; when users can
- * pick EN/RU, read the stored field here (e.g. `user.ui_language`) and every screen follows.
- */
-export function userLanguagePreference(_user?: { role?: string | null } | null): Locale | undefined {
-  return undefined;
+type LocaleUser = { role?: string | null; ui_language?: string | null };
+
+/** The user's own language choice (Settings → Language), or undefined for the role's default. */
+export function userLanguagePreference(user?: LocaleUser | null): Locale | undefined {
+  const choice = user?.ui_language;
+  return isLocale(choice) ? choice : undefined;
 }
 
-/** The locale of a signed-in user (or English before anyone signs in). */
-export function localeForUser(user?: { role?: string | null } | null): Locale {
-  return uiLocale(user?.role, userLanguagePreference(user));
+/** The locale of a signed-in user; before anyone signs in, this device's last one (or English). */
+export function localeForUser(user?: LocaleUser | null): Locale {
+  if (!user) return deviceLocale() ?? 'en';
+  return uiLocale(user.role, userLanguagePreference(user));
+}
+
+const DEVICE_KEY = 'lms:ui-language';
+
+/** The language last used on this device, for the pages shown before signing in (Q31). */
+export function deviceLocale(): Locale | undefined {
+  try {
+    const stored = globalThis.localStorage?.getItem(DEVICE_KEY);
+    return isLocale(stored) ? stored : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function rememberDeviceLocale(locale: Locale): void {
+  try {
+    globalThis.localStorage?.setItem(DEVICE_KEY, locale);
+  } catch {
+    /* storage blocked: the sign-in page falls back to English */
+  }
 }
 
 /**

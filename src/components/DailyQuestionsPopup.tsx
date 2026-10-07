@@ -27,6 +27,8 @@ import {
   useAttention,
 } from '../lib/attention';
 import { AlertCircle, Check, X, Loader2 } from 'lucide-react';
+import { useLocale, useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 
@@ -54,6 +56,8 @@ function DailyQuestionsPopupInner({
   onOpenChange,
   onComplete 
 }: DailyQuestionsPopupProps = {}) {
+  const t = useT();
+  const locale = useLocale();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -499,9 +503,9 @@ function DailyQuestionsPopupInner({
         {/* Header */}
         <DialogHeader className="border-b pb-4">
           <div>
-            <DialogTitle className="text-xl font-semibold">Daily Questions</DialogTitle>
+            <DialogTitle className="text-xl font-semibold">{t('studentHome.dailyQuestions.title')}</DialogTitle>
             <DialogDescription className="mt-1 text-sm">
-              Solve these questions to improve your weak areas
+              {t('studentHome.dailyQuestions.subtitle')}
             </DialogDescription>
           </div>
 
@@ -525,7 +529,7 @@ function DailyQuestionsPopupInner({
         {view === 'loading' ? (
           <div className="flex items-center justify-center p-12">
             <Loader2 className="h-8 w-8 animate-spin text-brand" />
-            <span className="ml-3 text-muted-foreground">Loading questions...</span>
+            <span className="ml-3 text-muted-foreground">{t('studentHome.dailyQuestions.loading')}</span>
           </div>
         ) : view === 'empty' ? (
           <DailyQuestionsEmptyState onDismiss={handleDismiss} />
@@ -534,11 +538,11 @@ function DailyQuestionsPopupInner({
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 dark:bg-red-950/40">
               <AlertCircle className="h-7 w-7 text-red-600 dark:text-red-400" aria-hidden="true" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Oops! Something went wrong</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">{t('studentHome.dailyQuestions.errorTitle')}</h3>
             <p className="text-muted-foreground mb-6">
-              We couldn't load your daily questions right now. Please try again later.
+              {t('studentHome.dailyQuestions.errorText')}
             </p>
-            <Button variant="outline" onClick={handleDismiss}>Close</Button>
+            <Button variant="outline" onClick={handleDismiss}>{t('common.close')}</Button>
           </div>
         ) : view === 'questions' && currentQuestion ? (
           <div className="pt-4">
@@ -546,7 +550,7 @@ function DailyQuestionsPopupInner({
             <div className="flex items-center gap-2 mb-4 flex-wrap text-sm">
               <span className="text-muted-foreground">{getSectionLabel(currentQuestion.section)}</span>
               <span className="text-muted-foreground/50" aria-hidden="true">•</span>
-              <span className="text-muted-foreground">{difficultyLabel(currentQuestion.difficulty)}</span>
+              <span className="text-muted-foreground">{difficultyLabel(currentQuestion.difficulty, locale)}</span>
               <span className="text-muted-foreground/50" aria-hidden="true">•</span>
               <span className="text-muted-foreground">{formatTag(currentQuestion.primaryTag)}</span>
               {currentQuestion.questionType && (
@@ -560,7 +564,7 @@ function DailyQuestionsPopupInner({
             {/* Passage text (for verbal questions) */}
             {currentQuestion.passageText && (
               <div className="mb-5 p-4 bg-muted/60 border border-border rounded-md max-h-[200px] overflow-y-auto">
-                <p className="text-xs font-medium text-muted-foreground uppercase mb-2">Passage</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase mb-2">{t('studentHome.dailyQuestions.passage')}</p>
                 <div 
                   className="text-sm text-foreground leading-relaxed prose prose-sm max-w-none dark:prose-invert"
                   dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentQuestion.passageText) }}
@@ -580,7 +584,7 @@ function DailyQuestionsPopupInner({
               <div className="mb-5 rounded-md overflow-hidden border border-border bg-card">
                 <img 
                   src={currentQuestion.imageUrl}
-                  alt="Question"
+                  alt={t('studentHome.dailyQuestions.questionAlt')}
                   className="w-full h-auto object-contain"
                   loading="lazy"
                   onError={() => {
@@ -595,7 +599,7 @@ function DailyQuestionsPopupInner({
               {isMultipleChoice(currentQuestion) ? (
                 // Multiple choice options
                 <div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-foreground mb-3">Choose an answer:</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-foreground mb-3">{t('studentHome.dailyQuestions.chooseAnswer')}</p>
                   <div className="space-y-2">
                     {questionOptions(currentQuestion).map(({ letter, text: optionText, imageUrl, imageAlt }) => {
                       const isSelected = answers[currentQuestion.questionId] === letter;
@@ -626,7 +630,7 @@ function DailyQuestionsPopupInner({
                             {imageUrl ? (
                               <img
                                 src={imageUrl}
-                                alt={imageAlt ?? `Option ${letter}`}
+                                alt={imageAlt ?? t('studentHome.dailyQuestions.optionAlt', { letter })}
                                 loading="lazy"
                                 className="mt-2 block max-h-56 max-w-full rounded-md border border-border bg-card object-contain p-1"
                               />
@@ -641,7 +645,7 @@ function DailyQuestionsPopupInner({
                 // Free text input (Student Response)
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-foreground mb-2">
-                    Your answer:
+                    {t('studentHome.dailyQuestions.yourAnswerLabel')}
                   </label>
                   <input
                     type="text"
@@ -650,7 +654,7 @@ function DailyQuestionsPopupInner({
                       ...prev, 
                       [currentQuestion.questionId]: e.target.value 
                     }))}
-                    placeholder="Enter your answer..."
+                    placeholder={t('studentHome.dailyQuestions.answerPlaceholder')}
                     className="w-full px-4 py-2.5 border border-gray-300 dark:border-border bg-background text-foreground rounded-md focus:ring-2 focus:ring-ring focus:border-ring outline-none transition-all"
                   />
                 </div>
@@ -665,11 +669,11 @@ function DailyQuestionsPopupInner({
                 disabled={currentIndex === 0}
                 size="sm"
               >
-                Back
+                {t('common.back')}
               </Button>
 
               <span className="text-sm text-muted-foreground">
-                Answered: {answeredCount} / {allQuestions.length}
+                {t('studentHome.dailyQuestions.answered', { answered: answeredCount, total: allQuestions.length })}
               </span>
 
               {isLastQuestion ? (
@@ -679,14 +683,14 @@ function DailyQuestionsPopupInner({
                   size="sm"
                   className="bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground"
                 >
-                  {completing ? 'Saving...' : 'Complete'}
+                  {completing ? t('studentHome.dailyQuestions.saving') : t('studentHome.dailyQuestions.complete')}
                 </Button>
               ) : (
                 <Button
                   onClick={() => setCurrentIndex(Math.min(allQuestions.length - 1, currentIndex + 1))}
                   size="sm"
                 >
-                  Next
+                  {t('studentHome.dailyQuestions.next')}
                 </Button>
               )}
             </div>
@@ -708,10 +712,10 @@ function DailyQuestionsPopupInner({
                 </span>
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-1">
-                {score.correct === score.total ? 'Perfect!' : score.correct >= score.total / 2 ? 'Good job!' : 'Keep practicing!'}
+                {score.correct === score.total ? t('studentHome.dailyQuestions.perfect') : score.correct >= score.total / 2 ? t('studentHome.dailyQuestions.goodJob') : t('studentHome.dailyQuestions.keepPracticing')}
               </h3>
               <p className="text-sm text-muted-foreground">
-                You got {score.correct} out of {score.total} questions correct
+                {t('studentHome.dailyQuestions.scoreLine', { correct: score.correct, total: score.total })}
               </p>
             </div>
 
@@ -742,14 +746,14 @@ function DailyQuestionsPopupInner({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground">
-                        Question {idx + 1} <span className="text-muted-foreground">•</span>{' '}
+                        {t('studentHome.dailyQuestions.questionN', { n: idx + 1 })} <span className="text-muted-foreground">•</span>{' '}
                         <span className="text-muted-foreground font-normal">{formatTag(q.primaryTag)}</span>
                       </div>
                       {!isCorrect && q.correctAnswer && (
                         <div className="text-xs text-muted-foreground mt-0.5">
-                          Correct answer: <span className="font-medium text-green-700 dark:text-green-400">{q.correctAnswer}</span>
+                          {t('studentHome.dailyQuestions.correctAnswer')} <span className="font-medium text-green-700 dark:text-green-400">{q.correctAnswer}</span>
                           {wasAnswered && (
-                            <span className="ml-2 text-red-600 dark:text-red-400">Your answer: {userAnswer}</span>
+                            <span className="ml-2 text-red-600 dark:text-red-400">{t('studentHome.dailyQuestions.yourAnswer', { answer: userAnswer })}</span>
                           )}
                         </div>
                       )}
@@ -767,7 +771,7 @@ function DailyQuestionsPopupInner({
             {/* Close button */}
             <div className="flex justify-center mt-6 pt-4 border-t">
               <Button onClick={() => setIsDialogOpen(false)} className="px-8">
-                Close
+                {t('common.close')}
               </Button>
             </div>
           </div>
@@ -779,8 +783,8 @@ function DailyQuestionsPopupInner({
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-1">Great job!</h3>
-            <p className="text-sm text-muted-foreground">Daily questions completed</p>
+            <h3 className="text-lg font-semibold text-foreground mb-1">{t('studentHome.dailyQuestions.greatJob')}</h3>
+            <p className="text-sm text-muted-foreground">{t('studentHome.dailyQuestions.completed')}</p>
           </div>
         )}
       </DialogContent>

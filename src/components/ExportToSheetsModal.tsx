@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, Download, CheckCircle2, AlertCircle, BarChart3, Lightbulb } from 'lucide-react';
 import { exportAnalyticsExcel } from '../services/api';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherDesk';
 
 interface ExportToExcelModalProps {
   open: boolean;
@@ -22,6 +24,7 @@ export default function ExportToExcelModal({
   courseName,
   groups = []
 }: ExportToExcelModalProps) {
+  const t = useT();
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [isExporting, setIsExporting] = useState(false);
   const [exportResult, setExportResult] = useState<{
@@ -61,7 +64,7 @@ export default function ExportToExcelModal({
     } catch (error: any) {
       setExportResult({
         success: false,
-        error: error.response?.data?.detail || 'Failed to export analytics to Excel. Please try again.'
+        error: error.response?.data?.detail || t('teacherDesk.export.failed')
       });
     } finally {
       setIsExporting(false);
@@ -78,9 +81,9 @@ export default function ExportToExcelModal({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Export Analytics to Excel</DialogTitle>
+          <DialogTitle>{t('teacherDesk.export.title')}</DialogTitle>
           <DialogDescription>
-            Download Excel file with detailed analytics and charts for <strong>{courseName}</strong>
+            {t('teacherDesk.export.description').split(/\{(\w+)\}/).map((part, i) => (i % 2 ? <strong key={i}>{courseName}</strong> : part))}
           </DialogDescription>
         </DialogHeader>
 
@@ -88,20 +91,20 @@ export default function ExportToExcelModal({
           <div className="space-y-4 py-4">
             {groups.length > 0 && (
               <div className="space-y-2">
-                <Label htmlFor="group">Filter by Group (Optional)</Label>
+                <Label htmlFor="group">{t('teacherDesk.export.groupFilter')}</Label>
                 <Select value={selectedGroup} onValueChange={setSelectedGroup} disabled={isExporting}>
                   <SelectTrigger id="group">
-                    <SelectValue placeholder="All students" />
+                    <SelectValue placeholder={t('teacherDesk.export.allStudents')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All students</SelectItem>
+                    <SelectItem value="all">{t('teacherDesk.export.allStudents')}</SelectItem>
                     {groups.map((group) => {
                       const groupId = group.group_id || group.id;
                       const groupName = group.group_name || group.name;
                       if (!groupId) return null; // Skip groups without ID
                       return (
                         <SelectItem key={groupId} value={groupId.toString()}>
-                          {groupName || 'Unknown Group'}
+                          {groupName || t('teacherDesk.export.unknownGroup')}
                         </SelectItem>
                       );
                     })}
@@ -112,16 +115,16 @@ export default function ExportToExcelModal({
 
             <Alert>
               <AlertDescription className="text-sm">
-                <strong>Excel file will include:</strong>
+                <strong>{t('teacherDesk.export.includes')}</strong>
                 <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li><strong>Student Progress</strong> - detailed metrics with color coding</li>
-                  <li><strong>Course Overview</strong> - course statistics and structure</li>
-                  {selectedGroup === 'all' && <li><strong>Groups Summary</strong> - group performance comparison</li>}
-                  <li><strong>Charts & Analytics</strong> - visual progress distribution and comparisons</li>
+                  <li><strong>{t('teacherDesk.export.sheetProgress')}</strong> — {t('teacherDesk.export.sheetProgressHint')}</li>
+                  <li><strong>{t('teacherDesk.progress.courseOverview')}</strong> — {t('teacherDesk.export.sheetCourseHint')}</li>
+                  {selectedGroup === 'all' && <li><strong>{t('teacherDesk.export.sheetGroups')}</strong> — {t('teacherDesk.export.sheetGroupsHint')}</li>}
+                  <li><strong>{t('teacherDesk.export.sheetCharts')}</strong> — {t('teacherDesk.export.sheetChartsHint')}</li>
                 </ul>
                 <p className="mt-3 flex items-center gap-1.5 text-xs">
                   <BarChart3 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  File includes interactive charts and conditional formatting
+                  {t('teacherDesk.export.chartsNote')}
                 </p>
               </AlertDescription>
             </Alert>
@@ -131,13 +134,13 @@ export default function ExportToExcelModal({
             <Alert className="border-green-500 bg-green-50">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
-                <strong>Export successful!</strong>
+                <strong>{t('teacherDesk.export.success')}</strong>
                 <p className="mt-2">
-                  Your Excel file has been downloaded. Check your downloads folder.
+                  {t('teacherDesk.export.downloaded')}
                 </p>
                 <p className="mt-2 flex items-start gap-1.5 text-xs">
                   <Lightbulb className="h-3.5 w-3.5 shrink-0 mt-px" aria-hidden="true" />
-                  Tip: You can upload the Excel file to Google Sheets for online collaboration
+                  {t('teacherDesk.export.tip')}
                 </p>
               </AlertDescription>
             </Alert>
@@ -147,13 +150,13 @@ export default function ExportToExcelModal({
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                <strong>Export failed</strong>
+                <strong>{t('teacherDesk.export.failedTitle')}</strong>
                 <p className="mt-2">{exportResult.error}</p>
               </AlertDescription>
             </Alert>
 
             <Button onClick={() => setExportResult(null)} variant="outline" className="w-full">
-              Try Again
+              {t('teacherDesk.export.tryAgain')}
             </Button>
           </div>
         )}
@@ -162,25 +165,25 @@ export default function ExportToExcelModal({
           {!exportResult ? (
             <>
               <Button variant="outline" onClick={handleClose} disabled={isExporting}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button onClick={handleExport} disabled={isExporting}>
                 {isExporting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Exporting...
+                    {t('teacherDesk.export.exporting')}
                   </>
                 ) : (
                   <>
                     <Download className="mr-2 h-4 w-4" />
-                    Export to Excel
+                    {t('teacherDesk.export.submit')}
                   </>
                 )}
               </Button>
             </>
           ) : (
             <Button onClick={handleClose} variant="outline">
-              Close
+              {t('common.close')}
             </Button>
           )}
         </DialogFooter>

@@ -5,6 +5,8 @@ import { Skeleton } from './ui/skeleton';
 import { Crown, Dumbbell, Flame, Star } from 'lucide-react';
 import apiClient from '../services/api';
 import UserAvatar from '@/components/mascot/UserAvatar';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 
 interface LeaderboardEntry {
   rank: number;
@@ -36,6 +38,7 @@ type SelfRankSummary = {
 };
 
 export default function StudentLeaderboard() {
+  const t = useT();
   const [entries, setEntries] = useState<any[]>([]);
   const [selfRankSummary, setSelfRankSummary] = useState<SelfRankSummary | null>(null);
   const [totalParticipants, setTotalParticipants] = useState<number>(0);
@@ -76,7 +79,7 @@ export default function StudentLeaderboard() {
       console.error('Failed to load user info:', err);
       // Without this the card is stuck on the skeleton forever: currentUser
       // never gets set, so loadLeaderboard never runs and isLoading stays true.
-      setError('Failed to load leaderboard');
+      setError(t('studentHome.leaderboard.loadFailed'));
       setIsLoading(false);
     }
   };
@@ -111,7 +114,7 @@ export default function StudentLeaderboard() {
       }
       
     } catch (err: any) {
-      setError(err?.message || 'Failed to load leaderboard');
+      setError(err?.message || t('studentHome.leaderboard.loadFailed'));
       console.error('Leaderboard error:', err);
     } finally {
       setIsLoading(false);
@@ -151,7 +154,7 @@ export default function StudentLeaderboard() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
-            Leaderboard
+            {t('studentHome.leaderboard.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -166,7 +169,7 @@ export default function StudentLeaderboard() {
       <CardHeader className="pb-2 space-y-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-xl">
-            Leaderboard
+            {t('studentHome.leaderboard.title')}
           </CardTitle>
           
           <div className="flex items-center gap-2">
@@ -180,7 +183,7 @@ export default function StudentLeaderboard() {
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 } ${myGroups.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                My Group
+                {t('studentHome.leaderboard.myGroup')}
               </button>
               <button
                 onClick={() => setScope('all')}
@@ -190,7 +193,7 @@ export default function StudentLeaderboard() {
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
-                All Students
+                {t('studentHome.leaderboard.allStudents')}
               </button>
             </div>
           </div>
@@ -216,7 +219,7 @@ export default function StudentLeaderboard() {
         {error ? (
           <div className="text-center py-4 text-red-500 dark:text-red-400 text-sm">
             {error}
-            <Button variant="link" size="sm" onClick={() => (currentUser ? loadLeaderboard() : loadUserAndGroups())} className="text-blue-500 dark:text-blue-400">Retry</Button>
+            <Button variant="link" size="sm" onClick={() => (currentUser ? loadLeaderboard() : loadUserAndGroups())} className="text-blue-500 dark:text-blue-400">{t('studentHome.leaderboard.retry')}</Button>
           </div>
         ) : (
           <>
@@ -234,23 +237,23 @@ export default function StudentLeaderboard() {
                 size={48}
               />
               <div className="flex flex-col">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">Your Rank</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">{t('studentHome.leaderboard.yourRank')}</span>
                 <div className="flex items-center gap-2 ">
                   <span className="text-2xl font-bold text-gray-900 dark:text-foreground tracking-tight">#{myRankInfo.rank}</span>
                   {myRankInfo.rank === 1 ? (
-                    <span className="inline-flex items-center gap-1 text-[16px] font-bold text-yellow-700 dark:text-yellow-400 px-2 rounded-full"><Crown className="h-4 w-4" aria-hidden="true" />THE GOAT</span>
+                    <span className="inline-flex items-center gap-1 text-[16px] font-bold text-yellow-700 dark:text-yellow-400 px-2 rounded-full"><Crown className="h-4 w-4" aria-hidden="true" />{t('studentHome.leaderboard.title1')}</span>
                   ) : myRankInfo.rank <= 3 ? (
-                    <span className="inline-flex items-center gap-1 text-[16px] font-bold text-orange-700 dark:text-orange-400 px-2 rounded-full"><Flame className="h-4 w-4" aria-hidden="true" />LEGEND</span>
+                    <span className="inline-flex items-center gap-1 text-[16px] font-bold text-orange-700 dark:text-orange-400 px-2 rounded-full"><Flame className="h-4 w-4" aria-hidden="true" />{t('studentHome.leaderboard.titleTop3')}</span>
                   ) : myRankInfo.rank <= 10 ? (
-                    <span className="inline-flex items-center gap-1 text-[16px] font-bold text-purple-600 dark:text-purple-400 px-2 rounded-full"><Star className="h-4 w-4" aria-hidden="true" />RISING STAR</span>
+                    <span className="inline-flex items-center gap-1 text-[16px] font-bold text-purple-600 dark:text-purple-400 px-2 rounded-full"><Star className="h-4 w-4" aria-hidden="true" />{t('studentHome.leaderboard.titleTop10')}</span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-secondary px-2 py-0.5 rounded-full"><Dumbbell className="h-3.5 w-3.5" aria-hidden="true" />GRINDING</span>
+                    <span className="inline-flex items-center gap-1 text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-secondary px-2 py-0.5 rounded-full"><Dumbbell className="h-3.5 w-3.5" aria-hidden="true" />{t('studentHome.leaderboard.titleRest')}</span>
                   )}
                 </div>
               </div>
               </div>
               <div className="flex flex-col items-end">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">Rank</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">{t('studentHome.leaderboard.rank')}</span>
                 <span className="text-xl font-semibold text-gray-900 dark:text-foreground">
                   {myRankInfo.rank} <span className="text-muted-foreground font-normal">/ {totalParticipants}</span>
                 </span>
@@ -260,8 +263,8 @@ export default function StudentLeaderboard() {
             {myRankInfo.pointsToNext > 0 ? (
               <div className="bg-gray-50 dark:bg-secondary rounded-lg p-3 mt-3">
                 <div className="flex justify-between text-xs font-medium mb-2">
-                  <span className="text-gray-500 dark:text-gray-400">Next Level</span>
-                  <span className="text-blue-600 dark:text-blue-400">{myRankInfo.pointsToNext} points needed</span>
+                  <span className="text-gray-500 dark:text-gray-400">{t('studentHome.leaderboard.nextLevel')}</span>
+                  <span className="text-blue-600 dark:text-blue-400">{t('studentHome.leaderboard.pointsNeeded', { count: myRankInfo.pointsToNext })}</span>
                 </div>
                 <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div className="h-full bg-blue-500 dark:bg-blue-400 rounded-full w-2/3"></div>
@@ -269,13 +272,13 @@ export default function StudentLeaderboard() {
               </div>
             ) : myRankInfo.rank === 1 && (
                <div className="mt-2 text-center">
-                 <p className="flex items-center justify-center gap-1.5 text-sm font-medium text-yellow-700 dark:text-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/20 py-2 rounded-lg"><Crown className="h-4 w-4" aria-hidden="true" />Unstoppable!</p>
+                 <p className="flex items-center justify-center gap-1.5 text-sm font-medium text-yellow-700 dark:text-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/20 py-2 rounded-lg"><Crown className="h-4 w-4" aria-hidden="true" />{t('studentHome.leaderboard.unstoppable')}</p>
                </div>
             )}
           </div>
         ) : (
           <div className="text-center py-2 text-gray-500 dark:text-gray-400 text-sm mb-2">
-            You haven't earned points in this period yet.
+            {t('studentHome.leaderboard.noPoints')}
           </div>
         )}
 

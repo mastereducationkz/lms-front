@@ -118,4 +118,9 @@ export const shell = {
   'shell.accessDenied.title': 'Access Denied',
   'shell.accessDenied.body': 'You don’t have permission to access this page.',
   'shell.accessDenied.back': 'Go Back',
+  'shell.signingIn': 'Signing you in…',
+  'shell.loadingPage': 'Loading page…',
+  'shell.attendanceBadge.toMark': '{count} to mark',
+  'shell.attendanceBadge.waiting': '{count} waiting on Meet',
+  'shell.attendanceBadge.scores': '{count} need activity scores',
 } as const satisfies MessageTable;

@@ -5,6 +5,9 @@
 import { Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { achievementField } from '@/lib/achievements';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 import type { Achievement, StarAward } from '@/services/api/achievementsUi';
 import type { Crown } from '@/services/api/shares';
 import { openShareDialog } from './openShare';
@@ -15,12 +18,13 @@ function useStudent(): ShareUser | null {
   return user && user.role === 'student' ? (user as ShareUser) : null;
 }
 
-function ShareEntryButton({ label = 'Share', build, onOpen, className = '' }: {
+function ShareEntryButton({ label, build, onOpen, className = '' }: {
   label?: string;
   build: () => ShareItem | null;
   onOpen?: () => void;
   className?: string;
 }) {
+  const t = useT();
   return (
     <Button
       type="button"
@@ -34,7 +38,7 @@ function ShareEntryButton({ label = 'Share', build, onOpen, className = '' }: {
         void openShareDialog(item);
       }}
     >
-      <Share2 className="h-4 w-4" aria-hidden /> {label}
+      <Share2 className="h-4 w-4" aria-hidden /> {label ?? t('studentHome.share.share')}
     </Button>
   );
 }
@@ -49,14 +53,15 @@ export function ShareAchievementButton({ achievement, className }: { achievement
 /** In the unlock celebration: shares the most exciting new achievement, closing the celebration first. */
 export function ShareCelebrationButton({ achievement, onOpen }: { achievement: Achievement | undefined; onOpen: () => void }) {
   const student = useStudent();
+  const t = useT();
   if (!student || !achievement?.unlocked) return null;
   return (
     <Button
       type="button"
       variant="outline"
       size="icon"
-      aria-label={`Share ${achievement.title}`}
-      title="Share to your story"
+      aria-label={t('studentHome.share.shareAchievement', { title: achievementField(achievement, 'title') })}
+      title={t('studentHome.share.toStory')}
       onClick={() => {
         const item = achievementItem(achievement, student);
         if (!item) return;

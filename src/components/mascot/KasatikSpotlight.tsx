@@ -8,6 +8,8 @@ import { Popover, PopoverAnchor, PopoverContent } from '../ui/popover';
 import Orca from './Orca';
 import { useAttention } from '../../lib/attention';
 import { seedMascot } from './config';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 import {
   dismissSpotlight,
   isSpotlightDismissed,
@@ -72,20 +74,21 @@ function useIsDesktop(): boolean {
 }
 
 function SpotlightBody({ userId, onCustomize, onLater }: { userId: string; onCustomize: () => void; onLater: () => void }) {
+  const t = useT();
   return (
     <div className="flex gap-3">
-      <Orca config={seedMascot(userId)} size={56} className="rounded-full shrink-0" title="Your Kasatik" />
+      <Orca config={seedMascot(userId)} size={56} className="rounded-full shrink-0" title={t('studentHome.mascot.spotlight.yourKasatik')} />
       <div className="min-w-0">
-        <p className="font-semibold text-brand-surface-foreground">Meet your Kasatik!</p>
+        <p className="font-semibold text-brand-surface-foreground">{t('studentHome.mascot.spotlight.title')}</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Your study buddy is ready — dress it up with outfits, props and Master merch.
+          {t('studentHome.mascot.spotlight.body')}
         </p>
         <div className="mt-3 flex gap-2">
           <Button type="button" size="sm" className="bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground" onClick={onCustomize}>
-            Customize
+            {t('studentHome.mascot.spotlight.customize')}
           </Button>
           <Button type="button" size="sm" variant="ghost" onClick={onLater}>
-            Later
+            {t('studentHome.mascot.spotlight.later')}
           </Button>
         </div>
       </div>
@@ -95,6 +98,7 @@ function SpotlightBody({ userId, onCustomize, onLater }: { userId: string; onCus
 
 /** Wraps the desktop sidebar avatar: a soft pulsing ring plus a popover card just past the sidebar's edge. */
 export function KasatikCoachmark({ children, sideOffset = 24 }: { children: ReactNode; sideOffset?: number }) {
+  const t = useT();
   const { visible, userId, later, customize } = useKasatikSpotlight();
   const desktop = useIsDesktop();
   if (!visible || !desktop) return <>{children}</>;
@@ -113,7 +117,7 @@ export function KasatikCoachmark({ children, sideOffset = 24 }: { children: Reac
         sideOffset={sideOffset}
         className="w-80 rounded-2xl border-blue-100 dark:border-brand-border shadow-lg"
         role="dialog"
-        aria-label="Meet your Kasatik"
+        aria-label={t('studentHome.mascot.spotlight.label')}
         onOpenAutoFocus={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={later}
@@ -130,11 +134,12 @@ export function KasatikCoachmark({ children, sideOffset = 24 }: { children: Reac
 
 /** The mobile surface: a compact card at the top of the student dashboard (hidden on desktop). */
 export function KasatikSpotlightCard({ className = '' }: { className?: string }) {
+  const t = useT();
   const { visible, userId, later, customize } = useKasatikSpotlight();
   if (!visible) return null;
   return (
     <section
-      aria-label="Meet your Kasatik"
+      aria-label={t('studentHome.mascot.spotlight.label')}
       onKeyDown={(e) => {
         if (e.key === 'Escape') later();
       }}

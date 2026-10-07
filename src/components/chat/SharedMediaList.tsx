@@ -1,5 +1,7 @@
 import { ImageOff, Paperclip } from 'lucide-react';
 import { fileNameFromUrl, safeUploadUrl } from '../../lib/mediaUrl';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 
 export interface SharedMediaItem {
   id: number;
@@ -23,6 +25,7 @@ function isImage(url: string) {
  * which fetches shared media in a `useEffect` a headless render can't run.
  */
 export function SharedMediaList({ media }: { media: SharedMediaItem[] }) {
+  const t = useT();
   const images = media.filter((m) => isImage(m.file_url));
   const files = media.filter((m) => !isImage(m.file_url));
 
@@ -46,7 +49,7 @@ export function SharedMediaList({ media }: { media: SharedMediaItem[] }) {
               <a key={m.id} href={href} target="_blank" rel="noreferrer">
                 <img
                   src={href}
-                  alt="shared"
+                  alt={t('chatLive.chat.sharedImage')}
                   className="w-full h-20 object-cover rounded-lg"
                 />
               </a>
@@ -62,7 +65,7 @@ export function SharedMediaList({ media }: { media: SharedMediaItem[] }) {
             if (!href) {
               return (
                 <p key={m.id} className="text-sm text-muted-foreground break-all">
-                  <Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{fileName} (unavailable)
+                  <Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{t('chatLive.chat.fileUnavailable', { name: fileName })}
                 </p>
               );
             }

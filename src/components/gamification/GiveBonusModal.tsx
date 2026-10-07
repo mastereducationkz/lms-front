@@ -6,6 +6,8 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import apiClient from '../../services/api';
 import { Loader2, Star, Trophy } from 'lucide-react';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherDesk';
 
 interface GiveBonusModalProps {
   isOpen: boolean;
@@ -24,8 +26,9 @@ export function GiveBonusModal({
   onSuccess,
   defaultAmount = 5
 }: GiveBonusModalProps) {
+  const t = useT();
   const [amount, setAmount] = useState<number>(defaultAmount);
-  const [reason, setReason] = useState('Great participation!');
+  const [reason, setReason] = useState(() => t('teacherDesk.bonus.defaultReason'));
 
   // Update amount when defaultAmount changes or modal reopens
   useEffect(() => {
@@ -51,7 +54,7 @@ export function GiveBonusModal({
       onClose();
     } catch (err: any) {
       console.error('Failed to give bonus:', err);
-      setError(err.response?.data?.detail || 'Failed to award points');
+      setError(err.response?.data?.detail || t('teacherDesk.bonus.failed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -63,16 +66,16 @@ export function GiveBonusModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />
-            Award Bonus Points
+            {t('teacherDesk.bonus.title')}
           </DialogTitle>
           <DialogDescription>
-            Give bonus points to <strong>{studentName}</strong> for their achievements.
+            {t('teacherDesk.bonus.description').split(/\{(\w+)\}/).map((part, i) => (i % 2 ? <strong key={i}>{studentName}</strong> : part))}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="amount">Points Amount (1-50)</Label>
+            <Label htmlFor="amount">{t('teacherDesk.bonus.amount')}</Label>
             <div className="relative">
               <Star className="absolute left-3 top-2.5 h-4 w-4 text-yellow-500 dark:text-yellow-400" />
               <Input
@@ -89,12 +92,12 @@ export function GiveBonusModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="reason">Reason / Comment</Label>
+            <Label htmlFor="reason">{t('teacherDesk.bonus.reason')}</Label>
             <Textarea
               id="reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. Excellent question in class"
+              placeholder={t('teacherDesk.bonus.reasonPlaceholder')}
               required
               rows={3}
             />
@@ -108,18 +111,18 @@ export function GiveBonusModal({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting} className="bg-yellow-600 hover:bg-yellow-700 text-white">
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Awarding...
+                  {t('teacherDesk.bonus.awarding')}
                 </>
               ) : (
                 <>
                   <Star className="mr-2 h-4 w-4 fill-current" />
-                  Award Points
+                  {t('teacherDesk.awards.awardPoints')}
                 </>
               )}
             </Button>

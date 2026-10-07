@@ -25,6 +25,11 @@ describe('the amount a head teacher types', () => {
     expect(checkDecision(draft({ amount: '' }), 600).error).toBe('Enter an amount');
     expect(checkDecision(draft({ amount: '-5' }), 600).error).toBe('Only whole tenge, digits alone');
   });
+
+  it('says it in Russian for a reader who picked Русский', () => {
+    expect(checkDecision(draft({ amount: '' }), 600, 'ru').error).toBe('Введите сумму');
+    expect(checkDecision(draft({ amount: '0' }), 600, 'ru').error).toBe('Выберите причину снижения');
+  });
 });
 
 describe('lowering what the rule asked', () => {

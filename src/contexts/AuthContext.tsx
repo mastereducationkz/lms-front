@@ -3,7 +3,9 @@ import apiClient from "../services/api";
 import type { User, UserRole } from '../types';
 import { clearOidcSession, isOidcSession } from '../services/oidc';
 import { setSentryUser } from '../lib/sentry';
-import { localeForUser, setActiveLocale } from '../lib/i18n/locale';
+import { localeForUser, rememberDeviceLocale, setActiveLocale } from '../lib/i18n/locale';
+import { t } from '../lib/i18n/translate';
+import '@/lib/i18n/catalogs/sharedUi';
 import { setPwaUser } from '../services/pwaInstall';
 import { detachPushOnSignOut, syncPushSubscription } from '../services/webPush';
 
@@ -64,7 +66,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   setActiveLocale(locale);
   useEffect(() => {
     document.documentElement.lang = locale;
-  }, [locale]);
+    // The sign-in and reset pages speak the language last used here (owner, Q31).
+    if (user) rememberDeviceLocale(locale);
+  }, [locale, user]);
 
   // Error reports carry who hit the error (WS9, 2026-09-26): id, email, name and role, so the
   // owner can see who was affected. Runs after login and after the /auth/me session restore
@@ -143,10 +147,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(result.user);
         return { success: true };
       } else {
-        throw new Error('Login failed');
+        throw new Error(t('sharedUi.auth.loginFailed'));
       }
     } catch (error: any) {
-      const errorMessage = error.message || 'Login failed';
+      const errorMessage = error.message || t('sharedUi.auth.loginFailed');
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {

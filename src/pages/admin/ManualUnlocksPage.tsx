@@ -22,6 +22,9 @@ import {
   History,
 } from 'lucide-react'
 import type { Course, CourseModule, User, Group, ManualLessonUnlock, Lesson } from '../../types'
+import type { MessageKey } from '../../lib/i18n'
+import { useT } from '../../lib/i18n/react'
+import '@/lib/i18n/catalogs/adminPages'
 
 type TargetType = 'user' | 'group'
 type UnitFilter = 'all' | 'incomplete' | 'complete' | 'unlocked'
@@ -48,11 +51,11 @@ const resolveCourseIdForGroup = (group: Group | undefined, courses: Course[]): s
 }
 
 
-const unitFilterOptions: { value: UnitFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'incomplete', label: 'Incomplete' },
-  { value: 'complete', label: 'Completed' },
-  { value: 'unlocked', label: 'Unlocked' },
+const unitFilterOptions: { value: UnitFilter; label: MessageKey }[] = [
+  { value: 'all', label: 'common.all' },
+  { value: 'incomplete', label: 'adminPages.manualUnlocks.filter.incomplete' },
+  { value: 'complete', label: 'adminPages.manualUnlocks.filter.complete' },
+  { value: 'unlocked', label: 'adminPages.manualUnlocks.filter.unlocked' },
 ]
 
 const RECENT_TARGETS_KEY = 'manual-unlocks-recent-v1'
@@ -81,6 +84,7 @@ const saveRecentTarget = (target: RecentTarget) => {
 
 export default function ManualUnlocksPage() {
   const { user } = useAuth()
+  const t = useT()
 
   const [courses, setCourses] = useState<Course[]>([])
   const [allGroups, setAllGroups] = useState<Group[]>([])
@@ -133,7 +137,7 @@ export default function ManualUnlocksPage() {
       setAllGroups(groupsData || [])
     } catch (error) {
       console.error('Failed to load initial data:', error)
-      toast('Failed to load data', 'error')
+      toast(t('adminPages.manualUnlocks.loadFailed'), 'error')
     } finally {
       setIsLoading(false)
     }
@@ -258,11 +262,11 @@ export default function ManualUnlocksPage() {
       console.error('Failed to load lesson progress:', error)
       setLessonProgress({})
       setOverall(null)
-      toast('Failed to load unit progress', 'error')
+      toast(t('adminPages.manualUnlocks.loadProgressFailed'), 'error')
     } finally {
       setIsProgressLoading(false)
     }
-  }, [selectedTarget, selectedCourseId])
+  }, [selectedTarget, selectedCourseId, t])
 
   const loadCourseStructure = useCallback(async (courseId: string) => {
     try {
@@ -304,7 +308,7 @@ export default function ManualUnlocksPage() {
 
   const handleToggleUnlock = async (lessonId: number, currentlyUnlocked: boolean) => {
     if (!selectedTarget) {
-      toast('Please select a student or group first', 'error')
+      toast(t('adminPages.manualUnlocks.selectTargetFirst'), 'error')
       return
     }
 
@@ -316,14 +320,14 @@ export default function ManualUnlocksPage() {
 
       if (currentlyUnlocked) {
         await apiClient.manualLockLesson(data)
-        toast('Access revoked', 'success')
+        toast(t('adminPages.manualUnlocks.accessRevoked'), 'success')
       } else {
         await apiClient.manualUnlockLesson(data)
-        toast('Access granted', 'success')
+        toast(t('adminPages.manualUnlocks.accessGranted'), 'success')
       }
       loadTargetUnlocks()
     } catch (error: any) {
-      toast(error.message || error.response?.data?.detail || 'Action failed', 'error')
+      toast(error.message || error.response?.data?.detail || t('adminPages.manualUnlocks.actionFailed'), 'error')
     } finally {
       setActionLessonId(null)
     }
@@ -345,13 +349,13 @@ export default function ManualUnlocksPage() {
       await apiClient.completeLessonsForTarget(data)
       toast(
         selectedTarget.type === 'group'
-          ? 'Unit marked complete for all students in the group'
-          : 'Unit marked complete',
+          ? t('adminPages.manualUnlocks.completedForGroup')
+          : t('adminPages.manualUnlocks.completedForStudent'),
         'success'
       )
       loadLessonProgress()
     } catch (error: any) {
-      toast(error.message || 'Failed to mark unit complete', 'error')
+      toast(error.message || t('adminPages.manualUnlocks.completeFailed'), 'error')
     } finally {
       setActionLessonId(null)
     }
@@ -373,13 +377,13 @@ export default function ManualUnlocksPage() {
       await apiClient.resetLessonsForTarget(data)
       toast(
         selectedTarget.type === 'group'
-          ? 'Progress reset for all students in the group'
-          : 'Progress reset',
+          ? t('adminPages.manualUnlocks.resetForGroup')
+          : t('adminPages.manualUnlocks.resetForStudent'),
         'success'
       )
       loadLessonProgress()
     } catch (error: any) {
-      toast(error.message || 'Failed to reset progress', 'error')
+      toast(error.message || t('adminPages.manualUnlocks.resetFailed'), 'error')
     } finally {
       setActionLessonId(null)
     }
@@ -487,12 +491,12 @@ export default function ManualUnlocksPage() {
       {/* Header */}
       <div className="flex flex-col @lg:flex-row @lg:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Manual Unlocks</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Unlock units or mark them complete for a student or group</p>
+          <h1 className="text-xl font-semibold text-foreground">{t('adminPages.manualUnlocks.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t('adminPages.manualUnlocks.subtitle')}</p>
         </div>
         {selectedTarget && selectedCourseId && stats.total > 0 && (
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">{stats.completed}/{stats.total} completed</span>
+            <span className="text-sm text-muted-foreground">{t('adminPages.manualUnlocks.completedOf', { done: stats.completed, total: stats.total })}</span>
             <div className="w-32 h-1.5 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-green-500 rounded-full transition-all"
@@ -519,7 +523,7 @@ export default function ManualUnlocksPage() {
               }`}
             >
               <UserIcon className="w-3.5 h-3.5" />
-              Students
+              {t('adminPages.manualUnlocks.students')}
             </button>
             <button
               type="button"
@@ -531,7 +535,7 @@ export default function ManualUnlocksPage() {
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              Groups
+              {t('adminPages.manualUnlocks.groups')}
             </button>
           </div>
 
@@ -540,9 +544,9 @@ export default function ManualUnlocksPage() {
             {activeTab === 'user' ? (
               <>
                 <Select value={studentGroupFilter} onValueChange={setStudentGroupFilter}>
-                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="All groups" /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={t('adminPages.manualUnlocks.allGroups')} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All groups</SelectItem>
+                    <SelectItem value="all">{t('adminPages.manualUnlocks.allGroups')}</SelectItem>
                     {allGroups.map((g) => (
                       <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>
                     ))}
@@ -552,7 +556,7 @@ export default function ManualUnlocksPage() {
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                   <Input
                     ref={studentSearchRef}
-                    placeholder="Search by name or email..."
+                    placeholder={t('adminPages.manualUnlocks.searchStudents')}
                     value={searchQuery}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                     className="pl-8 h-8 text-sm"
@@ -563,7 +567,7 @@ export default function ManualUnlocksPage() {
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <Input
-                  placeholder="Search groups..."
+                  placeholder={t('adminPages.manualUnlocks.searchGroups')}
                   value={groupSearchQuery}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGroupSearchQuery(e.target.value)}
                   className="pl-8 h-8 text-sm"
@@ -577,19 +581,19 @@ export default function ManualUnlocksPage() {
             <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
               {activeTab === 'user' ? (
                 <>
-                  {!canSearchStudents && recentTargets.filter((t) => t.type === 'user').length > 0 && (
+                  {!canSearchStudents && recentTargets.filter((r) => r.type === 'user').length > 0 && (
                     <>
                       <div className="px-4 py-2 bg-muted border-b border-border flex items-center gap-1.5">
                         <History className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Recent</span>
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('adminPages.manualUnlocks.recent')}</span>
                       </div>
-                      {recentTargets.filter((t) => t.type === 'user').map((t) => (
+                      {recentTargets.filter((r) => r.type === 'user').map((r) => (
                         <PersonRow
-                          key={`r-${t.id}`}
-                          name={t.name}
-                          sub={t.email || 'Student'}
-                          selected={selectedTarget?.id === t.id && selectedTarget?.type === 'user'}
-                          onClick={() => handleSelectTarget(t)}
+                          key={`r-${r.id}`}
+                          name={r.name}
+                          sub={r.email || t('adminPages.manualUnlocks.student')}
+                          selected={selectedTarget?.id === r.id && selectedTarget?.type === 'user'}
+                          onClick={() => handleSelectTarget(r)}
                         />
                       ))}
                       <div className="border-t border-border" />
@@ -598,8 +602,8 @@ export default function ManualUnlocksPage() {
                   {!canSearchStudents ? (
                     <div className="py-12 text-center px-4">
                       <UserIcon className="w-8 h-8 text-gray-300 dark:text-muted-foreground/50 mx-auto mb-2" />
-                      <p className="text-sm font-medium text-foreground">Find a student</p>
-                      <p className="text-xs text-muted-foreground mt-1">Select a group or type to search</p>
+                      <p className="text-sm font-medium text-foreground">{t('adminPages.manualUnlocks.findStudent')}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t('adminPages.manualUnlocks.findStudentHint')}</p>
                     </div>
                   ) : studentsLoading && students.length === 0 ? (
                     <div className="py-12 flex justify-center">
@@ -607,12 +611,12 @@ export default function ManualUnlocksPage() {
                     </div>
                   ) : students.length === 0 ? (
                     <div className="py-10 text-center">
-                      <p className="text-sm text-muted-foreground">No students found</p>
+                      <p className="text-sm text-muted-foreground">{t('adminPages.manualUnlocks.noStudents')}</p>
                     </div>
                   ) : (
                     <>
                       <div className="px-4 py-2 bg-muted border-b border-border">
-                        <span className="text-xs text-muted-foreground">{students.length} of {studentsTotal} students</span>
+                        <span className="text-xs text-muted-foreground">{t('adminPages.manualUnlocks.shownOfTotal', { shown: students.length, count: studentsTotal })}</span>
                       </div>
                       {students.map((s) => {
                         const name = s.name || s.full_name || ''
@@ -633,7 +637,7 @@ export default function ManualUnlocksPage() {
                           onClick={() => fetchStudents(false)}
                           className="w-full py-2.5 text-xs text-brand hover:bg-brand-subtle transition-colors border-t border-border font-medium"
                         >
-                          {studentsLoading ? 'Loading...' : `Load more (${studentsTotal - students.length} left)`}
+                          {studentsLoading ? t('common.loading') : t('adminPages.manualUnlocks.loadMore', { count: studentsTotal - students.length })}
                         </button>
                       )}
                     </>
@@ -642,14 +646,14 @@ export default function ManualUnlocksPage() {
               ) : filteredGroups.length === 0 ? (
                 <div className="py-12 text-center">
                   <Users className="w-8 h-8 text-gray-300 dark:text-muted-foreground/50 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No groups found</p>
+                  <p className="text-sm text-muted-foreground">{t('adminPages.manualUnlocks.noGroups')}</p>
                 </div>
               ) : (
                 filteredGroups.map((g) => (
                   <PersonRow
                     key={g.id}
                     name={g.name}
-                    sub={`${g.student_count || 0} students`}
+                    sub={t('common.students', { count: g.student_count || 0 })}
                     selected={selectedTarget?.id === Number(g.id) && selectedTarget?.type === 'group'}
                     onClick={() => handleSelectTarget({ id: Number(g.id), type: 'group', name: g.name }, g)}
                   />
@@ -668,13 +672,13 @@ export default function ManualUnlocksPage() {
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">
-                      {selectedTarget ? selectedTarget.name : 'No target selected'}
+                      {selectedTarget ? selectedTarget.name : t('adminPages.manualUnlocks.noTarget')}
                     </p>
                     {selectedTarget && (
                       <p className="text-xs text-muted-foreground">
-                        {selectedTarget.type === 'user' ? 'Student' : 'Group'}
+                        {selectedTarget.type === 'user' ? t('adminPages.manualUnlocks.student') : t('adminPages.manualUnlocks.group')}
                         {selectedTarget && selectedCourseId && stats.total > 0 && (
-                          <> · {stats.completed} done · {stats.unlocked} unlocked</>
+                          <> · {t('adminPages.manualUnlocks.targetStats', { done: stats.completed, unlocked: stats.unlocked })}</>
                         )}
                       </p>
                     )}
@@ -685,7 +689,7 @@ export default function ManualUnlocksPage() {
                     type="button"
                     onClick={handleClearTarget}
                     className="text-muted-foreground hover:text-muted-foreground p-1 rounded hover:bg-muted transition-colors shrink-0"
-                    title="Change"
+                    title={t('adminPages.manualUnlocks.change')}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -695,7 +699,7 @@ export default function ManualUnlocksPage() {
               <div className="flex flex-col @lg:flex-row gap-2">
                 <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
                   <SelectTrigger className="h-8 text-sm sm:max-w-xs">
-                    <SelectValue placeholder="Select a course..." />
+                    <SelectValue placeholder={t('adminPages.manualUnlocks.selectCourse')} />
                   </SelectTrigger>
                   <SelectContent>
                     {availableCourses.map((c) => (
@@ -709,7 +713,7 @@ export default function ManualUnlocksPage() {
                     <div className="relative flex-1">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                       <Input
-                        placeholder="Search units..."
+                        placeholder={t('adminPages.manualUnlocks.searchUnits')}
                         value={unitSearch}
                         onChange={(e) => setUnitSearch(e.target.value)}
                         className="pl-8 h-8 text-sm"
@@ -727,7 +731,7 @@ export default function ManualUnlocksPage() {
                               : 'bg-muted text-muted-foreground hover:bg-gray-200 dark:hover:bg-secondary'
                           }`}
                         >
-                          {opt.label}
+                          {t(opt.label)}
                         </button>
                       ))}
                     </div>
@@ -740,14 +744,14 @@ export default function ManualUnlocksPage() {
             {!selectedTarget ? (
               <div className="py-20 text-center px-8">
                 <UserIcon className="w-10 h-10 text-gray-200 dark:text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-sm font-medium text-foreground">Select a student or group</p>
-                <p className="text-xs text-muted-foreground mt-1">Choose from the list on the left</p>
+                <p className="text-sm font-medium text-foreground">{t('adminPages.manualUnlocks.emptyTarget')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('adminPages.manualUnlocks.emptyTargetHint')}</p>
               </div>
             ) : !selectedCourseId ? (
               <div className="py-20 text-center px-8">
                 <BookOpen className="w-10 h-10 text-gray-200 dark:text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-sm font-medium text-foreground">Select a course</p>
-                <p className="text-xs text-muted-foreground mt-1">Pick a course to see its units</p>
+                <p className="text-sm font-medium text-foreground">{t('adminPages.manualUnlocks.emptyCourse')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('adminPages.manualUnlocks.emptyCourseHint')}</p>
               </div>
             ) : isStructureLoading || isProgressLoading ? (
               <div className="py-20 flex justify-center">
@@ -756,8 +760,8 @@ export default function ManualUnlocksPage() {
             ) : filteredModules.length === 0 ? (
               <div className="py-20 text-center px-8">
                 <Layout className="w-10 h-10 text-gray-200 dark:text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-sm font-medium text-foreground">No units match</p>
-                <p className="text-xs text-muted-foreground mt-1">Try clearing the filter</p>
+                <p className="text-sm font-medium text-foreground">{t('adminPages.manualUnlocks.noUnits')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('adminPages.manualUnlocks.noUnitsHint')}</p>
               </div>
             ) : (
               <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
@@ -817,15 +821,15 @@ export default function ManualUnlocksPage() {
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-xs text-muted-foreground">Unit {lesson.order_index}</span>
+                                    <span className="text-xs text-muted-foreground">{t('adminPages.manualUnlocks.unit', { number: lesson.order_index })}</span>
                                     {unlocked && (
                                       <span className="text-[10px] font-medium px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded">
-                                        Unlocked
+                                        {t('adminPages.manualUnlocks.unlocked')}
                                       </span>
                                     )}
                                     {isComplete && (
                                       <span className="text-[10px] font-medium px-1.5 py-0.5 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300 rounded">
-                                        Completed
+                                        {t('adminPages.manualUnlocks.completed')}
                                       </span>
                                     )}
                                   </div>
@@ -842,8 +846,8 @@ export default function ManualUnlocksPage() {
                                       </div>
                                       <span className="text-xs text-muted-foreground">
                                         {selectedTarget.type === 'group'
-                                          ? `${progress.completed_students}/${progress.student_count} students`
-                                          : `${progress.completed_steps}/${progress.total_steps} steps`
+                                          ? t('adminPages.manualUnlocks.studentsDone', { done: progress.completed_students ?? 0, count: progress.student_count ?? 0 })
+                                          : t('adminPages.manualUnlocks.stepsDone', { done: progress.completed_steps ?? 0, count: progress.total_steps })
                                         } · {percent}%
                                       </span>
                                     </div>
@@ -864,7 +868,7 @@ export default function ManualUnlocksPage() {
                                     }`}
                                   >
                                     {unlocked ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                                    <span className="ml-1 hidden @lg:inline">{unlocked ? 'Revoke' : 'Unlock'}</span>
+                                    <span className="ml-1 hidden @lg:inline">{unlocked ? t('adminPages.manualUnlocks.revoke') : t('adminPages.manualUnlocks.unlock')}</span>
                                   </Button>
 
                                   {isComplete ? (
@@ -876,7 +880,7 @@ export default function ManualUnlocksPage() {
                                       className="h-7 px-2 text-xs border-orange-200 dark:border-orange-500/30 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/15"
                                     >
                                       <RotateCcw className="w-3 h-3" />
-                                      <span className="ml-1 hidden @lg:inline">Reset</span>
+                                      <span className="ml-1 hidden @lg:inline">{t('adminPages.manualUnlocks.reset')}</span>
                                     </Button>
                                   ) : (
                                     <Button
@@ -886,7 +890,7 @@ export default function ManualUnlocksPage() {
                                       className="h-7 px-2.5 text-xs bg-green-600 hover:bg-green-700 text-white"
                                     >
                                       <CheckCircle2 className="w-3 h-3" />
-                                      <span className="ml-1">Complete</span>
+                                      <span className="ml-1">{t('adminPages.manualUnlocks.complete')}</span>
                                     </Button>
                                   )}
                                 </div>

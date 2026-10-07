@@ -13,6 +13,9 @@ import { recipientSelectionFromAnnouncement } from '../../components/announcemen
 import { getGroups, getRecipientSummary } from '../../services/api/announcements';
 import type { AnnouncementDetail, RecipientSummary, TelegramGroup } from '../../services/api/announcements';
 import type { RecipientSelection } from '../../components/announcements/resend';
+import type { MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/announcements';
 
 /**
  * Admin → Telegram Announcements.
@@ -26,15 +29,16 @@ import type { RecipientSelection } from '../../components/announcements/resend';
 
 type Tab = 'compose' | 'history' | 'groups' | 'invitations' | 'bot';
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'compose', label: 'Compose' },
-  { key: 'history', label: 'History' },
-  { key: 'groups', label: 'Groups' },
-  { key: 'invitations', label: 'Lesson invitations' },
-  { key: 'bot', label: 'Bot questions' },
+const TABS: { key: Tab; label: MessageKey }[] = [
+  { key: 'compose', label: 'announcements.tabs.compose' },
+  { key: 'history', label: 'announcements.tabs.history' },
+  { key: 'groups', label: 'announcements.tabs.groups' },
+  { key: 'invitations', label: 'announcements.tabs.invitations' },
+  { key: 'bot', label: 'announcements.tabs.bot' },
 ];
 
 export default function TelegramAnnouncementsPage() {
+  const t = useT();
   const [tab, setTab] = useState<Tab>('compose');
 
   // Shared across tabs: the composer needs the approved groups as targets, and
@@ -53,11 +57,11 @@ export default function TelegramAnnouncementsPage() {
       setGroups(groupRows);
       setSummary(counts);
     } catch (error) {
-      toast(errorMessage(error, 'Failed to load Telegram groups'), 'error');
+      toast(errorMessage(error, t('announcements.page.loadGroupsFailed')), 'error');
     } finally {
       setLoadingGroups(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadGroups();
@@ -85,16 +89,15 @@ export default function TelegramAnnouncementsPage() {
         <div className="space-y-1">
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-foreground">
             <Megaphone className="h-6 w-6" />
-            Telegram Announcements
+            {t('announcements.page.title')}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Broadcast to the groups the support bot belongs to, and to students who linked their
-            Telegram account.
+            {t('announcements.page.intro')}
           </p>
         </div>
         <Button variant="outline" onClick={loadGroups} disabled={loadingGroups}>
           <RefreshCw className={`mr-2 h-4 w-4 ${loadingGroups ? 'animate-spin' : ''}`} />
-          Refresh
+          {t('announcements.page.refresh')}
         </Button>
       </div>
 
@@ -102,11 +105,10 @@ export default function TelegramAnnouncementsPage() {
         <div className="flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span>
-            {pendingCount} group{pendingCount > 1 ? 's are' : ' is'} waiting for approval and cannot
-            receive announcements yet.
+            {t('announcements.page.pendingGroups', { count: pendingCount })}
           </span>
           <Button variant="ghost" size="sm" onClick={() => setTab('groups')}>
-            Review
+            {t('announcements.page.review')}
           </Button>
         </div>
       )}
@@ -125,7 +127,7 @@ export default function TelegramAnnouncementsPage() {
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
-            {entry.label}
+            {t(entry.label)}
             {entry.key === 'groups' && pendingCount > 0 && (
               <span className="ml-2 rounded-full bg-amber-500 px-1.5 text-[11px] font-semibold text-white">
                 {pendingCount}

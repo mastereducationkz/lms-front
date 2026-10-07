@@ -111,3 +111,26 @@ describe('the check with Google Meet', () => {
     expect(syncStatus(null, NOW)).toBeNull();
   });
 });
+
+describe('in Russian, for a viewer who chose it', () => {
+  it('counts lessons and room checks in proper Russian', () => {
+    expect(spanText(85 * 60_000, 'ru')).toBe('1 ч 25 мин');
+    expect(waitedText(waiting(), NOW, 'ru')).toBe('Урок закончился в 20:00 · ждём 1 ч 25 мин');
+    expect(waitingBannerText([waiting({ stage: 'lesson_running' })], 'ru')).toBe('1 урок идёт');
+    expect(waitingBannerText([waiting(), waiting()], 'ru')).toBe('2 урока ждут, когда Google Meet передаст звонки');
+    expect(waitingBannerText([
+      waiting({ stage: 'settling' }), waiting({ stage: 'lesson_running' }), waiting(), waiting({ stage: 'lesson_running' }),
+      waiting({ stage: 'collecting' }),
+    ], 'ru')).toBe('5 уроков ещё не готовы: 2 идут · 1 ждёт, когда Google Meet передаст звонок · 1 сохраняется · 1 почти готов');
+    expect(stageText(waiting(), 'ru')).toBe('Google Meet ещё не передал звонок урока — пока только 2 коротких захода в комнату.');
+  });
+
+  it('says the steps and the check', () => {
+    const steps = waitingSteps(waiting(), sync(), NOW, 'ru');
+    expect(steps.map((s) => s.label)).toEqual(['Урок закончился', 'Google Meet передаёт звонок', 'Сохраняется, кто подключился', 'Сверка с отметками']);
+    expect(steps[1].detail).toBe('Ждём 1 ч 25 мин · заходы в комнату в 18:58, 18:59');
+    expect(syncStatus(sync({ running: true, step: 'attendance', progress: { done: 3, total: 9 }, next_at: null }), NOW, 'ru')?.text)
+      .toBe('Сейчас проверяем Google Meet · Сохраняем, кто подключился · звонков: 3 из 9');
+    expect(syncStatus(sync(), NOW, 'ru')?.text).toBe('Последняя проверка Google Meet — в 21:20 (5 мин назад) · следующая — в 21:26');
+  });
+});

@@ -13,6 +13,8 @@ import {
   type LookupMode,
   type LookupResult,
 } from '../../../services/api/lookup';
+import { t } from '../../../lib/i18n';
+import '@/lib/i18n/catalogs/sharedUi';
 
 export type WordField = 'translation' | 'headword' | 'pos' | 'definition' | 'example';
 
@@ -76,7 +78,7 @@ export function lookupReducer(state: LookupState, action: LookupAction): LookupS
   }
   if (action.type === 'fail') return { ...state, status: 'error', error: action.error };
   if (action.type === 'end') {
-    return { ...state, status: 'error', error: { code: 'cut_off', message: 'The answer was cut off. Try again.' } };
+    return { ...state, status: 'error', error: { code: 'cut_off', message: t('sharedUi.lookup.cutOff') } };
   }
   const event = action.event;
   switch (event.type) {
@@ -108,7 +110,7 @@ export function lookupReducer(state: LookupState, action: LookupAction): LookupS
 
 function asError(error: unknown): LookupError {
   if (error instanceof LookupFailure) return { code: error.code, message: error.message, retryAfter: error.retryAfter };
-  return { code: 'network', message: "Couldn't reach the dictionary. Check your connection and try again." };
+  return { code: 'network', message: t('sharedUi.lookup.network') };
 }
 
 export function useLookupStream() {

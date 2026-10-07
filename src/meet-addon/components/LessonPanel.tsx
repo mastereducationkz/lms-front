@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { ArrowLeft, ExternalLink, Loader2, MessageSquareText, NotebookPen, Paperclip, Radio, Star } from 'lucide-react';
 import { LiveRoom } from '../../components/class-lesson/LessonBlocks';
 import { lessonWhen } from '../../lib/classLessonPage';
-import { activeLocale, localeForUser, setActiveLocale, t, type MessageKey } from '../../lib/i18n';
+import { activeLocale, isLocale, localeForUser, setActiveLocale, t, type MessageKey } from '../../lib/i18n';
 import type { LessonNote, LessonStatus, LessonView, NoteKind } from '../../services/api/classLessons';
 import { ApiError, SessionLost } from '../api';
 import { lessonUrl } from '../config';
@@ -38,9 +38,10 @@ export default function LessonPanel({ lessonId, onBack, onSessionLost }: {
     if (!quiet) { setView(null); setError(null); }
     try {
       const data = await lessons.lesson(lessonId);
-      // The panel has no AuthProvider: the lesson names its viewer, and the app's one language
-      // rule (lib/i18n) picks the panel's language from that. Set before the render it triggers.
-      setActiveLocale(localeForUser(data.viewer));
+      // The panel has no AuthProvider: the lesson names its viewer and the language the server's
+      // copy of the rule chose for them (their own choice, else their role). Set before the render
+      // it triggers.
+      setActiveLocale(isLocale(data.viewer.locale) ? data.viewer.locale : localeForUser(data.viewer));
       setView(data);
       setError(null);
     } catch (e) {

@@ -22,7 +22,18 @@ import ConfirmDialog from '../components/ConfirmDialog.tsx';
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import UnsavedChangesDialog from '../components/UnsavedChangesDialog';
 import { canManageCourseAccess } from '../lib/courseAccess';
-import { DATE, formatDate, formatDateTime } from '../lib/i18n';
+import { DATE, formatDate, formatDateTime, type MessageKey } from '../lib/i18n';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/courseAuthoring';
+
+const LESSON_TYPE_LABELS: Record<string, MessageKey> = {
+  text: 'courseAuthoring.lesson.typeText',
+  video: 'courseAuthoring.builder.typeVideo',
+  video_text: 'courseAuthoring.lesson.typeVideoText',
+  quiz: 'courseAuthoring.lesson.typeQuiz',
+  flashcard: 'courseAuthoring.lesson.typeFlashcard',
+  summary: 'courseAuthoring.lesson.typeSummary',
+};
 
 interface SelectedModule {
   module: CourseModule;
@@ -78,6 +89,7 @@ const DraggableModule = ({
   isPending = false,
   onUpdatePendingModule
 }: DraggableModuleProps) => {
+  const t = useT();
   const {
     attributes,
     listeners,
@@ -117,7 +129,7 @@ const DraggableModule = ({
                     <div className="flex-1">
                       <input 
                         type="text" 
-                        placeholder="New module"
+                        placeholder={t('courseAuthoring.builder.newModule')}
                         value={module.title}
                         onChange={(e) => {
                           if (onUpdatePendingModule) {
@@ -128,7 +140,7 @@ const DraggableModule = ({
                       />
                     </div>
                     <div className="flex items-center gap-2 ml-4">
-                      <span className="text-sm text-muted-foreground">Total points: 0</span>
+                      <span className="text-sm text-muted-foreground">{t('courseAuthoring.builder.totalPoints', { points: 0 })}</span>
                       <button className="p-2 hover:bg-muted rounded">
                         <MoreVertical className="w-4 h-4 text-muted-foreground" />
                       </button>
@@ -137,7 +149,7 @@ const DraggableModule = ({
                   
                   <input 
                     type="text" 
-                    placeholder="Additional description"
+                    placeholder={t('courseAuthoring.builder.additionalDescription')}
                     value={module.description}
                     onChange={(e) => {
                       if (onUpdatePendingModule) {
@@ -187,7 +199,7 @@ const DraggableModule = ({
                       }}
                       className="block w-full text-left px-4 py-2 text-sm text-brand hover:bg-brand-surface dark:hover:bg-secondary rounded-t-lg"
                     >
-                      Edit
+                      {t('common.edit')}
                     </button>
                   )}
                   <button 
@@ -197,7 +209,7 @@ const DraggableModule = ({
                     }}
                     className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-secondary rounded-b-lg dark:hover:bg-red-950/40"
                   >
-                    Delete
+                    {t('common.delete')}
                   </button>
                 </div>
               )}
@@ -225,6 +237,7 @@ const DraggableLesson = ({
   onRemove,
   onToggleInitiallyUnlocked
 }: DraggableLessonProps) => {
+  const t = useT();
   const {
     attributes,
     listeners,
@@ -280,11 +293,11 @@ const DraggableLesson = ({
           {getLessonTypeIcon(getLessonType(lesson))}
         </div>
         <div>
-          <div className="font-medium text-foreground text-sm">{lesson?.title || 'Untitled'}</div>
+          <div className="font-medium text-foreground text-sm">{lesson?.title || t('courseAuthoring.builder.untitled')}</div>
           <div className="text-xs text-muted-foreground capitalize">
-            {getLessonType(lesson)} • {index + 1}
+            {LESSON_TYPE_LABELS[getLessonType(lesson)] ? t(LESSON_TYPE_LABELS[getLessonType(lesson)]) : getLessonType(lesson)} • {index + 1}
             {lesson?.is_initially_unlocked && (
-              <span className="ml-2 inline-flex items-center gap-0.5 normal-case text-green-700 font-medium dark:text-green-300"><LockOpen className="h-3 w-3" aria-hidden="true" />Unlocked</span>
+              <span className="ml-2 inline-flex items-center gap-0.5 normal-case text-green-700 font-medium dark:text-green-300"><LockOpen className="h-3 w-3" aria-hidden="true" />{t('courseAuthoring.builder.unlocked')}</span>
             )}
           </div>
         </div>
@@ -298,8 +311,8 @@ const DraggableLesson = ({
                 ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-300 dark:hover:bg-green-900/50' 
                 : 'bg-muted text-muted-foreground hover:bg-border'
             }`}
-            title={lesson?.is_initially_unlocked ? 'Lesson is initially unlocked for students' : 'Click to make lesson initially unlocked'}
-            aria-label={lesson?.is_initially_unlocked ? 'Lesson is initially unlocked for students' : 'Make lesson initially unlocked'}
+            title={lesson?.is_initially_unlocked ? t('courseAuthoring.builder.unlockedHint') : t('courseAuthoring.builder.makeUnlockedHint')}
+            aria-label={lesson?.is_initially_unlocked ? t('courseAuthoring.builder.unlockedHint') : t('courseAuthoring.builder.makeUnlocked')}
             aria-pressed={!!lesson?.is_initially_unlocked}
           >
             {lesson?.is_initially_unlocked ? <LockOpen className="h-3.5 w-3.5" aria-hidden="true" /> : <Lock className="h-3.5 w-3.5" aria-hidden="true" />}
@@ -309,13 +322,13 @@ const DraggableLesson = ({
           onClick={() => navigate(`/course/${courseId}/lesson/${lesson?.id}/edit`)} 
           className="px-3 py-1 text-sm text-brand hover:bg-brand-subtle rounded"
         >
-          Edit
+          {t('common.edit')}
         </button>
         <button 
           onClick={() => onRemove(lesson?.id)} 
           className="px-3 py-1 text-sm text-red-600 hover:bg-red-100 rounded dark:text-red-400 dark:hover:bg-red-900/40"
-          aria-label="Remove lesson"
-          title="Remove lesson"
+          aria-label={t('courseAuthoring.builder.removeLesson')}
+          title={t('courseAuthoring.builder.removeLesson')}
         >
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -329,6 +342,7 @@ export default function CourseBuilderPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
+  const t = useT();
   
   const [course, setCourse] = useState<Course | null>(null);
   const [mods, setMods] = useState<CourseModule[]>([]);
@@ -377,7 +391,7 @@ export default function CourseBuilderPage() {
   // Unsaved changes warning
   const { confirmLeave, cancelLeave, isBlocked } = useUnsavedChangesWarning({
     hasUnsavedChanges,
-    message: 'You have unsaved changes in this course. Are you sure you want to leave?',
+    message: t('courseAuthoring.builder.unsavedLeave'),
     onConfirmLeave: () => {
       setHasUnsavedChanges(false);
     }
@@ -678,10 +692,10 @@ export default function CourseBuilderPage() {
 
       setCourse(updatedCourse)
       setHasUnsavedChanges(false)
-      alert('Course details saved')
+      alert(t('courseAuthoring.builder.detailsSaved'))
     } catch (error) {
       console.error('Failed to update course:', error)
-      alert('Failed to save course details')
+      alert(t('courseAuthoring.builder.detailsSaveFailed'))
     } finally {
       setIsSavingCourseDetails(false)
     }
@@ -807,10 +821,10 @@ export default function CourseBuilderPage() {
                   {getLessonTypeIcon(getLessonType(l))}
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-foreground text-sm">{l?.title || "Untitled"}</div>
+                  <div className="font-medium text-foreground text-sm">{l?.title || t('courseAuthoring.builder.untitled')}</div>
                   <div className="text-xs text-green-600 flex items-center gap-1 dark:text-green-400">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    Created - will be saved
+                    {t('courseAuthoring.builder.createdPending')}
                   </div>
                 </div>
               </div>
@@ -834,7 +848,7 @@ export default function CourseBuilderPage() {
                   <div className="flex-1">
                     <input 
                       type="text" 
-                      placeholder="Enter lesson title..."
+                      placeholder={t('courseAuthoring.builder.lessonTitlePlaceholder')}
                       value={inlineLectureData.title}
                       onChange={(e) => {
                         const newTitle = e.target.value;
@@ -858,20 +872,20 @@ export default function CourseBuilderPage() {
                       disabled={!inlineLectureData.title.trim() || isCreatingLesson}
                       className="px-3 py-1 text-sm bg-brand-solid hover:bg-brand-solid-hover text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isCreatingLesson ? 'Creating...' : 'Create'}
+                      {isCreatingLesson ? t('courseAuthoring.create.creating') : t('courseAuthoring.builder.create')}
                     </button>
                     <button
                       onClick={handleCancelInlineLecture}
                       className="px-3 py-1 text-sm text-muted-foreground hover:bg-muted rounded"
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </div>
                 <div className="text-xs text-brand flex items-center gap-1">
                   <div className="w-2 h-2 bg-brand-solid rounded-full"></div>
-                  Press Enter to add lesson or Escape to cancel
-                  {isCreatingLesson && <span className="ml-2 text-orange-600 dark:text-orange-400">Creating...</span>}
+                  {t('courseAuthoring.builder.enterToAdd')}
+                  {isCreatingLesson && <span className="ml-2 text-orange-600 dark:text-orange-400">{t('courseAuthoring.create.creating')}</span>}
                 </div>
               </div>
             </div>
@@ -885,7 +899,7 @@ export default function CourseBuilderPage() {
             >
               <div className="flex items-center justify-center gap-2">
                 <span className="text-lg">+</span>
-                <span className="text-sm">Add lesson</span>
+                <span className="text-sm">{t('courseAuthoring.builder.addLesson')}</span>
               </div>
             </button>
           )}
@@ -902,10 +916,10 @@ export default function CourseBuilderPage() {
                   {getLessonTypeIcon(getLessonType(l))}
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-foreground text-sm">{l?.title || "Untitled"}</div>
+                  <div className="font-medium text-foreground text-sm">{l?.title || t('courseAuthoring.builder.untitled')}</div>
                   <div className="text-xs text-green-600 flex items-center gap-1 dark:text-green-400">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    Created - will be saved
+                    {t('courseAuthoring.builder.createdPending')}
                   </div>
                 </div>
               </div>
@@ -929,7 +943,7 @@ export default function CourseBuilderPage() {
                   <div className="flex-1">
                     <input 
                       type="text" 
-                      placeholder="Enter lesson title..."
+                      placeholder={t('courseAuthoring.builder.lessonTitlePlaceholder')}
                       value={inlineLectureData.title}
                       onChange={(e) => {
                         const newTitle = e.target.value;
@@ -953,20 +967,20 @@ export default function CourseBuilderPage() {
                       disabled={!inlineLectureData.title.trim() || isCreatingLesson}
                       className="px-3 py-1 text-sm bg-brand-solid hover:bg-brand-solid-hover text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isCreatingLesson ? 'Creating...' : 'Create'}
+                      {isCreatingLesson ? t('courseAuthoring.create.creating') : t('courseAuthoring.builder.create')}
                     </button>
                     <button
                       onClick={handleCancelInlineLecture}
                       className="px-3 py-1 text-sm text-muted-foreground hover:bg-muted rounded"
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </div>
                 <div className="text-xs text-brand flex items-center gap-1">
                   <div className="w-2 h-2 bg-brand-solid rounded-full"></div>
-                  Press Enter to add lesson or Escape to cancel
-                  {isCreatingLesson && <span className="ml-2 text-orange-600 dark:text-orange-400">Creating...</span>}
+                  {t('courseAuthoring.builder.enterToAdd')}
+                  {isCreatingLesson && <span className="ml-2 text-orange-600 dark:text-orange-400">{t('courseAuthoring.create.creating')}</span>}
                 </div>
               </div>
             </div>
@@ -979,7 +993,7 @@ export default function CourseBuilderPage() {
               className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               <span>+</span>
-              <span>Create lesson</span>
+              <span>{t('courseAuthoring.builder.createLesson')}</span>
             </button>
           )}
         </div>
@@ -1245,15 +1259,15 @@ export default function CourseBuilderPage() {
           <>
             {/* Course Information Card */}
             <div className="bg-card rounded-lg border p-6">
-              <h2 className="text-xl font-semibold mb-4">Course Information</h2>
+              <h2 className="text-xl font-semibold mb-4">{t('courseAuthoring.builder.courseInfo')}</h2>
               <div className="grid grid-cols-1 @xl:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-foreground/80">Title</label>
+                    <label className="block text-sm font-medium text-foreground/80">{t('courseAuthoring.create.titleLabel')}</label>
                     <p className="mt-1 text-lg font-medium">{course.title}</p>
                   </div>
                                     <div>
-                    <label className="block text-sm font-medium text-foreground/80">Status</label>
+                    <label className="block text-sm font-medium text-foreground/80">{t('courseAuthoring.courses.colStatus')}</label>
                     <div className="mt-1 flex items-center gap-2">
                       <span className={`w-2 h-2 rounded-full ${
                         (course as any).is_active ? 'bg-green-500' : 'bg-muted-foreground/50'
@@ -1261,22 +1275,22 @@ export default function CourseBuilderPage() {
                       <span className={`text-sm font-medium ${
                         (course as any).is_active ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
                       }`}>
-                        {(course as any).is_active ? 'Active' : 'Draft'}
+                        {(course as any).is_active ? t('courseAuthoring.status.active') : t('courseAuthoring.status.draft')}
                       </span>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground/80">Created</label>
+                    <label className="block text-sm font-medium text-foreground/80">{t('courseAuthoring.builder.created')}</label>
                     <p className="mt-1 text-muted-foreground">
-                      {course.created_at ? formatDate(new Date(course.created_at)) : 'Unknown'}
+                      {course.created_at ? formatDate(new Date(course.created_at)) : t('courseAuthoring.builder.unknown')}
                     </p>
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-foreground/80">Description</label>
+                  <label className="block text-sm font-medium text-foreground/80">{t('courseAuthoring.create.descriptionLabel')}</label>
                   <p className="mt-1 text-muted-foreground leading-relaxed">
-                    {(course as any).description || 'No description provided'}
+                    {(course as any).description || t('courseAuthoring.builder.noDescription')}
                   </p>
                 </div>
               </div>
@@ -1287,7 +1301,7 @@ export default function CourseBuilderPage() {
               <div className="bg-card rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Modules</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('courseAuthoring.courses.totalModules')}</p>
                     <p className="text-2xl font-bold text-brand">{mods.length}</p>
                   </div>
                   <div className="w-8 h-8 bg-brand-subtle rounded-lg flex items-center justify-center">
@@ -1301,7 +1315,7 @@ export default function CourseBuilderPage() {
               <div className="bg-card rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Lessons</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('courseAuthoring.builder.totalLessons')}</p>
                     <p className="text-2xl font-bold text-green-600 dark:text-green-400">{totalLessons}</p>
                   </div>
                   <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center dark:bg-green-900/40">
@@ -1315,7 +1329,7 @@ export default function CourseBuilderPage() {
               <div className="bg-card rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Text Lessons</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('courseAuthoring.builder.textLessons')}</p>
                     <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{lessonTypes.text || 0}</p>
                   </div>
                   <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center dark:bg-purple-900/40">
@@ -1329,7 +1343,7 @@ export default function CourseBuilderPage() {
               <div className="bg-card rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Video Lessons</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('courseAuthoring.builder.videoLessons')}</p>
                     <p className="text-2xl font-bold text-red-600 dark:text-red-400">{lessonTypes.video || 0}</p>
                   </div>
                   <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center dark:bg-red-900/40">
@@ -1346,7 +1360,7 @@ export default function CourseBuilderPage() {
               <div className="bg-card rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Quiz Lessons</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t('courseAuthoring.builder.quizLessons')}</p>
                     <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{lessonTypes.quiz || 0}</p>
                   </div>
                   <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center dark:bg-orange-900/40">
@@ -1360,14 +1374,14 @@ export default function CourseBuilderPage() {
 
             {/* Recent Activity */}
             <div className="bg-card rounded-lg border p-6">
-              <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+              <h2 className="text-xl font-semibold mb-4">{t('courseAuthoring.builder.recentActivity')}</h2>
               <div className="space-y-3">
                 {mods.length > 0 ? (
                   <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                     <div className="w-2 h-2 bg-brand-solid rounded-full"></div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium">Course structure updated</p>
-                      <p className="text-xs text-muted-foreground">{mods.length} modules, {totalLessons} lessons</p>
+                      <p className="text-sm font-medium">{t('courseAuthoring.builder.structureUpdated')}</p>
+                      <p className="text-xs text-muted-foreground">{t('courseAuthoring.builder.structureCounts', { modules: t('courseAuthoring.courseCard.modules', { count: mods.length }), lessons: t('common.lessons', { count: totalLessons }) })}</p>
                     </div>
                   </div>
                 ) : (
@@ -1375,7 +1389,7 @@ export default function CourseBuilderPage() {
                     <svg className="w-12 h-12 mx-auto mb-4 text-muted-foreground/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                     </svg>
-                    <p className="text-sm">No activity yet. Start by adding modules and lessons.</p>
+                    <p className="text-sm">{t('courseAuthoring.builder.noActivity')}</p>
                   </div>
                 )}
               </div>
@@ -1389,9 +1403,9 @@ export default function CourseBuilderPage() {
   const renderDescriptionSection = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Course Description</h1>
+        <h1 className="text-3xl font-bold">{t('courseAuthoring.builder.courseDescription')}</h1>
         <span className="text-xs text-muted-foreground">
-          {course?.updated_at ? `Last updated: ${formatDateTime(new Date((course as any).updated_at), { ...DATE, hour: '2-digit', minute: '2-digit' })}` : ''}
+          {course?.updated_at ? t('courseAuthoring.builder.lastUpdated', { date: formatDateTime(new Date((course as any).updated_at), { ...DATE, hour: '2-digit', minute: '2-digit' }) }) : ''}
         </span>
       </div>
       
@@ -1399,19 +1413,19 @@ export default function CourseBuilderPage() {
         <div className="grid grid-cols-1 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Course Details</CardTitle>
+              <CardTitle>{t('courseAuthoring.builder.courseDetails')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Course Image Section */}
               <div className="space-y-2">
-                <Label htmlFor="course-image">Course Cover Image</Label>
+                <Label htmlFor="course-image">{t('courseAuthoring.builder.coverImage')}</Label>
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <div className="w-32 h-24 bg-muted rounded-lg overflow-hidden border">
                       {(course as any).cover_image_url ? (
                         <img 
                           src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + (course as any).cover_image_url} 
-                          alt="Course cover"
+                          alt={t('courseAuthoring.builder.coverAlt')}
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -1441,14 +1455,14 @@ export default function CourseBuilderPage() {
                     />
                     <div className="space-y-2">
                       <p className="text-sm text-muted-foreground">
-                        {(course as any).cover_image_url ? 'Click the edit button to change the image' : 'Upload a cover image for your course'}
+                        {(course as any).cover_image_url ? t('courseAuthoring.builder.changeImageHint') : t('courseAuthoring.builder.uploadImageHint')}
                       </p>
                       {(course as any).cover_image_url && (
                         <button
                           onClick={() => setCourse(prev => prev ? { ...prev, cover_image_url: '' } : prev)}
                           className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                         >
-                          Remove image
+                          {t('courseAuthoring.builder.removeImage')}
                         </button>
                       )}
                     </div>
@@ -1457,7 +1471,7 @@ export default function CourseBuilderPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="course-title">Course Title</Label>
+                <Label htmlFor="course-title">{t('courseAuthoring.wizard.courseTitle')}</Label>
                 <Input
                   id="course-title"
                   value={course.title}
@@ -1465,11 +1479,11 @@ export default function CourseBuilderPage() {
                     setCourse(prev => prev ? { ...prev, title: e.target.value } : null)
                     setHasUnsavedChanges(true)
                   }}
-                  placeholder="Enter course title"
+                  placeholder={t('courseAuthoring.builder.courseTitlePlaceholder')}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="course-description">Description</Label>
+                <Label htmlFor="course-description">{t('courseAuthoring.create.descriptionLabel')}</Label>
                 <Textarea
                   id="course-description"
                   value={(course as any).description || ''}
@@ -1477,12 +1491,12 @@ export default function CourseBuilderPage() {
                     setCourse(prev => prev ? { ...prev, description: e.target.value } : null)
                     setHasUnsavedChanges(true)
                   }}
-                  placeholder="Describe what students will learn..."
+                  placeholder={t('courseAuthoring.builder.courseDescriptionPlaceholder')}
                   rows={3}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="release-schedule">Release schedule</Label>
+                <Label htmlFor="release-schedule">{t('courseAuthoring.builder.releaseSchedule')}</Label>
                 <Select
                   value={(course as any).release_schedule || 'all'}
                   onValueChange={(value) => {
@@ -1491,14 +1505,14 @@ export default function CourseBuilderPage() {
                   }}
                 >
                   <SelectTrigger id="release-schedule">
-                    <SelectValue placeholder="Select release schedule" />
+                    <SelectValue placeholder={t('courseAuthoring.builder.releaseSchedulePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All modules open at once</SelectItem>
-                    <SelectItem value="weekly">Weekly (modules unlock by week from group start)</SelectItem>
+                    <SelectItem value="all">{t('courseAuthoring.builder.releaseAll')}</SelectItem>
+                    <SelectItem value="weekly">{t('courseAuthoring.builder.releaseWeekly')}</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-muted-foreground">For weekly: set start_date in group schedule_config</p>
+                <p className="text-sm text-muted-foreground">{t('courseAuthoring.builder.releaseWeeklyHint')}</p>
               </div>
               <div className="flex items-center justify-end gap-2 pt-2">
                 <Button
@@ -1508,14 +1522,14 @@ export default function CourseBuilderPage() {
                     setCourse(prev => prev ? { ...prev, title: prev.title || '', description: (prev as any).description || '' } : prev);
                   }}
                 >
-                  Reset
+                  {t('courseAuthoring.builder.reset')}
                 </Button>
                 <Button
                   type="button"
                   disabled={isSavingCourseDetails}
                   onClick={handleSaveCourseDetails}
                 >
-                  {isSavingCourseDetails ? 'Saving...' : 'Save changes'}
+                  {isSavingCourseDetails ? t('courseAuthoring.lesson.saving') : t('courseAuthoring.builder.saveChanges')}
                 </Button>
               </div>
             </CardContent>
@@ -1531,8 +1545,8 @@ export default function CourseBuilderPage() {
       <div className="bg-card rounded-lg border p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Course Program</h1>
-            <p className="text-muted-foreground mt-1">Organize your course content into modules and lessons</p>
+            <h1 className="text-2xl font-bold text-foreground">{t('courseAuthoring.builder.program')}</h1>
+            <p className="text-muted-foreground mt-1">{t('courseAuthoring.builder.programHint')}</p>
           </div>
         </div>
         
@@ -1540,17 +1554,17 @@ export default function CourseBuilderPage() {
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-3 bg-muted rounded-lg">
             <div className="text-2xl font-bold text-foreground">{mods.length}</div>
-            <div className="text-sm text-muted-foreground">Modules</div>
+            <div className="text-sm text-muted-foreground">{t('courseAuthoring.courses.colModules')}</div>
           </div>
           <div className="text-center p-3 bg-muted rounded-lg">
             <div className="text-2xl font-bold text-foreground">
               {Array.from(moduleLectures.values()).reduce((total, lectures) => total + lectures.length, 0)}
             </div>
-            <div className="text-sm text-muted-foreground">Total Lessons</div>
+            <div className="text-sm text-muted-foreground">{t('courseAuthoring.builder.totalLessons')}</div>
           </div>
           <div className="text-center p-3 bg-muted rounded-lg">
             <div className="text-2xl font-bold text-foreground">{pendingModules.length + pendingLectures.length}</div>
-            <div className="text-sm text-muted-foreground">Pending</div>
+            <div className="text-sm text-muted-foreground">{t('courseAuthoring.builder.pending')}</div>
           </div>
         </div>
       </div>
@@ -1604,7 +1618,7 @@ export default function CourseBuilderPage() {
             <div className="flex-1 space-y-3">
               <input 
                 type="text" 
-                placeholder="Module title..."
+                placeholder={t('courseAuthoring.builder.moduleTitlePlaceholderShort')}
                 value={inlineModuleData.title}
                 onChange={(e) => {
                   const newTitle = e.target.value;
@@ -1621,7 +1635,7 @@ export default function CourseBuilderPage() {
               
               <input 
                 type="text" 
-                placeholder="Description (optional)"
+                placeholder={t('courseAuthoring.builder.descriptionOptional')}
                 value={inlineModuleData.description}
                 onChange={(e) => setInlineModuleData(prev => ({ ...prev, description: e.target.value }))}
                 maxLength={254}
@@ -1634,13 +1648,13 @@ export default function CourseBuilderPage() {
                   disabled={!inlineModuleData.title.trim()}
                   className="px-3 py-1 text-sm bg-brand-solid hover:bg-brand-solid-hover text-white rounded disabled:opacity-50"
                 >
-                  Create
+                  {t('courseAuthoring.builder.create')}
                 </button>
                 <button 
                   onClick={handleCancelInlineModule}
                   className="px-3 py-1 text-sm text-muted-foreground hover:bg-muted rounded"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>
@@ -1660,8 +1674,8 @@ export default function CourseBuilderPage() {
               <span className="text-brand font-bold text-lg">+</span>
             </div>
             <div className="text-left">
-              <div className="font-medium">Add New Module</div>
-              <div className="text-sm text-muted-foreground">Create a new module for your course</div>
+              <div className="font-medium">{t('courseAuthoring.builder.addModule')}</div>
+              <div className="text-sm text-muted-foreground">{t('courseAuthoring.builder.addModuleHint')}</div>
             </div>
           </div>
         </Button>
@@ -1718,15 +1732,15 @@ export default function CourseBuilderPage() {
       const result = await apiClient.grantGroupAccess(course.id.toString(), groupId);
       
       if (result.status === 'granted') {
-        alert('Access granted to the group.');
+        alert(t('courseAuthoring.access.groupGranted'));
       } else if (result.status === 'already_granted') {
-        alert('This group already has access to the course.');
+        alert(t('courseAuthoring.access.groupAlready'));
       }
       
       loadGroups(); // Reload to update status
     } catch (error) {
       console.error('Failed to grant access:', error);
-      alert('Failed to grant access to the group.');
+      alert(t('courseAuthoring.access.groupGrantFailed'));
     }
   };
 
@@ -1735,11 +1749,11 @@ export default function CourseBuilderPage() {
     
     try {
       await apiClient.revokeGroupAccess(course.id.toString(), groupId);
-      alert('Access revoked from the group.');
+      alert(t('courseAuthoring.access.groupRevoked'));
       loadGroups(); // Reload to update status
     } catch (error) {
       console.error('Failed to revoke access:', error);
-      alert('Failed to revoke access from the group.');
+      alert(t('courseAuthoring.access.groupRevokeFailed'));
     }
   };
 
@@ -1762,15 +1776,15 @@ export default function CourseBuilderPage() {
       }
     }
     
-    let message = '';
+    const parts: string[] = [];
     if (grantedCount > 0) {
-      message += `Access granted to ${grantedCount} group(s). `;
+      parts.push(t('courseAuthoring.access.grantedToGroups', { count: grantedCount }));
     }
     if (alreadyGrantedCount > 0) {
-      message += `${alreadyGrantedCount} group(s) already had access.`;
+      parts.push(t('courseAuthoring.access.groupsAlready', { count: alreadyGrantedCount }));
     }
     
-    alert(message || 'Operation completed.');
+    alert(parts.join(' ') || t('courseAuthoring.access.done'));
     loadGroups(); // Reload to update status
   };
 
@@ -1800,17 +1814,17 @@ export default function CourseBuilderPage() {
       const result = await apiClient.grantCourseTeacherAccess(course.id.toString(), teacherId);
       
       if (result.status === 'granted') {
-        alert('Access granted to teacher.');
+        alert(t('courseAuthoring.access.teacherGranted'));
       } else if (result.status === 'already_granted') {
-        alert('This teacher already has access.');
+        alert(t('courseAuthoring.access.teacherAlready'));
       } else if (result.status === 'creator') {
-        alert('This teacher is the course creator.');
+        alert(t('courseAuthoring.access.teacherIsCreator'));
       }
       
       loadTeacherAccess();
     } catch (error) {
       console.error('Failed to grant access:', error);
-      alert('Failed to grant access.');
+      alert(t('courseAuthoring.access.grantFailed'));
     }
   };
 
@@ -1819,11 +1833,11 @@ export default function CourseBuilderPage() {
     
     try {
       await apiClient.revokeCourseTeacherAccess(course.id.toString(), teacherId);
-      alert('Access revoked from teacher.');
+      alert(t('courseAuthoring.access.teacherRevoked'));
       loadTeacherAccess();
     } catch (error) {
       console.error('Failed to revoke access:', error);
-      alert('Failed to revoke access.');
+      alert(t('courseAuthoring.access.revokeFailed'));
     }
   };
 
@@ -1841,17 +1855,17 @@ export default function CourseBuilderPage() {
         setCourse(prev => prev ? { ...prev, cover_image_url: response.cover_image_url } : null);
         setHasUnsavedChanges(true);
       } else {
-        alert('Failed to upload image.');
+        alert(t('courseAuthoring.builder.imageUploadFailed'));
       }
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image. Please try again.');
+      alert(t('courseAuthoring.flashcards.uploadFailed'));
     }
   };
 
   const handleAddSummaries = async () => {
     if (!courseId) return;
-    if (!window.confirm('This will add a summary step to all lessons that do not have one. Continue?')) return;
+    if (!window.confirm(t('courseAuthoring.builder.addSummariesConfirm'))) return;
     
     try {
       const result = await apiClient.addSummaryStepsToCourse(courseId);
@@ -1859,7 +1873,7 @@ export default function CourseBuilderPage() {
       loadCourseData();
     } catch (error) {
       console.error('Failed to add summaries:', error);
-      alert('Failed to add summary steps');
+      alert(t('courseAuthoring.builder.addSummariesFailed'));
     }
   };
 
@@ -1894,18 +1908,18 @@ export default function CourseBuilderPage() {
         <div className="flex-1 min-w-0 @container">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-foreground">{course?.title || 'Course Builder'}</h1>
-              <p className="text-muted-foreground mt-1">Create and organize your course content</p>
+              <h1 className="text-2xl font-bold text-foreground">{course?.title || t('courseAuthoring.builder.title')}</h1>
+              <p className="text-muted-foreground mt-1">{t('courseAuthoring.builder.subtitle')}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 onClick={handleAddSummaries}
                 variant="outline"
                 className="flex items-center space-x-2"
-                title="Add summary step to all lessons"
+                title={t('courseAuthoring.builder.addSummariesHint')}
               >
                 <Trophy className="w-4 h-4" />
-                <span>Add Summaries</span>
+                <span>{t('courseAuthoring.builder.addSummaries')}</span>
               </Button>
               <Button
                 onClick={() => navigate(`/course/${courseId}`)}
@@ -1913,7 +1927,7 @@ export default function CourseBuilderPage() {
                 className="flex items-center space-x-2"
               >
                 <Eye className="w-4 h-4" />
-                <span>Preview Course</span>
+                <span>{t('courseAuthoring.builder.preview')}</span>
               </Button>
               {/* Which teachers and groups get the course is access management: admins only
                   (head teachers edit content, 2026-10-03). */}
@@ -1924,7 +1938,7 @@ export default function CourseBuilderPage() {
                   className="flex items-center space-x-2"
                 >
                   <Users className="w-4 h-4" />
-                  <span>Manage Teachers</span>
+                  <span>{t('courseAuthoring.builder.manageTeachers')}</span>
                 </Button>
               )}
               {canManageCourseAccess(user?.role) && (
@@ -1934,7 +1948,7 @@ export default function CourseBuilderPage() {
                   className="flex items-center space-x-2"
                 >
                   <Users className="w-4 h-4" />
-                  <span>Manage Groups</span>
+                  <span>{t('courseAuthoring.builder.manageGroups')}</span>
                 </Button>
               )}
             </div>
@@ -1952,48 +1966,48 @@ export default function CourseBuilderPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{modForm.id ? 'Edit module' : 'New module'}</DialogTitle>
+            <DialogTitle>{modForm.id ? t('courseAuthoring.builder.editModule') : t('courseAuthoring.builder.newModuleTitle')}</DialogTitle>
             <DialogDescription>
-              {modForm.id ? 'Update the module details below.' : 'Create a new module for your course.'}
+              {modForm.id ? t('courseAuthoring.builder.editModuleHint') : t('courseAuthoring.builder.newModuleHint')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Module title</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('courseAuthoring.builder.moduleTitle')}</label>
               <input 
                 className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand" 
                 value={modForm.title} 
                 onChange={e => setModForm(f => ({ ...f, title: e.target.value }))} 
-                placeholder="Enter module title"
+                placeholder={t('courseAuthoring.builder.moduleTitlePlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Description (optional)</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('courseAuthoring.builder.descriptionOptional')}</label>
               <textarea 
                 className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand" 
                 value={modForm.description || ''} 
                 onChange={e => setModForm(f => ({ ...f, description: e.target.value }))} 
-                placeholder="Module description"
+                placeholder={t('courseAuthoring.builder.moduleDescription')}
                 rows={3}
               />
             </div>
             {(course as any)?.release_schedule === 'weekly' && (
               <div>
-                <label className="block text-sm text-muted-foreground mb-1">Week number (opens in)</label>
+                <label className="block text-sm text-muted-foreground mb-1">{t('courseAuthoring.builder.weekNumber')}</label>
                 <input
                   type="number"
                   min={1}
                   className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
                   value={modForm.week_number ?? ''}
                   onChange={e => setModForm(f => ({ ...f, week_number: e.target.value ? parseInt(e.target.value, 10) : undefined }))}
-                  placeholder="1 = week 1, 2 = week 2..."
+                  placeholder={t('courseAuthoring.builder.weekNumberPlaceholder')}
                 />
-                <p className="text-xs text-muted-foreground mt-1">Which week (from group start) this module unlocks. Leave empty to use order.</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('courseAuthoring.builder.weekNumberHint')}</p>
               </div>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setModForm({ open: false, title: '', description: '', week_number: undefined })}>Cancel</Button>
+            <Button variant="outline" onClick={() => setModForm({ open: false, title: '', description: '', week_number: undefined })}>{t('common.cancel')}</Button>
             <Button onClick={async () => {
           if (!modForm.title.trim()) return;
           
@@ -2023,7 +2037,7 @@ export default function CourseBuilderPage() {
           
           setModForm({ open: false, title: '', description: '', week_number: undefined });
           setHasUnsavedChanges(true);
-            }}>Save</Button>
+            }}>{t('common.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -2032,34 +2046,34 @@ export default function CourseBuilderPage() {
       <Dialog open={lecForm.open} onOpenChange={(open) => { if (!open) setLecForm({ open: false, title: '', type: 'text', videoUrl: '' }); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit lesson</DialogTitle>
-            <DialogDescription>Update the lesson details.</DialogDescription>
+            <DialogTitle>{t('courseAuthoring.builder.editLesson')}</DialogTitle>
+            <DialogDescription>{t('courseAuthoring.builder.editLessonHint')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Lesson title</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('courseAuthoring.builder.lessonTitle')}</label>
               <input 
                 className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand" 
                 value={lecForm.title} 
                 onChange={e => setLecForm(f => ({ ...f, title: e.target.value }))} 
-                placeholder="Enter lesson title"
+                placeholder={t('courseAuthoring.lesson.titlePlaceholder')}
               />
             </div>
             <div>
-              <label className="block text-sm text-muted-foreground mb-1">Lesson type</label>
+              <label className="block text-sm text-muted-foreground mb-1">{t('courseAuthoring.builder.lessonType')}</label>
               <select 
                 className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand" 
                 value={lecForm.type} 
                 onChange={(e) => setLecForm(f => ({ ...f, type: (e.target as HTMLSelectElement).value as any }))}
               >
-                <option value="text">Text</option>
-                <option value="video">Video</option>
-                <option value="quiz">Quiz</option>
+                <option value="text">{t('courseAuthoring.lesson.typeText')}</option>
+                <option value="video">{t('courseAuthoring.builder.typeVideo')}</option>
+                <option value="quiz">{t('courseAuthoring.lesson.typeQuiz')}</option>
               </select>
             </div>
             {lecForm.type === 'video' && (
               <div>
-                <label className="block text-sm text-muted-foreground mb-1">Video URL</label>
+                <label className="block text-sm text-muted-foreground mb-1">{t('courseAuthoring.builder.videoUrl')}</label>
                 <input 
                   className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand" 
                   value={lecForm.videoUrl || ''} 
@@ -2070,7 +2084,7 @@ export default function CourseBuilderPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLecForm({ open: false, title: '', type: 'text', videoUrl: '' })}>Cancel</Button>
+            <Button variant="outline" onClick={() => setLecForm({ open: false, title: '', type: 'text', videoUrl: '' })}>{t('common.cancel')}</Button>
             <Button onClick={async () => {
           if (!lecForm.title.trim() || !selected?.module || !lecForm.id) return;
           
@@ -2099,7 +2113,7 @@ export default function CourseBuilderPage() {
           if (!courseId) return;
           const lectures = await apiClient.getModuleLessons(courseId, selected.module.id);
           setModuleLectures(prev => new Map(prev).set(selected.module.id, lectures));
-            }}>Save</Button>
+            }}>{t('common.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -2113,22 +2127,22 @@ export default function CourseBuilderPage() {
         onConfirm={async () => { 
           await confirm.action?.();
         }}
-        title={confirmStep === 1 ? "Delete lesson?" : "Are you REALLY sure?"}
+        title={confirmStep === 1 ? t('courseAuthoring.builder.deleteTitle') : t('courseAuthoring.builder.deleteTitleSure')}
         description={
           confirmStep === 1 
-            ? "This action cannot be undone. All lesson content, steps, and student progress will be permanently deleted." 
-            : "This is your last chance! Once deleted, this lesson and all its data will be gone forever. There's no going back."
+            ? t('courseAuthoring.builder.deleteText') 
+            : t('courseAuthoring.builder.deleteTextSure')
         }
-        confirmText={confirmStep === 1 ? "Yes, delete" : "Yes, permanently delete"}
+        confirmText={confirmStep === 1 ? t('courseAuthoring.builder.deleteYes') : t('courseAuthoring.builder.deleteYesSure')}
       />
 
       {/* Group Management Modal */}
       <Dialog open={showGroupManagementModal} onOpenChange={setShowGroupManagementModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Manage Course Access</DialogTitle>
+            <DialogTitle>{t('courseAuthoring.access.groupsTitle')}</DialogTitle>
             <DialogDescription>
-              Select the groups you want to grant access to this course. All students in the selected groups will automatically receive access.
+              {t('courseAuthoring.access.groupsHint')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -2141,13 +2155,13 @@ export default function CourseBuilderPage() {
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">
                 {user?.role === 'admin' 
-                  ? "No groups available yet." 
+                  ? t('courseAuthoring.access.noGroupsAdmin') 
                   : user?.role === 'curator'
-                  ? "You don't have any assigned groups yet."
-                  : "You don't have any groups yet."}
+                  ? t('courseAuthoring.access.noGroupsCurator')
+                  : t('courseAuthoring.access.noGroups')}
               </p>
               <Button onClick={() => navigate('/groups')} variant="outline">
-                {user?.role === 'admin' ? 'Create a group' : 'View groups'}
+                {user?.role === 'admin' ? t('courseAuthoring.access.createGroup') : t('courseAuthoring.access.viewGroups')}
               </Button>
             </div>
           ) : (
@@ -2155,10 +2169,10 @@ export default function CourseBuilderPage() {
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-medium">
                   {user?.role === 'admin' 
-                    ? `All groups (${availableGroups.length})` 
+                    ? t('courseAuthoring.access.allGroups', { count: availableGroups.length }) 
                     : user?.role === 'curator'
-                    ? `Assigned groups (${availableGroups.length})`
-                    : `Your groups (${availableGroups.length})`}
+                    ? t('courseAuthoring.access.assignedGroups', { count: availableGroups.length })
+                    : t('courseAuthoring.access.yourGroups', { count: availableGroups.length })}
                 </h3>
                 <Button 
                   onClick={grantAccessToAllGroups}
@@ -2167,7 +2181,7 @@ export default function CourseBuilderPage() {
                   className="flex items-center space-x-2"
                 >
                   <Check className="w-4 h-4" />
-                  <span>Grant to all</span>
+                  <span>{t('courseAuthoring.access.grantAll')}</span>
                 </Button>
               </div>
               
@@ -2182,14 +2196,14 @@ export default function CourseBuilderPage() {
                       <div>
                         <h4 className="font-medium">{group.name}</h4>
                         <p className="text-sm text-muted-foreground">
-                          {group.student_count || 0} students
+                          {t('common.students', { count: group.student_count || 0 })}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
                         {hasAccess ? (
                           <>
                             <Badge variant="secondary" className="text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950/40">
-                              Access granted
+                              {t('courseAuthoring.access.granted')}
                             </Badge>
                             <Button
                               onClick={() => revokeAccessFromGroup(group.id.toString())}
@@ -2198,7 +2212,7 @@ export default function CourseBuilderPage() {
                               className="flex items-center space-x-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                             >
                               <X className="w-3 h-3" />
-                              <span>Revoke</span>
+                              <span>{t('courseAuthoring.access.revoke')}</span>
                             </Button>
                           </>
                         ) : (
@@ -2209,7 +2223,7 @@ export default function CourseBuilderPage() {
                             className="flex items-center space-x-1"
                           >
                             <Check className="w-3 h-3" />
-                            <span>Grant</span>
+                            <span>{t('courseAuthoring.access.grant')}</span>
                           </Button>
                         )}
                       </div>
@@ -2221,7 +2235,7 @@ export default function CourseBuilderPage() {
           )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowGroupManagementModal(false)}>Close</Button>
+            <Button variant="outline" onClick={() => setShowGroupManagementModal(false)}>{t('common.close')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -2230,9 +2244,9 @@ export default function CourseBuilderPage() {
       <Dialog open={showTeacherAccessModal} onOpenChange={setShowTeacherAccessModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Manage Teacher Access</DialogTitle>
+            <DialogTitle>{t('courseAuthoring.access.teachersTitle')}</DialogTitle>
             <DialogDescription>
-              Grant direct access to this course for specific teachers. They will be able to view the course content without being in a group.
+              {t('courseAuthoring.access.teachersHint')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -2244,7 +2258,7 @@ export default function CourseBuilderPage() {
           ) : (
             <>
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-medium">Available Teachers</h3>
+                <h3 className="font-medium">{t('courseAuthoring.access.availableTeachers')}</h3>
               </div>
               
               <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -2270,7 +2284,7 @@ export default function CourseBuilderPage() {
                             className="flex items-center space-x-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/40"
                           >
                             <X className="w-3 h-3" />
-                            <span>Revoke</span>
+                            <span>{t('courseAuthoring.access.revoke')}</span>
                           </Button>
                         ) : (
                           <Button
@@ -2280,7 +2294,7 @@ export default function CourseBuilderPage() {
                             className="flex items-center space-x-1"
                           >
                             <Check className="w-3 h-3" />
-                            <span>Grant</span>
+                            <span>{t('courseAuthoring.access.grant')}</span>
                           </Button>
                         )}
                       </div>
@@ -2288,14 +2302,14 @@ export default function CourseBuilderPage() {
                   );
                 })}
                 {availableTeachers.length === 0 && (
-                  <p className="text-center text-muted-foreground py-4">No teachers found.</p>
+                  <p className="text-center text-muted-foreground py-4">{t('courseAuthoring.access.noTeachers')}</p>
                 )}
               </div>
             </>
           )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowTeacherAccessModal(false)}>Close</Button>
+            <Button variant="outline" onClick={() => setShowTeacherAccessModal(false)}>{t('common.close')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -2305,8 +2319,8 @@ export default function CourseBuilderPage() {
         open={isBlocked}
         onConfirm={confirmLeave}
         onCancel={cancelLeave}
-        title="Save Course Changes!"
-        description="You have unsaved changes in this course (modules, lessons, or reordering). Please save your changes before leaving to avoid losing your work."
+        title={t('courseAuthoring.builder.saveChangesTitle')}
+        description={t('courseAuthoring.builder.saveChangesText')}
       />
     </> 
   );

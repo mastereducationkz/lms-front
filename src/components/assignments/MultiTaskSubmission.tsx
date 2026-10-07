@@ -14,10 +14,12 @@ import { cn } from '../../lib/utils';
 import { AudioPlayer } from '../AudioPlayer';
 import { parseBluebookReport } from '../../services/api/exams';
 import { BluebookGraderPanel } from './BluebookGraderPanel';
-import { formatAssignmentTaskLabel, gatedLessonIds, type UnitGate } from '../../lib/assignmentTask';
+import { gatedLessonIds, type UnitGate } from '../../lib/assignmentTask';
 import { UploadFailedError } from '../../lib/uploadFailure';
 import { safeLinkUrl, safeUploadUrl } from '../../lib/mediaUrl';
 import { formatTime } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/homework';
 
 interface Task {
   id: string;
@@ -51,6 +53,7 @@ interface CourseUnitTaskDisplayProps {
 }
 
 function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId, unitGate }: CourseUnitTaskDisplayProps) {
+  const t = useT();
   const [courseData, setCourseData] = useState<any>(null);
   const [lessonsData, setLessonsData] = useState<any[]>([]);
   const [lessonProgress, setLessonProgress] = useState<Record<number, boolean>>({});
@@ -178,7 +181,7 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId, unitGa
   if (loading) {
     return (
       <div className="space-y-3">
-        <div className="text-sm text-muted-foreground">Loading course information...</div>
+        <div className="text-sm text-muted-foreground">{t('homework.tasks.loadingCourse')}</div>
       </div>
     );
   }
@@ -187,14 +190,14 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId, unitGa
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Complete the following lessons:
+          {t('homework.tasks.completeLessons')}
         </div>
       </div>
       <div className="bg-muted p-3 rounded-md">
         <div className="flex items-center space-x-2 mb-2">
           <BookOpen className="w-4 h-4 text-muted-foreground" />
           <span className="font-medium text-foreground">
-            {courseData?.title || (resolvedCourseId ? `Course #${resolvedCourseId}` : 'Course not linked')}
+            {courseData?.title || (resolvedCourseId ? t('homework.tasks.courseNumber', { id: resolvedCourseId }) : t('homework.tasks.courseNotLinked'))}
           </span>
         </div>
         <div className="space-y-2 ml-6">
@@ -220,7 +223,7 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId, unitGa
                       className="h-auto p-0 ml-2" 
                       onClick={() => window.open(`/course/${resolvedCourseId}/lesson/${lesson.id}`, '_blank')}
                     >
-                      Go to Lesson <ExternalLink className="w-3 h-3 ml-1" />
+                      {t('homework.tasks.goToLesson')} <ExternalLink className="w-3 h-3 ml-1" />
                     </Button>
                   )}
                 </div>
@@ -229,7 +232,7 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId, unitGa
           ) : (
             countedLessonIds.map((lessonId: number) => (
               <div key={lessonId} className="text-sm flex items-center justify-between">
-                <span>Lesson #{lessonId}</span>
+                <span>{t('homework.tasks.lessonNumber', { id: lessonId })}</span>
                 {!readOnly && resolvedCourseId && (
                   <Button 
                     variant="link" 
@@ -237,7 +240,7 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId, unitGa
                     className="h-auto p-0" 
                     onClick={() => window.open(`/course/${resolvedCourseId}/lesson/${lessonId}`, '_blank')}
                   >
-                    Go to Lesson <ExternalLink className="w-3 h-3 ml-1" />
+                    {t('homework.tasks.goToLesson')} <ExternalLink className="w-3 h-3 ml-1" />
                   </Button>
                 )}
               </div>
@@ -247,7 +250,7 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId, unitGa
         {totalCount > 0 && (
           <div className="mt-3 pt-3 border-t border-border">
             <div className="text-xs text-muted-foreground">
-             Progress: {completedCount} / {totalCount} lessons completed
+             {t('homework.tasks.lessonsProgress', { done: completedCount, total: totalCount })}
             </div>
             <div className="w-full bg-gray-200 dark:bg-secondary rounded-full h-2 mt-1">
               <div 
@@ -261,13 +264,13 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId, unitGa
           <div className="mt-3 flex items-center gap-2 rounded-md border border-border bg-card p-3">
             <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
             <span className="text-sm leading-snug text-foreground">
-              All lessons for this task are complete.
+              {t('homework.tasks.lessonsDone')}
             </span>
           </div>
         )}
         {!readOnly && !allLessonsCompleted && totalCount > 0 && (
           <p className="mt-2 text-xs text-muted-foreground">
-            Complete all lessons above to mark this task done.
+            {t('homework.tasks.lessonsHint')}
           </p>
         )}
       </div>
@@ -311,6 +314,7 @@ interface AudioTaskSubmissionProps {
 }
 
 function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTaskSubmissionProps) {
+  const t = useT();
   const [isSupported, setIsSupported] = useState(true);
   const [recorderState, setRecorderState] = useState<AudioRecorderState>('idle');
   const [permissionError, setPermissionError] = useState('');
@@ -432,11 +436,11 @@ function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTask
       stopStream();
       setRecorderState('idle');
       if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
-        setPermissionError('Microphone access was denied. Please allow microphone access in your browser settings and try again.');
+        setPermissionError(t('homework.audio.micDenied'));
       } else if (err?.name === 'NotFoundError') {
-        setPermissionError('No microphone was found on this device. Please connect a microphone and try again.');
+        setPermissionError(t('homework.audio.micNotFound'));
       } else {
-        setPermissionError('Could not access the microphone. Please check your device settings and try again.');
+        setPermissionError(t('homework.audio.micUnavailable'));
       }
     }
   };
@@ -467,10 +471,10 @@ function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTask
       const result = await apiClient.uploadAssignmentAudio(blob);
       onRecorded({ audio_url: result.url, audio_name: result.filename, duration_seconds: elapsedSeconds });
       discardRecording();
-      toast('Recording saved', 'success');
+      toast(t('homework.tasks.recordingSaved'), 'success');
     } catch (error) {
       console.error('Audio upload failed:', error);
-      setUploadError('Failed to save your recording. Please try again.');
+      setUploadError(t('homework.tasks.recordingSaveFailed'));
     } finally {
       if (isMountedRef.current) {
         setIsUploading(false);
@@ -488,12 +492,12 @@ function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTask
       {showSavedRecording && (
         <div className="space-y-2">
           {readOnly && (
-            <div className="text-xs font-medium text-muted-foreground">Student's Recording:</div>
+            <div className="text-xs font-medium text-muted-foreground">{t('homework.tasks.studentRecording')}</div>
           )}
           {safeAudioUrl ? (
             <AudioPlayer src={safeAudioUrl} />
           ) : (
-            <div className="text-sm italic text-muted-foreground">Recording unavailable.</div>
+            <div className="text-sm italic text-muted-foreground">{t('homework.tasks.recordingUnavailable')}</div>
           )}
           {!readOnly && (
             <Button
@@ -504,20 +508,20 @@ function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTask
               disabled={!isSupported || isUploading}
             >
               <RotateCcw className="w-4 h-4 mr-2" />
-              Record again
+              {t('homework.tasks.recordAgain')}
             </Button>
           )}
         </div>
       )}
 
       {readOnly && !audioUrl && (
-        <div className="text-sm italic text-muted-foreground">No recording submitted.</div>
+        <div className="text-sm italic text-muted-foreground">{t('homework.tasks.noRecording')}</div>
       )}
 
       {!readOnly && !isSupported && (
         <div className="flex items-start rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
           <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-          <span>Audio recording is not supported in this browser. Please try a recent version of Chrome, Safari, or Firefox.</span>
+          <span>{t('homework.audio.unsupported')}</span>
         </div>
       )}
 
@@ -527,7 +531,7 @@ function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTask
           <div className="flex-1">
             <p>{permissionError}</p>
             <Button type="button" variant="outline" size="sm" className="mt-2" onClick={startRecording}>
-              Try Again
+              {t('homework.shared.tryAgain')}
             </Button>
           </div>
         </div>
@@ -545,20 +549,20 @@ function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTask
           {recorderState === 'idle' && (
             <Button type="button" onClick={startRecording}>
               <Mic className="w-4 h-4 mr-2" />
-              Record
+              {t('homework.audio.record')}
             </Button>
           )}
 
           {recorderState === 'requesting' && (
             <Button type="button" disabled>
-              Requesting microphone access...
+              {t('homework.audio.requestingMic')}
             </Button>
           )}
 
           {recorderState === 'recording' && (
             <Button type="button" variant="destructive" onClick={stopRecording}>
               <Square className="w-4 h-4 mr-2" />
-              Stop
+              {t('homework.audio.stop')}
             </Button>
           )}
 
@@ -578,7 +582,7 @@ function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTask
                       onClick={() => recordedBlob && uploadRecording(recordedBlob)}
                       disabled={isUploading}
                     >
-                      Retry
+                      {t('homework.tasks.retry')}
                     </Button>
                   </div>
                 </div>
@@ -591,14 +595,14 @@ function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTask
                   disabled={isUploading}
                 >
                   <RotateCcw className="w-4 h-4 mr-2" />
-                  Re-record
+                  {t('homework.audio.reRecord')}
                 </Button>
                 <Button
                   type="button"
                   onClick={() => recordedBlob && uploadRecording(recordedBlob)}
                   disabled={!recordedBlob || isUploading}
                 >
-                  {isUploading ? 'Saving...' : 'Save recording'}
+                  {isUploading ? t('homework.tasks.saving') : t('homework.tasks.saveRecording')}
                 </Button>
               </div>
             </div>
@@ -610,6 +614,10 @@ function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTask
 }
 
 export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswers, readOnly = false, isSubmitting = false, studentId, onAutosave, unitGate }: MultiTaskSubmissionProps) {
+  const t = useT();
+  // A task without a title reads «Task N».
+  const taskLabel = (title: string | null | undefined, index: number) =>
+    title?.trim() || t('homework.tasks.taskNumber', { number: index + 1 });
   const [tasks, setTasks] = useState<Task[]>([]);
   // Handle both formats: { tasks: {...} } or direct object {...}
   const [answers, setAnswers] = useState<Record<string, any>>(
@@ -682,7 +690,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
 
         // Check if it's an image and compress
         if (fileToUpload.type.startsWith('image/')) {
-          toast(`Compressing image ${i + 1}/${files.length}...`, 'info');
+          toast(t('homework.shared.compressingImage', { current: i + 1, total: files.length }), 'info');
           fileToUpload = await compressImage(fileToUpload);
         }
 
@@ -721,10 +729,10 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
         file_size: uploadedFiles[uploadedFiles.length - 1].file_size
       });
       
-      toast('Files uploaded successfully', 'success');
+      toast(t('homework.tasks.filesUploaded'), 'success');
     } catch (error) {
       console.error('File upload failed:', error);
-      toast(error instanceof UploadFailedError ? error.message : 'Failed to upload files. Please try again.', 'error');
+      toast(error instanceof UploadFailedError ? error.message : t('homework.tasks.uploadFailed'), 'error');
     } finally {
       setUploading(prev => ({ ...prev, [taskId]: false }));
     }
@@ -792,7 +800,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               ...prev,
               [task.id]: typeof detail === 'string'
                 ? detail
-                : 'Could not read this file. Upload the official PDF score report from Bluebook.',
+                : t('homework.bluebook.readFailed'),
             }));
           } finally {
             setUploading((prev) => ({ ...prev, [task.id]: false }));
@@ -802,17 +810,15 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
         return (
           <div className="space-y-4">
             <div className="text-sm font-medium text-foreground">
-              Bluebook Test #{expected ?? '—'}
+              {t('homework.bluebook.testNumber', { number: expected ?? '—' })}
             </div>
 
             <div className={`rounded-md border border-dashed p-4 ${readOnly ? 'hidden' : ''}`}>
               <label htmlFor={`bb-pdf-${task.id}`} className="text-sm font-medium">
-                Official score report (PDF) *
+                {t('homework.bluebook.reportLabel')}
               </label>
               <p className="text-xs text-muted-foreground mt-1 mb-2">
-                In Bluebook, open <strong>My Practice</strong>, choose this practice test and
-                download the score report as PDF, then upload that file here. Your scores are
-                read from the report automatically — screenshots and photos are not accepted.
+                {howToBefore}<strong>{t('homework.bluebook.myPractice')}</strong>{howToAfter}
               </p>
               <input
                 id={`bb-pdf-${task.id}`}
@@ -823,7 +829,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                 className="block w-full text-sm"
               />
               {uploading[task.id] && (
-                <p className="text-xs text-muted-foreground mt-2">Reading your report…</p>
+                <p className="text-xs text-muted-foreground mt-2">{t('homework.bluebook.reading')}</p>
               )}
               {bluebookError[task.id] && (
                 <p className="text-xs text-red-600 dark:text-red-400 mt-2" role="alert">
@@ -843,35 +849,35 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             {!readOnly && parsed && (
               <div className="rounded-md border bg-muted/40 p-3">
                 <div className="text-xs font-medium mb-2">
-                  Read from your report — SAT Practice {parsed.test_number}
+                  {t('homework.bluebook.readFromReport', { number: parsed.test_number })}
                   {parsed.report_date ? ` · ${parsed.report_date}` : ''}
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
-                    <div className="text-[11px] text-muted-foreground">Reading &amp; Writing</div>
+                    <div className="text-[11px] text-muted-foreground">{t('homework.bluebook.readingWriting')}</div>
                     <div className="text-lg font-semibold">{parsed.verbal_score}</div>
                   </div>
                   <div>
-                    <div className="text-[11px] text-muted-foreground">Math</div>
+                    <div className="text-[11px] text-muted-foreground">{t('homework.bluebook.math')}</div>
                     <div className="text-lg font-semibold">{parsed.math_score}</div>
                   </div>
                   <div>
-                    <div className="text-[11px] text-muted-foreground">Total</div>
+                    <div className="text-[11px] text-muted-foreground">{t('homework.bluebook.total')}</div>
                     <div className="text-lg font-bold">{parsed.total_score}</div>
                   </div>
                 </div>
                 {parsed.student_name && (
                   <div className="mt-2 text-[11px] text-muted-foreground">
-                    Report name: {parsed.student_name}
+                    {t('homework.bluebook.reportName', { name: parsed.student_name })}
                     {parsed.name_matches === false && (
                       <span className="ml-1 text-amber-600 dark:text-amber-500">
-                        — this does not match your account name; your teacher will check it.
+                        {t('homework.bluebook.nameMismatchStudent')}
                       </span>
                     )}
                   </div>
                 )}
                 <p className="mt-2 text-[11px] text-muted-foreground">
-                  These values come from the official report and cannot be edited.
+                  {t('homework.bluebook.readOnlyNote')}
                 </p>
               </div>
             )}
@@ -910,7 +916,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                   <div className="border dark:border-border rounded-lg overflow-hidden bg-muted">
                     <img 
                       src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + task.content.teacher_file_url}
-                      alt={task.content.teacher_file_name || 'Reference image'}
+                      alt={task.content.teacher_file_name || t('homework.shared.referenceImage')}
                       className="w-full h-auto max-h-[600px] object-contain"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
@@ -923,7 +929,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                 <div className="flex items-center p-2 bg-secondary/50 dark:bg-secondary rounded-md text-sm border border-border">
                   <FileText className="w-4 h-4 text-muted-foreground mr-2" />
                   <a href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + task.content.teacher_file_url} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline">
-                    Download Reference File: {task.content.teacher_file_name || 'File'}
+                    {t('homework.tasks.downloadReference', { name: task.content.teacher_file_name || t('homework.shared.file') })}
                   </a>
                 </div>
               </div>
@@ -941,7 +947,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                                 <div className="border dark:border-border rounded-lg overflow-hidden bg-muted">
                                 <img
                                     src={fileHref}
-                                    alt={file.file_name || 'Uploaded image'}
+                                    alt={file.file_name || t('homework.tasks.uploadedImage')}
                                     className="w-full h-auto max-h-[600px] object-contain"
                                     onError={(e) => {
                                       e.currentTarget.style.display = 'none';
@@ -954,7 +960,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                             <div className="flex items-center justify-between gap-3 p-3 border rounded-lg bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
                                 <div className="flex min-w-0 items-center space-x-2">
                                 <CheckCircle className="w-4 h-4 shrink-0 text-green-600 dark:text-green-400" />
-                                <span className="min-w-0 break-all text-sm font-medium text-green-800 dark:text-green-400">{file.file_name || `File ${index + 1}`}</span>
+                                <span className="min-w-0 break-all text-sm font-medium text-green-800 dark:text-green-400">{file.file_name || t('homework.tasks.fileNumber', { number: index + 1 })}</span>
                                 {file.file_size && (
                                     <span className="text-xs text-green-600 dark:text-green-500">({(file.file_size / 1024 / 1024).toFixed(2)} MB)</span>
                                 )}
@@ -968,7 +974,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                                     className="text-foreground hover:underline h-8 px-2"
                                 >
                                     <ExternalLink className="w-4 h-4 mr-1" />
-                                    Open
+                                    {t('homework.shared.open')}
                                 </Button>
                                 )}
                                 {!readOnly && (
@@ -1028,8 +1034,8 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                 const allowedLabel = (() => {
                   const types: string[] = task.content.allowed_file_types || []
                   const extra = types.filter(t => !['jpg','jpeg','png','gif','webp','heic','heif'].includes(t.toLowerCase()))
-                  if (extra.length === 0) return 'Photos or Images'
-                  return `Photos, Images, ${extra.map(t => t.toUpperCase()).join(', ')}`
+                  if (extra.length === 0) return t('homework.tasks.photosOrImages')
+                  return t('homework.tasks.photosImagesAnd', { types: extra.map(type => type.toUpperCase()).join(', ') })
                 })()
 
                 return (
@@ -1057,7 +1063,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                     <label
                       htmlFor={`file-${task.id}`}
                       className="flex cursor-pointer flex-col items-center gap-3 px-6 py-8"
-                      aria-label="Upload files"
+                      aria-label={t('homework.tasks.uploadFiles')}
                     >
                       <div className={cn(
                         'rounded-full p-3 transition-colors',
@@ -1068,16 +1074,16 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                       <div className="text-center">
                         <p className="text-sm font-medium text-foreground">
                           {isUploading
-                            ? 'Uploading…'
+                            ? t('homework.tasks.uploading')
                             : isOver
-                            ? 'Drop files here'
+                            ? t('homework.tasks.dropHere')
                             : displayFiles.length > 0
-                            ? 'Drop or click to add more files'
-                            : 'Drop files here or click to browse'}
+                            ? t('homework.tasks.dropToAddMore')
+                            : t('homework.tasks.dropOrBrowse')}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
                           {allowedLabel}
-                          {task.content.max_file_size_mb ? ` · max ${task.content.max_file_size_mb} MB per file` : ''}
+                          {task.content.max_file_size_mb ? ` · ${t('homework.tasks.maxPerFile', { size: task.content.max_file_size_mb })}` : ''}
                         </p>
                       </div>
                     </label>
@@ -1089,14 +1095,14 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             {task.content.answer_fields && task.content.answer_fields.length > 0 && (
               <div className="space-y-2 mt-4 pt-4 border-t">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Answer Fields</Label>
+                  <Label className="text-sm font-medium">{t('homework.tasks.answerFields')}</Label>
                   {readOnly && taskAnswer.auto_check_result && (
                     <div className={`text-xs font-semibold px-2 py-1 rounded-full ${
                       taskAnswer.auto_check_result.correct_count === taskAnswer.auto_check_result.total_count 
                         ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
                         : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                     }`}>
-                      {taskAnswer.auto_check_result.correct_count}/{taskAnswer.auto_check_result.total_count} Correct
+                      {t('homework.tasks.correctCount', { correct: taskAnswer.auto_check_result.correct_count, total: taskAnswer.auto_check_result.total_count })}
                     </div>
                   )}
                 </div>
@@ -1118,7 +1124,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                             };
                             handleTaskCompletion(task.id, { field_answers: newFieldAnswers });
                           }}
-                          placeholder="Enter your answer..."
+                          placeholder={t('homework.shared.enterAnswer')}
                           className={`text-sm font-mono flex-1 ${
                             showValidation 
                               ? (isCorrect ? 'border-green-500 bg-green-50 dark:bg-green-900/20 pr-8' : 'border-red-500 bg-red-50 dark:bg-red-900/20 pr-8')
@@ -1151,25 +1157,25 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             <div className="text-sm font-medium text-foreground">{task.content.question}</div>
             {/* Student Response Label */}
             {readOnly && taskAnswer.text_response && (
-              <div className="text-xs text-muted-foreground font-medium">Student's Response:</div>
+              <div className="text-xs text-muted-foreground font-medium">{t('homework.tasks.studentResponse')}</div>
             )}
             <Textarea
               value={taskAnswer.text_response || ''}
               onChange={(e) => handleTaskCompletion(task.id, { text_response: e.target.value })}
-              placeholder="Type your answer here..."
+              placeholder={t('homework.shared.typeAnswer')}
               rows={4}
               disabled={readOnly}
               className={readOnly ? 'bg-muted text-foreground' : ''}
             />
             {!readOnly && task.content.max_length && (
               <div className="text-xs text-right text-muted-foreground">
-                {(taskAnswer.text_response?.length || 0)} / {task.content.max_length} characters
+                {t('homework.tasks.characters', { length: taskAnswer.text_response?.length || 0, max: task.content.max_length })}
               </div>
             )}
             {/* Keywords hint for teacher grading */}
             {task.content.keywords && task.content.keywords.length > 0 && readOnly && (
               <div className="mt-2 rounded border border-yellow-200 bg-yellow-50 p-2 text-xs text-amber-900 dark:border-yellow-800 dark:bg-yellow-950/80 dark:text-amber-200">
-                <span className="font-medium">Keywords for grading:</span> {task.content.keywords.join(', ')}
+                <span className="font-medium">{t('homework.tasks.keywords')}</span> {task.content.keywords.join(', ')}
               </div>
             )}
 
@@ -1177,14 +1183,14 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             {task.content.answer_fields && task.content.answer_fields.length > 0 && (
               <div className="space-y-2 mt-4 pt-4 border-t">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Answer Fields</Label>
+                  <Label className="text-sm font-medium">{t('homework.tasks.answerFields')}</Label>
                   {readOnly && taskAnswer.auto_check_result && (
                     <div className={`text-xs font-semibold px-2 py-1 rounded-full ${
                       taskAnswer.auto_check_result.correct_count === taskAnswer.auto_check_result.total_count 
                         ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
                         : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                     }`}>
-                      {taskAnswer.auto_check_result.correct_count}/{taskAnswer.auto_check_result.total_count} Correct
+                      {t('homework.tasks.correctCount', { correct: taskAnswer.auto_check_result.correct_count, total: taskAnswer.auto_check_result.total_count })}
                     </div>
                   )}
                 </div>
@@ -1206,7 +1212,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                             };
                             handleTaskCompletion(task.id, { field_answers: newFieldAnswers });
                           }}
-                          placeholder="Enter your answer..."
+                          placeholder={t('homework.shared.enterAnswer')}
                           className={`text-sm font-mono flex-1 ${
                             showValidation 
                               ? (isCorrect ? 'border-green-500 bg-green-50 dark:bg-green-900/20 pr-8' : 'border-red-500 bg-red-50 dark:bg-red-900/20 pr-8')
@@ -1257,9 +1263,9 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                 disabled={readOnly}
               />
               <Label htmlFor={`task-${task.id}`} className="text-foreground font-normal">
-                I have {task.content.completion_criteria === 'watch' ? 'watched' : 
-                        task.content.completion_criteria === 'read' ? 'read' : 
-                        task.content.completion_criteria === 'complete' ? 'completed' : 'visited'} this resource
+                {t(task.content.completion_criteria === 'watch' ? 'homework.tasks.linkWatched' :
+                   task.content.completion_criteria === 'read' ? 'homework.tasks.linkRead' :
+                   task.content.completion_criteria === 'complete' ? 'homework.tasks.linkCompleted' : 'homework.tasks.linkVisited')}
               </Label>
             </div>
           </div>
@@ -1280,7 +1286,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                     <div className="overflow-hidden rounded-lg border border-border bg-muted">
                       <img
                         src={fileUrl}
-                        alt={fileName || 'Reference image'}
+                        alt={fileName || t('homework.shared.referenceImage')}
                         className="max-h-[480px] w-full object-contain"
                         onError={(e) => { e.currentTarget.style.display = 'none' }}
                       />
@@ -1290,7 +1296,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                     <FileSearch className="w-5 h-5 text-muted-foreground mr-3 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-foreground truncate">
-                        {fileName || 'Reference File'}
+                        {fileName || t('homework.tasks.referenceFile')}
                       </div>
                       <a
                         href={fileUrl}
@@ -1298,7 +1304,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                         rel="noopener noreferrer"
                         className="text-xs text-foreground hover:underline"
                       >
-                        Open/Download File
+                        {t('homework.tasks.openDownload')}
                       </a>
                     </div>
                   </div>
@@ -1311,28 +1317,28 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             
             {/* Student Response Label */}
             {readOnly && taskAnswer.text_response && (
-              <div className="text-xs text-muted-foreground font-medium">Student's Response:</div>
+              <div className="text-xs text-muted-foreground font-medium">{t('homework.tasks.studentResponse')}</div>
             )}
             
             {/* Text Response */}
             <Textarea
               value={taskAnswer.text_response || ''}
               onChange={(e) => handleTaskCompletion(task.id, { text_response: e.target.value })}
-              placeholder="Type your answer here..."
+              placeholder={t('homework.shared.typeAnswer')}
               rows={5}
               disabled={readOnly}
               className={readOnly ? 'bg-muted text-foreground' : ''}
             />
             {!readOnly && task.content.max_length && (
               <div className="text-xs text-right text-muted-foreground">
-                {(taskAnswer.text_response?.length || 0)} / {task.content.max_length} characters
+                {t('homework.tasks.characters', { length: taskAnswer.text_response?.length || 0, max: task.content.max_length })}
               </div>
             )}
             
             {/* Keywords hint for teacher grading */}
             {task.content.keywords && task.content.keywords.length > 0 && readOnly && (
               <div className="mt-2 rounded border border-yellow-200 bg-yellow-50 p-2 text-xs text-amber-900 dark:border-yellow-800 dark:bg-yellow-950/80 dark:text-amber-200">
-                <span className="font-medium">Keywords for grading:</span> {task.content.keywords.join(', ')}
+                <span className="font-medium">{t('homework.tasks.keywords')}</span> {task.content.keywords.join(', ')}
               </div>
             )}
 
@@ -1340,14 +1346,14 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             {task.content.answer_fields && task.content.answer_fields.length > 0 && (
               <div className="space-y-2 mt-4 pt-4 border-t">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Answer Fields</Label>
+                  <Label className="text-sm font-medium">{t('homework.tasks.answerFields')}</Label>
                   {readOnly && taskAnswer.auto_check_result && (
                     <div className={`text-xs font-semibold px-2 py-1 rounded-full ${
                       taskAnswer.auto_check_result.correct_count === taskAnswer.auto_check_result.total_count 
                         ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' 
                         : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                     }`}>
-                      {taskAnswer.auto_check_result.correct_count}/{taskAnswer.auto_check_result.total_count} Correct
+                      {t('homework.tasks.correctCount', { correct: taskAnswer.auto_check_result.correct_count, total: taskAnswer.auto_check_result.total_count })}
                     </div>
                   )}
                 </div>
@@ -1369,7 +1375,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                             };
                             handleTaskCompletion(task.id, { field_answers: newFieldAnswers });
                           }}
-                          placeholder="Enter your answer..."
+                          placeholder={t('homework.shared.enterAnswer')}
                           className={`text-sm font-mono flex-1 ${
                             showValidation 
                               ? (isCorrect ? 'border-green-500 bg-green-50 dark:bg-green-900/20 pr-8' : 'border-red-500 bg-red-50 dark:bg-red-900/20 pr-8')
@@ -1406,7 +1412,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
         );
 
       default:
-        return <div>Unknown task type</div>;
+        return <div>{t('homework.tasks.unknownType')}</div>;
     }
   };
 
@@ -1476,12 +1482,17 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
     }
   };
 
+  // Bold values sit inside the translated sentences at their {slot}.
+  const [requiredBefore, requiredAfter = ''] = t('homework.tasks.requiredPoints').split('{points}');
+  const [bonusBefore, bonusAfter = ''] = t('homework.tasks.bonusPoints').split('{points}');
+  const [howToBefore, howToAfter = ''] = t('homework.bluebook.howTo').split('{myPractice}');
+
   return (
     <div className="space-y-6">
       {assignment.content.instructions && (
         <Card className="border-border bg-secondary/50 dark:bg-secondary">
           <CardContent className="pt-6">
-            <h4 className="mb-2 font-medium text-foreground">Instructions</h4>
+            <h4 className="mb-2 font-medium text-foreground">{t('homework.shared.instructions')}</h4>
             <p className="whitespace-pre-wrap text-sm text-foreground">{assignment.content.instructions}</p>
           </CardContent>
         </Card>
@@ -1491,10 +1502,10 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
       {tasks.some(t => t.is_optional) && (
         <div className="flex items-center gap-4 text-sm px-1">
           <span className="text-muted-foreground">
-            Required: <span className="font-semibold">{tasks.filter(t => !t.is_optional).reduce((sum, t) => sum + t.points, 0)}</span> pts
+            {requiredBefore}<span className="font-semibold">{tasks.filter(t => !t.is_optional).reduce((sum, t) => sum + t.points, 0)}</span>{requiredAfter}
           </span>
           <span className="text-amber-600 dark:text-amber-400">
-            Bonus: <span className="font-semibold">+{tasks.filter(t => t.is_optional).reduce((sum, t) => sum + t.points, 0)}</span> pts
+            {bonusBefore}<span className="font-semibold">+{tasks.filter(t => t.is_optional).reduce((sum, t) => sum + t.points, 0)}</span>{bonusAfter}
           </span>
         </div>
       )}
@@ -1521,18 +1532,18 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                     </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h4 className="min-w-0 break-words font-medium text-foreground">{formatAssignmentTaskLabel(task.title, index)}</h4>
+                        <h4 className="min-w-0 break-words font-medium text-foreground">{taskLabel(task.title, index)}</h4>
                         {task.is_optional && (
                           <span className="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded-full flex items-center gap-1">
                             <Star className="w-3 h-3" />
-                            Bonus
+                            {t('homework.tasks.bonus')}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                        <span>Task {index + 1}</span>
+                        <span>{t('homework.tasks.taskNumber', { number: index + 1 })}</span>
                         <span>•</span>
-                        <span>{task.is_optional ? `+${task.points} bonus points` : `${task.points} points`}</span>
+                        <span>{task.is_optional ? t('homework.tasks.taskBonusPoints', { count: task.points }) : t('homework.tasks.points', { count: task.points })}</span>
                       </div>
                     </div>
                   </div>
@@ -1566,36 +1577,36 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
           <div className="flex flex-col items-end gap-2 pt-4">
             {!canSubmit && requiredTasks.length > 0 && (
               <p className="text-sm text-amber-600 dark:text-amber-400">
-                Complete all required tasks to submit ({completedRequiredCount}/{requiredTasks.length} done)
-                {optionalTasks.length > 0 && ` • ${completedOptionalCount}/${optionalTasks.length} bonus tasks`}
+                {t('homework.tasks.completeRequired', { done: completedRequiredCount, total: requiredTasks.length })}
+                {optionalTasks.length > 0 && ` • ${t('homework.tasks.bonusTasksProgress', { done: completedOptionalCount, total: optionalTasks.length })}`}
               </p>
             )}
             {!canSubmit && (
               <div className="text-sm text-muted-foreground space-y-1">
                 {requiredTasks.filter(t => !checkTaskCompletion(t)).length > 0 && (
                   <div>
-                    Still needed: {requiredTasks.filter(t => !checkTaskCompletion(t)).map(t => formatAssignmentTaskLabel(t.title, tasks.indexOf(t))).join(', ')}
+                    {t('homework.tasks.stillNeeded', { tasks: requiredTasks.filter(task => !checkTaskCompletion(task)).map(task => taskLabel(task.title, tasks.indexOf(task))).join(', ') })}
                   </div>
                 )}
                 {unitsBlocked && (
-                  <div>Complete these units first: {unitGate!.missing.map(m => m.title).join(', ')}</div>
+                  <div>{t('homework.tasks.unitsFirst', { units: unitGate!.missing.map(m => m.title).join(', ') })}</div>
                 )}
               </div>
             )}
             {hasOnlyOptionalTasks && (
               <p className="text-sm text-muted-foreground">
-                All tasks are optional — you can submit at any time
-                {completedOptionalCount > 0 && ` (${completedOptionalCount}/${optionalTasks.length} completed)`}
+                {t('homework.tasks.allOptional')}
+                {completedOptionalCount > 0 && ` ${t('homework.tasks.optionalCompleted', { done: completedOptionalCount, total: optionalTasks.length })}`}
               </p>
             )}
             {!hasOnlyOptionalTasks && canSubmit && optionalTasks.length > 0 && completedOptionalCount < optionalTasks.length && (
               <p className="text-sm text-muted-foreground">
-                {completedOptionalCount}/{optionalTasks.length} bonus tasks completed (optional)
+                {t('homework.tasks.bonusCompleted', { done: completedOptionalCount, total: optionalTasks.length })}
               </p>
             )}
             {onAutosave && !readOnly && (
               <div className="text-xs text-muted-foreground mb-1" aria-live="polite">
-                {autosaveState === 'saving' ? 'Saving…' : savedAt ? `Draft saved · ${savedAt}` : ''}
+                {autosaveState === 'saving' ? t('homework.tasks.autosaving') : savedAt ? t('homework.tasks.draftSaved', { time: savedAt }) : ''}
               </div>
             )}
             <Button
@@ -1604,7 +1615,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               className="w-full md:w-auto"
               disabled={isSubmitting || !canSubmit}
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Assignment'}
+              {isSubmitting ? t('homework.shared.submitting') : t('homework.shared.submitAssignment')}
             </Button>
           </div>
         );

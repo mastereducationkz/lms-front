@@ -11,6 +11,9 @@ import type { FavoriteFlashcard } from '../types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import FavoriteStepsList from '../components/favorites/FavoriteStepsList';
 import FlipFlashcard, { DifficultyBadge, LookupDetails, type SavedFlashcard } from '../components/favorites/FlipFlashcard';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/learning';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 export default function FavoriteFlashcardsPage() {
   const [favorites, setFavorites] = useState<FavoriteFlashcard[]>([]);
@@ -22,6 +25,7 @@ export default function FavoriteFlashcardsPage() {
   const [practiceCompleted, setPracticeCompleted] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'flashcards' | 'pages'>('flashcards');
   const navigate = useNavigate();
+  const t = useT();
 
   useEffect(() => {
     loadFavorites();
@@ -34,7 +38,7 @@ export default function FavoriteFlashcardsPage() {
       setFavorites(data);
     } catch (error: any) {
       console.error('Failed to load favorite flashcards:', error);
-      toast(error.message || 'Failed to load favorites', 'error');
+      toast(error.message || t('lessonPlayer.favorites.loadFailed'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -44,11 +48,11 @@ export default function FavoriteFlashcardsPage() {
     event.stopPropagation();
     try {
       await removeFavoriteFlashcard(favoriteId);
-      toast('Removed from favorites', 'success');
+      toast(t('lessonPlayer.favorites.removed'), 'success');
       setFavorites(favorites.filter(f => f.id !== favoriteId));
     } catch (error: any) {
       console.error('Failed to remove favorite:', error);
-      toast(error.message || 'Failed to remove favorite', 'error');
+      toast(error.message || t('lessonPlayer.favorites.removeFailed'), 'error');
     }
   };
 
@@ -95,7 +99,7 @@ export default function FavoriteFlashcardsPage() {
       setPracticeFlipped(false);
     } else {
       // Completed all cards
-      toast('Great job! You\'ve practiced all flashcards!', 'success');
+      toast(t('lessonPlayer.favorites.practiceDone'), 'success');
       handleExitPractice();
     }
   };
@@ -128,7 +132,7 @@ export default function FavoriteFlashcardsPage() {
     const flashcard = parseFlashcardData(currentFavorite.flashcard_data);
     
     if (!flashcard) {
-      return <div>Error loading flashcard</div>;
+      return <div>{t('lessonPlayer.favorites.cardFailed')}</div>;
     }
 
     const progress = ((currentPracticeIndex + 1) / favorites.length) * 100;
@@ -138,17 +142,17 @@ export default function FavoriteFlashcardsPage() {
         {/* Practice Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-foreground">Practice Mode</h2>
+            <h2 className="text-2xl font-bold text-foreground">{t('lessonPlayer.favorites.practiceMode')}</h2>
             <Button variant="outline" onClick={handleExitPractice}>
-              Exit Practice
+              {t('lessonPlayer.favorites.exitPractice')}
             </Button>
           </div>
           
           {/* Progress Bar */}
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Card {currentPracticeIndex + 1} of {favorites.length}</span>
-              <span>{Math.round(progress)}% complete</span>
+              <span>{t('lessonPlayer.flashcards.cardOf', { number: currentPracticeIndex + 1, total: favorites.length })}</span>
+              <span>{t('lessonPlayer.flashcards.percentComplete', { percent: Math.round(progress) })}</span>
             </div>
             <div className="w-full bg-gray-200 dark:bg-secondary rounded-full h-2">
               <div 
@@ -171,12 +175,12 @@ export default function FavoriteFlashcardsPage() {
               // Question Side
               <div className="space-y-6 w-full flex flex-col items-center justify-center">
                 <div className="text-sm text-gray-400 dark:text-muted-foreground uppercase tracking-wider mb-8">
-                  Question
+                  {t('lessonPlayer.flashcards.question')}
                 </div>
                 {flashcard.front_image_url && (
                   <img 
                     src={flashcard.front_image_url} 
-                    alt="Front" 
+                    alt={t('learning.flashcards.frontImage')} 
                     className="max-w-full max-h-48 object-contain rounded mb-6 mx-auto"
                   />
                 )}
@@ -184,19 +188,19 @@ export default function FavoriteFlashcardsPage() {
                   {flashcard.front_text}
                 </div>
                 <div className="text-sm text-gray-400 dark:text-muted-foreground mt-8">
-                  Click to reveal answer
+                  {t('lessonPlayer.favorites.revealAnswer')}
                 </div>
               </div>
             ) : (
               // Answer Side
               <div className="space-y-6 w-full flex flex-col items-center justify-center">
                 <div className="text-sm text-gray-400 dark:text-muted-foreground uppercase tracking-wider mb-4">
-                  Answer
+                  {t('lessonPlayer.flashcards.answer')}
                 </div>
                 {flashcard.back_image_url && (
                   <img 
                     src={flashcard.back_image_url} 
-                    alt="Back" 
+                    alt={t('learning.flashcards.backImage')} 
                     className="max-w-full max-h-48 object-contain rounded mb-6 mx-auto"
                   />
                 )}
@@ -214,7 +218,7 @@ export default function FavoriteFlashcardsPage() {
                     className="flex items-center gap-2"
                   >
                     <XCircle className="h-5 w-5" />
-                    Need Review
+                    {t('lessonPlayer.favorites.needReview')}
                   </Button>
                   <Button 
                     onClick={handlePracticeKnow}
@@ -222,7 +226,7 @@ export default function FavoriteFlashcardsPage() {
                     className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
                   >
                     <CheckCircle className="h-5 w-5" />
-                    I Know This
+                    {t('lessonPlayer.favorites.knowThis')}
                   </Button>
                 </div>
               </div>
@@ -249,11 +253,11 @@ export default function FavoriteFlashcardsPage() {
             disabled={currentPracticeIndex === 0}
           >
             <ChevronLeft className="h-5 w-5 mr-1" />
-            Previous
+            {t('lessonPlayer.nav.previous')}
           </Button>
           
           <div className="text-sm text-muted-foreground">
-            {practiceCompleted.size} cards marked as known
+            {t('lessonPlayer.favorites.knownCount', { count: practiceCompleted.size })}
           </div>
 
           <Button 
@@ -261,7 +265,7 @@ export default function FavoriteFlashcardsPage() {
             variant="outline"
             disabled={currentPracticeIndex === favorites.length - 1}
           >
-            Next
+            {t('lessonPlayer.nav.next')}
             <ChevronRight className="h-5 w-5 ml-1" />
           </Button>
         </div>
@@ -274,8 +278,8 @@ export default function FavoriteFlashcardsPage() {
     <div className="max-w-7xl mx-auto p-6">
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'flashcards' | 'pages')}>
         <TabsList className="mb-6">
-          <TabsTrigger value="flashcards">Flashcards</TabsTrigger>
-          <TabsTrigger value="pages">Pages</TabsTrigger>
+          <TabsTrigger value="flashcards">{t('lessonPlayer.favorites.tabCards')}</TabsTrigger>
+          <TabsTrigger value="pages">{t('lessonPlayer.favorites.tabPages')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="flashcards">
@@ -283,9 +287,9 @@ export default function FavoriteFlashcardsPage() {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">My Flashcards</h1>
+              <h1 className="text-3xl font-bold text-foreground">{t('lessonPlayer.favorites.title')}</h1>
               <p className="text-muted-foreground">
-                {favorites.length} flashcard{favorites.length !== 1 ? 's' : ''} saved
+                {t('lessonPlayer.favorites.savedCount', { count: favorites.length })}
               </p>
             </div>
           </div>
@@ -296,7 +300,7 @@ export default function FavoriteFlashcardsPage() {
               className="flex items-center gap-2"
             >
               <Play className="h-5 w-5" />
-              Practice All
+              {t('lessonPlayer.favorites.practiceAll')}
             </Button>
           )}
         </div>
@@ -307,14 +311,14 @@ export default function FavoriteFlashcardsPage() {
           <CardContent className="p-12 text-center">
             <Heart className="h-16 w-16 text-gray-300 dark:text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-700 dark:text-foreground mb-2">
-              No favorite flashcards yet
+              {t('lessonPlayer.favorites.emptyCards')}
             </h3>
             <p className="text-muted-foreground mb-6">
-              Start adding flashcards to your favorites while studying!
+              {t('lessonPlayer.favorites.emptyCardsHint')}
             </p>
             <Button onClick={() => navigate('/courses')}>
               <BookOpen className="h-4 w-4 mr-2" />
-              Browse Courses
+              {t('lessonPlayer.favorites.browseCourses')}
             </Button>
           </CardContent>
         </Card>

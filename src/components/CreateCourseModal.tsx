@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext.tsx';
 import type { CourseType } from '../types';
 import { useT } from '../lib/i18n/react';
 import '@/lib/i18n/catalogs/adminTools';
+import '@/lib/i18n/catalogs/courseAuthoring';
 
 interface CreateCourseModalProps {
   open: boolean;
@@ -88,7 +89,7 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
       resetState();
       onClose();
     } catch (e) {
-      alert('Failed to create course');
+      alert(tr('courseAuthoring.create.failed'));
     } finally {
       setSaving(false);
     }
@@ -109,16 +110,16 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
     <Dialog open={open} onOpenChange={(o) => { if (!o) { resetState(); setStep('form'); onClose(); } }}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
-          <DialogTitle>{step === 'form' ? 'Create Course' : 'Preview Course Card'}</DialogTitle>
+          <DialogTitle>{step === 'form' ? tr('courseAuthoring.create.title') : tr('courseAuthoring.create.previewTitle')}</DialogTitle>
           <DialogDescription>
-            {step === 'form' ? 'Fill out the details to create a new course' : 'Preview how the course card will look'}
+            {step === 'form' ? tr('courseAuthoring.create.subtitle') : tr('courseAuthoring.create.previewSubtitle')}
           </DialogDescription>
         </DialogHeader>
         {step === 'form' ? (
         <div className="space-y-4">
           {/* 1) Image upload (click or drag&drop) */}
           <div>
-            <Label className="mb-2 block">Thumbnail image</Label>
+            <Label className="mb-2 block">{tr('courseAuthoring.create.thumbnail')}</Label>
             <input
               ref={fileInputRef}
               type="file"
@@ -128,7 +129,7 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
             />
             <div
               role="button"
-              aria-label="Upload course thumbnail"
+              aria-label={tr('courseAuthoring.create.thumbnailAria')}
               tabIndex={0}
               onClick={() => fileInputRef.current?.click()}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
@@ -144,11 +145,11 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
               className={`relative w-64 h-64 mx-auto border-2 border-dashed rounded-xl overflow-hidden flex items-center justify-center cursor-pointer transition ${dragActive ? 'border-brand bg-brand-surface' : 'border-input bg-muted hover:border-input'}`}
             >
               {thumbnailPreview ? (
-                <img src={thumbnailPreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
+                <img src={thumbnailPreview} alt={tr('courseAuthoring.create.previewAlt')} className="absolute inset-0 w-full h-full object-cover" />
               ) : (
                 <div className="text-center text-muted-foreground text-sm">
-                  <div className="font-medium">Click to upload</div>
-                  <div className="text-xs">or drag & drop image here</div>
+                  <div className="font-medium">{tr('courseAuthoring.create.clickToUpload')}</div>
+                  <div className="text-xs">{tr('courseAuthoring.create.orDragImage')}</div>
                 </div>
               )}
             </div>
@@ -163,7 +164,7 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
               <SelectContent>
                 <SelectItem value="sat">SAT</SelectItem>
                 <SelectItem value="ielts">IELTS</SelectItem>
-                <SelectItem value="general_english">General English</SelectItem>
+                <SelectItem value="general_english">{tr('courseAuthoring.create.typeGeneralEnglish')}</SelectItem>
                 <SelectItem value="nuet">NUET</SelectItem>
               </SelectContent>
             </Select>
@@ -171,24 +172,24 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
 
           {/* 2) Title */}
           <div>
-            <Label className="mb-2 block">Title</Label>
+            <Label className="mb-2 block">{tr('courseAuthoring.create.titleLabel')}</Label>
             <Input
               value={title}
               maxLength={64}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Course title"
+              placeholder={tr('courseAuthoring.create.titlePlaceholder')}
               className="w-full"
             />
-            <div className="text-xs text-muted-foreground mt-1">{remaining} characters left</div>
+            <div className="text-xs text-muted-foreground mt-1">{tr('courseAuthoring.create.charsLeft', { count: remaining })}</div>
           </div>
 
           {/* 3) Description */}
           <div>
-            <Label className="mb-2 block">Description</Label>
+            <Label className="mb-2 block">{tr('courseAuthoring.create.descriptionLabel')}</Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Short course description"
+              placeholder={tr('courseAuthoring.create.descriptionPlaceholder')}
               rows={3}
               className="w-full"
             />
@@ -196,22 +197,22 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
 
           {/* 4) Tags */}
           <div>
-            <Label className="mb-2 block">Tags</Label>
+            <Label className="mb-2 block">{tr('courseAuthoring.create.tags')}</Label>
             <Input
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              placeholder="react, javascript, frontend"
+              placeholder={tr('courseAuthoring.create.tagsPlaceholder')}
               className="w-full"
             />
-            <p className="text-xs text-muted-foreground mt-1">Tags are for future filtering (optional)</p>
+            <p className="text-xs text-muted-foreground mt-1">{tr('courseAuthoring.create.tagsHint')}</p>
           </div>
 
           {isAdmin && (
             <div>
-              <Label className="mb-2 block">Assign Teacher</Label>
+              <Label className="mb-2 block">{tr('courseAuthoring.create.assignTeacher')}</Label>
               <Select value={teacherId} onValueChange={(v) => setTeacherId(v)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a teacher (optional)" />
+                  <SelectValue placeholder={tr('courseAuthoring.create.selectTeacher')} />
                 </SelectTrigger>
                 <SelectContent>
                   {Array.isArray(teachers) && teachers.map((t) => (
@@ -227,29 +228,29 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
             <CourseCard
               course={{
                 id: 'preview',
-                title: title || 'Course title',
-                description: description || 'Short course description',
+                title: title || tr('courseAuthoring.create.titlePlaceholder'),
+                description: description || tr('courseAuthoring.create.descriptionPlaceholder'),
                 image: thumbnailPreview || undefined,
-                teacher: isAdmin ? ((Array.isArray(teachers) ? teachers.find(t => String(t.id) === teacherId)?.name : undefined) || 'Teacher') : (user?.name || 'Me'),
+                teacher: isAdmin ? ((Array.isArray(teachers) ? teachers.find(t => String(t.id) === teacherId)?.name : undefined) || tr('courseAuthoring.create.teacherFallback')) : (user?.name || tr('courseAuthoring.create.meFallback')),
                 modulesCount: 0,
                 progress: 0,
                 status: 'not-started',
               }}
               onContinue={() => {}}
             />
-            <div className="text-xs text-muted-foreground">This course will be created as a draft. You can add modules and lessons next.</div>
+            <div className="text-xs text-muted-foreground">{tr('courseAuthoring.create.draftNote')}</div>
           </div>
         )}
         <DialogFooter className="mt-4">
           {step === 'form' ? (
             <>
-              <Button variant="outline" onClick={() => { resetState(); setStep('form'); onClose(); }}>Cancel</Button>
-              <Button onClick={() => setStep('preview')} disabled={!canSubmit}>Next</Button>
+              <Button variant="outline" onClick={() => { resetState(); setStep('form'); onClose(); }}>{tr('common.cancel')}</Button>
+              <Button onClick={() => setStep('preview')} disabled={!canSubmit}>{tr('courseAuthoring.create.next')}</Button>
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={() => setStep('form')}>Back</Button>
-              <Button onClick={handleSubmit} disabled={saving}>{saving ? 'Creating...' : 'Create & Edit'}</Button>
+              <Button variant="outline" onClick={() => setStep('form')}>{tr('common.back')}</Button>
+              <Button onClick={handleSubmit} disabled={saving}>{saving ? tr('courseAuthoring.create.creating') : tr('courseAuthoring.create.createAndEdit')}</Button>
             </>
           )}
         </DialogFooter>

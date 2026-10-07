@@ -7,6 +7,7 @@ vi.mock('@googleworkspace/meet-addons/meet.addons', () => ({
 }));
 
 import { normaliseMeetingCode, resolveMeeting } from './meetSdk';
+import { setActiveLocale } from '../lib/i18n';
 
 function inMeet(code: string) {
   createAddonSession.mockResolvedValue({
@@ -62,6 +63,18 @@ describe('resolveMeeting', () => {
   it('a malformed meeting code from Meet is not trusted', async () => {
     inMeet('not a code');
     expect(await resolveMeeting({ projectNumber: '1', search: '', framed: true })).toMatchObject({ kind: 'unavailable' });
+  });
+
+  it('says why in the device’s last language', async () => {
+    expect(await resolveMeeting({ projectNumber: '', search: '', framed: true }))
+      .toEqual({ kind: 'unavailable', reason: 'The add-on is not configured yet (no Cloud project number).' });
+    setActiveLocale('ru');
+    try {
+      expect(await resolveMeeting({ projectNumber: '', search: '', framed: true }))
+        .toEqual({ kind: 'unavailable', reason: 'Дополнение ещё не настроено (нет номера проекта в Google Cloud).' });
+    } finally {
+      setActiveLocale('en');
+    }
   });
 });
 

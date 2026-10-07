@@ -261,7 +261,7 @@ export default function HeadCuratorCuratorPage() {
                                                 <thead>
                                                     <tr className="bg-slate-50 dark:bg-muted border-b">
                                                         <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">{t('curatorPages.curatorDetail.student')}</th>
-                                                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Email</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">{t('curatorPages.curatorDetail.email')}</th>
                                                         <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">{t('curatorPages.curatorDetail.progress')}</th>
                                                         <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">{t('curatorPages.curatorDetail.overdue')}</th>
                                                     </tr>

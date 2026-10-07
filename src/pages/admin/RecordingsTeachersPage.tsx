@@ -28,6 +28,9 @@ import {
   type RecordingTeacher,
   type WorkspaceDirectory,
 } from '../../services/api/recordingsAdmin';
+import type { MessageKey } from '@/lib/i18n';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/adminPages';
 
 /**
  * Admin → Recordings Rollout: connecting teachers to their @mastereducation.kz accounts.
@@ -41,12 +44,20 @@ import {
 
 type Filter = 'pending' | 'connected' | 'skipped' | 'all';
 const DEFAULT_ORG_UNIT = '/Teachers';
+const FILTER_KEYS = {
+  pending: 'adminPages.recordingsRollout.filter.pending',
+  connected: 'adminPages.recordingsRollout.filter.connected',
+  skipped: 'adminPages.recordingsRollout.filter.skipped',
+  all: 'adminPages.recordingsRollout.filter.all',
+} as const satisfies Record<Filter, MessageKey>;
 
 const message = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback;
 
 export default function RecordingsTeachersPage() {
   const { user } = useAuth();
+  // `t` names a teacher throughout this page.
+  const tr = useT();
   const canWrite = user?.role === 'admin';
 
   const [teachers, setTeachers] = useState<RecordingTeacher[]>([]);
@@ -67,11 +78,11 @@ export default function RecordingsTeachersPage() {
       setTeachers(rows);
       setDirectory(dir);
     } catch (error) {
-      toast(message(error, 'Failed to load the rollout'), 'error');
+      toast(message(error, tr('adminPages.recordingsRollout.loadFailed')), 'error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tr]);
 
   useEffect(() => {
     load();
@@ -106,12 +117,12 @@ export default function RecordingsTeachersPage() {
       }
       const state = accountState(draft.email, directoryMap, connectedTo);
       const intent: Intent = duplicates.has(t.id)
-        ? { kind: 'blocked', reason: 'The same address is chosen for another teacher' }
+        ? { kind: 'blocked', reason: tr('adminPages.recordingsRollout.sameAddress') }
         : draftIntent(draft, state);
       byId.set(t.id, { state, intent });
     }
     return byId;
-  }, [teachers, pending, draftOf, directoryMap, connectedTo]);
+  }, [teachers, pending, draftOf, directoryMap, connectedTo, tr]);
 
   const chosen = pending.filter((t) => !deselected.has(t.id));
   const toImport = chosen.filter((t) => evaluation.get(t.id)?.intent?.kind === 'import');
@@ -170,9 +181,9 @@ export default function RecordingsTeachersPage() {
           last_name: draft.lastName.trim(),
         };
       }));
-      toast(`Import for ${toImport.length} new accounts downloaded. Upload it in Google Admin, then upload a fresh users list here.`, 'success');
+      toast(tr('adminPages.recordingsRollout.importDownloaded', { count: toImport.length }), 'success');
     } catch (error) {
-      toast(message(error, 'Failed to build the Google import'), 'error');
+      toast(message(error, tr('adminPages.recordingsRollout.importFailed')), 'error');
     } finally {
       setBusy(null);
     }
@@ -187,11 +198,11 @@ export default function RecordingsTeachersPage() {
         await connectRecordingTeacher(t.id, normaliseAddress(draftOf(t).email));
         connected += 1;
       } catch (error) {
-        failures.push(`${t.name}: ${message(error, 'failed')}`);
+        failures.push(`${t.name}: ${message(error, tr('adminPages.recordingsRollout.failed'))}`);
       }
     }
     if (connected) {
-      toast(`Connected ${connected} teacher${connected === 1 ? '' : 's'} — Meet rooms appear within ~5 minutes for the next 3 days of lessons`, 'success');
+      toast(tr('adminPages.recordingsRollout.connected', { count: connected }), 'success');
     }
     if (failures.length) toast(failures.join('\n'), 'error');
     setBusy(null);
@@ -203,10 +214,10 @@ export default function RecordingsTeachersPage() {
     setBusy(`row:${teacher.id}`);
     try {
       await connectRecordingTeacher(teacher.id, null);
-      toast(`Disconnected ${teacher.name}`, 'success');
+      toast(tr('adminPages.recordingsRollout.disconnected', { name: teacher.name }), 'success');
       await load();
     } catch (error) {
-      toast(message(error, 'Failed to disconnect'), 'error');
+      toast(message(error, tr('adminPages.recordingsRollout.disconnectFailed')), 'error');
     } finally {
       setBusy(null);
     }
@@ -218,7 +229,7 @@ export default function RecordingsTeachersPage() {
       await skipRecordingTeacher(teacher.id, !teacher.skipped);
       await load();
     } catch (error) {
-      toast(message(error, 'Failed to update the teacher'), 'error');
+      toast(message(error, tr('adminPages.recordingsRollout.updateFailed')), 'error');
     } finally {
       setBusy(null);
     }
@@ -228,9 +239,9 @@ export default function RecordingsTeachersPage() {
     const draft = draftOf(teacher);
     try {
       await navigator.clipboard.writeText(teacherInstructions(draft.firstName, normaliseAddress(draft.email)));
-      toast('Instructions copied — fill in the temporary password from the import file before sending', 'success');
+      toast(tr('adminPages.recordingsRollout.instructionsCopied'), 'success');
     } catch {
-      toast('Could not copy to the clipboard', 'error');
+      toast(tr('adminPages.recordingsRollout.copyFailed'), 'error');
     }
   };
 
@@ -242,24 +253,24 @@ export default function RecordingsTeachersPage() {
         <div className="space-y-1">
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight text-foreground">
             <Video className="h-6 w-6" />
-            Recordings rollout
+            {tr('adminPages.recordingsRollout.title')}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Connect teachers to their @mastereducation.kz accounts so lessons get Meet rooms, recordings and Telegram invitations.
+            {tr('adminPages.recordingsRollout.subtitle')}
           </p>
         </div>
         <Button variant="outline" onClick={load} disabled={loading}>
           <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
+          {tr('adminPages.recordingsRollout.refresh')}
         </Button>
       </div>
 
       <ol className="list-decimal space-y-1 rounded-md border border-sky-200 bg-sky-50 py-3 pl-8 pr-4 text-sm text-sky-900 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-200">
-        <li>In Google Admin, download the users list (Directory → Users → Download users → CSV) and upload it below.</li>
-        <li>Check each teacher's English name and address. Untick or skip anyone who should not get an account.</li>
-        <li>Download the import for the <strong>new</strong> accounts and upload it in Google Admin → Users → Bulk update users. It never contains an existing address, so no account is overwritten.</li>
-        <li>Send each teacher their address, the temporary password from the file and the copied instructions — they must sign in once before their next lesson.</li>
-        <li>Upload a fresh users list, then Connect. Meet rooms appear within ~5 minutes for the next 3 days of lessons.</li>
+        <li>{tr('adminPages.recordingsRollout.step1')}</li>
+        <li>{tr('adminPages.recordingsRollout.step2')}</li>
+        <li>{tr('adminPages.recordingsRollout.step3Before')} <strong>{tr('adminPages.recordingsRollout.step3New')}</strong> {tr('adminPages.recordingsRollout.step3After')}</li>
+        <li>{tr('adminPages.recordingsRollout.step4')}</li>
+        <li>{tr('adminPages.recordingsRollout.step5')}</li>
       </ol>
 
       <DirectoryCard directory={directory} canWrite={canWrite} onUploaded={load} />
@@ -271,25 +282,25 @@ export default function RecordingsTeachersPage() {
               <button key={key} type="button" onClick={() => setFilter(key)}
                 className={`rounded px-3 py-1 text-sm font-medium capitalize transition-colors ${
                   filter === key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-                {key} ({counts[key]})
+                {tr(FILTER_KEYS[key])} ({counts[key]})
               </button>
             ))}
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name or email" className="w-64 pl-9" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={tr('adminPages.recordingsRollout.searchPlaceholder')} className="w-64 pl-9" />
           </div>
         </div>
         {canWrite && (
           <div className="flex flex-wrap items-center gap-2">
-            <Input value={orgUnit} onChange={(e) => setOrgUnit(e.target.value)} title="Org unit for the new accounts" className="w-32" />
+            <Input value={orgUnit} onChange={(e) => setOrgUnit(e.target.value)} title={tr('adminPages.recordingsRollout.orgUnitHint')} className="w-32" />
             <Button variant="outline" onClick={exportImport} disabled={busy !== null || toImport.length === 0}>
               <Download className="mr-2 h-4 w-4" />
-              Google import ({toImport.length} new)
+              {tr('adminPages.recordingsRollout.googleImport', { count: toImport.length })}
             </Button>
             <Button onClick={() => connectMany(toConnect)} disabled={busy !== null || toConnect.length === 0}>
               <Check className="mr-2 h-4 w-4" />
-              Connect ({toConnect.length} existing)
+              {tr('adminPages.recordingsRollout.connectExisting', { count: toConnect.length })}
             </Button>
           </div>
         )}
@@ -301,23 +312,23 @@ export default function RecordingsTeachersPage() {
             <TableRow>
               {canWrite && (
                 <TableHead className="w-8">
-                  <Checkbox checked={allChosen} onCheckedChange={toggleAll} aria-label="Select all pending" disabled={allVisiblePending.length === 0} />
+                  <Checkbox checked={allChosen} onCheckedChange={toggleAll} aria-label={tr('adminPages.recordingsRollout.selectAllPending')} disabled={allVisiblePending.length === 0} />
                 </TableHead>
               )}
-              <TableHead>Teacher</TableHead>
-              <TableHead>English name</TableHead>
-              <TableHead>Workspace account</TableHead>
-              <TableHead className="text-center">Lessons (30d)</TableHead>
-              <TableHead className="text-center">Rooms</TableHead>
-              <TableHead>Groups</TableHead>
-              {canWrite && <TableHead className="text-right">Actions</TableHead>}
+              <TableHead>{tr('adminPages.recordingsRollout.col.teacher')}</TableHead>
+              <TableHead>{tr('adminPages.recordingsRollout.col.englishName')}</TableHead>
+              <TableHead>{tr('adminPages.recordingsRollout.col.workspaceAccount')}</TableHead>
+              <TableHead className="text-center">{tr('adminPages.recordingsRollout.col.lessons30d')}</TableHead>
+              <TableHead className="text-center">{tr('adminPages.recordingsRollout.col.rooms')}</TableHead>
+              <TableHead>{tr('adminPages.recordingsRollout.col.groups')}</TableHead>
+              {canWrite && <TableHead className="text-right">{tr('adminPages.recordingsRollout.col.actions')}</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {(loading && teachers.length === 0) || visible.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns} className="py-10 text-center text-muted-foreground">
-                  {loading ? 'Loading…' : 'No teachers match.'}
+                  {loading ? tr('common.loading') : tr('adminPages.recordingsRollout.noMatch')}
                 </TableCell>
               </TableRow>
             ) : visible.map((t) => {
@@ -347,9 +358,9 @@ export default function RecordingsTeachersPage() {
 
       <ConfirmDialog
         open={disconnecting !== null}
-        title={`Disconnect ${disconnecting?.name ?? ''}?`}
-        description="Existing Meet links stay on their lessons, but no new rooms, invitations or recordings will be made for this teacher."
-        confirmText="Disconnect"
+        title={tr('adminPages.recordingsRollout.disconnectTitle', { name: disconnecting?.name ?? '' })}
+        description={tr('adminPages.recordingsRollout.disconnectDescription')}
+        confirmText={tr('adminPages.recordingsRollout.disconnect')}
         onConfirm={() => disconnecting && disconnect(disconnecting)}
         onCancel={() => setDisconnecting(null)}
       />

@@ -1,12 +1,15 @@
 /**
  * One-time page tips (owner, 2026-10-07): a small card on a real element, the first time someone
  * opens that page. «Got it» hides it for good on every device (the key is stored on the server, so
- * keys never change once shipped). One tip may carry a variant per role, under the same key.
+ * keys never change once shipped). One tip may carry a variant per role, under the same key. The
+ * copy lives in the guide.* catalog and shows in the viewer's language.
  *
  * Every line here was checked against the page it sits on; a tip whose element isn't on screen
  * simply waits.
  */
 import type { Placement } from '@floating-ui/react-dom';
+import type { MessageKey } from '@/lib/i18n';
+import '@/lib/i18n/catalogs/guide';
 
 export interface TipDefinition {
   key: string;
@@ -14,9 +17,8 @@ export interface TipDefinition {
   path: RegExp;
   target: string;
   placement: Placement;
-  locale: 'en' | 'ru';
-  title: string;
-  body: string;
+  title: MessageKey;
+  body: MessageKey;
 }
 
 const STUDENT = ['student'] as const;
@@ -31,9 +33,8 @@ export const TIPS: readonly TipDefinition[] = [
     path: /^\/lessons\/\d+\/?$/,
     target: tip('lesson-sections'),
     placement: 'bottom-start',
-    locale: 'en',
-    title: 'Everything from this lesson',
-    body: 'Your mark, the recording once it’s ready, notes, homework and your teacher’s materials. Tap a chip to jump there.',
+    title: 'guide.tips.lessonSections.title',
+    body: 'guide.tips.lessonSections.body',
   },
   {
     key: 'homework.late',
@@ -41,9 +42,8 @@ export const TIPS: readonly TipDefinition[] = [
     path: /^\/homework\/\d+\/?$/,
     target: tip('homework-due'),
     placement: 'bottom-start',
-    locale: 'en',
-    title: 'Late still counts',
-    body: 'After the due date your work is still accepted, just marked late. Until it’s graded, you can send a better version while attempts remain.',
+    title: 'guide.tips.homeworkLate.title',
+    body: 'guide.tips.homeworkLate.body',
   },
   {
     key: 'achievements.try-on',
@@ -51,9 +51,8 @@ export const TIPS: readonly TipDefinition[] = [
     path: /^\/achievements\/?$/,
     target: tip('try-on'),
     placement: 'bottom-start',
-    locale: 'en',
-    title: 'Try it on first',
-    body: 'Every badge unlocks something for your Kasatik. Try it on to see your orca wearing it now; once you earn it, it’s yours to keep.',
+    title: 'guide.tips.tryOn.title',
+    body: 'guide.tips.tryOn.body',
   },
   {
     key: 'course.checkpoint',
@@ -61,9 +60,8 @@ export const TIPS: readonly TipDefinition[] = [
     path: /^\/course\/\d+\/?$/,
     target: tip('checkpoint-row'),
     placement: 'top-start',
-    locale: 'en',
-    title: 'Checkpoints',
-    body: 'A checkpoint opens once you finish the units before it. Take it within a day to see where you stand. It’s optional and never holds your course back.',
+    title: 'guide.tips.checkpoint.title',
+    body: 'guide.tips.checkpoint.body',
   },
   {
     key: 'lesson.register',
@@ -71,9 +69,8 @@ export const TIPS: readonly TipDefinition[] = [
     path: /^\/lessons\/\d+\/?$/,
     target: 'section#register h2',
     placement: 'top-start',
-    locale: 'en',
-    title: 'Meet takes the register',
-    body: 'In an LMS Meet room, Meet marks who came. Change a mark only if it’s wrong (we’ll ask why), then give each present student a score by 23:59 that day.',
+    title: 'guide.tips.lessonRegister.title',
+    body: 'guide.tips.lessonRegister.body',
   },
   {
     key: 'homework.allow-attempt',
@@ -81,9 +78,8 @@ export const TIPS: readonly TipDefinition[] = [
     path: /^\/homework\/\d+\/grade\/?$/,
     target: tip('allow-attempt'),
     placement: 'bottom-end',
-    locale: 'en',
-    title: 'One more try',
-    body: 'Once graded, a student can’t resubmit on their own. Allow another attempt reopens it for just them: one more try, or until a time you pick.',
+    title: 'guide.tips.allowAttempt.title',
+    body: 'guide.tips.allowAttempt.body',
   },
   {
     key: 'review.pick-quiz',
@@ -91,9 +87,8 @@ export const TIPS: readonly TipDefinition[] = [
     path: /^\/review\/?$/,
     target: '#review-course',
     placement: 'bottom-start',
-    locale: 'en',
-    title: 'Made for the big screen',
-    body: 'Pick a course, a group and a quiz they took. Each question then opens on its own, with how the group answered. Share it in Meet or on a projector.',
+    title: 'guide.tips.reviewPickQuiz.title',
+    body: 'guide.tips.reviewPickQuiz.body',
   },
   {
     key: 'leaderboard.star-of-week',
@@ -101,9 +96,8 @@ export const TIPS: readonly TipDefinition[] = [
     path: /^\/attendance\/?$/,
     target: tip('star-of-week'),
     placement: 'bottom-end',
-    locale: 'en',
-    title: 'Star of the Week',
-    body: 'Once a week, pick one student and say why. They’ll see your star and your words on their achievements page.',
+    title: 'guide.tips.starOfWeekTeacher.title',
+    body: 'guide.tips.starOfWeekTeacher.body',
   },
   {
     key: 'leaderboard.star-of-week',
@@ -111,9 +105,8 @@ export const TIPS: readonly TipDefinition[] = [
     path: /^\/curator\/leaderboard\/?$/,
     target: tip('star-of-week'),
     placement: 'bottom-end',
-    locale: 'ru',
-    title: 'Звезда недели',
-    body: 'Раз в неделю выберите ученика группы и напишите, за что. Он увидит звезду и ваши слова на странице достижений.',
+    title: 'guide.tips.starOfWeekCurator.title',
+    body: 'guide.tips.starOfWeekCurator.body',
   },
   {
     key: 'journal.student-card',
@@ -121,9 +114,8 @@ export const TIPS: readonly TipDefinition[] = [
     path: /^\/curator\/students\/?$/,
     target: tip('journal-row'),
     placement: 'bottom-start',
-    locale: 'ru',
-    title: 'Карточка ученика',
-    body: 'Нажмите на ученика: посещаемость, домашки, прогресс и отчёт об успеваемости на одной странице.',
+    title: 'guide.tips.studentCard.title',
+    body: 'guide.tips.studentCard.body',
   },
   {
     key: 'homeworks.lagging',
@@ -131,13 +123,10 @@ export const TIPS: readonly TipDefinition[] = [
     path: /^\/curator\/homeworks\/?$/,
     target: tip('lagging-filter'),
     placement: 'bottom',
-    locale: 'ru',
-    title: 'Кому напомнить',
-    body: '«Только отстающие» оставит группы, где есть несданные или просроченные домашки. С них и начните.',
+    title: 'guide.tips.lagging.title',
+    body: 'guide.tips.lagging.body',
   },
 ];
-
-export const tipGotIt = (locale: 'en' | 'ru'): string => (locale === 'ru' ? 'Понятно' : 'Got it');
 
 /** The tips this person could see on this page, in order, minus those already dismissed. */
 export function tipsFor(role: string | null | undefined, pathname: string, dismissed: (key: string) => boolean): TipDefinition[] {

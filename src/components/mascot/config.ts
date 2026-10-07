@@ -12,6 +12,8 @@
  * the shared contract and the backend catalogue). Automatic orcas, Shuffle and presets only ever
  * use free parts.
  */
+import { activeLocale, t, type Locale, type MessageKey } from '@/lib/i18n';
+import '@/lib/i18n/catalogs/studentHome';
 
 export type MascotCategory = 'hat' | 'eyewear' | 'expression' | 'prop' | 'background' | 'frame';
 
@@ -26,119 +28,120 @@ export interface MascotConfig {
 
 export interface MascotPart {
   key: string;
-  label: string;
+  /** Its name in the wardrobe catalog (src/lib/i18n/en/studentHome/wardrobe.ts) — show it with partLabel. */
+  labelKey: MessageKey;
 }
 
 export const HATS: MascotPart[] = [
-  { key: 'none', label: 'No hat' },
-  { key: 'graduate', label: 'Graduate cap' },
-  { key: 'headphones', label: 'Headphones' },
-  { key: 'astronaut', label: 'Astronaut' },
-  { key: 'cape', label: 'Superhero cape' },
-  { key: 'crown', label: 'Crown' },
-  { key: 'wizard', label: 'Wizard hat' },
-  { key: 'detective', label: 'Detective' },
-  { key: 'ninja', label: 'Ninja band' },
-  { key: 'pirate', label: 'Pirate hat' },
-  { key: 'party', label: 'Party hat' },
-  { key: 'takiya', label: 'Takiya' },
-  { key: 'beanie', label: 'Beanie & scarf' },
-  { key: 'nightcap', label: 'Nightcap' },
-  { key: 'cap', label: 'Backwards cap' },
-  { key: 'bandana', label: 'Rockstar bandana' },
-  { key: 'master-hoodie', label: 'Master hoodie' },
+  { key: 'none', labelKey: 'studentHome.wardrobe.hat.none' },
+  { key: 'graduate', labelKey: 'studentHome.wardrobe.hat.graduate' },
+  { key: 'headphones', labelKey: 'studentHome.wardrobe.hat.headphones' },
+  { key: 'astronaut', labelKey: 'studentHome.wardrobe.hat.astronaut' },
+  { key: 'cape', labelKey: 'studentHome.wardrobe.hat.cape' },
+  { key: 'crown', labelKey: 'studentHome.wardrobe.hat.crown' },
+  { key: 'wizard', labelKey: 'studentHome.wardrobe.hat.wizard' },
+  { key: 'detective', labelKey: 'studentHome.wardrobe.hat.detective' },
+  { key: 'ninja', labelKey: 'studentHome.wardrobe.hat.ninja' },
+  { key: 'pirate', labelKey: 'studentHome.wardrobe.hat.pirate' },
+  { key: 'party', labelKey: 'studentHome.wardrobe.hat.party' },
+  { key: 'takiya', labelKey: 'studentHome.wardrobe.hat.takiya' },
+  { key: 'beanie', labelKey: 'studentHome.wardrobe.hat.beanie' },
+  { key: 'nightcap', labelKey: 'studentHome.wardrobe.hat.nightcap' },
+  { key: 'cap', labelKey: 'studentHome.wardrobe.hat.cap' },
+  { key: 'bandana', labelKey: 'studentHome.wardrobe.hat.bandana' },
+  { key: 'master-hoodie', labelKey: 'studentHome.wardrobe.hat.masterHoodie' },
   // ── rewards (achievements) ──
-  { key: 'gold_master_hoodie', label: 'Gold Master hoodie' },
-  { key: 'diamond_crown', label: 'Diamond crown' },
-  { key: 'golden_kalpak', label: 'Golden kalpak' },
-  { key: 'explorer_hat', label: 'Explorer hat' },
-  { key: 'warrior_headband', label: 'Warrior headband' },
-  { key: 'quiz_cap', label: 'Quiz cap' },
-  { key: 'garland_scarf', label: 'Light-garland scarf' },
-  { key: 'team_scarf', label: 'Team scarf' },
-  { key: 'star_cape', label: 'Gold-star cape' },
+  { key: 'gold_master_hoodie', labelKey: 'studentHome.wardrobe.hat.goldMasterHoodie' },
+  { key: 'diamond_crown', labelKey: 'studentHome.wardrobe.hat.diamondCrown' },
+  { key: 'golden_kalpak', labelKey: 'studentHome.wardrobe.hat.goldenKalpak' },
+  { key: 'explorer_hat', labelKey: 'studentHome.wardrobe.hat.explorerHat' },
+  { key: 'warrior_headband', labelKey: 'studentHome.wardrobe.hat.warriorHeadband' },
+  { key: 'quiz_cap', labelKey: 'studentHome.wardrobe.hat.quizCap' },
+  { key: 'garland_scarf', labelKey: 'studentHome.wardrobe.hat.garlandScarf' },
+  { key: 'team_scarf', labelKey: 'studentHome.wardrobe.hat.teamScarf' },
+  { key: 'star_cape', labelKey: 'studentHome.wardrobe.hat.starCape' },
 ];
 
 export const EYEWEAR: MascotPart[] = [
-  { key: 'none', label: 'None' },
-  { key: 'round', label: 'Round glasses' },
-  { key: 'shades', label: 'Sunglasses' },
-  { key: 'stars', label: 'Star glasses' },
-  { key: 'hearts', label: 'Heart glasses' },
-  { key: 'monocle', label: 'Monocle' },
-  { key: 'eyepatch', label: 'Eyepatch' },
-  { key: 'goggles', label: 'Goggles' },
+  { key: 'none', labelKey: 'studentHome.wardrobe.eyewear.none' },
+  { key: 'round', labelKey: 'studentHome.wardrobe.eyewear.round' },
+  { key: 'shades', labelKey: 'studentHome.wardrobe.eyewear.shades' },
+  { key: 'stars', labelKey: 'studentHome.wardrobe.eyewear.stars' },
+  { key: 'hearts', labelKey: 'studentHome.wardrobe.eyewear.hearts' },
+  { key: 'monocle', labelKey: 'studentHome.wardrobe.eyewear.monocle' },
+  { key: 'eyepatch', labelKey: 'studentHome.wardrobe.eyewear.eyepatch' },
+  { key: 'goggles', labelKey: 'studentHome.wardrobe.eyewear.goggles' },
   // ── rewards ──
-  { key: 'gold_star_glasses', label: 'Gold-star glasses' },
+  { key: 'gold_star_glasses', labelKey: 'studentHome.wardrobe.eyewear.goldStarGlasses' },
 ];
 
 export const EXPRESSIONS: MascotPart[] = [
-  { key: 'happy', label: 'Happy' },
-  { key: 'wink', label: 'Wink' },
-  { key: 'cool', label: 'Cool' },
-  { key: 'starstruck', label: 'Star-eyes' },
-  { key: 'determined', label: 'Determined' },
-  { key: 'sleepy', label: 'Sleepy' },
-  { key: 'surprised', label: 'Surprised' },
-  { key: 'laughing', label: 'Laughing' },
+  { key: 'happy', labelKey: 'studentHome.wardrobe.expression.happy' },
+  { key: 'wink', labelKey: 'studentHome.wardrobe.expression.wink' },
+  { key: 'cool', labelKey: 'studentHome.wardrobe.expression.cool' },
+  { key: 'starstruck', labelKey: 'studentHome.wardrobe.expression.starstruck' },
+  { key: 'determined', labelKey: 'studentHome.wardrobe.expression.determined' },
+  { key: 'sleepy', labelKey: 'studentHome.wardrobe.expression.sleepy' },
+  { key: 'surprised', labelKey: 'studentHome.wardrobe.expression.surprised' },
+  { key: 'laughing', labelKey: 'studentHome.wardrobe.expression.laughing' },
 ];
 
 export const PROPS: MascotPart[] = [
-  { key: 'none', label: 'Nothing' },
-  { key: 'laptop', label: 'Laptop' },
-  { key: 'book', label: 'Book' },
-  { key: 'coffee', label: 'Late-night coffee' },
-  { key: 'pillow', label: 'Pillow' },
-  { key: 'calculator', label: 'Calculator' },
-  { key: 'quill', label: 'Quill' },
-  { key: 'rocket', label: 'Rocket' },
-  { key: 'guitar', label: 'Guitar' },
-  { key: 'controller', label: 'Game controller' },
-  { key: 'magnifier', label: 'Magnifying glass' },
-  { key: 'decks', label: 'DJ decks' },
-  { key: 'wave', label: 'Surf wave' },
-  { key: 'pencil', label: 'Pencil' },
-  { key: 'trophy', label: 'Trophy' },
-  { key: 'cupcake', label: 'Cupcake' },
+  { key: 'none', labelKey: 'studentHome.wardrobe.prop.none' },
+  { key: 'laptop', labelKey: 'studentHome.wardrobe.prop.laptop' },
+  { key: 'book', labelKey: 'studentHome.wardrobe.prop.book' },
+  { key: 'coffee', labelKey: 'studentHome.wardrobe.prop.coffee' },
+  { key: 'pillow', labelKey: 'studentHome.wardrobe.prop.pillow' },
+  { key: 'calculator', labelKey: 'studentHome.wardrobe.prop.calculator' },
+  { key: 'quill', labelKey: 'studentHome.wardrobe.prop.quill' },
+  { key: 'rocket', labelKey: 'studentHome.wardrobe.prop.rocket' },
+  { key: 'guitar', labelKey: 'studentHome.wardrobe.prop.guitar' },
+  { key: 'controller', labelKey: 'studentHome.wardrobe.prop.controller' },
+  { key: 'magnifier', labelKey: 'studentHome.wardrobe.prop.magnifier' },
+  { key: 'decks', labelKey: 'studentHome.wardrobe.prop.decks' },
+  { key: 'wave', labelKey: 'studentHome.wardrobe.prop.wave' },
+  { key: 'pencil', labelKey: 'studentHome.wardrobe.prop.pencil' },
+  { key: 'trophy', labelKey: 'studentHome.wardrobe.prop.trophy' },
+  { key: 'cupcake', labelKey: 'studentHome.wardrobe.prop.cupcake' },
   // ── rewards ──
-  { key: 'swim_ring', label: 'Swim ring' },
-  { key: 'fin_pencil', label: 'Pencil behind the fin' },
-  { key: 'compass', label: 'Compass' },
-  { key: 'clock_pin', label: 'Clock pin' },
-  { key: 'golden_clock', label: 'Golden clock' },
-  { key: 'bronze_medal', label: 'Bronze medal' },
-  { key: 'jetpack', label: 'Jetpack' },
-  { key: 'boomerang', label: 'Boomerang' },
-  { key: 'diploma', label: 'Diploma' },
-  { key: 'lucky_charm', label: 'Lucky charm' },
-  { key: 'lightning_badge', label: 'Lightning badge' },
+  { key: 'swim_ring', labelKey: 'studentHome.wardrobe.prop.swimRing' },
+  { key: 'fin_pencil', labelKey: 'studentHome.wardrobe.prop.finPencil' },
+  { key: 'compass', labelKey: 'studentHome.wardrobe.prop.compass' },
+  { key: 'clock_pin', labelKey: 'studentHome.wardrobe.prop.clockPin' },
+  { key: 'golden_clock', labelKey: 'studentHome.wardrobe.prop.goldenClock' },
+  { key: 'bronze_medal', labelKey: 'studentHome.wardrobe.prop.bronzeMedal' },
+  { key: 'jetpack', labelKey: 'studentHome.wardrobe.prop.jetpack' },
+  { key: 'boomerang', labelKey: 'studentHome.wardrobe.prop.boomerang' },
+  { key: 'diploma', labelKey: 'studentHome.wardrobe.prop.diploma' },
+  { key: 'lucky_charm', labelKey: 'studentHome.wardrobe.prop.luckyCharm' },
+  { key: 'lightning_badge', labelKey: 'studentHome.wardrobe.prop.lightningBadge' },
 ];
 
 export const BACKGROUNDS: MascotPart[] = [
-  { key: 'sat', label: 'SAT blue' },
-  { key: 'ocean', label: 'Ocean' },
-  { key: 'sunset', label: 'Sunset' },
-  { key: 'mint', label: 'Mint' },
-  { key: 'night', label: 'Starry night' },
-  { key: 'lemon', label: 'Lemon' },
-  { key: 'coral', label: 'Coral' },
-  { key: 'space', label: 'Deep space' },
-  { key: 'forest', label: 'Forest' },
-  { key: 'lilac', label: 'Lilac' },
-  { key: 'master', label: 'Master blue' },
+  { key: 'sat', labelKey: 'studentHome.wardrobe.background.sat' },
+  { key: 'ocean', labelKey: 'studentHome.wardrobe.background.ocean' },
+  { key: 'sunset', labelKey: 'studentHome.wardrobe.background.sunset' },
+  { key: 'mint', labelKey: 'studentHome.wardrobe.background.mint' },
+  { key: 'night', labelKey: 'studentHome.wardrobe.background.night' },
+  { key: 'lemon', labelKey: 'studentHome.wardrobe.background.lemon' },
+  { key: 'coral', labelKey: 'studentHome.wardrobe.background.coral' },
+  { key: 'space', labelKey: 'studentHome.wardrobe.background.space' },
+  { key: 'forest', labelKey: 'studentHome.wardrobe.background.forest' },
+  { key: 'lilac', labelKey: 'studentHome.wardrobe.background.lilac' },
+  { key: 'master', labelKey: 'studentHome.wardrobe.background.master' },
   // ── rewards ──
-  { key: 'sparkle', label: 'Sparkle' },
-  { key: 'sunrise', label: 'Sunrise' },
-  { key: 'aurora', label: 'Aurora' },
+  { key: 'sparkle', labelKey: 'studentHome.wardrobe.background.sparkle' },
+  { key: 'sunrise', labelKey: 'studentHome.wardrobe.background.sunrise' },
+  { key: 'aurora', labelKey: 'studentHome.wardrobe.background.aurora' },
 ];
 
 export const FRAMES: MascotPart[] = [
-  { key: 'none', label: 'No frame' },
+  { key: 'none', labelKey: 'studentHome.wardrobe.frame.none' },
   // ── rewards ──
-  { key: 'flame', label: 'Flame frame' },
-  { key: 'blue_flame', label: 'Blue-flame frame' },
-  { key: 'gold_laurel', label: 'Gold laurel frame' },
-  { key: 'star_ring', label: 'Star ring frame' },
+  { key: 'flame', labelKey: 'studentHome.wardrobe.frame.flame' },
+  { key: 'blue_flame', labelKey: 'studentHome.wardrobe.frame.blueFlame' },
+  { key: 'gold_laurel', labelKey: 'studentHome.wardrobe.frame.goldLaurel' },
+  { key: 'star_ring', labelKey: 'studentHome.wardrobe.frame.starRing' },
 ];
 
 export const CATEGORY_PARTS: Record<MascotCategory, MascotPart[]> = {
@@ -259,7 +262,7 @@ export interface RewardPart {
   category: MascotCategory;
   index: number;
   key: string;
-  name: string;
+  labelKey: MessageKey;
   /** The achievement that unlocks it (shared contract, backend catalogue). */
   achievement: string;
 }
@@ -283,9 +286,21 @@ export const REWARD_PARTS: RewardPart[] = SEGMENTS.flatMap(([category, layer]) =
     .map((part, index) => ({ part, index }))
     .filter(({ index }) => index >= FREE_COUNTS[category])
     .map(({ part, index }) => ({
-      layer, category, index, key: part.key, name: part.label, achievement: REWARD_ACHIEVEMENT[part.key],
+      layer, category, index, key: part.key, labelKey: part.labelKey, achievement: REWARD_ACHIEVEMENT[part.key],
     })),
 );
+
+/** A part's name in the reader's language ('Crown' / «Корона»); '' for an index this build doesn't know. */
+export function partLabel(category: MascotCategory, index: number, locale: Locale = activeLocale()): string {
+  const part = CATEGORY_PARTS[category]?.[index];
+  return part ? t(part.labelKey, undefined, locale) : '';
+}
+
+/** An achievement reward's name: the part it puts on, in the reader's language, else the server's name. */
+export function rewardLabel(reward: { layer: LayerTag; index: number; name?: string }, locale: Locale = activeLocale()): string {
+  const category = CATEGORY_OF_TAG[reward.layer];
+  return (category && partLabel(category, reward.index, locale)) || reward.name || '';
+}
 
 /** `locked_parts` from GET /achievements/me: reward indices the student hasn't unlocked yet. */
 export type LockedParts = Partial<Record<LayerTag, number[]>>;

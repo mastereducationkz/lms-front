@@ -32,6 +32,22 @@ import { curatorHomeworks } from './en/curatorHomeworks';
 import { curatorPages } from './en/curatorPages';
 import { profile } from './en/profile';
 import { stars } from './en/stars';
+import { guide } from './en/guide';
+import { curatorDashboard } from './en/curatorDashboard';
+import { lessonPlayer } from './en/lessonPlayer';
+import { homework } from './en/homework';
+import { homeworkStaff } from './en/homeworkStaff';
+import { studentHome } from './en/studentHome';
+import { publicPages } from './en/publicPages';
+import { chatLive } from './en/chatLive';
+import { meetViews } from './en/meetViews';
+import { teacherDesk } from './en/teacherDesk';
+import { teacherInsights } from './en/teacherInsights';
+import { courseAuthoring } from './en/courseAuthoring';
+import { adminUsers } from './en/adminUsers';
+import { adminPages } from './en/adminPages';
+import { quizReview } from './en/quizReview';
+import { sharedUi } from './en/sharedUi';
 import { live } from './en/live';
 
 export const EN_NAMESPACES = {
@@ -65,6 +81,22 @@ export const EN_NAMESPACES = {
   curatorPages,
   profile,
   stars,
+  guide,
+  curatorDashboard,
+  lessonPlayer,
+  homework,
+  homeworkStaff,
+  studentHome,
+  publicPages,
+  chatLive,
+  meetViews,
+  teacherDesk,
+  teacherInsights,
+  courseAuthoring,
+  adminUsers,
+  adminPages,
+  quizReview,
+  sharedUi,
   live,
 } as const;
 
@@ -99,6 +131,22 @@ export const en = {
   ...curatorPages,
   ...profile,
   ...stars,
+  ...guide,
+  ...curatorDashboard,
+  ...lessonPlayer,
+  ...homework,
+  ...homeworkStaff,
+  ...studentHome,
+  ...publicPages,
+  ...chatLive,
+  ...meetViews,
+  ...teacherDesk,
+  ...teacherInsights,
+  ...courseAuthoring,
+  ...adminUsers,
+  ...adminPages,
+  ...quizReview,
+  ...sharedUi,
   ...live,
 } as const;
 

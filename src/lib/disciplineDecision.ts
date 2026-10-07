@@ -9,6 +9,9 @@
 // Kept apart from the dialog because this repo's tests run in `node`: the dialog stays thin and
 // this is what is actually covered.
 
+import { activeLocale, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/teacherInsights';
+
 export type DecisionDraft = {
   /** Raw text from the input, exactly as typed — «1 400», «1400», «» are all plausible. */
   amount: string;
@@ -38,20 +41,20 @@ export function parseAmount(text: string): number | null {
 /**
  * @param proposed what the rule asked for — null for a miss, which only a person can price.
  */
-export function checkDecision(draft: DecisionDraft, proposed: number | null): DecisionCheck {
+export function checkDecision(draft: DecisionDraft, proposed: number | null, locale: Locale = activeLocale()): DecisionCheck {
   const amount = parseAmount(draft.amount);
   // Reducing the rule's figure — waiving is just reducing it to zero — is the case that has to
   // be explainable months later, when somebody asks why this teacher paid less.
   const needsReason = amount !== null && proposed !== null && amount < proposed;
 
   if (draft.amount.trim() === '') {
-    return { amount, needsReason, error: 'Enter an amount', ready: false };
+    return { amount, needsReason, error: t('teacherInsights.discipline.error.enterAmount', undefined, locale), ready: false };
   }
   if (amount === null) {
-    return { amount, needsReason, error: 'Only whole tenge, digits alone', ready: false };
+    return { amount, needsReason, error: t('teacherInsights.discipline.error.digitsOnly', undefined, locale), ready: false };
   }
   if (needsReason && !draft.reasonCode) {
-    return { amount, needsReason, error: 'Choose a reason for lowering it', ready: false };
+    return { amount, needsReason, error: t('teacherInsights.discipline.error.reasonRequired', undefined, locale), ready: false };
   }
   return { amount, needsReason, error: null, ready: true };
 }

@@ -4,6 +4,8 @@
  */
 import Orca from './Orca';
 import { CATEGORY_OF_TAG, resolveMascot, type LayerTag } from './config';
+import { t } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/sharedUi';
 
 interface RewardPreviewProps {
   userId: number | string;
@@ -17,5 +19,5 @@ interface RewardPreviewProps {
 
 export default function RewardPreview({ userId, mascot, layer, index, size = 120, className, title }: RewardPreviewProps) {
   const config = { ...resolveMascot(mascot, userId), [CATEGORY_OF_TAG[layer]]: index };
-  return <Orca config={config} size={size} className={className} title={title ?? 'Your orca with its new reward'} />;
+  return <Orca config={config} size={size} className={className} title={title ?? t('sharedUi.mascot.rewardPreview')} />;
 }

@@ -1,8 +1,10 @@
 /** The quiet way to announce a new achievement: a small toast, and tapping it opens the card. */
 import { Trophy } from 'lucide-react';
 import { toast as sonnerToast } from 'sonner';
+import { activeLocale, t, type Locale } from '@/lib/i18n';
+import '@/lib/i18n/catalogs/studentHome';
 
-export function showAchievementToast(title: string, onOpen: () => void): void {
+export function showAchievementToast(title: string, onOpen: () => void, locale: Locale = activeLocale()): void {
   sonnerToast.custom(
     (id) => (
       <button
@@ -15,8 +17,8 @@ export function showAchievementToast(title: string, onOpen: () => void): void {
       >
         <Trophy className="h-5 w-5 shrink-0 text-amber-500" aria-hidden />
         <span className="min-w-0">
-          New achievement: <span className="font-semibold">{title}</span>
-          <span className="text-muted-foreground"> — tap to see</span>
+          {t('studentHome.achievements.toastLead', undefined, locale)} <span className="font-semibold">{title}</span>
+          <span className="text-muted-foreground">{t('studentHome.achievements.toastTap', undefined, locale)}</span>
         </span>
       </button>
     ),

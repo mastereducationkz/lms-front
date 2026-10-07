@@ -52,6 +52,11 @@ describe('every group can be linked', () => {
     expect(options.map((o) => o.hint)).toEqual([undefined, 'not started', 'stopped', 'finished · now: SAT June 20']);
   });
 
+  it('marks them in Russian for a Russian reader', () => {
+    const options = groupOptionsFor([g(1, 'a', 'finished', true), g(2, 'b', 'not_started')], 'ru');
+    expect(options.map((o) => o.hint)).toEqual(['не начата', 'завершена · сейчас: SAT June 20']);
+  });
+
   it('keeps stopped and finished groups out of the table unless asked', () => {
     expect([g(1, 'a', 'running'), g(2, 'b', 'not_started'), g(3, 'c', 'stopped'), g(4, 'd', 'finished')].map(isInactive))
       .toEqual([false, false, true, true]);

@@ -16,6 +16,24 @@ import {
   Activity
 } from 'lucide-react';
 import { getStudentDetailedProgress, getStudentLearningPath } from '../services/api';
+import { formatDate, formatDateTime as formatLocalDateTime, type MessageKey } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherDesk';
+
+/** Step content types as the API names them → their label. */
+const STEP_TYPE_LABELS: Record<string, MessageKey> = {
+  text: 'teacherDesk.progress.type.text',
+  video_text: 'teacherDesk.progress.type.videoText',
+  quiz: 'teacherDesk.progress.type.quiz',
+  flashcard: 'teacherDesk.progress.type.flashcard',
+  summary: 'teacherDesk.progress.type.summary',
+};
+
+/** Step statuses other than «completed» (which reads «Done» in the table). */
+const STEP_STATUS_LABELS: Record<string, MessageKey> = {
+  in_progress: 'teacherDesk.progress.stepInProgress',
+  not_started: 'teacherDesk.progress.stepNotStarted',
+};
 
 interface StudentDetailedProgressProps {
   studentId: number;
@@ -69,6 +87,7 @@ export default function StudentDetailedProgress({
   courseId, 
   onClose 
 }: StudentDetailedProgressProps) {
+  const t = useT();
   const [detailedProgress, setDetailedProgress] = useState<any>(null);
   const [learningPath, setLearningPath] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,24 +129,23 @@ export default function StudentDetailedProgress({
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'completed': return <Badge variant="default">Completed</Badge>;
-      case 'in_progress': return <Badge variant="secondary">In Progress</Badge>;
-      case 'not_started': return <Badge variant="outline">Not Started</Badge>;
+      case 'completed': return <Badge variant="default">{t('teacherDesk.progress.statusCompleted')}</Badge>;
+      case 'in_progress': return <Badge variant="secondary">{t('teacherDesk.progress.statusInProgress')}</Badge>;
+      case 'not_started': return <Badge variant="outline">{t('teacherDesk.progress.statusNotStarted')}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const formatDateTime = (dateString: string | null) => {
-    if (!dateString) return 'Not specified';
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US');
+    if (!dateString) return t('teacherDesk.progress.notSpecified');
+    return formatLocalDateTime(dateString, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
   const formatDuration = (minutes: number) => {
-    if (minutes < 60) return `${minutes} min`;
+    if (minutes < 60) return t('common.minutes', { count: minutes });
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+    return t('teacherDesk.duration.hoursMinutes', { hours, minutes: mins });
   };
 
   if (isLoading) {
@@ -136,7 +154,7 @@ export default function StudentDetailedProgress({
         <CardContent className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Loading detailed progress...</p>
+            <p>{t('teacherDesk.progress.loading')}</p>
           </div>
         </CardContent>
       </Card>
@@ -147,7 +165,7 @@ export default function StudentDetailedProgress({
     return (
       <Card className="w-full max-w-6xl mx-auto">
         <CardContent className="flex items-center justify-center h-64">
-          <p>Progress data not found</p>
+          <p>{t('teacherDesk.progress.notFound')}</p>
         </CardContent>
       </Card>
     );
@@ -162,7 +180,7 @@ export default function StudentDetailedProgress({
             <div>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="w-5 h-5" />
-                Detailed Student Progress
+                {t('teacherDesk.progress.title')}
               </CardTitle>
               <div className="mt-2 space-y-1">
                 <p className="text-lg font-medium">{detailedProgress.student_info.name}</p>
@@ -171,7 +189,7 @@ export default function StudentDetailedProgress({
             </div>
             {onClose && (
               <Button variant="outline" onClick={onClose}>
-                Close
+                {t('common.close')}
               </Button>
             )}
           </div>
@@ -185,7 +203,7 @@ export default function StudentDetailedProgress({
             <div className="flex items-center">
               <CheckCircle className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-muted-foreground">Completed Steps</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('teacherDesk.progress.completedSteps')}</p>
                 <p className="text-2xl font-bold">
                   {detailedProgress.summary.completed_steps}/{detailedProgress.summary.total_steps}
                 </p>
@@ -199,7 +217,7 @@ export default function StudentDetailedProgress({
             <div className="flex items-center">
               <TrendingUp className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-muted-foreground">Progress</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('teacherDesk.col.progress')}</p>
                 <p className="text-2xl font-bold">{Math.round(detailedProgress.summary.completion_percentage)}%</p>
               </div>
             </div>
@@ -211,7 +229,7 @@ export default function StudentDetailedProgress({
             <div className="flex items-center">
               <Clock className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-muted-foreground">Study Time</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('teacherDesk.progress.studyTime')}</p>
                 <p className="text-2xl font-bold">{formatDuration(detailedProgress.summary.total_study_time_minutes)}</p>
               </div>
             </div>
@@ -223,8 +241,8 @@ export default function StudentDetailedProgress({
             <div className="flex items-center">
               <Calendar className="h-8 w-8 text-orange-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-muted-foreground">Study Period</p>
-                <p className="text-2xl font-bold">{detailedProgress.summary.study_period_days} days</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('teacherDesk.progress.studyPeriod')}</p>
+                <p className="text-2xl font-bold">{t('common.days', { count: detailedProgress.summary.study_period_days })}</p>
               </div>
             </div>
           </CardContent>
@@ -234,9 +252,9 @@ export default function StudentDetailedProgress({
       {/* Detailed Information Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Course Overview</TabsTrigger>
-          <TabsTrigger value="timeline" disabled={!learningPath}>Timeline</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value="overview">{t('teacherDesk.progress.courseOverview')}</TabsTrigger>
+          <TabsTrigger value="timeline" disabled={!learningPath}>{t('teacherDesk.progress.timeline')}</TabsTrigger>
+          <TabsTrigger value="activity">{t('teacherDesk.progress.activity')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -253,7 +271,7 @@ export default function StudentDetailedProgress({
                   <div key={moduleId} className="mb-6">
                     <h4 className="font-semibold mb-3 flex items-center gap-2">
                       <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs">
-                        {moduleData.module_info.order_index || 'M'}
+                        {moduleData.module_info.order_index || t('teacherDesk.progress.moduleShort')}
                       </span>
                       {moduleData.module_info.title}
                     </h4>
@@ -262,7 +280,7 @@ export default function StudentDetailedProgress({
                       <div key={lessonId} className="ml-8 mb-4">
                         <h5 className="font-medium mb-2 flex items-center gap-2">
                           <span className="bg-secondary text-secondary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                            {lessonData.lesson_info.order_index || 'L'}
+                            {lessonData.lesson_info.order_index || t('teacherDesk.progress.lessonShort')}
                           </span>
                           {lessonData.lesson_info.title}
                         </h5>
@@ -273,11 +291,11 @@ export default function StudentDetailedProgress({
                               <thead className="bg-muted/50">
                                 <tr className="text-left border-b">
                                   <th className="p-2 font-medium w-12">#</th>
-                                  <th className="p-2 font-medium">Step</th>
-                                  <th className="p-2 font-medium">Type</th>
-                                  <th className="p-2 font-medium">Time</th>
-                                  <th className="p-2 font-medium">Status</th>
-                                  <th className="p-2 font-medium text-right">Date</th>
+                                  <th className="p-2 font-medium">{t('teacherDesk.progress.step')}</th>
+                                  <th className="p-2 font-medium">{t('teacherDesk.col.type')}</th>
+                                  <th className="p-2 font-medium">{t('teacherDesk.col.time')}</th>
+                                  <th className="p-2 font-medium">{t('teacherDesk.col.status')}</th>
+                                  <th className="p-2 font-medium text-right">{t('teacherDesk.progress.date')}</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -289,9 +307,9 @@ export default function StudentDetailedProgress({
                                     <td className="p-2 font-medium">{step.step_title}</td>
                                     <td className="p-2 flex items-center gap-2">
                                       {getStepIcon(step.content_type)}
-                                      <span className="capitalize">{step.content_type.replace('_', ' ')}</span>
+                                      <span className="capitalize">{STEP_TYPE_LABELS[step.content_type] ? t(STEP_TYPE_LABELS[step.content_type]) : step.content_type.replace('_', ' ')}</span>
                                     </td>
-                                    <td className="p-2">{step.progress.time_spent_minutes}m</td>
+                                    <td className="p-2">{t('teacherDesk.duration.minutesShort', { minutes: step.progress.time_spent_minutes })}</td>
                                     <td className="p-2">
                                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                                         step.progress.status === 'completed' 
@@ -300,7 +318,7 @@ export default function StudentDetailedProgress({
                                           ? 'bg-blue-100 text-blue-800'
                                           : 'bg-gray-100 text-gray-800'
                                       }`}>
-                                        {step.progress.status === 'completed' ? 'Done' : step.progress.status.replace('_', ' ')}
+                                        {step.progress.status === 'completed' ? t('teacherDesk.progress.stepDone') : STEP_STATUS_LABELS[step.progress.status] ? t(STEP_STATUS_LABELS[step.progress.status]) : step.progress.status.replace('_', ' ')}
                                       </span>
                                     </td>
                                     <td className="p-2 text-right text-muted-foreground text-xs">
@@ -332,10 +350,10 @@ export default function StudentDetailedProgress({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="w-5 h-5" />
-                  Learning Timeline
+                  {t('teacherDesk.progress.learningTimeline')}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Chronological order of step completion
+                  {t('teacherDesk.progress.timelineHint')}
                 </p>
               </CardHeader>
               <CardContent>
@@ -344,11 +362,11 @@ export default function StudentDetailedProgress({
                     <thead className="bg-muted/50">
                       <tr className="text-left border-b">
                         <th className="p-2 font-medium w-12">#</th>
-                        <th className="p-2 font-medium">Step</th>
-                        <th className="p-2 font-medium">Location</th>
-                        <th className="p-2 font-medium">Time</th>
-                        <th className="p-2 font-medium">Status</th>
-                        <th className="p-2 font-medium text-right">Date</th>
+                        <th className="p-2 font-medium">{t('teacherDesk.progress.step')}</th>
+                        <th className="p-2 font-medium">{t('teacherDesk.progress.location')}</th>
+                        <th className="p-2 font-medium">{t('teacherDesk.col.time')}</th>
+                        <th className="p-2 font-medium">{t('teacherDesk.col.status')}</th>
+                        <th className="p-2 font-medium text-right">{t('teacherDesk.progress.date')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -360,10 +378,10 @@ export default function StudentDetailedProgress({
                             {step.module_info.title} → {step.lesson_info.title}
                           </td>
                           <td className="p-2">
-                            {step.progress_info.time_spent_minutes}m
+                            {t('teacherDesk.duration.minutesShort', { minutes: step.progress_info.time_spent_minutes })}
                             {step.progress_info.time_since_previous_step_minutes && (
                               <span className="text-xs text-muted-foreground ml-2">
-                                (+{formatDuration(step.progress_info.time_since_previous_step_minutes)} break)
+                                {t('teacherDesk.progress.break', { duration: formatDuration(step.progress_info.time_since_previous_step_minutes) })}
                               </span>
                             )}
                           </td>
@@ -389,8 +407,8 @@ export default function StudentDetailedProgress({
         <TabsContent value="activity" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Daily Activity</CardTitle>
-              <p className="text-sm text-muted-foreground">Last 30 days</p>
+              <CardTitle>{t('teacherDesk.progress.dailyActivity')}</CardTitle>
+              <p className="text-sm text-muted-foreground">{t('teacherDesk.progress.last30Days')}</p>
             </CardHeader>
             <CardContent>
               {detailedProgress.daily_activity.length > 0 ? (
@@ -398,9 +416,9 @@ export default function StudentDetailedProgress({
                   {detailedProgress.daily_activity.map((day: any) => (
                     <div key={day.date} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
-                        <p className="font-medium">{new Date(day.date).toLocaleDateString('en-US')}</p>
+                        <p className="font-medium">{formatDate(day.date)}</p>
                         <p className="text-sm text-muted-foreground">
-                          {day.steps_completed} steps completed
+                          {t('teacherDesk.progress.stepsCompleted', { count: day.steps_completed })}
                         </p>
                       </div>
                       <div className="text-right">
@@ -415,7 +433,7 @@ export default function StudentDetailedProgress({
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">
-                  No activity in the last 30 days
+                  {t('teacherDesk.progress.noActivity')}
                 </p>
               )}
             </CardContent>

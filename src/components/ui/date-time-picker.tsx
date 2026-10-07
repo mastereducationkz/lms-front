@@ -11,6 +11,8 @@ import {
   PopoverTrigger,
 } from "./popover"
 import { Input } from "./input"
+import { useT } from "../../lib/i18n/react"
+import "@/lib/i18n/catalogs/chatLive"
 
 interface DateTimePickerProps {
   date?: Date
@@ -19,6 +21,7 @@ interface DateTimePickerProps {
 }
 
 export function DateTimePicker({ date, setDate, placeholder }: DateTimePickerProps) {
+  const t = useT()
   const [time, setTime] = React.useState<string>(
     date ? format(date, "HH:mm") : "00:00"
   )
@@ -66,7 +69,7 @@ export function DateTimePicker({ date, setDate, placeholder }: DateTimePickerPro
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {date ? format(date, "PPP") : <span>{placeholder || "Pick a date"}</span>}
+            {date ? format(date, "PPP") : <span>{placeholder || t("chatLive.ui.pickDate")}</span>}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">

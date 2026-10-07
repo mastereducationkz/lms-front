@@ -118,4 +118,9 @@ export const shell: RuTable<typeof en> = {
   'shell.accessDenied.title': 'Нет доступа',
   'shell.accessDenied.body': 'У вас нет прав на эту страницу.',
   'shell.accessDenied.back': 'Назад',
+  'shell.signingIn': 'Выполняем вход…',
+  'shell.loadingPage': 'Загрузка страницы…',
+  'shell.attendanceBadge.toMark': 'Отметить: {count}',
+  'shell.attendanceBadge.waiting': 'Ждут Meet: {count}',
+  'shell.attendanceBadge.scores': 'Нужны баллы за активность: {count}',
 };

@@ -12,9 +12,11 @@ import {
 } from '../../components/ui/table';
 import { getWeeklyTopStudents, exportWeeklyTopStudents, getGroups } from '../../services/api';
 import { formatDate } from '../../lib/i18n';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/adminPages';
 
+/** Program names are product names; "All programs" is rendered from the catalog. */
 const PROGRAMS = [
-  { value: 'all', label: 'All programs' },
   { value: 'sat', label: 'SAT' },
   { value: 'ielts', label: 'IELTS' },
   { value: 'general_english', label: 'General English' },
@@ -56,6 +58,7 @@ function scoreColor(score: number): string {
 }
 
 export default function WeeklyTopStudentsPage() {
+  const t = useT();
   const [weekStart, setWeekStart] = useState<string>(() => toISO(mondayOf(new Date())));
   const [programType, setProgramType] = useState<string>('all');
   const [groupId, setGroupId] = useState<string>('all');
@@ -108,18 +111,18 @@ export default function WeeklyTopStudentsPage() {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       try {
         const res = await getWeeklyTopStudents(queryParams);
         if (!cancelled) setData(res);
       } catch (e: any) {
-        if (!cancelled) setError(e?.response?.data?.detail || 'Failed to load weekly top students.');
+        if (!cancelled) setError(e?.response?.data?.detail || t('adminPages.weeklyTop.loadFailed'));
       } finally {
         if (!cancelled) setLoading(false);
       }
     }, 350);
-    return () => { cancelled = true; clearTimeout(t); };
-  }, [queryParams]);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [queryParams, t]);
 
   const commitLimit = () => {
     const parsed = parseInt(limitInput, 10);
@@ -141,7 +144,7 @@ export default function WeeklyTopStudentsPage() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch {
-      setError('Failed to export the report.');
+      setError(t('adminPages.weeklyTop.exportFailed'));
     } finally {
       setExporting(false);
     }
@@ -156,12 +159,12 @@ export default function WeeklyTopStudentsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-2">
-            Weekly Top Students
+            {t('adminPages.weeklyTop.title')}
           </h1>
         </div>
         <Button onClick={handleExport} disabled={exporting || loading} variant="outline">
           {exporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-          Export Excel
+          {t('adminPages.weeklyTop.export')}
         </Button>
       </div>
 
@@ -170,7 +173,7 @@ export default function WeeklyTopStudentsPage() {
         <CardContent className="p-4 flex flex-wrap items-end gap-4">
           {/* Week navigation */}
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Week</Label>
+            <Label className="text-xs text-muted-foreground">{t('adminPages.weeklyTop.week')}</Label>
             <div className="flex items-center gap-1">
               <Button variant="outline" size="icon" onClick={() => setWeekStart(toISO(addDays(new Date(weekStart), -7)))}>
                 <ChevronLeft className="h-4 w-4" />
@@ -188,7 +191,7 @@ export default function WeeklyTopStudentsPage() {
               </Button>
               {!isCurrentWeek && (
                 <Button variant="ghost" size="sm" onClick={() => setWeekStart(currentMondayISO)}>
-                  This week
+                  {t('adminPages.weeklyTop.thisWeek')}
                 </Button>
               )}
             </div>
@@ -196,7 +199,7 @@ export default function WeeklyTopStudentsPage() {
 
           {/* Top-N */}
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Top-N</Label>
+            <Label className="text-xs text-muted-foreground">{t('adminPages.weeklyTop.topN')}</Label>
             <div className="flex items-center gap-1">
               <Input
                 type="number"
@@ -223,10 +226,11 @@ export default function WeeklyTopStudentsPage() {
 
           {/* Program */}
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Program</Label>
+            <Label className="text-xs text-muted-foreground">{t('adminPages.weeklyTop.program')}</Label>
             <Select value={programType} onValueChange={setProgramType}>
               <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">{t('adminPages.weeklyTop.allPrograms')}</SelectItem>
                 {PROGRAMS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -234,18 +238,18 @@ export default function WeeklyTopStudentsPage() {
 
           {/* Group */}
           <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Group</Label>
+            <Label className="text-xs text-muted-foreground">{t('adminPages.weeklyTop.group')}</Label>
             <Select value={groupId} onValueChange={setGroupId}>
-              <SelectTrigger className="w-[220px]"><SelectValue placeholder="All groups" /></SelectTrigger>
+              <SelectTrigger className="w-[220px]"><SelectValue placeholder={t('adminPages.weeklyTop.allGroups')} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All groups</SelectItem>
+                <SelectItem value="all">{t('adminPages.weeklyTop.allGroups')}</SelectItem>
                 {groups.map((g) => <SelectItem key={g.id} value={String(g.id)}>{g.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
 
           <div className="ml-auto text-sm text-muted-foreground self-center">
-            {loading ? 'Loading…' : `${data?.total_students ?? 0} students · showing top ${students.length}`}
+            {loading ? t('common.loading') : t('adminPages.weeklyTop.summary', { count: data?.total_students ?? 0, shown: students.length })}
           </div>
         </CardContent>
       </Card>
@@ -262,32 +266,33 @@ export default function WeeklyTopStudentsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12 text-center">#</TableHead>
-                  <TableHead>Student</TableHead>
-                  <TableHead>Group</TableHead>
-                  <TableHead>Teacher</TableHead>
-                  <TableHead>Curator</TableHead>
-                  <TableHead className="text-center">Prog</TableHead>
-                  <TableHead className="text-center" title="on-time / submitted / due">HW</TableHead>
-                  <TableHead className="text-center">Avg %</TableHead>
-                  <TableHead className="text-center">Steps/wk</TableHead>
-                  <TableHead className="text-center">% course/wk</TableHead>
-                  <TableHead className="text-center">Study min</TableHead>
-                  <TableHead className="text-center">Points</TableHead>
-                  <TableHead className="text-center">Streak</TableHead>
-                  <TableHead className="text-center">Score</TableHead>
+                  <TableHead>{t('adminPages.weeklyTop.col.student')}</TableHead>
+                  <TableHead>{t('adminPages.weeklyTop.col.group')}</TableHead>
+                  <TableHead>{t('adminPages.weeklyTop.col.teacher')}</TableHead>
+                  <TableHead>{t('adminPages.weeklyTop.col.curator')}</TableHead>
+                  <TableHead className="text-center">{t('adminPages.weeklyTop.col.program')}</TableHead>
+                  <TableHead className="text-center" title={t('adminPages.weeklyTop.col.homeworkHint')}>{t('adminPages.weeklyTop.col.homework')}</TableHead>
+                  <TableHead className="text-center">{t('adminPages.weeklyTop.col.avgPct')}</TableHead>
+                  <TableHead className="text-center">{t('adminPages.weeklyTop.col.steps')}</TableHead>
+                  <TableHead className="text-center">{t('adminPages.weeklyTop.col.coursePct')}</TableHead>
+                  <TableHead className="text-center">{t('adminPages.weeklyTop.col.studyMinutes')}</TableHead>
+                  <TableHead className="text-center">{t('adminPages.weeklyTop.col.points')}</TableHead>
+                  <TableHead className="text-center">{t('adminPages.weeklyTop.col.streak')}</TableHead>
+                  <TableHead className="text-center">{t('adminPages.weeklyTop.col.score')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading && students.length === 0 ? (
-                  <TableRow><TableCell colSpan={14} className="text-center py-12 text-muted-foreground">Loading…</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={14} className="text-center py-12 text-muted-foreground">{t('common.loading')}</TableCell></TableRow>
                 ) : students.length === 0 ? (
-                  <TableRow><TableCell colSpan={14} className="text-center py-12 text-muted-foreground">No students for this selection.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={14} className="text-center py-12 text-muted-foreground">{t('adminPages.weeklyTop.noStudents')}</TableCell></TableRow>
                 ) : students.map((s: any) => {
                   const hw = s.homework;
                   const sub = s.subscores;
-                  const scoreTitle =
-                    `Subscores — Homework: ${num(sub.homework, 1)}, Course: ${num(sub.course, 1)}, ` +
-                    `Study: ${num(sub.study, 1)}, Engagement: ${num(sub.engagement, 1)}`;
+                  const scoreTitle = t('adminPages.weeklyTop.subscores', {
+                    homework: num(sub.homework, 1), course: num(sub.course, 1),
+                    study: num(sub.study, 1), engagement: num(sub.engagement, 1),
+                  });
                   return (
                     <TableRow key={s.student_id}>
                       <TableCell className="text-center font-medium tabular-nums">{s.rank}</TableCell>
@@ -296,7 +301,7 @@ export default function WeeklyTopStudentsPage() {
                       <TableCell className="text-muted-foreground">{s.teacher_name}</TableCell>
                       <TableCell className="text-muted-foreground">{s.curator_name}</TableCell>
                       <TableCell className="text-center uppercase text-xs text-muted-foreground">{s.program_type ?? '—'}</TableCell>
-                      <TableCell className="text-center tabular-nums" title="on-time / submitted / due">
+                      <TableCell className="text-center tabular-nums" title={t('adminPages.weeklyTop.col.homeworkHint')}>
                         {hw.due > 0 ? `${hw.on_time}/${hw.submitted}/${hw.due}` : '—'}
                       </TableCell>
                       <TableCell className="text-center tabular-nums">{num(hw.avg_pct, 0)}{hw.avg_pct != null ? '%' : ''}</TableCell>
@@ -328,8 +333,8 @@ export default function WeeklyTopStudentsPage() {
           <CardHeader className="cursor-pointer" onClick={() => setShowAttention((v) => !v)}>
             <CardTitle className="text-base flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-rose-500 dark:text-rose-400" />
-              Needs Attention — {needsAttention.length} students with missing / late homework
-              <span className="ml-auto text-sm font-normal text-muted-foreground">{showAttention ? 'Hide' : 'Show'}</span>
+              {t('adminPages.weeklyTop.needsAttention', { count: needsAttention.length })}
+              <span className="ml-auto text-sm font-normal text-muted-foreground">{showAttention ? t('adminPages.weeklyTop.hide') : t('adminPages.weeklyTop.show')}</span>
             </CardTitle>
           </CardHeader>
           {showAttention && (
@@ -338,13 +343,13 @@ export default function WeeklyTopStudentsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Student</TableHead>
-                      <TableHead>Group</TableHead>
-                      <TableHead>Teacher</TableHead>
-                      <TableHead>Curator</TableHead>
-                      <TableHead className="text-center">Due</TableHead>
-                      <TableHead className="text-center">Submitted</TableHead>
-                      <TableHead className="text-center">On-time</TableHead>
+                      <TableHead>{t('adminPages.weeklyTop.col.student')}</TableHead>
+                      <TableHead>{t('adminPages.weeklyTop.col.group')}</TableHead>
+                      <TableHead>{t('adminPages.weeklyTop.col.teacher')}</TableHead>
+                      <TableHead>{t('adminPages.weeklyTop.col.curator')}</TableHead>
+                      <TableHead className="text-center">{t('adminPages.weeklyTop.col.due')}</TableHead>
+                      <TableHead className="text-center">{t('adminPages.weeklyTop.col.submitted')}</TableHead>
+                      <TableHead className="text-center">{t('adminPages.weeklyTop.col.onTime')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

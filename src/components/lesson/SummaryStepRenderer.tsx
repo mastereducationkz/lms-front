@@ -12,6 +12,8 @@ import {
 } from '../ui/table';
 import apiClient from '../../services/api';
 import { formatDate } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 import type { LessonQuizSummary } from '../../types';
 
 interface SummaryStepRendererProps {
@@ -20,6 +22,7 @@ interface SummaryStepRendererProps {
 }
 
 const SummaryStepRenderer = ({ lessonId, onLoad }: SummaryStepRendererProps) => {
+  const t = useT();
   const [summaryData, setSummaryData] = useState<LessonQuizSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +38,7 @@ const SummaryStepRenderer = ({ lessonId, onLoad }: SummaryStepRendererProps) => 
         }
       } catch (err) {
         console.error('Failed to load quiz summary:', err);
-        setError('Failed to load quiz summary');
+        setError(t('lessonPlayer.summary.loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -55,7 +58,7 @@ const SummaryStepRenderer = ({ lessonId, onLoad }: SummaryStepRendererProps) => 
   if (error || !summaryData) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
-        <p className="text-muted-foreground">{error || 'No quiz data available'}</p>
+        <p className="text-muted-foreground">{error || t('lessonPlayer.summary.empty')}</p>
       </div>
     );
   }
@@ -64,10 +67,10 @@ const SummaryStepRenderer = ({ lessonId, onLoad }: SummaryStepRendererProps) => 
 
   const getStatusBadge = (percentage: number) => {
     if (percentage >= 70)
-      return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-900 dark:hover:bg-emerald-900/40">Great</Badge>;
+      return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-900 dark:hover:bg-emerald-900/40">{t('lessonPlayer.summary.great')}</Badge>;
     if (percentage >= 50)
-      return <Badge className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-900 dark:hover:bg-amber-900/40">Good</Badge>;
-    return <Badge className="bg-red-100 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-200 dark:border-red-900 dark:hover:bg-red-900/40">Needs work</Badge>;
+      return <Badge className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-900 dark:hover:bg-amber-900/40">{t('lessonPlayer.summary.good')}</Badge>;
+    return <Badge className="bg-red-100 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-200 dark:border-red-900 dark:hover:bg-red-900/40">{t('lessonPlayer.summary.needsWork')}</Badge>;
   };
 
   const getProgressColor = (percentage: number): string => {
@@ -82,10 +85,10 @@ const SummaryStepRenderer = ({ lessonId, onLoad }: SummaryStepRendererProps) => 
     if (!hasAttempts) return null;
 
     if (pct >= 70)
-      return `Excellent work — you scored ${pct.toFixed(0)}% on average. You've mastered this lesson.`;
+      return t('lessonPlayer.summary.feedbackGreat', { percent: pct.toFixed(0) });
     if (pct >= 50)
-      return `You scored ${pct.toFixed(0)}% on average. Consider reviewing the material to strengthen your understanding.`;
-    return `Your average score is ${pct.toFixed(0)}%. Review the lesson materials and retry the quizzes to improve.`;
+      return t('lessonPlayer.summary.feedbackGood', { percent: pct.toFixed(0) });
+    return t('lessonPlayer.summary.feedbackLow', { percent: pct.toFixed(0) });
   };
 
   const feedback = getFeedbackMessage();
@@ -94,9 +97,9 @@ const SummaryStepRenderer = ({ lessonId, onLoad }: SummaryStepRendererProps) => 
     <div className="max-w-3xl mx-auto space-y-6 p-4">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Lesson Summary</h2>
+        <h2 className="text-2xl font-bold text-foreground">{t('lessonPlayer.summary.title')}</h2>
         <p className="text-muted-foreground mt-1">
-          Your quiz performance for this lesson
+          {t('lessonPlayer.summary.subtitle')}
         </p>
       </div>
 
@@ -104,7 +107,7 @@ const SummaryStepRenderer = ({ lessonId, onLoad }: SummaryStepRendererProps) => 
       <Card>
         <CardContent className="p-6 space-y-5">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">Overall Performance</h3>
+            <h3 className="text-lg font-semibold text-foreground">{t('lessonPlayer.summary.overall')}</h3>
             {getStatusBadge(overall_stats.average_percentage)}
           </div>
 
@@ -113,25 +116,25 @@ const SummaryStepRenderer = ({ lessonId, onLoad }: SummaryStepRendererProps) => 
               <p className="text-2xl font-bold text-foreground">
                 {overall_stats.average_percentage.toFixed(0)}%
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Average</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('lessonPlayer.summary.average')}</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">
                 {overall_stats.total_correct}/{overall_stats.total_questions}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Correct</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('lessonPlayer.result.correct')}</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">
                 {quizzes.filter(q => q.last_attempt).length}/{quizzes.length}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Completed</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('lessonPlayer.summary.completed')}</p>
             </div>
           </div>
 
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Progress</span>
+              <span>{t('lessonPlayer.summary.progress')}</span>
               <span>{overall_stats.average_percentage.toFixed(0)}%</span>
             </div>
             <Progress
@@ -146,22 +149,22 @@ const SummaryStepRenderer = ({ lessonId, onLoad }: SummaryStepRendererProps) => 
       <Card>
         <CardContent className="p-0">
           <div className="px-6 py-4 border-b">
-            <h3 className="text-lg font-semibold text-foreground">Quiz Results</h3>
+            <h3 className="text-lg font-semibold text-foreground">{t('lessonPlayer.summary.results')}</h3>
           </div>
 
           {quizzes.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-muted-foreground">No quizzes found in this lesson</p>
+              <p className="text-muted-foreground">{t('lessonPlayer.summary.noQuizzes')}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">#</TableHead>
-                  <TableHead>Quiz</TableHead>
-                  <TableHead className="text-center w-24">Score</TableHead>
+                  <TableHead>{t('lessonPlayer.summary.colQuiz')}</TableHead>
+                  <TableHead className="text-center w-24">{t('lessonPlayer.summary.colScore')}</TableHead>
                   <TableHead className="text-center w-24">%</TableHead>
-                  <TableHead className="text-right w-32 hidden sm:table-cell">Date</TableHead>
+                  <TableHead className="text-right w-32 hidden sm:table-cell">{t('lessonPlayer.result.colDate')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -176,7 +179,7 @@ const SummaryStepRenderer = ({ lessonId, onLoad }: SummaryStepRendererProps) => 
                         </TableCell>
                         <TableCell>
                           <span className="font-medium text-foreground">
-                            {quiz.quiz_title || `Quiz ${index + 1}`}
+                            {quiz.quiz_title || t('lessonPlayer.summary.quizNumber', { number: index + 1 })}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
@@ -193,7 +196,7 @@ const SummaryStepRenderer = ({ lessonId, onLoad }: SummaryStepRendererProps) => 
                             getStatusBadge(attempt.percentage)
                           ) : (
                             <Badge variant="outline" className="text-muted-foreground">
-                              N/A
+                              {t('lessonPlayer.summary.notAttempted')}
                             </Badge>
                           )}
                         </TableCell>

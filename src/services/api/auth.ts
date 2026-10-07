@@ -1,6 +1,8 @@
 import axios from 'axios';
 import type { User } from '../../types';
 import { api, tokenManager, API_BASE_URL, CookieUtils, setLogoutHandler, clearCache } from './client';
+import { t } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/sharedUi';
 
 let currentUser: User | null = getCurrentUserFromStorage();
 
@@ -47,7 +49,7 @@ export async function login(email: string, password: string): Promise<{ success:
 
     return { success: true, user };
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Login failed');
+    throw new Error(error.response?.data?.detail || t('sharedUi.auth.loginFailed'));
   }
 }
 
@@ -105,6 +107,12 @@ export async function getCurrentUser(): Promise<User> {
     wrapped.isNetworkError = isNetwork;
     throw wrapped;
   }
+}
+
+/** The signed-in person's own UI language (Settings); null goes back to the role's default. */
+export async function saveUiLanguage(language: 'en' | 'ru' | null): Promise<User> {
+  const response = await api.put('/auth/me/language', { language });
+  return response.data as User;
 }
 
 export async function updateProfile(userId: number, profileData: { name?: string; email?: string }): Promise<User> {

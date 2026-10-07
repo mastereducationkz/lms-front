@@ -12,6 +12,8 @@ import { createPortal } from 'react-dom';
 import { autoUpdate } from '@floating-ui/react-dom';
 import { centerInViewport, spotlightBox } from '@/lib/guide/geometry';
 import { neighbourStep, reachable, settleStep, stepPosition, targetPhase } from '@/lib/guide/steps';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/guide';
 import { bringIntoView, findShown, otherDialogOpen, prefersReducedMotion, resolves, viewportSize } from './dom';
 import { TourCard } from './GuideCards';
 import type { TourDefinition, TourStep } from './tours';
@@ -66,6 +68,7 @@ function Spotlight({ target, gliding }: { target: HTMLElement | null; gliding: b
 }
 
 export default function TourLayer({ tour, stepId, welcomeLeading, onGoTo, onEnd }: Props) {
+  const t = useT();
   const steps = tour.steps;
   const step: TourStep = steps.find((s) => s.id === stepId) ?? steps[0];
   // Stops Next and Back can land on: on screen now, or content still loading that its stop waits for.
@@ -244,11 +247,10 @@ export default function TourLayer({ tour, stepId, welcomeLeading, onGoTo, onEnd 
         titleId={titleId}
         bodyId={bodyId}
         stepId={current.id}
-        title={current.title}
-        body={current.body}
+        title={t(current.title)}
+        body={t(current.body)}
         index={position.index}
         total={position.total}
-        text={tour.text}
         loading={Boolean(shown?.loading)}
         leading={current.target ? undefined : welcomeLeading}
         style={style}
@@ -260,7 +262,7 @@ export default function TourLayer({ tour, stepId, welcomeLeading, onGoTo, onEnd 
         onClose={() => endRef.current('close')}
       />
       <div className="sr-only" aria-live="polite" aria-atomic="true">
-        {ready ? `${tour.text.stepOf(position.index + 1, position.total)}: ${current.title}${shown?.loading ? `. ${tour.text.loading}` : ''}` : ''}
+        {ready ? `${t('guide.tour.stepOf', { index: position.index + 1, total: position.total })}: ${t(current.title)}${shown?.loading ? `. ${t('guide.tour.loading')}` : ''}` : ''}
       </div>
     </>,
     document.body,

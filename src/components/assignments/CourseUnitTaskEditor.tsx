@@ -3,6 +3,8 @@ import { ArrowRight, BookOpen, CheckCircle, ClipboardCheck } from 'lucide-react'
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import apiClient from '../../services/api';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/homeworkStaff';
 
 interface AssignedLessonInfo {
   lesson_id: number;
@@ -19,6 +21,7 @@ interface CourseUnitTaskEditorProps {
 }
 
 export default function CourseUnitTaskEditor({ content, onContentChange }: CourseUnitTaskEditorProps) {
+  const t = useT();
   const toCourseIdString = (courseId: unknown) =>
     courseId != null && courseId !== '' ? String(courseId) : ''
 
@@ -119,7 +122,7 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="course-select">Select Course *</Label>
+        <Label htmlFor="course-select">{t('homeworkStaff.courseUnit.selectCourse')}</Label>
         <Select
           value={selectedCourseId}
           onValueChange={(value) => {
@@ -129,7 +132,7 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
           disabled={loading}
         >
           <SelectTrigger>
-            <SelectValue placeholder={loading ? "Loading courses..." : "Select a course"} />
+            <SelectValue placeholder={loading ? t('homeworkStaff.courseUnit.loadingCourses') : t('homeworkStaff.courseUnit.coursePlaceholder')} />
           </SelectTrigger>
           <SelectContent>
             {courses.map(course => (
@@ -144,7 +147,7 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
       {selectedCourseId && (
         <div>
           <div className="flex items-center justify-between mb-2">
-            <Label>Select Lessons/Units to Complete *</Label>
+            <Label>{t('homeworkStaff.courseUnit.selectLessons')}</Label>
             {assignedCount > 0 && (
               <button
                 type="button"
@@ -155,7 +158,7 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
                     : 'bg-muted dark:bg-secondary text-muted-foreground hover:bg-gray-200 dark:hover:bg-secondary'
                 }`}
               >
-                {showAssignedOnly ? 'Show all' : `${notAssignedCount} not assigned yet`}
+                {showAssignedOnly ? t('homeworkStaff.courseUnit.showAll') : t('homeworkStaff.courseUnit.notAssignedYet', { count: notAssignedCount })}
               </button>
             )}
           </div>
@@ -165,19 +168,19 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
             <div className="flex items-center gap-4 text-xs mb-2 px-1">
               <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
                 <ClipboardCheck className="w-3.5 h-3.5" />
-                {assignedCount} already assigned
+                {t('homeworkStaff.courseUnit.alreadyAssigned', { count: assignedCount })}
               </span>
               <span className="text-muted-foreground">•</span>
               <span className="text-muted-foreground">
-                {notAssignedCount} not assigned
+                {t('homeworkStaff.courseUnit.notAssigned', { count: notAssignedCount })}
               </span>
             </div>
           )}
 
           {loading ? (
-            <div className="text-sm text-muted-foreground">Loading lessons...</div>
+            <div className="text-sm text-muted-foreground">{t('homeworkStaff.courseUnit.loadingLessons')}</div>
           ) : lessons.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No lessons found in this course</div>
+            <div className="text-sm text-muted-foreground">{t('homeworkStaff.courseUnit.noLessons')}</div>
           ) : (
             <div className="border dark:border-border rounded-lg divide-y dark:divide-border max-h-80 overflow-y-auto">
               {lessons
@@ -215,12 +218,12 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
                       </div>
                       <div className="flex items-center gap-2">
                         {lesson.duration_minutes > 0 && (
-                          <span className="text-xs text-muted-foreground">{lesson.duration_minutes} min</span>
+                          <span className="text-xs text-muted-foreground">{t('homeworkStaff.courseUnit.minutes', { count: lesson.duration_minutes })}</span>
                         )}
                         {isAssigned && (
                           <span className="inline-flex items-center gap-1 text-xs bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-full px-2 py-0.5 whitespace-nowrap">
                             <ClipboardCheck className="w-3 h-3" />
-                            assigned
+                            {t('homeworkStaff.courseUnit.assigned')}
                           </span>
                         )}
                       </div>
@@ -246,7 +249,7 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
           )}
           {selectedLessonIds.length > 0 && (
             <div className="mt-2 text-sm text-muted-foreground">
-              Selected: {selectedLessonIds.length} lesson{selectedLessonIds.length !== 1 ? 's' : ''}
+              {t('homeworkStaff.courseUnit.selected', { count: selectedLessonIds.length })}
             </div>
           )}
         </div>

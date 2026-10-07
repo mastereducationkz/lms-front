@@ -10,7 +10,9 @@ import { getMySubstitutions, getEventParticipants, updateEventAttendance } from 
 import { SubstitutionLesson, EventStudent } from '../types';
 import { isAttendanceLockedLesson } from '../lib/attendance';
 import { parseAsUTC } from '../lib/datetime';
-import { formatDateTime as formatLocalDateTime } from '../lib/i18n';
+import { formatDateTime as formatLocalDateTime, type TFunction } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherDesk';
 import { cn } from '../lib/utils';
 import { canBeExcused, excusePayload, isAbsenceStatus } from '../lib/excusedAbsence';
 import { ExcusePopover } from '../components/attendance/ExcusePopover';
@@ -38,12 +40,12 @@ function statusColor(status: string, excused = false) {
   }
 }
 
-function statusLabel(status: string, excused = false) {
-  if (status === 'missed' && excused) return 'Exc.';
+function statusLabel(t: TFunction, status: string, excused = false) {
+  if (status === 'missed' && excused) return t('teacherDesk.subAttendance.status.excused');
   switch (status) {
-    case 'attended': return 'Present';
-    case 'late': return 'Late';
-    case 'missed': return 'Absent';
+    case 'attended': return t('teacherDesk.subAttendance.status.present');
+    case 'late': return t('teacherDesk.subAttendance.status.late');
+    case 'missed': return t('teacherDesk.subAttendance.status.absent');
     default: return '-';
   }
 }
@@ -55,6 +57,7 @@ function formatDateTime(iso: string) {
 }
 
 export default function SubstitutionAttendancePanel() {
+  const t = useT();
   const [lessons, setLessons] = useState<SubstitutionLesson[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -85,7 +88,7 @@ export default function SubstitutionAttendancePanel() {
         setLessons(await getMySubstitutions());
       } catch (err) {
         console.error('Failed to load substitutions:', err);
-        toast.error('Failed to load substitutions');
+        toast.error(t('teacherDesk.subAttendance.loadFailed'));
       } finally {
         setLoading(false);
       }
@@ -103,7 +106,7 @@ export default function SubstitutionAttendancePanel() {
       setRoster(students);
     } catch (err) {
       console.error('Failed to load roster:', err);
-      toast.error('Failed to load students');
+      toast.error(t('teacherDesk.subAttendance.studentsFailed'));
     } finally {
       setRosterLoading(false);
     }
@@ -188,14 +191,14 @@ export default function SubstitutionAttendancePanel() {
           ...excusePayload(touchedExcuses.has(s.student_id), Boolean(s.excused), s.excuse_note ?? null),
         }));
       await updateEventAttendance(openLesson.event_id, { attendance });
-      toast.success('Attendance saved');
+      toast.success(t('teacherDesk.subAttendance.saved'));
       closeRoster();
     } catch (err: any) {
       console.error('Failed to save attendance:', err);
       // A validation failure (e.g. an excuse without a reason) comes back as a Russian
       // 422 detail from the backend — `err.message` already carries it (see
       // updateEventAttendance in services/api/events.ts), so show it verbatim.
-      toast.error(err?.message || 'Failed to save attendance');
+      toast.error(err?.message || t('teacherDesk.subAttendance.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -245,33 +248,33 @@ export default function SubstitutionAttendancePanel() {
               {primary}
             </span>
             <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
-              <Repeat className="w-3 h-3" /> Substitution
+              <Repeat className="w-3 h-3" /> {t('teacherDesk.subAttendance.badge')}
             </span>
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span className="font-medium text-muted-foreground">
-              Covering for {lesson.original_teacher_name || '—'}
+              {t('teacherDesk.subAttendance.coveringFor', { name: lesson.original_teacher_name || '—' })}
             </span>
             <span>{formatDateTime(lesson.start_datetime)}</span>
             <span className="flex items-center gap-1">
               {lesson.is_online
                 ? <Video className="w-3.5 h-3.5" />
                 : <MapPin className="w-3.5 h-3.5" />}
-              {lesson.is_online ? 'Online' : (lesson.location || 'In person')}
+              {lesson.is_online ? t('teacherDesk.subAttendance.online') : (lesson.location || t('teacherDesk.subAttendance.inPerson'))}
             </span>
           </div>
         </div>
         {locked ? (
           <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground shrink-0">
-            <Lock className="w-3.5 h-3.5" /> Upcoming
+            <Lock className="w-3.5 h-3.5" /> {t('teacherDesk.subAttendance.upcoming')}
           </span>
         ) : lesson.marked ? (
           <span className="flex items-center gap-1 text-xs font-semibold text-green-600 dark:text-green-400 shrink-0">
-            <Check className="w-3.5 h-3.5" /> Marked
+            <Check className="w-3.5 h-3.5" /> {t('teacherDesk.subAttendance.marked')}
           </span>
         ) : (
           <span className="text-xs font-semibold text-brand  shrink-0">
-            Mark attendance
+            {t('teacherDesk.subAttendance.markAttendance')}
           </span>
         )}
       </div>
@@ -305,17 +308,17 @@ export default function SubstitutionAttendancePanel() {
     return (
       <div className="py-24 text-center text-muted-foreground">
         <CalendarClock className="w-10 h-10 mx-auto mb-3 opacity-40" />
-        <p className="font-medium">You have no substitution lessons.</p>
-        <p className="text-sm mt-1">Lessons you're covering for another teacher will appear here.</p>
+        <p className="font-medium">{t('teacherDesk.subAttendance.empty')}</p>
+        <p className="text-sm mt-1">{t('teacherDesk.subAttendance.emptyHint')}</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {renderSection('Needs marking', sections.needsMarking)}
-      {renderSection('Upcoming', sections.upcoming)}
-      {renderSection('Marked', sections.marked)}
+      {renderSection(t('teacherDesk.subAttendance.sectionNeedsMarking'), sections.needsMarking)}
+      {renderSection(t('teacherDesk.subAttendance.sectionUpcoming'), sections.upcoming)}
+      {renderSection(t('teacherDesk.subAttendance.sectionMarked'), sections.marked)}
 
       {/* Roster dialog */}
       <Dialog open={!!openLesson} onOpenChange={(o) => !o && closeRoster()}>
@@ -334,7 +337,7 @@ export default function SubstitutionAttendancePanel() {
                 <Skeleton className="h-10 w-full" />
               </div>
             ) : roster.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">No students in this group.</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">{t('teacherDesk.subAttendance.noStudents')}</p>
             ) : (
               <>
                 <div className="flex justify-end mb-2">
@@ -342,7 +345,7 @@ export default function SubstitutionAttendancePanel() {
                     className="text-xs font-semibold text-brand  hover:underline"
                     onClick={markAllPresent}
                   >
-                    Mark all present
+                    {t('teacherDesk.subAttendance.markAllPresent')}
                   </button>
                 </div>
                 <div className="max-h-[50vh] overflow-y-auto divide-y divide-border">
@@ -365,7 +368,7 @@ export default function SubstitutionAttendancePanel() {
                               open: true, studentId: s.student_id, studentName: s.name,
                               currentScore: s.activity_score || 0,
                             })}
-                            title="Set activity score"
+                            title={t('teacherDesk.subAttendance.setActivity')}
                           >
                             <Star className={cn(
                               'w-3.5 h-3.5',
@@ -387,7 +390,7 @@ export default function SubstitutionAttendancePanel() {
                             )}
                             onClick={() => cycleStatus(s.student_id)}
                           >
-                            {statusLabel(s.attendance_status, Boolean(s.excused))}
+                            {statusLabel(t, s.attendance_status, Boolean(s.excused))}
                           </button>
                           {showExcuseAffordance && (
                             <button
@@ -398,9 +401,11 @@ export default function SubstitutionAttendancePanel() {
                                 s.excused ? 'bg-rose-600' : 'bg-transparent border border-white/80'
                               )}
                               title={s.excused
-                                ? `Excused absence${s.excuse_note ? `: ${s.excuse_note}` : ''} — click to edit`
-                                : 'Mark this absence as excused'}
-                              aria-label={s.excused ? 'Excused absence, edit reason' : 'Mark absence as excused'}
+                                ? (s.excuse_note
+                                  ? t('teacherDesk.subAttendance.excusedWithNoteEdit', { note: s.excuse_note })
+                                  : t('teacherDesk.subAttendance.excusedEdit'))
+                                : t('teacherDesk.subAttendance.markExcused')}
+                              aria-label={s.excused ? t('teacherDesk.subAttendance.excusedAria') : t('teacherDesk.subAttendance.markExcusedAria')}
                             />
                           )}
                           {excusePopoverFor === s.student_id && (
@@ -423,10 +428,10 @@ export default function SubstitutionAttendancePanel() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={closeRoster} disabled={saving}>Cancel</Button>
+            <Button variant="outline" onClick={closeRoster} disabled={saving}>{t('common.cancel')}</Button>
             <Button onClick={save} disabled={saving || rosterLoading || roster.length === 0}>
               {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Save
+              {t('common.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -439,11 +444,11 @@ export default function SubstitutionAttendancePanel() {
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Activity Score</DialogTitle>
+            <DialogTitle>{t('teacherDesk.subAttendance.activityTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              Set activity score for <strong>{activityModal.studentName}</strong>
+              {t('teacherDesk.subAttendance.activityFor').split(/\{(\w+)\}/).map((part, i) => (i % 2 ? <strong key={i}>{activityModal.studentName}</strong> : part))}
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(score => (
@@ -464,7 +469,7 @@ export default function SubstitutionAttendancePanel() {
               variant="outline"
               onClick={() => setActivityModal({ open: false, studentId: null, studentName: '', currentScore: 0 })}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               className="bg-yellow-500 hover:bg-yellow-600"
@@ -473,7 +478,7 @@ export default function SubstitutionAttendancePanel() {
                 setActivityModal({ open: false, studentId: null, studentName: '', currentScore: 0 });
               }}
             >
-              Save Score
+              {t('teacherDesk.subAttendance.saveScore')}
             </Button>
           </DialogFooter>
         </DialogContent>

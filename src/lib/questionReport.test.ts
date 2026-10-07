@@ -19,6 +19,7 @@ describe('reportErrorMessage', () => {
       .toBe('Failed to submit report. Please try again.');
     expect(reportErrorMessage(new Error('network'))).toBe('Failed to submit report. Please try again.');
     expect(reportErrorMessage(undefined)).toBe('Failed to submit report. Please try again.');
+    expect(reportErrorMessage(undefined, 'ru')).toBe('Не удалось отправить сообщение об ошибке. Попробуйте ещё раз.');
   });
 
   it('ignores a non-string detail rather than rendering [object Object]', () => {

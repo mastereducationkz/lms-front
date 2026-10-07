@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import Stepper from '../components/Stepper.tsx';
 import Button from '../components/Button.tsx';
 import apiClient from '../services/api';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/courseAuthoring';
 
 export default function CreateCourseWizard() {
   const navigate = useNavigate();
+  const tr = useT();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
 
@@ -16,7 +19,7 @@ export default function CreateCourseWizard() {
   const [file, setFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string>('');
 
-  const steps = ['Details', 'Curriculum', 'Content & Media', 'Assessments', 'Publish'];
+  const steps = [tr('courseAuthoring.wizard.details'), tr('courseAuthoring.wizard.curriculum'), tr('courseAuthoring.wizard.content'), tr('courseAuthoring.wizard.assessments'), tr('courseAuthoring.wizard.publish')];
 
   const canContinue = () => {
     if (step === 0) return title.trim().length > 2;
@@ -43,7 +46,7 @@ export default function CreateCourseWizard() {
       }
       navigate(`/teacher/course/${created.id}/builder`);
     } catch (e) {
-      alert('Failed to create course');
+      alert(tr('courseAuthoring.create.failed'));
     } finally {
       setSaving(false);
     }
@@ -51,7 +54,7 @@ export default function CreateCourseWizard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Create Course</h1>
+      <h1 className="text-3xl font-bold">{tr('courseAuthoring.create.title')}</h1>
       <div className="card p-6">
         <Stepper steps={steps} current={step} onStepChange={setStep} />
 
@@ -59,57 +62,57 @@ export default function CreateCourseWizard() {
           {step === 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Course Title</label>
-                <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder="e.g. React for Beginners" />
+                <label className="block text-sm font-medium text-gray-700 mb-2">{tr('courseAuthoring.wizard.courseTitle')}</label>
+                <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder={tr('courseAuthoring.wizard.titlePlaceholder')} />
               </div>
               <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Thumbnail URL</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{tr('courseAuthoring.wizard.thumbnailUrl')}</label>
                 <input value={thumbnail} onChange={(e) => setThumbnail(e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="https://.../image.jpg" />
                 {thumbnail && (
                   <div className="mt-3">
-                    <img src={thumbnail} alt="Preview" className="w-full h-40 object-cover rounded-lg border" onError={() => { /* silent */ }} />
+                    <img src={thumbnail} alt={tr('courseAuthoring.create.previewAlt')} className="w-full h-40 object-cover rounded-lg border" onError={() => { /* silent */ }} />
                   </div>
                 )}
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" rows={4} placeholder="What will students learn?" />
+                <label className="block text-sm font-medium text-gray-700 mb-2">{tr('courseAuthoring.create.descriptionLabel')}</label>
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" rows={4} placeholder={tr('courseAuthoring.wizard.descriptionPlaceholder')} />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
-                <input value={tags} onChange={(e) => setTags(e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="e.g. react, javascript, frontend" />
+                <label className="block text-sm font-medium text-gray-700 mb-2">{tr('courseAuthoring.create.tags')}</label>
+                <input value={tags} onChange={(e) => setTags(e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder={tr('courseAuthoring.wizard.tagsPlaceholder')} />
               </div>
             </div>
           )}
 
           {step === 1 && (
             <div className="text-gray-600">
-              <p className="mb-2 font-medium">Curriculum</p>
-              <p className="text-sm">You can add modules and lessons later in the builder. This step will be enhanced soon.</p>
+              <p className="mb-2 font-medium">{tr('courseAuthoring.wizard.curriculum')}</p>
+              <p className="text-sm">{tr('courseAuthoring.wizard.curriculumHint')}</p>
             </div>
           )}
 
           {step === 2 && (
             <div className="text-gray-600">
-              <p className="mb-2 font-medium">Content & Media</p>
-              <p className="text-sm">Attach text and video per lesson in the builder. You can set a course thumbnail here:</p>
+              <p className="mb-2 font-medium">{tr('courseAuthoring.wizard.content')}</p>
+              <p className="text-sm">{tr('courseAuthoring.wizard.contentHint')}</p>
               <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Thumbnail URL</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{tr('courseAuthoring.wizard.thumbnailUrl')}</label>
                   <input value={thumbnail} onChange={(e) => { setThumbnail(e.target.value); setFile(null); setFilePreview(''); }} className="w-full border rounded-lg px-3 py-2" placeholder="https://.../image.jpg" />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 mb-2">Preview</div>
+                  <div className="text-xs text-gray-500 mb-2">{tr('courseAuthoring.create.previewAlt')}</div>
                   <div className="border rounded-lg overflow-hidden h-24 bg-gray-50 flex items-center justify-center">
                     {filePreview || thumbnail ? (
-                      <img src={filePreview || thumbnail} alt="Preview" className="w-full h-full object-cover" onError={() => { /* ignore */ }} />
+                      <img src={filePreview || thumbnail} alt={tr('courseAuthoring.create.previewAlt')} className="w-full h-full object-cover" onError={() => { /* ignore */ }} />
                     ) : (
-                      <span className="text-xs text-gray-400">No image</span>
+                      <span className="text-xs text-gray-400">{tr('courseAuthoring.wizard.noImage')}</span>
                     )}
                   </div>
                 </div>
                 <div className="md:col-span-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Or upload image</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{tr('courseAuthoring.wizard.orUpload')}</label>
                   <input
                     type="file"
                     accept="image/*"
@@ -127,7 +130,7 @@ export default function CreateCourseWizard() {
                       }
                     }}
                   />
-                  <p className="text-xs text-gray-500 mt-1">Supported: JPG, PNG, GIF, WEBP</p>
+                  <p className="text-xs text-gray-500 mt-1">{tr('courseAuthoring.wizard.supported')}</p>
                 </div>
               </div>
             </div>
@@ -135,30 +138,30 @@ export default function CreateCourseWizard() {
 
           {step === 3 && (
             <div className="text-gray-600">
-              <p className="mb-2 font-medium">Assessments</p>
-              <p className="text-sm">Create quizzes and assignments per lesson in the builder. Quiz builder is coming next.</p>
+              <p className="mb-2 font-medium">{tr('courseAuthoring.wizard.assessments')}</p>
+              <p className="text-sm">{tr('courseAuthoring.wizard.assessmentsHint')}</p>
             </div>
           )}
 
           {step === 4 && (
             <div className="text-gray-600">
-              <p className="mb-2 font-medium">Publish</p>
-              <p className="text-sm">You can set visibility and publish the course after creation.</p>
+              <p className="mb-2 font-medium">{tr('courseAuthoring.wizard.publish')}</p>
+              <p className="text-sm">{tr('courseAuthoring.wizard.publishHint')}</p>
             </div>
           )}
         </div>
 
         <div className="mt-8 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate('/admin/courses')}>Cancel</Button>
+          <Button variant="ghost" onClick={() => navigate('/admin/courses')}>{tr('common.cancel')}</Button>
           <div className="flex items-center gap-3">
             {step > 0 && (
-              <Button variant="ghost" onClick={() => setStep(step - 1)}>Back</Button>
+              <Button variant="ghost" onClick={() => setStep(step - 1)}>{tr('common.back')}</Button>
             )}
             {step < steps.length - 1 && (
-              <Button onClick={() => canContinue() && setStep(step + 1)} disabled={!canContinue()}>Continue</Button>
+              <Button onClick={() => canContinue() && setStep(step + 1)} disabled={!canContinue()}>{tr('courseAuthoring.courseCard.continue')}</Button>
             )}
             {step === steps.length - 1 && (
-              <Button onClick={handleCreate} disabled={!canContinue() || saving}>{saving ? 'Creating…' : 'Create Course'}</Button>
+              <Button onClick={handleCreate} disabled={!canContinue() || saving}>{saving ? tr('courseAuthoring.create.creating') : tr('courseAuthoring.create.title')}</Button>
             )}
           </div>
         </div>

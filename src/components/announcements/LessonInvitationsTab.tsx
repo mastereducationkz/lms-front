@@ -6,9 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { SearchableSelect } from '../ui/searchable-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { toast } from '../Toast';
-import { formatDateTime } from '../../lib/i18n';
+import { formatDateTime, type MessageKey } from '../../lib/i18n';
 import { useT } from '../../lib/i18n/react';
-import { errorMessage } from './shared';
+import { DELIVERY_STATUS_LABELS, errorMessage } from './shared';
 import { InvitationChatsView } from './InvitationChatsView';
 import { GROUP_STATUS_LABEL, chatRows, isInactive } from './invitationChats';
 import {
@@ -54,11 +54,11 @@ export function LessonInvitationsTab() {
     try {
       setData(await getInvitationLinks());
     } catch (error) {
-      toast(errorMessage(error, 'Failed to load lesson invitation settings'), 'error');
+      toast(errorMessage(error, t('announcements.invitations.loadFailed')), 'error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -96,10 +96,10 @@ export function LessonInvitationsTab() {
     setBusy(groupId);
     try {
       await setInvitationLink(groupId, chatId);
-      toast(chatId === null ? `Unlinked ${groupName}` : `Linked ${groupName}`, 'success');
+      toast(t(chatId === null ? 'announcements.invitations.unlinked' : 'announcements.invitations.linked', { name: groupName }), 'success');
       await load();
     } catch (error) {
-      toast(errorMessage(error, 'Failed to save the link'), 'error');
+      toast(errorMessage(error, t('announcements.invitations.saveFailed')), 'error');
     } finally {
       setBusy(null);
     }
@@ -118,10 +118,10 @@ export function LessonInvitationsTab() {
     setBusy('all');
     try {
       const n = await confirmInvitationLinks(pairs);
-      toast(`Linked ${n} group${n === 1 ? '' : 's'}`, 'success');
+      toast(t('announcements.invitations.linkedCount', { count: n }), 'success');
       await load();
     } catch (error) {
-      toast(errorMessage(error, 'Failed to confirm the suggestions'), 'error');
+      toast(errorMessage(error, t('announcements.invitations.confirmFailed')), 'error');
     } finally {
       setBusy(null);
     }
@@ -133,25 +133,25 @@ export function LessonInvitationsTab() {
       value={row.link ? String(row.link.chat_id) : null}
       onChange={(v) => void link(row, Number(v))}
       placeholder={placeholder}
-      searchPlaceholder="Search Telegram chats…"
-      emptyText="No approved chat matches"
+      searchPlaceholder={t('announcements.invitations.searchChats')}
+      emptyText={t('announcements.invitations.noChatMatches')}
       disabled={readOnly || busy !== null}
       className="h-8 w-44 text-xs"
     />
   );
 
-  const VIEWS: { key: View; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'suggested', label: 'Suggested' },
-    { key: 'linked', label: 'Linked' },
-    { key: 'unlinked', label: 'No chat' },
+  const VIEWS: { key: View; label: MessageKey }[] = [
+    { key: 'all', label: 'common.all' },
+    { key: 'suggested', label: 'announcements.invitations.viewSuggested' },
+    { key: 'linked', label: 'announcements.invitations.viewLinked' },
+    { key: 'unlinked', label: 'announcements.invitations.viewNoChat' },
   ];
 
   return (
     <Card>
       <CardHeader className="space-y-3 pb-3">
         <div>
-          <CardTitle className="text-base">Lesson invitations</CardTitle>
+          <CardTitle className="text-base">{t('announcements.invitations.title')}</CardTitle>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
             {t('announcements.invitations.intro')}
           </p>
@@ -166,22 +166,22 @@ export function LessonInvitationsTab() {
             {data.enabled ? <CheckCircle2 className="mt-0.5 h-4 w-4 flex-none" /> : <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" />}
             <span>
               {data.enabled
-                ? 'Invitations are on. Every linked group gets them for its LMS Meet lessons.'
-                : 'Invitations are switched off. Links you confirm now take effect as soon as they are switched on.'}
+                ? t('announcements.invitations.enabled')
+                : t('announcements.invitations.disabled')}
             </span>
           </div>
         )}
         {readOnly && (
           <div className="flex items-start gap-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:bg-rose-900/20 dark:text-rose-200">
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" />
-            <span>Could not reach the Telegram bot ({data?.chats_error}). Links are shown but cannot be changed right now.</span>
+            <span>{t('announcements.invitations.botUnreachable', { error: data?.chats_error ?? '' })}</span>
           </div>
         )}
 
-        <div className="inline-flex gap-0.5 self-start rounded-lg border border-border bg-muted/40 p-0.5" role="tablist" aria-label="View links by">
+        <div className="inline-flex gap-0.5 self-start rounded-lg border border-border bg-muted/40 p-0.5" role="tablist" aria-label={t('announcements.invitations.viewBy')}>
           {([
-            { key: 'groups', label: 'By LMS group', count: null },
-            { key: 'chats', label: 'By Telegram chat', count: chatsWithoutGroup },
+            { key: 'groups', label: 'announcements.invitations.byGroup', count: null },
+            { key: 'chats', label: 'announcements.invitations.byChat', count: chatsWithoutGroup },
           ] as const).map((m) => (
             <button
               key={m.key}
@@ -192,10 +192,10 @@ export function LessonInvitationsTab() {
               className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition ${mode === m.key
                 ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              {m.label}
+              {t(m.label)}
               {m.count ? (
                 <span className="rounded-full bg-amber-100 px-1.5 text-[11px] font-semibold tabular-nums text-amber-900 dark:bg-amber-900/40 dark:text-amber-200"
-                      title="Chats with no LMS group">
+                      title={t('announcements.invitations.chatsWithoutGroup')}>
                   {m.count}
                 </span>
               ) : null}
@@ -211,12 +211,12 @@ export function LessonInvitationsTab() {
               id="invitation-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search groups or chats"
-              aria-label="Search groups or chats"
+              placeholder={t('announcements.invitations.search')}
+              aria-label={t('announcements.invitations.search')}
               className="h-9 w-full rounded-md border border-border bg-background pl-8 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
-          <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label="Show">
+          <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label={t('announcements.invitations.show')}>
             {VIEWS.map((v) => (
               <button
                 key={v.key}
@@ -226,7 +226,7 @@ export function LessonInvitationsTab() {
                 className={`rounded-md px-2.5 py-1 text-[13px] font-medium transition ${view === v.key
                   ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               >
-                {v.label} <span className="tabular-nums text-muted-foreground">{counts[v.key]}</span>
+                {t(v.label)} <span className="tabular-nums text-muted-foreground">{counts[v.key]}</span>
               </button>
             ))}
           </div>
@@ -237,13 +237,15 @@ export function LessonInvitationsTab() {
               aria-pressed={showInactive}
               className="rounded-md px-2 py-1 text-[13px] font-medium text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline"
             >
-              {showInactive ? 'Hide stopped & finished' : `Show stopped & finished (${hiddenInactive})`}
+              {showInactive
+                ? t('announcements.invitations.hideInactive')
+                : t('announcements.invitations.showInactive', { count: hiddenInactive })}
             </button>
           )}
           {counts.suggested > 0 && !readOnly && (
             <Button size="sm" className="ml-auto gap-1.5" onClick={confirmAll} disabled={busy !== null}>
               <Link2 className="h-4 w-4" />
-              Confirm all suggestions ({counts.suggested})
+              {t('announcements.invitations.confirmAll', { count: counts.suggested })}
             </Button>
           )}
         </div>
@@ -258,18 +260,18 @@ export function LessonInvitationsTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Group</TableHead>
-                <TableHead>Telegram chat</TableHead>
-                <TableHead>Last invitation</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t('announcements.invitations.colGroup')}</TableHead>
+                <TableHead>{t('announcements.invitations.colChat')}</TableHead>
+                <TableHead>{t('announcements.invitations.colLast')}</TableHead>
+                <TableHead className="text-right">{t('announcements.invitations.colActions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">{t('common.loading')}</TableCell></TableRow>
               ) : visible.length === 0 ? (
                 <TableRow><TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
-                  {groups.length === 0 ? 'No groups.' : 'No groups match.'}
+                  {groups.length === 0 ? t('announcements.invitations.noGroups') : t('announcements.invitations.noGroupsMatch')}
                 </TableCell></TableRow>
               ) : visible.map((row) => (
                 <TableRow key={row.id}>
@@ -282,9 +284,9 @@ export function LessonInvitationsTab() {
                                  ? 'bg-sky-100 font-normal text-sky-800 dark:bg-sky-900/30 dark:text-sky-300'
                                  : 'bg-muted font-normal text-muted-foreground'}
                                title={row.status === 'not_started'
-                                 ? 'Switched on, nobody enrolled yet — invitations start once it has students'
-                                 : 'No invitations: the group is not running'}>
-                          {GROUP_STATUS_LABEL[row.status]}
+                                 ? t('announcements.invitations.notStartedHint')
+                                 : t('announcements.invitations.notRunningHint')}>
+                          {t(GROUP_STATUS_LABEL[row.status])}
                         </Badge>
                       )}
                     </div>
@@ -292,25 +294,27 @@ export function LessonInvitationsTab() {
                   <TableCell className="text-sm">
                     {row.link ? (
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-foreground">{row.link.chat_title || `Chat ${row.link.chat_id}`}</span>
+                        <span className="text-foreground">{row.link.chat_title || t('announcements.invitations.chatFallback', { id: row.link.chat_id })}</span>
                         {row.link.chat_available === false && (
-                          <Badge variant="secondary" className={LAST_STYLES.failed}>Not approved or bot removed</Badge>
+                          <Badge variant="secondary" className={LAST_STYLES.failed}>{t('announcements.invitations.chatUnavailable')}</Badge>
                         )}
                       </div>
                     ) : row.suggestion ? (
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-muted-foreground">Suggested:</span>
+                        <span className="text-muted-foreground">{t('announcements.invitations.suggested')}</span>
                         <span className="text-foreground">{row.suggestion.chat_title}</span>
-                        <Badge variant="outline" className="font-normal tabular-nums">{Math.round(row.suggestion.score * 100)}% match</Badge>
+                        <Badge variant="outline" className="font-normal tabular-nums">{t('announcements.invitations.match', { percent: Math.round(row.suggestion.score * 100) })}</Badge>
                       </div>
                     ) : (
-                      <span className="text-muted-foreground">No chat</span>
+                      <span className="text-muted-foreground">{t('announcements.invitations.viewNoChat')}</span>
                     )}
                   </TableCell>
                   <TableCell className="text-sm">
                     {row.last_invitation ? (
                       <div className="flex flex-wrap items-center gap-1.5" title={row.last_invitation.error ?? undefined}>
-                        <Badge variant="secondary" className={LAST_STYLES[row.last_invitation.status]}>{row.last_invitation.status}</Badge>
+                        <Badge variant="secondary" className={LAST_STYLES[row.last_invitation.status]}>
+                          {DELIVERY_STATUS_LABELS[row.last_invitation.status] ? t(DELIVERY_STATUS_LABELS[row.last_invitation.status]) : row.last_invitation.status}
+                        </Badge>
                         <span className="tabular-nums text-muted-foreground">{when(row.last_invitation.at)}</span>
                       </div>
                     ) : <span className="text-muted-foreground">—</span>}
@@ -320,13 +324,15 @@ export function LessonInvitationsTab() {
                       {!row.link && row.suggestion && (
                         <Button size="sm" variant="outline" className="h-8" disabled={readOnly || busy !== null}
                                 onClick={() => void link(row, row.suggestion!.chat_id)}>
-                          Confirm
+                          {t('announcements.invitations.confirm')}
                         </Button>
                       )}
-                      {picker(row, row.link ? 'Change chat' : row.suggestion ? 'Choose another' : 'Choose a chat')}
+                      {picker(row, row.link
+                        ? t('announcements.invitations.changeChat')
+                        : row.suggestion ? t('announcements.invitations.chooseAnother') : t('announcements.invitations.chooseChat'))}
                       {row.link && (
                         <Button size="sm" variant="ghost" className="h-8 gap-1 text-muted-foreground" disabled={readOnly || busy !== null}
-                                onClick={() => void link(row, null)} aria-label={`Unlink ${row.name}`}>
+                                onClick={() => void link(row, null)} aria-label={t('announcements.invitations.unlink', { name: row.name })}>
                           <Unlink className="h-3.5 w-3.5" />
                         </Button>
                       )}

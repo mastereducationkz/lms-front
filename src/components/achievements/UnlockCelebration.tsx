@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTourActive } from '@/components/guide/tourStore';
 import { useAuth } from '@/contexts/AuthContext';
-import { parseMascot } from '@/components/mascot/config';
+import { parseMascot, rewardLabel } from '@/components/mascot/config';
 import { onboardingPending } from '@/components/mascot/spotlight';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -17,12 +17,14 @@ import { toast } from '@/components/Toast';
 import { updateMyMascot } from '@/services/api/auth';
 import {
   ACHIEVEMENTS_CHECK_EVENT,
+  achievementField,
   byExcitement,
   celebrationReward,
   celebrationTitle,
-  TIER_LABEL,
+  tierLabel,
   withReward,
 } from '@/lib/achievements';
+import { useLocale, useT } from '@/lib/i18n/react';
 import { getMyAchievements, markAchievementsSeen, type MyAchievements } from '@/services/api/achievementsUi';
 import { attention, celebrationMode, useAttention } from '@/lib/attention';
 import { showAchievementToast } from './achievementToast';
@@ -30,6 +32,7 @@ import Confetti from './Confetti';
 import RewardPreview from './RewardPreview';
 import { ShareCelebrationButton } from '@/components/share/ShareButtons';
 import { tierStyle } from './tierStyle';
+import '@/lib/i18n/catalogs/studentHome';
 
 /** Per page load: whether the visit's opening announcement was decided, and what's been announced. */
 const openingDecided = new Set<string>();
@@ -45,6 +48,8 @@ export default function UnlockCelebration() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const tourActive = useTourActive();
+  const t = useT();
+  const locale = useLocale();
   const queue = useAttention(user);
   const [data, setData] = useState<MyAchievements | null>(null);
   const [saving, setSaving] = useState(false);
@@ -107,7 +112,7 @@ export default function UnlockCelebration() {
     if (mode === 'toasts') {
       fresh.forEach((k) => done.add(k));
       markAchievementsSeen(fresh).catch(() => {});
-      byExcitement(list).forEach((a) => showAchievementToast(a.title, () => navigate(`/achievements#${a.key}`)));
+      byExcitement(list).forEach((a) => showAchievementToast(achievementField(a, 'title', locale), () => navigate(`/achievements#${a.key}`), locale));
     }
     if (mode === 'defer') fresh.forEach((k) => done.add(k)); // kept unseen for the next visit's modal
     attention.declare('celebration', 'none');
@@ -143,9 +148,9 @@ export default function UnlockCelebration() {
       updateMyMascot(withReward(user.mascot, user.id, pick.reward))
         .then((updated) => {
           updateUser({ ...user, mascot: updated.mascot ?? null });
-          toast(`Your Kasatik is wearing the ${pick.reward.name}!`, 'success');
+          toast(t('studentHome.achievements.celebration.wearing', { part: rewardLabel(pick.reward, locale) }), 'success');
         })
-        .catch((e: Error) => toast(e.message || 'Could not save your orca', 'error'))
+        .catch((e: Error) => toast(e.message || t('studentHome.mascot.saveFailed'), 'error'))
         .finally(() => setSaving(false));
     }
   };
@@ -160,21 +165,23 @@ export default function UnlockCelebration() {
             <div className="relative mx-auto w-fit rounded-full bg-white/15 p-2 ring-4 ring-white/25">
               <RewardPreview code={user.mascot} userId={user.id} reward={pick?.reward} size={128} />
             </div>
-            <DialogTitle className="relative mt-4 text-2xl font-bold text-white dark:text-brand-surface-foreground">{celebrationTitle(items.length)}</DialogTitle>
+            <DialogTitle className="relative mt-4 text-2xl font-bold text-white dark:text-brand-surface-foreground">{celebrationTitle(items.length, locale)}</DialogTitle>
             <DialogDescription className="relative mt-1 text-sm text-blue-100 dark:text-brand-subtle-foreground">
-              {pick ? `Your Kasatik has something new to wear: the ${pick.reward.name}.` : 'Look what you’ve earned.'}
+              {pick
+                ? t('studentHome.achievements.celebration.newToWear', { part: rewardLabel(pick.reward, locale) })
+                : t('studentHome.achievements.celebration.earned')}
             </DialogDescription>
           </div>
           <ul className="max-h-64 divide-y divide-border overflow-y-auto px-6">
             {items.map((a) => (
               <li key={a.key} className="flex items-center gap-3 py-3">
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tierStyle(a.tier).badge}`}>
-                  {TIER_LABEL[a.tier] ?? a.tier}
+                  {tierLabel(a.tier, locale)}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold">{a.title}</span>
+                  <span className="block truncate text-sm font-semibold">{achievementField(a, 'title', locale)}</span>
                   {a.rewards.length > 0 && (
-                    <span className="block truncate text-xs text-muted-foreground">{a.rewards.map((r) => r.name).join(' + ')}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{a.rewards.map((r) => rewardLabel(r, locale)).join(' + ')}</span>
                   )}
                 </span>
               </li>
@@ -189,11 +196,11 @@ export default function UnlockCelebration() {
                 disabled={saving}
                 onClick={() => close(true)}
               >
-                Wear it now
+                {t('studentHome.achievements.celebration.wearNow')}
               </Button>
             )}
             <Button type="button" variant="outline" className={wearable ? '' : 'flex-1'} onClick={() => close(false)}>
-              {wearable ? 'Later' : 'Awesome!'}
+              {wearable ? t('studentHome.achievements.celebration.later') : t('studentHome.achievements.celebration.awesome')}
             </Button>
           </div>
         </DialogContent>

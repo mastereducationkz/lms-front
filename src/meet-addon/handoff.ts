@@ -1,5 +1,7 @@
 import type { ApiClient } from './api';
 import { answerPairRequests } from '../lib/addonPairing';
+import { t } from '../lib/i18n';
+import '@/lib/i18n/catalogs/classLesson';
 
 /**
  * Signing the panel in (lms-backend `/auth/addon-handoff`, device-code style):
@@ -84,14 +86,14 @@ export async function runHandoff(
       onState({
         kind: 'error',
         message: answer.status === 429
-          ? 'Too many sign-in attempts from this network. Try again in a few minutes.'
-          : 'Sign-in is unavailable right now. Try again in a minute.',
+          ? t('classLesson.addon.tooManyAttempts')
+          : t('classLesson.addon.signInUnavailable'),
       });
       return 'error';
     }
   } catch {
     closeQuietly(deps.popup);
-    onState({ kind: 'error', message: 'Could not reach the LMS. Check the connection and try again.' });
+    onState({ kind: 'error', message: t('classLesson.addon.unreachable') });
     return 'error';
   }
 

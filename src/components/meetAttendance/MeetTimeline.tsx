@@ -5,6 +5,10 @@ import { registerNote } from '../../lib/meetRegister';
 import type { MeetAccount, MeetFlag, MeetMark, MeetPresence, MeetVerdict } from '../../services/api/meetAttendance';
 import type { StudentRegister } from '../../services/api/meetRegister';
 import { FlagChip, type FlagReviewing } from './FlagReview';
+import type { MessageKey } from '../../lib/i18n';
+import { useLocale, useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/meet';
+import '@/lib/i18n/catalogs/meetViews';
 
 export { FlagChip };
 
@@ -45,11 +49,12 @@ const MARK_CHIP: Record<string, string> = {
 };
 
 function MarkChip({ mark }: { mark: MeetMark | undefined }) {
-  const label = mark ? MARK_LABEL[mark] : 'Not marked';
+  const t = useT();
+  const label = mark ? MARK_LABEL[mark] : t('meet.participants.notMarked');
   return (
     <span
-      title={`Mark: ${label}`}
-      aria-label={`Mark: ${label}`}
+      title={t('meetViews.timeline.markIs', { mark: label })}
+      aria-label={t('meetViews.timeline.markIs', { mark: label })}
       className={cn(
         'inline-flex h-4 w-4 flex-none items-center justify-center rounded text-[9px] font-bold',
         mark ? MARK_CHIP[mark] : 'border border-dashed border-muted-foreground/40 text-muted-foreground',
@@ -72,10 +77,13 @@ const VERDICT_TONE: Record<string, string> = {
  * there is room. Outlined, so it never reads as a mark; «≠» when the two say different things.
  */
 export function VerdictChip({ verdict, mark, compact = false }: { verdict: MeetVerdict; mark: MeetMark | undefined; compact?: boolean }) {
-  const text = `Meet: ${verdictText(verdict)}`;
+  const t = useT();
+  const locale = useLocale();
+  const text = t('meetViews.verdict.meetSays', { verdict: verdictText(verdict, locale) });
   const differs = verdictDiffers(mark, verdict);
-  const hint = verdictHint(verdict);
-  const title = [differs ? `${text} — the mark says ${mark ? MARK_LABEL[mark] : 'nothing'}` : text, hint].filter(Boolean).join('\n');
+  const hint = verdictHint(verdict, locale);
+  const versus = mark ? t('meetViews.timeline.markSays', { verdict: text, mark: MARK_LABEL[mark] }) : t('meetViews.timeline.markSaysNothing', { verdict: text });
+  const title = [differs ? versus : text, hint].filter(Boolean).join('\n');
   const tone = VERDICT_TONE[verdict.verdict ?? 'unknown'];
   if (compact) {
     return (
@@ -95,9 +103,12 @@ export function VerdictChip({ verdict, mark, compact = false }: { verdict: MeetV
   );
 }
 
-const KIND_LABEL: Record<MeetAccount['kind'], string> = { signed_in: 'Google', guest: 'Guest', phone: 'Phone' };
+const KIND_LABEL: Record<MeetAccount['kind'], MessageKey> = {
+  signed_in: 'meetViews.timeline.kindGoogle', guest: 'meetViews.timeline.kindGuest', phone: 'meetViews.timeline.kindPhone',
+};
 
 function Track({ axis, row, heldBack }: { axis: Axis; row: TimelineRow; heldBack: boolean }) {
+  const t = useT();
   const bandLeft = position(axis, axis.lessonStart);
   const bandWidth = position(axis, axis.lessonEnd) - bandLeft;
   const bars = row.presence.sessions
@@ -112,7 +123,7 @@ function Track({ axis, row, heldBack }: { axis: Axis; row: TimelineRow; heldBack
       {bars.map(({ span, bar }) => (
         <div
           key={span.joined_at}
-          title={`${clock(span.joined_at)}–${span.left_at ? clock(span.left_at) : 'now'}`}
+          title={`${clock(span.joined_at)}–${span.left_at ? clock(span.left_at) : t('meet.strips.now')}`}
           className={cn('absolute inset-y-1 rounded-sm', BAR[row.kind])}
           style={{ left: `${bar.left}%`, width: `${bar.width}%` }}
         />
@@ -120,7 +131,7 @@ function Track({ axis, row, heldBack }: { axis: Axis; row: TimelineRow; heldBack
       {bars.length === 0 && (
         <span className="absolute inset-y-0 left-2 flex items-center text-[11px] text-muted-foreground">
           {/* While someone in the room is unconfirmed, "not in the room" may simply be untrue. */}
-          {heldBack ? 'No confirmed account yet' : 'Not in the room'}
+          {t(heldBack ? 'meetViews.timeline.noConfirmed' : 'meet.participants.notInRoom')}
         </span>
       )}
     </div>
@@ -145,12 +156,14 @@ interface Props {
  * the stretches each person was in the room (overlapping devices already merged).
  */
 export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = false, heldBack = false, reviewing }: Props) {
+  const t = useT();
+  const locale = useLocale();
   const nameCol = compact ? '7.5rem' : 'minmax(9rem, 15rem)';
   return (
-    <div role="table" aria-label="Who was in the room, and when" className="text-sm">
+    <div role="table" aria-label={t('meetViews.timeline.table')} className="text-sm">
       <div role="row" className="grid items-end gap-x-3 pb-1" style={{ gridTemplateColumns: `${nameCol} 1fr` }}>
         <span role="columnheader" className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-          {compact ? 'Person' : 'Person · mark'}
+          {t(compact ? 'meet.grid.person' : 'meetViews.timeline.personMark')}
         </span>
         <div role="columnheader" className="relative h-4">
           {axis.ticks.map((t) => (
@@ -180,12 +193,12 @@ export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = fal
                 {row.kind === 'student' && <MarkChip mark={row.mark} />}
                 {row.kind === 'student' && compact && row.verdict && <VerdictChip verdict={row.verdict} mark={row.mark} compact />}
                 {row.kind === 'unknown' && (
-                  <span title="Not confirmed yet" className="inline-flex h-4 w-4 flex-none items-center justify-center rounded bg-amber-100 text-[10px] font-bold text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">?</span>
+                  <span title={t('meetViews.shared.notConfirmedYet')} className="inline-flex h-4 w-4 flex-none items-center justify-center rounded bg-amber-100 text-[10px] font-bold text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">?</span>
                 )}
                 <span className={cn('truncate text-[13px]', row.kind === 'teacher' ? 'font-semibold' : 'font-medium')} title={row.name}>
                   {row.name}
                 </span>
-                {row.kind === 'teacher' && <span className="flex-none text-[10px] uppercase tracking-wide text-violet-600 dark:text-violet-300">Teacher</span>}
+                {row.kind === 'teacher' && <span className="flex-none text-[10px] uppercase tracking-wide text-violet-600 dark:text-violet-300">{t('meet.participants.teacher')}</span>}
               </div>
               {row.note && <div className="truncate text-[11px] text-muted-foreground">{row.note}</div>}
               {row.kind === 'student' && !compact && row.verdict && (
@@ -193,7 +206,7 @@ export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = fal
               )}
               {row.kind === 'student' && !compact && row.register && (
                 <div className="mt-0.5 whitespace-pre-line text-[11px] leading-snug text-muted-foreground">
-                  {registerNote(row.register, 'en')}
+                  {registerNote(row.register, locale)}
                 </div>
               )}
               {row.flags.length > 0 && (
@@ -208,13 +221,13 @@ export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = fal
                 <div className="mt-1 flex flex-wrap gap-1">
                   {row.accounts.map((a) => (
                     <span key={a.participant_id} className="inline-flex max-w-full items-center gap-1 rounded bg-muted px-1.5 py-px text-[11px] text-muted-foreground">
-                      <span className="truncate">{KIND_LABEL[a.kind]} · {a.display_name || 'no name'}</span>
+                      <span className="truncate">{t(KIND_LABEL[a.kind])} · {a.display_name || t('meetViews.timeline.noName')}</span>
                       <button
                         type="button"
                         disabled={busy}
                         onClick={() => onUnlink(a.participant_id)}
-                        aria-label={`Not ${row.name}: forget ${a.display_name || 'this account'}`}
-                        title="Not this person — ask again"
+                        aria-label={t('meetViews.timeline.forget', { name: row.name, account: a.display_name || t('meetViews.timeline.thisAccount') })}
+                        title={t('meetViews.timeline.askAgain')}
                         className="rounded hover:text-foreground disabled:opacity-50"
                       >
                         <X className="h-3 w-3" />

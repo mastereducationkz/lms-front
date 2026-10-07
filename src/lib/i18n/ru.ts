@@ -30,6 +30,22 @@ import { curatorHomeworks } from './ru/curatorHomeworks';
 import { curatorPages } from './ru/curatorPages';
 import { profile } from './ru/profile';
 import { stars } from './ru/stars';
+import { guide } from './ru/guide';
+import { curatorDashboard } from './ru/curatorDashboard';
+import { lessonPlayer } from './ru/lessonPlayer';
+import { homework } from './ru/homework';
+import { homeworkStaff } from './ru/homeworkStaff';
+import { studentHome } from './ru/studentHome';
+import { publicPages } from './ru/publicPages';
+import { chatLive } from './ru/chatLive';
+import { meetViews } from './ru/meetViews';
+import { teacherDesk } from './ru/teacherDesk';
+import { teacherInsights } from './ru/teacherInsights';
+import { courseAuthoring } from './ru/courseAuthoring';
+import { adminUsers } from './ru/adminUsers';
+import { adminPages } from './ru/adminPages';
+import { quizReview } from './ru/quizReview';
+import { sharedUi } from './ru/sharedUi';
 import { live } from './ru/live';
 
 export const RU_NAMESPACES = {
@@ -63,6 +79,22 @@ export const RU_NAMESPACES = {
   curatorPages,
   profile,
   stars,
+  guide,
+  curatorDashboard,
+  lessonPlayer,
+  homework,
+  homeworkStaff,
+  studentHome,
+  publicPages,
+  chatLive,
+  meetViews,
+  teacherDesk,
+  teacherInsights,
+  courseAuthoring,
+  adminUsers,
+  adminPages,
+  quizReview,
+  sharedUi,
   live,
 } as const;
 
@@ -97,5 +129,21 @@ export const ru: Readonly<Record<string, Message>> = {
   ...curatorPages,
   ...profile,
   ...stars,
+  ...guide,
+  ...curatorDashboard,
+  ...lessonPlayer,
+  ...homework,
+  ...homeworkStaff,
+  ...studentHome,
+  ...publicPages,
+  ...chatLive,
+  ...meetViews,
+  ...teacherDesk,
+  ...teacherInsights,
+  ...courseAuthoring,
+  ...adminUsers,
+  ...adminPages,
+  ...quizReview,
+  ...sharedUi,
   ...live,
 };

@@ -3,6 +3,8 @@
  * approves, from their normal LMS session, the Meet side panel that asked for one. The rules the
  * page follows live here so they are tested; the page only draws them.
  */
+import { activeLocale, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/publicPages';
 
 /** Roles the backend lets connect the panel (lms-backend `addon_handoff.ADDON_ROLES`). */
 export const PANEL_ROLES = ['teacher', 'head_teacher', 'admin'] as const;
@@ -44,14 +46,15 @@ export function stateFromInfo(info: HandoffInfo, paired = false): LinkState {
   return { kind: 'ask', info };
 }
 
-/** What the page shows when reading the handoff, or answering it, failed. */
-export function stateFromError(status: number | null, detail: string | null): LinkState {
+/** What the page shows when reading the handoff, or answering it, failed, in the reader's language
+ *  (the server's own detail is kept only for errors this page has no words for). */
+export function stateFromError(status: number | null, detail: string | null, locale: Locale = activeLocale()): LinkState {
   if (status === 404) return { kind: 'expired' };
   if (status === 409) return { kind: 'answered' };
-  if (status === 403 && detail && /different network/i.test(detail)) return { kind: 'error', message: detail };
+  if (status === 403 && detail && /different network/i.test(detail)) return { kind: 'error', message: t('publicPages.meetLink.otherNetworkError', undefined, locale) };
   if (status === 403) return { kind: 'staff_only' };
-  if (status === 503) return { kind: 'error', message: 'Sign-in is unavailable right now. Try again in a minute.' };
-  return { kind: 'error', message: detail || 'Something went wrong. Try again.' };
+  if (status === 503) return { kind: 'error', message: t('publicPages.meetLink.unavailable', undefined, locale) };
+  return { kind: 'error', message: detail || t('publicPages.meetLink.failed', undefined, locale) };
 }
 
 // --- carrying the link across an SSO login --------------------------------------------------

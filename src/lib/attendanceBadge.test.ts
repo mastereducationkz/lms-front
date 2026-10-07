@@ -32,4 +32,8 @@ describe('attendanceBadge', () => {
     expect(attendanceBadge({ total: 0, waiting: 0, scores: 2 })).toEqual({ count: 2, tone: 'action', title: '2 need activity scores' });
     expect(attendanceBadge({ total: 1, waiting: 1, scores: 1 })).toEqual({ count: 2, tone: 'action', title: '1 waiting on Meet · 1 need activity scores' });
   });
+
+  it('says what the number is made of in the viewer’s language', () => {
+    expect(attendanceBadge({ total: 3, waiting: 1, scores: 2 }, 'ru').title).toBe('Отметить: 2 · Ждут Meet: 1 · Нужны баллы за активность: 2');
+  });
 });

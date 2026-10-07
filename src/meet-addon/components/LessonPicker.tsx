@@ -1,6 +1,8 @@
 import { CalendarClock, RefreshCw } from 'lucide-react';
 import { lessonWhen } from '../../lib/classLessonPage';
 import type { LessonBrief } from '../lessons';
+import { t } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/classLesson';
 
 /** Nothing runs in this Meet right now: offer the lesson before and the one after. */
 export default function LessonPicker({ previous, next, onPick, onRefresh }: {
@@ -12,19 +14,19 @@ export default function LessonPicker({ previous, next, onPick, onRefresh }: {
   return (
     <div className="py-8 text-center">
       <CalendarClock className="mx-auto h-8 w-8 text-muted-foreground" aria-hidden />
-      <p className="mt-2 text-base font-semibold text-foreground">No lesson in this Meet right now</p>
+      <p className="mt-2 text-base font-semibold text-foreground">{t('classLesson.addon.noLessonTitle')}</p>
       <p className="mx-auto mt-1 max-w-[18rem] text-sm text-muted-foreground">
-        The panel opens the lesson that runs in this Meet, from 30 minutes before it starts until 30 minutes after it ends.
+        {t('classLesson.addon.noLessonBody')}
       </p>
       <div className="mt-5 space-y-2 text-left">
-        {previous && <Choice label="Previous lesson" lesson={previous} onPick={onPick} />}
-        {next && <Choice label="Next lesson" lesson={next} onPick={onPick} />}
+        {previous && <Choice label={t('classLesson.addon.previous')} lesson={previous} onPick={onPick} />}
+        {next && <Choice label={t('classLesson.addon.next')} lesson={next} onPick={onPick} />}
         {!previous && !next && (
-          <p className="text-center text-xs text-muted-foreground">This Meet link belongs to no lesson you can open.</p>
+          <p className="text-center text-xs text-muted-foreground">{t('classLesson.addon.noneYours')}</p>
         )}
       </div>
       <button type="button" onClick={onRefresh} className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
-        <RefreshCw className="h-3.5 w-3.5" aria-hidden />Check again
+        <RefreshCw className="h-3.5 w-3.5" aria-hidden />{t('classLesson.addon.checkAgain')}
       </button>
     </div>
   );

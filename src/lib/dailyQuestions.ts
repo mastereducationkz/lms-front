@@ -1,4 +1,6 @@
 import type { DailyQuestionItem, DailyQuestionsRecommendations } from '../types';
+import { activeLocale, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/studentHome';
 
 export type QuestionWithSection = DailyQuestionItem & { section: 'math' | 'verbal' };
 
@@ -117,11 +119,11 @@ export function formatTag(tag: unknown): string {
   return tag.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 }
 
-export function difficultyLabel(difficulty: unknown): string {
+export function difficultyLabel(difficulty: unknown, locale: Locale = activeLocale()): string {
   switch (difficulty) {
-    case 'easy': return 'Easy';
-    case 'medium': return 'Medium';
-    case 'hard': return 'Hard';
+    case 'easy': return t('studentHome.dailyQuestions.difficulty.easy', undefined, locale);
+    case 'medium': return t('studentHome.dailyQuestions.difficulty.medium', undefined, locale);
+    case 'hard': return t('studentHome.dailyQuestions.difficulty.hard', undefined, locale);
     default: return typeof difficulty === 'string' ? difficulty : '';
   }
 }

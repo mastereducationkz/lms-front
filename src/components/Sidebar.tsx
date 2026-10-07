@@ -50,11 +50,11 @@ import type { LucideIcon } from 'lucide-react';
 import type { Course } from '../types';
 import { roleLabel } from '@/lib/roleLabel';
 import { replayTourFor } from '@/lib/guide/state';
-import { replayLabel } from '@/components/guide/tours';
 import { requestTourReplay } from '@/components/guide/tourStore';
 import { useT } from '@/lib/i18n/react';
 import type { TFunction } from '@/lib/i18n';
 import '@/lib/i18n/catalogs/shell';
+import '@/lib/i18n/catalogs/guide';
 
 /** Only three groups: primary nav, curator tools, admin tools */
 type NavCategory = 'primary' | 'curator' | 'admin';
@@ -613,7 +613,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                   className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-foreground hover:bg-muted transition-colors"
                 >
                   <Route className="w-4 h-4 mr-3" />
-                  {replayLabel(replayKind)}
+                  {t('guide.tour.replay')}
                 </button>
               )}
               <div className="border-t my-1"></div>

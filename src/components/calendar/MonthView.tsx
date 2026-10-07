@@ -2,7 +2,7 @@ import MeetMark from './MeetMark';
 import RecordingMark from './RecordingMark';
 import type { Event } from '../../types';
 import {
-  cx, formatTime, eventStyle, eventTitle, isSubstitutedForTeacher, DAY_NAMES, type MonthDay,
+  cx, formatTime, eventStyle, eventTitle, isSubstitutedForTeacher, dayNames, type MonthDay,
 } from './calendarUtils';
 
 interface Props {
@@ -19,7 +19,7 @@ export default function MonthView({ days, user, onDayClick, onEventClick }: Prop
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       {/* Weekday header */}
       <div className="grid grid-cols-7 border-b border-border bg-muted/40">
-        {DAY_NAMES.map((d, i) => (
+        {dayNames().map((d, i) => (
           <div
             key={d}
             className={cx(

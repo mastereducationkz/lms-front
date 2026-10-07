@@ -8,9 +8,11 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { formatDateTime } from './shared';
+import { DELIVERY_STATUS_LABELS, formatDateTime } from './shared';
 import { renderStoredBodyHtml } from './telegramText';
 import type { AnnouncementDetail, AnnouncementTarget } from '../../services/api/announcements';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/announcements';
 
 interface DeliveryReportDialogProps {
   announcement: AnnouncementDetail | null;
@@ -18,17 +20,19 @@ interface DeliveryReportDialogProps {
 }
 
 function TargetStatus({ target }: { target: AnnouncementTarget }) {
+  const t = useT();
   if (target.status === 'sent') {
     return (
       <span className="inline-flex items-center gap-1 text-emerald-600">
         <Check className="h-3.5 w-3.5" />
-        sent
-        {target.pinned && <Pin className="h-3 w-3" aria-label="pinned" />}
+        {t('announcements.delivery.sent')}
+        {target.pinned && <Pin className="h-3 w-3" aria-label={t('announcements.delivery.pinned')} />}
       </span>
     );
   }
-  if (target.status === 'failed') return <span className="text-rose-600">failed</span>;
-  return <span className="text-muted-foreground">{target.status}</span>;
+  if (target.status === 'failed') return <span className="text-rose-600">{t('announcements.delivery.failed')}</span>;
+  const label = DELIVERY_STATUS_LABELS[target.status];
+  return <span className="text-muted-foreground">{label ? t(label) : target.status}</span>;
 }
 
 /**
@@ -37,16 +41,17 @@ function TargetStatus({ target }: { target: AnnouncementTarget }) {
  * this screen: it tells staff exactly what to fix.
  */
 export function DeliveryReportDialog({ announcement, onClose }: DeliveryReportDialogProps) {
+  const t = useT();
   return (
     <Dialog open={announcement !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
         {announcement && (
           <>
             <DialogHeader>
-              <DialogTitle>Delivery report</DialogTitle>
+              <DialogTitle>{t('announcements.report.title')}</DialogTitle>
               <DialogDescription>
-                {announcement.sent_count} of {announcement.total_count} delivered
-                {announcement.failed_count > 0 && ` · ${announcement.failed_count} failed`}
+                {t('announcements.report.delivered', { sent: announcement.sent_count, total: announcement.total_count })}
+                {announcement.failed_count > 0 && ` · ${t('announcements.report.failed', { count: announcement.failed_count })}`}
               </DialogDescription>
             </DialogHeader>
             {/* Rendered, not shown as source: the stored body is Telegram HTML,
@@ -55,24 +60,26 @@ export function DeliveryReportDialog({ announcement, onClose }: DeliveryReportDi
               {announcement.body ? (
                 <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderStoredBodyHtml(announcement.body)) }} />
               ) : (
-                <span className="text-muted-foreground">(images only)</span>
+                <span className="text-muted-foreground">{t('announcements.history.imagesOnly')}</span>
               )}
             </div>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Recipient</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Detail</TableHead>
+                    <TableHead>{t('announcements.report.colRecipient')}</TableHead>
+                    <TableHead>{t('announcements.report.colType')}</TableHead>
+                    <TableHead>{t('announcements.report.colStatus')}</TableHead>
+                    <TableHead>{t('announcements.report.colDetail')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {announcement.targets.map((target) => (
                     <TableRow key={target.id}>
                       <TableCell className="text-foreground">{target.label}</TableCell>
-                      <TableCell className="text-muted-foreground">{target.kind}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {target.kind === 'group' ? t('announcements.delivery.kindGroup') : target.kind === 'chat' ? t('announcements.delivery.kindChat') : target.kind}
+                      </TableCell>
                       <TableCell>
                         <TargetStatus target={target} />
                       </TableCell>

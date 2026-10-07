@@ -5,6 +5,9 @@ import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
+import { formatNumber } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/homeworkStaff';
 
 interface FileUploadEditorProps {
   content: any;
@@ -12,6 +15,7 @@ interface FileUploadEditorProps {
 }
 
 export default function FileUploadEditor({ content, onContentChange }: FileUploadEditorProps) {
+  const t = useT();
   const [question, setQuestion] = useState(content.question || '');
   const [allowedTypes, setAllowedTypes] = useState(content.allowed_file_types || ['pdf', 'docx']);
   const [maxSize, setMaxSize] = useState(content.max_file_size_mb || 10);
@@ -125,18 +129,18 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="file-question">Question/Instructions *</Label>
+        <Label htmlFor="file-question">{t('homeworkStaff.file.question')}</Label>
         <Textarea
           id="file-question"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Enter instructions for the file upload..."
+          placeholder={t('homeworkStaff.file.questionPlaceholder')}
           rows={3}
         />
       </div>
 
       <div>
-        <Label className="mb-2">Teacher's Reference File (Optional)</Label>
+        <Label className="mb-2">{t('homeworkStaff.file.teacherFile')}</Label>
         <div className="space-y-2">
           {content.teacher_file_url ? (
             // Display existing uploaded file
@@ -144,14 +148,14 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
               <div className="flex items-center space-x-2 flex-1">
                 <FileText className="w-4 h-4 text-brand" />
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-brand-surface-foreground">{content.teacher_file_name || 'Reference File'}</span>
+                  <span className="text-sm font-medium text-brand-surface-foreground">{content.teacher_file_name || t('homeworkStaff.editor.referenceFile')}</span>
                   <a 
                     href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + content.teacher_file_url} 
                     target="_blank" 
                     rel="noopener noreferrer" 
                     className="text-xs text-brand  hover:underline"
                   >
-                    View/Download File
+                    {t('homeworkStaff.editor.viewDownloadFile')}
                   </a>
                 </div>
               </div>
@@ -179,7 +183,7 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
                 <FileText className="w-4 h-4 text-brand" />
                 <span className="text-sm font-medium text-foreground">{teacherFileName}</span>
                 <span className="text-xs text-muted-foreground">
-                  ({(teacherFile.size / 1024 / 1024).toFixed(2)} MB)
+                  {t('homeworkStaff.editor.fileSize', { size: formatNumber(teacherFile.size / 1024 / 1024, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}
                 </span>
               </div>
               <Button
@@ -207,10 +211,10 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
                   <FileText className="w-8 h-8 text-muted-foreground" />
                   <div>
                     <span className="text-sm font-medium text-brand  hover:text-brand">
-                      Click to upload reference file
+                      {t('homeworkStaff.file.upload')}
                     </span>
                     <p className="text-xs text-muted-foreground  mt-1">
-                      Supported: {fileTypes.map(type => type.label).join(', ')}
+                      {t('homeworkStaff.editor.supported', { types: fileTypes.map(type => type.label).join(', ') })}
                     </p>
                   </div>
                 </div>
@@ -221,7 +225,7 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
       </div>
 
       <div>
-        <Label className="mb-2">Allowed File Types for Students</Label>
+        <Label className="mb-2">{t('homeworkStaff.editor.allowedTypes')}</Label>
         <div className="grid grid-cols-2 gap-2">
           {fileTypes.map(type => (
             <div key={type.value} className="flex items-center space-x-2">
@@ -236,7 +240,7 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
       </div>
 
       <div>
-        <Label htmlFor="file-max-size">Maximum File Size (MB)</Label>
+        <Label htmlFor="file-max-size">{t('homeworkStaff.editor.maxFileSize')}</Label>
         <Input
           id="file-max-size"
           type="number"
@@ -251,9 +255,9 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
       <div className="pt-4 border-t">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <Label className="text-sm font-semibold">Answer Fields (Auto-Check)</Label>
+            <Label className="text-sm font-semibold">{t('homeworkStaff.answerFields.title')}</Label>
             <p className="text-xs text-muted-foreground  mt-0.5">
-              Students will enter answers; system will auto-check them.
+              {t('homeworkStaff.answerFields.hint')}
             </p>
           </div>
           <Button
@@ -263,7 +267,7 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
             onClick={addAnswerField}
           >
             <Plus className="w-4 h-4 mr-1" />
-            Add Field
+            {t('homeworkStaff.answerFields.add')}
           </Button>
         </div>
 
@@ -282,7 +286,7 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
                       updateAnswerField(index, 'label', `${index + 1}`);
                     }
                   }}
-                  placeholder="Enter correct answer..."
+                  placeholder={t('homeworkStaff.answerFields.correctPlaceholder')}
                   className="text-sm font-mono flex-1"
                 />
                 <Button
@@ -301,8 +305,8 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
 
         {answerFields.length === 0 && (
           <div className="text-center py-6 bg-muted dark:bg-secondary border border-dashed dark:border-border rounded-lg">
-            <p className="text-sm text-muted-foreground">No answer fields added yet</p>
-            <p className="text-xs text-muted-foreground  mt-1">Click "Add Field" to create an answer field</p>
+            <p className="text-sm text-muted-foreground">{t('homeworkStaff.answerFields.empty')}</p>
+            <p className="text-xs text-muted-foreground  mt-1">{t('homeworkStaff.answerFields.emptyHint')}</p>
           </div>
         )}
       </div>

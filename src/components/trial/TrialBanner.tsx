@@ -2,16 +2,22 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { parseAsUTC } from '../../lib/datetime';
 import { Clock } from 'lucide-react';
+import { t as translate, type Locale } from '../../lib/i18n';
+import { useLocale } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 
-function formatRemaining(ms: number): string {
+function formatRemaining(ms: number, locale: Locale): string {
   const totalMin = Math.max(0, Math.floor(ms / 60000));
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  return h > 0
+    ? translate('studentHome.trial.hoursMinutes', { hours: h, minutes: m }, locale)
+    : translate('studentHome.trial.minutes', { minutes: m }, locale);
 }
 
 const TrialBanner: React.FC = () => {
   const { user, refreshUser } = useAuth();
+  const locale = useLocale();
 
   // trial_expires_at is a naive-UTC string from the backend — parseAsUTC, not new Date(),
   // or the countdown drifts by the browser's UTC offset.
@@ -40,7 +46,7 @@ const TrialBanner: React.FC = () => {
   return (
     <div className="w-full bg-amber-500 text-white text-sm px-4 py-1.5 flex items-center justify-center gap-2">
       <Clock className="w-4 h-4" />
-      <span>Trial access — ends in {formatRemaining(deadline - now)}</span>
+      <span>{translate('studentHome.trial.endsIn', { time: formatRemaining(deadline - now, locale) }, locale)}</span>
     </div>
   );
 };

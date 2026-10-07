@@ -28,6 +28,9 @@ import { TriageBar, TriageChip, TriagePanel } from '../../components/admin/quest
 import { labelCounts, sortReports, type ReportTriage, type SortMode } from '../../lib/reportTriage';
 import { useAuth } from '../../contexts/AuthContext';
 import { canEditCourseContent } from '../../lib/courseAccess';
+import { formatDateTime } from '../../lib/i18n';
+import { useLocale, useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/adminPages';
 
 interface QuestionReport {
   id: number;
@@ -112,10 +115,10 @@ interface ReportDetail {
 }
 
 const statusConfig = {
-  pending: { label: 'Pending', icon: Clock, color: 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30' },
-  reviewed: { label: 'Reviewed', icon: Eye, color: 'text-brand bg-brand-subtle' },
-  resolved: { label: 'Resolved', icon: CheckCircle, color: 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30' },
-  dismissed: { label: 'Dismissed', icon: XCircle, color: 'text-muted-foreground bg-muted' },
+  pending: { label: 'adminPages.questionReports.status.pending' as const, icon: Clock, color: 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30' },
+  reviewed: { label: 'adminPages.questionReports.status.reviewed' as const, icon: Eye, color: 'text-brand bg-brand-subtle' },
+  resolved: { label: 'adminPages.questionReports.status.resolved' as const, icon: CheckCircle, color: 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30' },
+  dismissed: { label: 'adminPages.questionReports.status.dismissed' as const, icon: XCircle, color: 'text-muted-foreground bg-muted' },
 };
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
@@ -170,6 +173,8 @@ const resolveCorrectAnswerIndices = (q: any): number[] => {
 export default function QuestionReportsPage() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const t = useT();
+  const locale = useLocale();
   // Fixing the question itself is content editing: admins and head teachers (2026-10-03).
   // Teachers keep working the queue (statuses) but don't get the edit links.
   const canFixQuestions = canEditCourseContent(user?.role);
@@ -350,17 +355,17 @@ export default function QuestionReportsPage() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('en-US', {
+    return formatDateTime(dateStr, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    });
+    }, locale);
   };
 
   const renderQuestionPreview = (question: any, stepImageUrl?: string | null) => {
-    if (!question) return <p className="text-muted-foreground">Question data not available</p>;
+    if (!question) return <p className="text-muted-foreground">{t('adminPages.questionReports.preview.noData')}</p>;
 
     return (
       <div className="space-y-4">
@@ -369,11 +374,11 @@ export default function QuestionReportsPage() {
           <div className="border rounded-lg overflow-hidden bg-muted dark:bg-secondary dark:border-border">
             <div className="p-2 bg-muted border-b flex items-center gap-2 dark:bg-secondary dark:border-border">
               <ImageIcon className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground/80">Passage Image</span>
+              <span className="text-sm font-medium text-foreground/80">{t('adminPages.questionReports.preview.passageImage')}</span>
             </div>
             <img 
               src={`${BACKEND_URL}${stepImageUrl}`} 
-              alt="Passage" 
+              alt={t('adminPages.questionReports.preview.passage')} 
               className="w-full max-h-96 object-contain"
             />
           </div>
@@ -384,7 +389,7 @@ export default function QuestionReportsPage() {
           <div className="border rounded-lg overflow-hidden dark:border-border">
             <img 
               src={`${BACKEND_URL}${question.image_url}`} 
-              alt="Question" 
+              alt={t('adminPages.questionReports.preview.question')} 
               className="w-full max-h-64 object-contain"
             />
           </div>
@@ -393,7 +398,7 @@ export default function QuestionReportsPage() {
         {/* Passage Text */}
         {question.passage && (
           <div className="p-4 bg-brand-surface border border-brand-border rounded-lg">
-            <h5 className="font-medium text-brand mb-2">Passage</h5>
+            <h5 className="font-medium text-brand mb-2">{t('adminPages.questionReports.preview.passage')}</h5>
             <div className="text-sm text-brand prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(question.passage) }}
             />
@@ -402,25 +407,25 @@ export default function QuestionReportsPage() {
 
         {/* Question Text */}
         <div className="p-4 bg-card border rounded-lg">
-          <h5 className="font-medium text-foreground/80 mb-2">Question</h5>
+          <h5 className="font-medium text-foreground/80 mb-2">{t('adminPages.questionReports.preview.question')}</h5>
           <div 
             className="text-foreground"
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(question.question_text || 'No question text')) }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(question.question_text || t('adminPages.questionReports.preview.noText'))) }}
           />
         </div>
 
         {/* Question Type */}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Type:</span>
+          <span className="text-sm text-muted-foreground">{t('adminPages.questionReports.preview.type')}</span>
           <span className="px-2 py-1 bg-muted rounded text-sm font-medium">
-            {question.question_type || 'Unknown'}
+            {question.question_type || t('adminPages.questionReports.preview.unknownType')}
           </span>
         </div>
 
         {/* Options */}
         {question.options && question.options.length > 0 && (
           <div className="space-y-2">
-            <h5 className="font-medium text-foreground/80">Options</h5>
+            <h5 className="font-medium text-foreground/80">{t('adminPages.questionReports.preview.options')}</h5>
             <div className="space-y-1">
               {question.options.map((opt: any, idx: number) => {
                 const optText = typeof opt === 'string' ? opt : opt.text;
@@ -450,7 +455,7 @@ export default function QuestionReportsPage() {
         {/* Correct Answer */}
         {question.correct_answer && !question.options?.length && (
           <div className="p-3 bg-green-50 border border-green-200 rounded-lg dark:bg-green-950/40 dark:border-green-800/60">
-            <h5 className="font-medium text-green-800 mb-1 dark:text-green-300">Correct Answer</h5>
+            <h5 className="font-medium text-green-800 mb-1 dark:text-green-300">{t('adminPages.questionReports.preview.correctAnswer')}</h5>
             <div className="text-green-900 dark:text-green-300">
               {typeof question.correct_answer === 'object' 
                 ? JSON.stringify(question.correct_answer) 
@@ -462,7 +467,7 @@ export default function QuestionReportsPage() {
         {/* Explanation */}
         {question.explanation && (
           <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg dark:bg-purple-950/40 dark:border-purple-800/60">
-            <h5 className="font-medium text-purple-800 mb-1 dark:text-purple-300">Explanation</h5>
+            <h5 className="font-medium text-purple-800 mb-1 dark:text-purple-300">{t('adminPages.questionReports.preview.explanation')}</h5>
             <div 
               className="text-purple-900 text-sm dark:text-purple-300"
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(question.explanation)) }}
@@ -478,12 +483,12 @@ export default function QuestionReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground dark:text-foreground">Question Error Reports</h1>
-          <p className="text-muted-foreground mt-1">Review and manage student-reported question errors</p>
+          <h1 className="text-2xl font-bold text-foreground dark:text-foreground">{t('adminPages.questionReports.title')}</h1>
+          <p className="text-muted-foreground mt-1">{t('adminPages.questionReports.subtitle')}</p>
         </div>
         <Button onClick={() => fetchReports()} variant="outline" className="gap-2">
           <RefreshCw className="w-4 h-4" />
-          Refresh
+          {t('adminPages.questionReports.refresh')}
         </Button>
       </div>
 
@@ -504,7 +509,7 @@ export default function QuestionReportsPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{count}</p>
-                  <p className="text-sm text-muted-foreground">{config.label}</p>
+                  <p className="text-sm text-muted-foreground">{t(config.label)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -520,14 +525,14 @@ export default function QuestionReportsPage() {
           onChange={(e) => setStatusFilter(e.target.value)}
           className="border rounded-lg px-3 py-2 text-sm dark:border-border dark:bg-card dark:text-foreground"
         >
-          <option value="">All Reports</option>
+          <option value="">{t('adminPages.questionReports.allReports')}</option>
           {Object.entries(statusConfig).map(([status, config]) => (
-            <option key={status} value={status}>{config.label}</option>
+            <option key={status} value={status}>{t(config.label)}</option>
           ))}
         </select>
         {statusFilter && (
           <Button variant="ghost" size="sm" onClick={() => setStatusFilter('')}>
-            Clear filter
+            {t('adminPages.questionReports.clearFilter')}
           </Button>
         )}
       </div>
@@ -547,7 +552,7 @@ export default function QuestionReportsPage() {
             <Card>
               <CardContent className="p-8 text-center">
                 <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No reports found</p>
+                <p className="text-muted-foreground">{t('adminPages.questionReports.noReports')}</p>
               </CardContent>
             </Card>
           ) : (
@@ -568,16 +573,16 @@ export default function QuestionReportsPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
                           <StatusIcon className="w-3 h-3 inline mr-1" />
-                          {statusInfo.label}
+                          {t(statusInfo.label)}
                         </span>
                         <span className="text-xs text-muted-foreground">#{report.id}</span>
                         {(sameQuestionCounts.get(reportGroupKey(report)) ?? 1) > 1 && (
                           <span
                             className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-200 dark:border-indigo-800"
-                            title="Several reports for the same question — status changes apply to all"
+                            title={t('adminPages.questionReports.sameQuestionHint')}
                           >
                             <Layers className="w-3 h-3 shrink-0" />
-                            {sameQuestionCounts.get(reportGroupKey(report))} same Q
+                            {t('adminPages.questionReports.sameQuestionBadge', { count: sameQuestionCounts.get(reportGroupKey(report)) ?? 1 })}
                           </span>
                         )}
                         <TriageChip triage={report.triage} />
@@ -590,7 +595,7 @@ export default function QuestionReportsPage() {
                     {report.suggested_answer && (
                       <p className="flex items-start gap-1 text-xs text-orange-700 dark:text-orange-400 mb-2">
                         <Lightbulb className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                        Suggested: {report.suggested_answer.substring(0, 50)}...
+                        {t('adminPages.questionReports.suggested', { answer: `${report.suggested_answer.substring(0, 50)}...` })}
                       </p>
                     )}
                     
@@ -603,7 +608,7 @@ export default function QuestionReportsPage() {
                       <div className="mt-2 text-xs text-muted-foreground">
                         <BookOpen className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />
                         {report.course_info.title} → {report.course_info.lesson_title}
-                        {report.step_info?.step_number && ` (Step ${report.step_info.step_number})`}
+                        {report.step_info?.step_number && ` (${t('adminPages.questionReports.step', { number: report.step_info.step_number })})`}
                       </div>
                     )}
                     
@@ -618,7 +623,7 @@ export default function QuestionReportsPage() {
                           className="text-xs text-brand hover:underline flex items-center gap-1"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <Edit3 className="w-3 h-3" /> Edit Step
+                          <Edit3 className="w-3 h-3" /> {t('adminPages.questionReports.editStep')}
                         </a>
                         )}
                         <a 
@@ -628,7 +633,7 @@ export default function QuestionReportsPage() {
                           className="text-xs text-green-600 hover:underline flex items-center gap-1 dark:text-green-400"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <ExternalLink className="w-3 h-3" /> View Question
+                          <ExternalLink className="w-3 h-3" /> {t('adminPages.questionReports.viewQuestion')}
                         </a>
                       </div>
                     )}
@@ -651,7 +656,7 @@ export default function QuestionReportsPage() {
             <Card className="overflow-hidden">
               <CardHeader className="sticky top-0 z-10 bg-muted border-b dark:bg-secondary dark:border-border">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Report Details</CardTitle>
+                  <CardTitle className="text-lg">{t('adminPages.questionReports.details')}</CardTitle>
                   <Button 
                     variant="ghost" 
                     size="icon"
@@ -673,7 +678,7 @@ export default function QuestionReportsPage() {
                       className="gap-1"
                     >
                       <config.icon className="w-4 h-4" />
-                      {config.label}
+                      {t(config.label)}
                     </Button>
                   ))}
                 </div>
@@ -685,9 +690,9 @@ export default function QuestionReportsPage() {
                   <div className="flex items-start gap-2 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 text-sm text-indigo-900 dark:text-indigo-100">
                     <Layers className="w-4 h-4 shrink-0 mt-0.5" aria-hidden />
                     <div>
-                      <p className="font-medium">Same question — {selectedSameQuestionTotal} reports</p>
+                      <p className="font-medium">{t('adminPages.questionReports.sameQuestionTitle', { count: selectedSameQuestionTotal })}</p>
                       <p className="text-indigo-800/90 dark:text-indigo-200/90 text-xs mt-1">
-                        Status you set here applies to every report for this question on this step (including the previews below).
+                        {t('adminPages.questionReports.sameQuestionNote')}
                       </p>
                     </div>
                   </div>
@@ -697,7 +702,7 @@ export default function QuestionReportsPage() {
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium text-foreground/80 flex items-center gap-2">
                       <Layers className="w-4 h-4 shrink-0" />
-                      Other reports for this question (synced with your status)
+                      {t('adminPages.questionReports.otherReports')}
                     </h4>
                     <div className="space-y-2">
                       {selectedReport.sibling_reports.map((s) => {
@@ -708,9 +713,9 @@ export default function QuestionReportsPage() {
                             className="border rounded-lg p-3 text-sm bg-muted dark:bg-secondary/50 border-border dark:border-border"
                           >
                             <div className="flex items-center justify-between gap-2 mb-1">
-                              <span className="font-medium text-foreground dark:text-foreground">Report #{s.id}</span>
+                              <span className="font-medium text-foreground dark:text-foreground">{t('adminPages.questionReports.reportNumber', { id: s.id })}</span>
                               <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${sInfo.color}`}>
-                                {sInfo.label}
+                                {t(sInfo.label)}
                               </span>
                             </div>
                             <p className="text-foreground/80 line-clamp-4">{s.message}</p>
@@ -720,7 +725,7 @@ export default function QuestionReportsPage() {
                             </div>
                             {s.suggested_answer && (
                               <p className="text-xs text-orange-700 dark:text-orange-300 mt-2 line-clamp-2">
-                                Suggested: {s.suggested_answer}
+                                {t('adminPages.questionReports.suggested', { answer: s.suggested_answer })}
                               </p>
                             )}
                           </div>
@@ -734,13 +739,13 @@ export default function QuestionReportsPage() {
                 <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-950/40 dark:border-yellow-800/60">
                   <h4 className="font-medium text-yellow-800 mb-2 flex items-center gap-2 dark:text-yellow-300">
                     <AlertTriangle className="w-4 h-4" />
-                    Reported Issue
+                    {t('adminPages.questionReports.reportedIssue')}
                   </h4>
                   <p className="text-yellow-900 dark:text-yellow-300">{selectedReport.report.message}</p>
                   
                   {selectedReport.report.suggested_answer && (
                     <div className="mt-3 p-2 bg-orange-100 rounded dark:bg-orange-900/40">
-                      <p className="text-sm font-medium text-orange-800 dark:text-orange-300">Suggested Answer:</p>
+                      <p className="text-sm font-medium text-orange-800 dark:text-orange-300">{t('adminPages.questionReports.suggestedAnswer')}</p>
                       <p className="text-orange-900 dark:text-orange-300">{selectedReport.report.suggested_answer}</p>
                     </div>
                   )}
@@ -749,7 +754,7 @@ export default function QuestionReportsPage() {
                 {/* Reporter Info */}
                 {selectedReport.user && (
                   <div className="text-sm">
-                    <span className="text-muted-foreground">Reported by:</span>
+                    <span className="text-muted-foreground">{t('adminPages.questionReports.reportedBy')}</span>
                     <span className="ml-2 font-medium">{selectedReport.user.name}</span>
                     <span className="text-muted-foreground ml-1">({selectedReport.user.email})</span>
                   </div>
@@ -758,13 +763,13 @@ export default function QuestionReportsPage() {
                 {/* Course Info */}
                 {selectedReport.course_info && (
                   <div className="p-3 bg-brand-surface border border-brand-border rounded-lg text-sm">
-                    <p className="font-medium text-brand">Location</p>
+                    <p className="font-medium text-brand">{t('adminPages.questionReports.location')}</p>
                     <p className="text-brand">
                       {selectedReport.course_info.course_title} → {selectedReport.course_info.module_title} → {selectedReport.course_info.lesson_title}
                     </p>
                     <p className="text-brand mt-1">
-                      Question {selectedReport.question_index + 1} of {selectedReport.total_questions}
-                      {selectedReport.step?.step_number && ` (Step ${selectedReport.step.step_number})`}
+                      {t('adminPages.questionReports.questionOf', { index: selectedReport.question_index + 1, total: selectedReport.total_questions })}
+                      {selectedReport.step?.step_number && ` (${t('adminPages.questionReports.step', { number: selectedReport.step.step_number })})`}
                     </p>
                     
                     <div className="flex gap-3 mt-3">
@@ -776,7 +781,7 @@ export default function QuestionReportsPage() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-green-600 hover:underline bg-card px-2 py-1 rounded border border-green-200 dark:text-green-400 dark:border-green-800/60"
                           >
-                            <ExternalLink className="w-3 h-3" /> View Question
+                            <ExternalLink className="w-3 h-3" /> {t('adminPages.questionReports.viewQuestion')}
                           </a>
                           {canFixQuestions && (
                           <a 
@@ -785,7 +790,7 @@ export default function QuestionReportsPage() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-brand hover:underline bg-card px-2 py-1 rounded border border-brand-border"
                           >
-                            <Edit3 className="w-3 h-3" /> Edit Step
+                            <Edit3 className="w-3 h-3" /> {t('adminPages.questionReports.editStep')}
                           </a>
                           )}
                         </>
@@ -797,7 +802,7 @@ export default function QuestionReportsPage() {
                 {/* Question Preview */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-foreground/80">Question Preview</h4>
+                    <h4 className="font-medium text-foreground/80">{t('adminPages.questionReports.questionPreview')}</h4>
                     {selectedReport.question_data && canFixQuestions && (
                       <Button 
                         size="sm" 
@@ -805,7 +810,7 @@ export default function QuestionReportsPage() {
                         className="gap-1"
                       >
                         <Edit3 className="w-4 h-4" />
-                        Edit Question
+                        {t('adminPages.questionReports.editQuestion')}
                       </Button>
                     )}
                   </div>
@@ -820,7 +825,7 @@ export default function QuestionReportsPage() {
             <Card>
               <CardContent className="p-8 text-center">
                 <Eye className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Select a report to view details</p>
+                <p className="text-muted-foreground">{t('adminPages.questionReports.selectReport')}</p>
               </CardContent>
             </Card>
           )}
@@ -837,7 +842,7 @@ export default function QuestionReportsPage() {
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
             <div className="bg-card dark:bg-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto">
               <div className="sticky top-0 bg-card dark:bg-card border-b dark:border-border p-4 flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Edit Question</h3>
+                <h3 className="text-lg font-semibold">{t('adminPages.questionReports.editQuestion')}</h3>
                 <Button variant="ghost" size="icon" onClick={() => setShowEditModal(false)}>
                   <X className="w-5 h-5" />
                 </Button>
@@ -847,7 +852,7 @@ export default function QuestionReportsPage() {
                 {/* Question Text */}
                 <div>
                   <label className="block text-sm font-medium text-foreground/80 mb-1">
-                    Question Text
+                    {t('adminPages.questionReports.edit.questionText')}
                   </label>
                   <textarea
                     value={editQuestionText}
@@ -860,7 +865,7 @@ export default function QuestionReportsPage() {
                 {editOptions.length > 0 && (
                   <div>
                     <label className="block text-sm font-medium text-foreground/80 mb-2">
-                      Options
+                      {t('adminPages.questionReports.preview.options')}
                     </label>
                     <div className="space-y-2">
                       {editOptions.map((opt, idx) => {
@@ -897,8 +902,8 @@ export default function QuestionReportsPage() {
                                   })
                                 }}
                                 className="w-4 h-4 shrink-0"
-                                title="Mark as correct"
-                                aria-label={`Mark option ${String.fromCharCode(65 + idx)} as correct`}
+                                title={t('adminPages.questionReports.edit.markCorrect')}
+                                aria-label={t('adminPages.questionReports.edit.markOptionCorrect', { letter: String.fromCharCode(65 + idx) })}
                               />
                             ) : (
                               <input
@@ -907,8 +912,8 @@ export default function QuestionReportsPage() {
                                 checked={isMarked}
                                 onChange={() => setEditChoiceIndices([idx])}
                                 className="w-4 h-4 shrink-0"
-                                title="Set as correct answer"
-                                aria-label={`Set option ${String.fromCharCode(65 + idx)} as correct answer`}
+                                title={t('adminPages.questionReports.edit.setCorrect')}
+                                aria-label={t('adminPages.questionReports.edit.setOptionCorrect', { letter: String.fromCharCode(65 + idx) })}
                               />
                             )}
                           </div>
@@ -917,8 +922,8 @@ export default function QuestionReportsPage() {
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {selectedReport.question_data.question_type === 'multiple_choice'
-                        ? 'Check all correct answers'
-                        : 'Select the correct answer (stored as option index for the quiz player)'}
+                        ? t('adminPages.questionReports.edit.checkAllCorrect')
+                        : t('adminPages.questionReports.edit.selectCorrect')}
                     </p>
                   </div>
                 )}
@@ -927,7 +932,7 @@ export default function QuestionReportsPage() {
                 {editOptions.length === 0 && (
                   <div>
                     <label className="block text-sm font-medium text-foreground/80 mb-1">
-                      Correct Answer
+                      {t('adminPages.questionReports.preview.correctAnswer')}
                     </label>
                     <input
                       type="text"
@@ -941,12 +946,12 @@ export default function QuestionReportsPage() {
                 {/* Explanation */}
                 <div>
                   <label className="block text-sm font-medium text-foreground/80 mb-1">
-                    Explanation
+                    {t('adminPages.questionReports.preview.explanation')}
                   </label>
                   <textarea
                     value={editExplanation}
                     onChange={(e) => setEditExplanation(e.target.value)}
-                    placeholder="Add an explanation for why this is the correct answer..."
+                    placeholder={t('adminPages.questionReports.edit.explanationPlaceholder')}
                     className="w-full h-20 p-3 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand dark:bg-secondary dark:border-border dark:text-foreground"
                   />
                 </div>
@@ -954,7 +959,7 @@ export default function QuestionReportsPage() {
                 {/* Student's Suggestion */}
                 {selectedReport.report.suggested_answer && (
                   <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
-                    <p className="text-sm font-medium text-orange-800 dark:text-orange-300 mb-1">Student's Suggested Answer:</p>
+                    <p className="text-sm font-medium text-orange-800 dark:text-orange-300 mb-1">{t('adminPages.questionReports.edit.studentSuggested')}</p>
                     <p className="text-orange-900 dark:text-orange-200">{selectedReport.report.suggested_answer}</p>
                     <Button 
                       variant="ghost" 
@@ -981,7 +986,7 @@ export default function QuestionReportsPage() {
                         setEditCorrectAnswer(sug)
                       }}
                     >
-                      Use this as correct answer
+                      {t('adminPages.questionReports.edit.useSuggestion')}
                     </Button>
                   </div>
                 )}
@@ -989,11 +994,11 @@ export default function QuestionReportsPage() {
 
               <div className="sticky bottom-0 bg-card dark:bg-card border-t dark:border-border p-4 flex justify-end gap-3">
                 <Button variant="outline" onClick={() => setShowEditModal(false)}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button onClick={saveQuestion} disabled={saving} className="gap-2">
                   <Save className="w-4 h-4" />
-                  {saving ? 'Saving...' : 'Save & Resolve'}
+                  {saving ? t('adminPages.questionReports.edit.saving') : t('adminPages.questionReports.edit.saveResolve')}
                 </Button>
               </div>
             </div>

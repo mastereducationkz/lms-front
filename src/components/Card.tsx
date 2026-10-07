@@ -1,4 +1,5 @@
-
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/courseAuthoring';
 
 interface CardProps {
   image?: string;
@@ -25,6 +26,7 @@ export default function Card({
   actionText,
   onAction
 }: CardProps) {
+  const t = useT();
 
   return (
     <div className="card p-6 flex flex-col">
@@ -43,8 +45,8 @@ export default function Card({
       )}
 
       <div className="flex items-center text-gray-800 text-sm space-x-4 mb-4">
-        {teacher && <span>By {teacher}</span>}
-        {duration && <span>{duration} weeks</span>}
+        {teacher && <span>{t('courseAuthoring.card.byTeacher', { teacher })}</span>}
+        {duration && <span>{t('courseAuthoring.card.weeks', { count: duration })}</span>}
       </div>
 
       {}
@@ -76,7 +78,7 @@ export default function Card({
       )}
 
       {students && (
-        <p className="text-gray-600 text-xs mb-6">{students} students enrolled</p>
+        <p className="text-gray-600 text-xs mb-6">{t('courseAuthoring.card.studentsEnrolled', { count: students })}</p>
       )}
 
       {actionText && (

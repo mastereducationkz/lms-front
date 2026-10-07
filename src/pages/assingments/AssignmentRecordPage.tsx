@@ -7,6 +7,8 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { AudioPlayer } from '../../components/AudioPlayer';
 import type { Assignment } from '../../types/index';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/homework';
 
 type RecorderState = 'idle' | 'requesting' | 'recording' | 'stopped';
 
@@ -39,6 +41,7 @@ function formatElapsed(totalSeconds: number): string {
 export default function AssignmentRecordPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const t = useT();
 
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [loadError, setLoadError] = useState<string>('');
@@ -66,7 +69,7 @@ export default function AssignmentRecordPage() {
       .then((data: Assignment) => setAssignment(data))
       .catch((err: unknown) => {
         console.error('Failed to load assignment:', err);
-        setLoadError('Failed to load assignment.');
+        setLoadError(t('homework.shared.loadFailed'));
       });
   }, [id]);
 
@@ -169,11 +172,11 @@ export default function AssignmentRecordPage() {
       stopStream();
       setRecorderState('idle');
       if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
-        setPermissionError('Microphone access was denied. Please allow microphone access in your browser settings and try again.');
+        setPermissionError(t('homework.audio.micDenied'));
       } else if (err?.name === 'NotFoundError') {
-        setPermissionError('No microphone was found on this device. Please connect a microphone and try again.');
+        setPermissionError(t('homework.audio.micNotFound'));
       } else {
-        setPermissionError('Could not access the microphone. Please check your device settings and try again.');
+        setPermissionError(t('homework.audio.micUnavailable'));
       }
     }
   };
@@ -207,10 +210,10 @@ export default function AssignmentRecordPage() {
         submitted_file_name: uploadResult.filename,
       });
       setSubmitted(true);
-      toast('Recording submitted successfully!', 'success');
+      toast(t('homework.record.submittedToast'), 'success');
     } catch (err) {
       console.error('Failed to submit audio recording:', err);
-      toast('Failed to submit your recording. Please try again.', 'error');
+      toast(t('homework.record.submitFailed'), 'error');
     } finally {
       setSubmitting(false);
     }
@@ -230,7 +233,7 @@ export default function AssignmentRecordPage() {
   if (!assignment) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-muted-foreground text-lg">Loading assignment...</div>
+        <div className="text-muted-foreground text-lg">{t('homework.shared.loadingAssignment')}</div>
       </div>
     );
   }
@@ -242,13 +245,13 @@ export default function AssignmentRecordPage() {
           <CardContent className="pt-6 flex flex-col items-center text-center space-y-4">
             <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400" />
             <div>
-              <h2 className="text-xl font-semibold text-foreground">Recording submitted</h2>
+              <h2 className="text-xl font-semibold text-foreground">{t('homework.record.submittedTitle')}</h2>
               <p className="text-muted-foreground mt-1">
-                Your teacher will listen to your recording and grade it soon.
+                {t('homework.record.submittedBody')}
               </p>
             </div>
             <Button onClick={() => navigate(`/homework/${id}`)}>
-              Back to Assignment
+              {t('homework.record.backToAssignment')}
             </Button>
           </CardContent>
         </Card>
@@ -256,11 +259,14 @@ export default function AssignmentRecordPage() {
     );
   }
 
+  // The link sits inside the translated sentence at its {link} slot.
+  const [footerBefore, footerAfter = ''] = t('homework.record.footer').split('{link}');
+
   return (
     <div className="max-w-2xl mx-auto @2xl:p-6 space-y-6">
       <Button variant="outline" onClick={() => navigate(`/homework/${id}`)}>
         <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Assignment
+        {t('homework.record.backToAssignment')}
       </Button>
 
       <Card>
@@ -274,14 +280,14 @@ export default function AssignmentRecordPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Record Your Answer</CardTitle>
+          <CardTitle>{t('homework.record.recordYourAnswer')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {!isSupported && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start text-red-800 dark:text-red-400">
               <AlertCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
               <span>
-                Audio recording is not supported in this browser. Please try a recent version of Chrome, Safari, or Firefox.
+                {t('homework.audio.unsupported')}
               </span>
             </div>
           )}
@@ -298,7 +304,7 @@ export default function AssignmentRecordPage() {
                   className="mt-2"
                   onClick={startRecording}
                 >
-                  Try Again
+                  {t('homework.shared.tryAgain')}
                 </Button>
               </div>
             </div>
@@ -313,20 +319,20 @@ export default function AssignmentRecordPage() {
               {recorderState === 'idle' && (
                 <Button onClick={startRecording} size="lg" className="w-full sm:w-auto">
                   <Mic className="w-5 h-5 mr-2" />
-                  Record
+                  {t('homework.audio.record')}
                 </Button>
               )}
 
               {recorderState === 'requesting' && (
                 <Button disabled size="lg" className="w-full sm:w-auto">
-                  Requesting microphone access...
+                  {t('homework.audio.requestingMic')}
                 </Button>
               )}
 
               {recorderState === 'recording' && (
                 <Button onClick={stopRecording} variant="destructive" size="lg" className="w-full sm:w-auto">
                   <Square className="w-5 h-5 mr-2" />
-                  Stop
+                  {t('homework.audio.stop')}
                 </Button>
               )}
 
@@ -341,14 +347,14 @@ export default function AssignmentRecordPage() {
                       disabled={submitting}
                     >
                       <RotateCcw className="w-4 h-4 mr-2" />
-                      Re-record
+                      {t('homework.audio.reRecord')}
                     </Button>
                     <Button
                       onClick={handleSubmit}
                       className="flex-1"
                       disabled={!recordedBlob || submitting}
                     >
-                      {submitting ? 'Submitting...' : 'Submit'}
+                      {submitting ? t('homework.shared.submitting') : t('homework.record.submit')}
                     </Button>
                   </div>
                 </div>
@@ -359,12 +365,11 @@ export default function AssignmentRecordPage() {
       </Card>
 
       <p className="text-sm text-muted-foreground text-center">
-        You can re-record as many times as you like before submitting. Once submitted, your teacher
-        will grade your recording — you can check back on the{' '}
+        {footerBefore}
         <Link to={`/homework/${id}`} className="underline">
-          assignment page
+          {t('homework.record.footerLink')}
         </Link>
-        .
+        {footerAfter}
       </p>
     </div>
   );

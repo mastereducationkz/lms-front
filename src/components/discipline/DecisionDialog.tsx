@@ -16,6 +16,8 @@ import { Textarea } from '../ui/textarea';
 import { money } from '../../lib/discipline';
 import { checkDecision, decisionPayload, type DecisionDraft } from '../../lib/disciplineDecision';
 import type { DisciplineReason } from '../../services/api/discipline';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherInsights';
 
 /**
  * Pricing or waiving one finding.
@@ -49,6 +51,7 @@ export default function DecisionDialog({
   onCancel: () => void;
   onSubmit: (amount: number, reasonCode: string | null, note: string | null) => void;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState<DecisionDraft>({ amount: '', reasonCode: null, note: '' });
   const [touched, setTouched] = useState(false);
 
@@ -82,17 +85,17 @@ export default function DecisionDialog({
           <DialogTitle>{target.kindLabel}</DialogTitle>
           <DialogDescription>
             {target.lessonLabel}
-            {target.minutes !== null && <> · {target.minutes} min</>}
+            {target.minutes !== null && <> · {t('teacherInsights.discipline.minutes', { minutes: target.minutes })}</>}
             {/* What the rule asked is stated, not implied: it is the number being departed from. */}
             {target.proposed !== null
-              ? <> · the rule asks {money(target.proposed)}</>
-              : <> · the rule cannot price a missed lesson</>}
+              ? <> · {t('teacherInsights.discipline.ruleAsks', { amount: money(target.proposed) })}</>
+              : <> · {t('teacherInsights.discipline.ruleCannotPrice')}</>}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="decision-amount">Amount, ₸</Label>
+            <Label htmlFor="decision-amount">{t('teacherInsights.discipline.amountLabel')}</Label>
             <Input
               id="decision-amount"
               inputMode="numeric"
@@ -105,12 +108,12 @@ export default function DecisionDialog({
             <div className="flex flex-wrap gap-2 pt-1">
               <Button type="button" size="sm" variant="outline"
                       onClick={() => { setDraft({ ...draft, amount: '0' }); setTouched(true); }}>
-                Waive — 0 ₸
+                {t('teacherInsights.discipline.waiveZero')}
               </Button>
               {target.proposed !== null && (
                 <Button type="button" size="sm" variant="outline"
                         onClick={() => setDraft({ ...draft, amount: String(target.proposed) })}>
-                  Use {money(target.proposed)}
+                  {t('teacherInsights.discipline.useAmount', { amount: money(target.proposed) })}
                 </Button>
               )}
             </div>
@@ -119,7 +122,7 @@ export default function DecisionDialog({
           {/* Shown whenever money is coming off, which is exactly when it is required. */}
           {check.needsReason && (
             <fieldset className="space-y-1.5">
-              <legend className="text-sm font-medium">Reason</legend>
+              <legend className="text-sm font-medium">{t('teacherInsights.discipline.reason')}</legend>
               <div className="space-y-1">
                 {reasons.map((reason) => (
                   <label key={reason.code} className="flex cursor-pointer items-center gap-2 text-sm">
@@ -138,12 +141,12 @@ export default function DecisionDialog({
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="decision-note">Note <span className="text-muted-foreground">(optional)</span></Label>
+            <Label htmlFor="decision-note">{t('teacherInsights.discipline.note')} <span className="text-muted-foreground">{t('teacherInsights.discipline.optional')}</span></Label>
             <Textarea
               id="decision-note"
               rows={2}
               value={draft.note}
-              placeholder="What happened, for whoever reads this later"
+              placeholder={t('teacherInsights.discipline.notePlaceholder')}
               onChange={(e) => setDraft({ ...draft, note: e.target.value })}
             />
           </div>
@@ -156,10 +159,10 @@ export default function DecisionDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={onCancel} disabled={saving}>Cancel</Button>
+          <Button variant="ghost" onClick={onCancel} disabled={saving}>{t('common.cancel')}</Button>
           <Button onClick={submit} disabled={saving || !check.ready}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save
+            {t('common.save')}
           </Button>
         </DialogFooter>
       </DialogContent>

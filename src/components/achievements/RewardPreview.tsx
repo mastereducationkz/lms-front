@@ -4,9 +4,11 @@
  */
 import { Gift, Lock } from 'lucide-react';
 import Orca from '@/components/mascot/Orca';
-import { parseMascot, resolveMascot } from '@/components/mascot/config';
+import { parseMascot, resolveMascot, rewardLabel } from '@/components/mascot/config';
 import { withReward } from '@/lib/achievements';
+import { useLocale, useT } from '@/lib/i18n/react';
 import type { AchievementReward } from '@/services/api/achievementsUi';
+import '@/lib/i18n/catalogs/studentHome';
 
 interface RewardPreviewProps {
   code: string | null | undefined;
@@ -18,6 +20,8 @@ interface RewardPreviewProps {
 }
 
 export default function RewardPreview({ code, userId, reward, size = 64, locked = false, className = '' }: RewardPreviewProps) {
+  const t = useT();
+  const locale = useLocale();
   const dressed = reward ? parseMascot(withReward(code, userId, reward)) : null;
   const config = dressed ?? resolveMascot(code, userId);
   const badge = Math.max(18, Math.round(size * 0.34));
@@ -26,7 +30,7 @@ export default function RewardPreview({ code, userId, reward, size = 64, locked 
       <Orca
         config={config}
         size={size}
-        title={reward ? `Orca with ${reward.name}` : 'Your orca'}
+        title={reward ? t('studentHome.mascot.orcaWith', { part: rewardLabel(reward, locale) }) : t('studentHome.mascot.yourOrca')}
         className={`rounded-full ${locked ? 'grayscale opacity-60' : ''}`}
       />
       {reward && !dressed && !locked && (

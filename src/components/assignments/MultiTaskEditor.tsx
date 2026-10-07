@@ -15,6 +15,7 @@ import FileUploadEditor from './FileUploadEditor';
 import PdfTextTaskEditor from './PdfTextTaskEditor';
 import { AnswerKeyEditor } from './AnswerKeyEditor';
 import '@/lib/i18n/catalogs/teacher';
+import '@/lib/i18n/catalogs/homeworkStaff';
 
 interface Task {
   id: string;
@@ -35,14 +36,14 @@ interface MultiTaskEditorProps {
 }
 
 const TASK_TYPES = [
-  { value: 'course_unit', label: 'Course Units', icon: BookOpen, description: 'Complete specific course lessons' },
-  { value: 'file_task', label: 'File Upload', icon: FileText, description: 'Upload a file (PDF, image, etc.)' },
-  { value: 'text_task', label: 'Text Response', icon: MessageSquare, description: 'Written answer' },
-  { value: 'link_task', label: 'External Link', icon: LinkIcon, description: 'Visit external resource' },
-  { value: 'pdf_text_task', label: 'File + Text', icon: FileSearch, description: 'Upload file, student writes response' },
-  { value: 'audio_task', label: 'Audio Answer', icon: Mic, description: 'Student records an audio answer' },
-  { value: 'bluebook_task', label: 'Bluebook Test', icon: ClipboardList, description: 'Student uploads the official College Board PDF; scores are read from it' }
-];
+  { value: 'course_unit', label: 'homeworkStaff.taskType.courseUnit', icon: BookOpen, description: 'homeworkStaff.taskType.courseUnitHint' },
+  { value: 'file_task', label: 'homeworkStaff.taskType.file', icon: FileText, description: 'homeworkStaff.taskType.fileHint' },
+  { value: 'text_task', label: 'homeworkStaff.taskType.text', icon: MessageSquare, description: 'homeworkStaff.taskType.textHint' },
+  { value: 'link_task', label: 'homeworkStaff.taskType.link', icon: LinkIcon, description: 'homeworkStaff.taskType.linkHint' },
+  { value: 'pdf_text_task', label: 'homeworkStaff.taskType.pdfText', icon: FileSearch, description: 'homeworkStaff.taskType.pdfTextHint' },
+  { value: 'audio_task', label: 'homeworkStaff.taskType.audio', icon: Mic, description: 'homeworkStaff.taskType.audioHint' },
+  { value: 'bluebook_task', label: 'homeworkStaff.taskType.bluebook', icon: ClipboardList, description: 'homeworkStaff.taskType.bluebookHint' }
+] as const;
 
 // College Board publishes practice tests 4-11 in Bluebook. Enforced again server-side:
 // the selector is a convenience, not a security boundary.
@@ -187,16 +188,16 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor={`audio-question-${task.id}`}>Question/Prompt *</Label>
+              <Label htmlFor={`audio-question-${task.id}`}>{tr('homeworkStaff.editor.questionPrompt')}</Label>
               <Textarea
                 id={`audio-question-${task.id}`}
                 value={task.content.question || ''}
                 onChange={(e) => updateTask(index, { content: { ...task.content, question: e.target.value } })}
-                placeholder="Enter the prompt the student should answer by recording their voice..."
+                placeholder={tr('homeworkStaff.multi.audioPlaceholder')}
                 rows={4}
               />
               <p className="text-xs text-muted-foreground  mt-1">
-                The student records an audio answer in the browser. This task is graded manually.
+                {tr('homeworkStaff.multi.audioHint')}
               </p>
             </div>
           </div>
@@ -205,7 +206,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor={`bluebook-test-${task.id}`}>Bluebook test *</Label>
+              <Label htmlFor={`bluebook-test-${task.id}`}>{tr('homeworkStaff.multi.bluebookTest')}</Label>
               <select
                 id={`bluebook-test-${task.id}`}
                 className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -220,22 +221,19 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
                   })
                 }
               >
-                <option value="">Select a test…</option>
+                <option value="">{tr('homeworkStaff.multi.bluebookSelect')}</option>
                 {BLUEBOOK_TEST_NUMBERS.map((n) => (
-                  <option key={n} value={n}>{`Bluebook Test #${n}`}</option>
+                  <option key={n} value={n}>{tr('homeworkStaff.multi.bluebookOption', { number: n })}</option>
                 ))}
               </select>
               <p className="text-xs text-muted-foreground  mt-1">
-                The student uploads the official College Board score report (PDF) for this
-                test. Reading &amp; Writing, Math and the total are read from the report
-                automatically — the student cannot type or edit them, and screenshots are
-                rejected. You can open the report and correct a score while grading.
+                {tr('homeworkStaff.multi.bluebookHint')}
               </p>
             </div>
           </div>
         );
       default:
-        return <div>Unknown task type</div>;
+        return <div>{tr('homeworkStaff.multi.unknownType')}</div>;
     }
   };
 
@@ -247,12 +245,12 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
     <div className="space-y-6">
       {/* Overall Instructions */}
       <div>
-        <Label htmlFor="instructions">Overall Instructions (Optional)</Label>
+        <Label htmlFor="instructions">{tr('homeworkStaff.multi.instructions')}</Label>
         <Textarea
           id="instructions"
           value={instructions}
           onChange={(e) => setInstructions(e.target.value)}
-          placeholder="Provide general instructions for this homework assignment..."
+          placeholder={tr('homeworkStaff.multi.instructionsPlaceholder')}
           rows={3}
         />
       </div>
@@ -260,14 +258,14 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
       {/* Tasks List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Tasks ({tasks.length})</h3>
+          <h3 className="text-lg font-semibold">{tr('homeworkStaff.multi.tasks', { count: tasks.length })}</h3>
           <div className="text-sm text-muted-foreground  flex items-center gap-4">
             <span>
-              Required: <span className="font-semibold text-foreground">{tasks.filter(t => !t.is_optional).reduce((sum, t) => sum + t.points, 0)}</span> pts
+              {tr('homeworkStaff.multi.required')} <span className="font-semibold text-foreground">{tr('homeworkStaff.multi.points', { count: tasks.filter(t => !t.is_optional).reduce((sum, t) => sum + t.points, 0) })}</span>
             </span>
             {tasks.some(t => t.is_optional) && (
               <span className="text-amber-600 dark:text-amber-400">
-                Bonus: <span className="font-semibold">+{tasks.filter(t => t.is_optional).reduce((sum, t) => sum + t.points, 0)}</span> pts
+                {tr('homeworkStaff.multi.bonusTotal')} <span className="font-semibold">+{tr('homeworkStaff.multi.points', { count: tasks.filter(t => t.is_optional).reduce((sum, t) => sum + t.points, 0) })}</span>
               </span>
             )}
           </div>
@@ -277,7 +275,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
           <Card className="border-dashed">
             <CardContent className="pt-6 text-center text-muted-foreground">
               <FileText className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
-              <p>No tasks yet. Add your first task below.</p>
+              <p>{tr('homeworkStaff.multi.empty')}</p>
             </CardContent>
           </Card>
         )}
@@ -302,14 +300,14 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
                     <Icon className="w-5 h-5 text-brand" />
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-muted-foreground">Task {index + 1}</span>
+                        <span className="text-sm font-medium text-muted-foreground">{tr('homeworkStaff.multi.taskNumber', { number: index + 1 })}</span>
                         <span className="text-xs px-2 py-1 bg-brand-subtle  text-brand-subtle-foreground  rounded">
-                          {taskTypeInfo?.label}
+                          {taskTypeInfo && tr(taskTypeInfo.label)}
                         </span>
                         {task.is_optional && (
                           <span className="text-xs px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 rounded flex items-center gap-1">
                             <Star className="w-3 h-3" />
-                            Bonus
+                            {tr('homeworkStaff.multi.bonus')}
                           </span>
                         )}
                       </div>
@@ -317,7 +315,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
                         type="text"
                         value={task.title}
                         onChange={(e) => updateTask(index, { title: e.target.value })}
-                        placeholder="Task title..."
+                        placeholder={tr('homeworkStaff.multi.taskTitlePlaceholder')}
                         className="mt-1 w-full text-base font-semibold border-none focus:outline-none focus:ring-0 p-0 bg-transparent text-foreground"
                       />
                     </div>
@@ -328,7 +326,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
                           checked={task.is_optional || false}
                           onCheckedChange={(checked) => updateTask(index, { is_optional: !!checked })}
                         />
-                        <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">Bonus</span>
+                        <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">{tr('homeworkStaff.multi.bonus')}</span>
                       </label>
                       <div className="flex items-center space-x-1">
                         <input
@@ -338,7 +336,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
                           className="w-16 px-2 py-1 text-sm border rounded bg-background dark:bg-card dark:border-border"
                           min="0"
                         />
-                        <span className="text-sm text-muted-foreground">pts</span>
+                        <span className="text-sm text-muted-foreground">{tr('homeworkStaff.multi.pointsUnit', { count: task.points })}</span>
                       </div>
                       <Button
                         type="button"
@@ -370,7 +368,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
       {/* Add Task Buttons */}
       <Card className="border-dashed">
         <CardContent className="pt-6">
-          <Label className="mb-3 block">Add New Task</Label>
+          <Label className="mb-3 block">{tr('homeworkStaff.multi.addTask')}</Label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {TASK_TYPES.map(taskType => {
               const Icon = taskType.icon;
@@ -387,9 +385,9 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
                   className="flex flex-col items-center justify-center h-auto py-4 space-y-2 text-center whitespace-normal disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Icon className="w-6 h-6 flex-shrink-0" />
-                  <span className="text-sm font-medium break-words w-full">{taskType.label}</span>
+                  <span className="text-sm font-medium break-words w-full">{tr(taskType.label)}</span>
                   <span className="text-xs text-muted-foreground  break-words w-full">
-                    {courseUnitTaken ? tr('teacher.taskEditor.alreadyAdded') : taskType.description}
+                    {courseUnitTaken ? tr('teacher.taskEditor.alreadyAdded') : tr(taskType.description)}
                   </span>
                 </Button>
               );

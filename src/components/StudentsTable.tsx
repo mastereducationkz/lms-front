@@ -24,6 +24,9 @@ import {
   BookOpen,
   BarChart3
 } from 'lucide-react';
+import { formatDate } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherDesk';
 
 interface Student {
   student_id: number;
@@ -69,6 +72,7 @@ export default function StudentsTable({
   onExportStudent,
   onExportAll 
 }: StudentsTableProps) {
+  const t = useT();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('student_name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -117,28 +121,30 @@ export default function StudentsTable({
   };
 
   const getStatusBadge = (percentage: number) => {
-    if (percentage >= 80) return <Badge variant="default">Excellent</Badge>;
-    if (percentage >= 60) return <Badge variant="secondary">Good</Badge>;
-    if (percentage >= 40) return <Badge variant="outline">Satisfactory</Badge>;
-    return <Badge variant="destructive" className='text-center'>Needs Attention</Badge>;
+    if (percentage >= 80) return <Badge variant="default">{t('teacherDesk.performance.excellent')}</Badge>;
+    if (percentage >= 60) return <Badge variant="secondary">{t('teacherDesk.performance.good')}</Badge>;
+    if (percentage >= 40) return <Badge variant="outline">{t('teacherDesk.performance.satisfactory')}</Badge>;
+    return <Badge variant="destructive" className='text-center'>{t('teacherDesk.performance.needsAttention')}</Badge>;
   };
 
   const formatTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+    return hours > 0
+      ? t('teacherDesk.duration.hoursMinutes', { hours, minutes: mins })
+      : t('teacherDesk.duration.minutesShort', { minutes: mins });
   };
 
   const formatLastActivity = (dateString: string | null) => {
-    if (!dateString) return 'Never';
+    if (!dateString) return t('teacherDesk.never');
     const date = new Date(dateString);
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
     
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString('en-US');
+    if (diffDays === 0) return t('teacherDesk.students.today');
+    if (diffDays === 1) return t('teacherDesk.students.yesterday');
+    if (diffDays < 7) return t('teacherDesk.students.daysAgo', { count: diffDays });
+    return formatDate(date);
   };
 
   if (isLoading) {
@@ -147,7 +153,7 @@ export default function StudentsTable({
         <CardContent className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Loading students...</p>
+            <p>{t('teacherDesk.students.loading')}</p>
           </div>
         </CardContent>
       </Card>
@@ -161,7 +167,7 @@ export default function StudentsTable({
           <div>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
-              Students ({students.length})
+              {t('teacherDesk.students.title', { count: students.length })}
             </CardTitle>
           </div>
           <div className="flex gap-2">
@@ -172,7 +178,7 @@ export default function StudentsTable({
         <div className="flex items-center space-x-2">
           <Search className="w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name, email, student number or group..."
+            placeholder={t('teacherDesk.students.search')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="max-w-sm"
@@ -185,7 +191,7 @@ export default function StudentsTable({
           <div className="text-center py-8">
             <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
-              {searchTerm ? 'No students found' : 'No students available'}
+              {searchTerm ? t('teacherDesk.students.noneFound') : t('teacherDesk.students.noneAvailable')}
             </p>
           </div>
         ) : (
@@ -199,27 +205,27 @@ export default function StudentsTable({
                       onClick={() => handleSort('student_name')}
                       className="h-auto p-0 font-semibold"
                     >
-                      Student {getSortIcon('student_name')}
+                      {t('teacherDesk.students.student')} {getSortIcon('student_name')}
                     </Button>
                   </TableHead>
-                  <TableHead>Groups</TableHead>
+                  <TableHead>{t('teacherDesk.students.groups')}</TableHead>
                   <TableHead>
                     <Button 
                       variant="ghost" 
                       onClick={() => handleSort('completion_percentage')}
                       className="h-auto p-0 font-semibold"
                     >
-                      Progress {getSortIcon('completion_percentage')}
+                      {t('teacherDesk.col.progress')} {getSortIcon('completion_percentage')}
                     </Button>
                   </TableHead>
-                  <TableHead>Current Lesson</TableHead>
+                  <TableHead>{t('teacherDesk.students.currentLesson')}</TableHead>
                   <TableHead>
                     <Button 
                       variant="ghost" 
                       onClick={() => handleSort('assignment_score_percentage')}
                       className="h-auto p-0 font-semibold"
                     >
-                      Assignments {getSortIcon('assignment_score_percentage')}
+                      {t('teacherDesk.students.assignments')} {getSortIcon('assignment_score_percentage')}
                     </Button>
                   </TableHead>
                   <TableHead>
@@ -228,12 +234,12 @@ export default function StudentsTable({
                       onClick={() => handleSort('total_study_time_minutes')}
                       className="h-auto p-0 font-semibold"
                     >
-                      Time {getSortIcon('total_study_time_minutes')}
+                      {t('teacherDesk.col.time')} {getSortIcon('total_study_time_minutes')}
                     </Button>
                   </TableHead>
-                  <TableHead>Last Activity</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>{t('teacherDesk.col.lastActivity')}</TableHead>
+                  <TableHead>{t('teacherDesk.col.status')}</TableHead>
+                  <TableHead>{t('teacherDesk.col.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -258,7 +264,7 @@ export default function StudentsTable({
                             </Badge>
                           ))
                         ) : (
-                          <span className="text-sm text-muted-foreground">No group</span>
+                          <span className="text-sm text-muted-foreground">{t('teacherDesk.students.noGroup')}</span>
                         )}
                       </div>
                     </TableCell>
@@ -270,7 +276,7 @@ export default function StudentsTable({
                           <span className="text-sm font-medium">{Math.round(student.completion_percentage)}%</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {student.completed_steps}/{student.total_steps} steps
+                          {t('teacherDesk.students.steps', { done: student.completed_steps, total: student.total_steps })}
                         </div>
                       </div>
                     </TableCell>
@@ -289,11 +295,11 @@ export default function StudentsTable({
                               </span>
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {student.last_lesson.completed_steps}/{student.last_lesson.total_steps} steps
+                              {t('teacherDesk.students.steps', { done: student.last_lesson.completed_steps, total: student.last_lesson.total_steps })}
                             </div>
                           </>
                         ) : (
-                          <span className="text-sm text-muted-foreground">No activity</span>
+                          <span className="text-sm text-muted-foreground">{t('teacherDesk.students.noActivity')}</span>
                         )}
                       </div>
                     </TableCell>
@@ -304,7 +310,7 @@ export default function StudentsTable({
                           {student.completed_assignments}/{student.total_assignments}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {Math.round(student.assignment_score_percentage)}% avg score
+                          {t('teacherDesk.students.avgScore', { percent: Math.round(student.assignment_score_percentage) })}
                         </div>
                       </div>
                     </TableCell>
@@ -332,7 +338,7 @@ export default function StudentsTable({
                             variant="ghost"
                             size="sm"
                             onClick={() => onViewDetailedProgress(student.student_id)}
-                            title="Detailed step-by-step progress"
+                            title={t('teacherDesk.students.detailedProgress')}
                           >
                             <BarChart3 className="w-4 h-4" />
                           </Button>

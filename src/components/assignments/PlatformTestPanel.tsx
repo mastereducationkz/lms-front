@@ -14,6 +14,9 @@ import {
   type PlatformTestProgress,
 } from '../../services/api/platformTests';
 import type { Assignment } from '../../types/index.ts';
+import { activeLocale, t as tr, type Locale } from '@/lib/i18n';
+import { useLocale, useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/homework';
 
 /**
  * A "platform_test" assignment: the weekly test lives on the exam platform (IELTS), the LMS
@@ -21,6 +24,7 @@ import type { Assignment } from '../../types/index.ts';
  * Students see their own checklist; group staff see the whole group.
  */
 
+// Exam section names stay as the platform and the official reports print them.
 const MODULE_LABEL: Record<string, string> = {
   listening: 'Listening',
   reading: 'Reading',
@@ -37,11 +41,12 @@ const trackOf = (platform: string, track?: string | null): PlatformTrack =>
   track === 'nuet' ? 'nuet' : track === 'sat' || platform === 'sat' ? 'sat' : 'ielts';
 
 function StateBadge({ state, band }: { state: PlatformModuleProgress['state']; band: number | null }) {
+  const t = useT();
   if (state === 'done') {
     return (
       <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 gap-1">
         <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-        Done{band != null ? (band > 9 ? ` · est. ${band}` : ` · Band ${band}`) : ''}
+        {band != null ? (band > 9 ? t('homework.platform.doneEstimate', { score: band }) : t('homework.platform.doneBand', { band })) : t('homework.platform.done')}
       </Badge>
     );
   }
@@ -49,33 +54,34 @@ function StateBadge({ state, band }: { state: PlatformModuleProgress['state']; b
     return (
       <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 gap-1">
         <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-        In progress
+        {t('homework.status.inProgress')}
       </Badge>
     );
   }
   return (
     <Badge variant="secondary" className="gap-1">
       <Circle className="h-3.5 w-3.5" aria-hidden="true" />
-      Not started
+      {t('homework.status.notStarted')}
     </Badge>
   );
 }
 
-function deadlineLine(progress: Pick<PlatformTestProgress, 'date_from' | 'date_to' | 'modules'>): string {
+function deadlineLine(progress: Pick<PlatformTestProgress, 'date_from' | 'date_to' | 'modules'>, locale: Locale = activeLocale()): string {
   const parts: string[] = [];
-  if (progress.date_to) parts.push(`Due ${formatAlmaty(progress.date_to)} (Almaty)`);
+  if (progress.date_to) parts.push(tr('homework.platform.due', { date: formatAlmaty(progress.date_to, true, locale) }, locale));
   const speaking = progress.modules.find((m) => m.module === 'speaking');
   if (speaking && progress.date_to) {
-    parts.push(`Speaking closes ${formatAlmaty(progress.date_to)}`);
+    parts.push(tr('homework.platform.speakingCloses', { date: formatAlmaty(progress.date_to, true, locale) }, locale));
   }
   return parts.join(' · ');
 }
 
 function ModuleRow({ module, track, canOpen }: { module: PlatformModuleProgress; track: PlatformTrack; canOpen: boolean }) {
+  const t = useT();
   const hint = !module.available
-    ? 'Only available inside the test window'
+    ? t('homework.platform.onlyInWindow')
     : module.state === 'done'
-      ? 'You can still open the part on the platform'
+      ? t('homework.platform.stillOpen')
       : undefined;
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3">
@@ -83,14 +89,14 @@ function ModuleRow({ module, track, canOpen }: { module: PlatformModuleProgress;
         <p className="font-medium">{moduleLabel(module.module)}</p>
         <p className="text-xs text-muted-foreground truncate">
           {module.test_title ?? ''}
-          {module.deadline_kind === 'closes' ? ' · closes at the deadline' : ''}
+          {module.deadline_kind === 'closes' ? ` · ${t('homework.platform.closesAtDeadline')}` : ''}
         </p>
       </div>
       <div className="flex items-center gap-2">
         <StateBadge state={module.state} band={module.band} />
         {canOpen && module.result_url && (
           <Button size="sm" variant="outline" onClick={() => void openPlatformPage(track, module.result_url ?? '/')}>
-            Result
+            {t('homework.platform.result')}
             <ExternalLink className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" />
           </Button>
         )}
@@ -102,7 +108,7 @@ function ModuleRow({ module, track, canOpen }: { module: PlatformModuleProgress;
             title={hint}
             onClick={() => void openPlatformPage(track, module.path ?? '/')}
           >
-            {module.state === 'in_progress' ? 'Continue' : 'Open'}
+            {module.state === 'in_progress' ? t('homework.platform.continue') : t('homework.platform.open')}
             <ExternalLink className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" />
           </Button>
         )}
@@ -112,6 +118,8 @@ function ModuleRow({ module, track, canOpen }: { module: PlatformModuleProgress;
 }
 
 function StudentView({ progress }: { progress: PlatformTestProgress }) {
+  const t = useT();
+  const locale = useLocale();
   const track = trackOf(progress.platform, (progress as { track?: string }).track);
   return (
     <Card>
@@ -119,10 +127,10 @@ function StudentView({ progress }: { progress: PlatformTestProgress }) {
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <CardTitle>{progress.title}</CardTitle>
-            <CardDescription>{deadlineLine(progress)}</CardDescription>
+            <CardDescription>{deadlineLine(progress, locale)}</CardDescription>
           </div>
           <Badge variant={progress.status === 'submitted' ? 'default' : 'secondary'}>
-            {progress.status === 'submitted' ? 'All parts done' : progress.status === 'in_progress' ? 'In progress' : 'Not started'}
+            {progress.status === 'submitted' ? t('homework.platform.allPartsDone') : progress.status === 'in_progress' ? t('homework.status.inProgress') : t('homework.status.notStarted')}
           </Badge>
         </div>
       </CardHeader>
@@ -134,12 +142,12 @@ function StudentView({ progress }: { progress: PlatformTestProgress }) {
         </ul>
         <p className="text-xs text-muted-foreground">
           {progress.modules.some((m) => m.module === 'speaking')
-            ? 'Checkmarks update automatically from the platform. Listening, Reading and Writing stay open after the deadline while the weekly set is active; Speaking is only available inside its window.'
-            : 'Checkmarks update automatically from the platform. Scores shown for SAT sections are estimates predicted from correct answers, not official scores.'}
+            ? t('homework.platform.hintIelts')
+            : t('homework.platform.hintSat')}
         </p>
         {progress.set_path && (
         <Button variant="link" className="px-0" onClick={() => void openPlatformPage(track, progress.set_path ?? '/')}>
-          Open the weekly set on the platform
+          {t('homework.platform.openWeeklySet')}
           <ExternalLink className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" />
         </Button>
         )}
@@ -149,17 +157,19 @@ function StudentView({ progress }: { progress: PlatformTestProgress }) {
 }
 
 function StaffView({ matrix }: { matrix: PlatformTestMatrix }) {
+  const t = useT();
+  const locale = useLocale();
   const modules = matrix.students[0]?.modules.map((m) => m.module) ?? [];
   const mark = (m: PlatformModuleProgress) =>
     m.state === 'done' ? (
       <span className="inline-flex items-center gap-1">
-        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" aria-label="Done" />
+        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" aria-label={t('homework.platform.done')} />
         {m.band != null ? m.band : null}
       </span>
     ) : m.state === 'in_progress' ? (
-      <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" aria-label="In progress" />
+      <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" aria-label={t('homework.status.inProgress')} />
     ) : (
-      <span aria-label="Not started">—</span>
+      <span aria-label={t('homework.status.notStarted')}>—</span>
     );
   const done = matrix.students.filter((s) => s.status === 'submitted').length;
   return (
@@ -167,7 +177,7 @@ function StaffView({ matrix }: { matrix: PlatformTestMatrix }) {
       <CardHeader>
         <CardTitle>{matrix.assignment.title}</CardTitle>
         <CardDescription>
-          {deadlineLine({ ...matrix.assignment, modules: [] })} · {done}/{matrix.students.length} students done
+          {deadlineLine({ ...matrix.assignment, modules: [] }, locale)} · {t('homework.platform.studentsDone', { done, total: matrix.students.length })}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -175,11 +185,11 @@ function StaffView({ matrix }: { matrix: PlatformTestMatrix }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-muted-foreground">
-                <th className="py-2 pr-4 font-medium">Student</th>
+                <th className="py-2 pr-4 font-medium">{t('homework.platform.colStudent')}</th>
                 {modules.map((m) => (
                   <th key={m} className="py-2 pr-4 font-medium">{moduleLabel(m)}</th>
                 ))}
-                <th className="py-2 font-medium">Status</th>
+                <th className="py-2 font-medium">{t('homework.platform.colStatus')}</th>
               </tr>
             </thead>
             <tbody>
@@ -193,13 +203,13 @@ function StaffView({ matrix }: { matrix: PlatformTestMatrix }) {
                     <td key={m.module} className="py-2 pr-4 tabular-nums">{mark(m)}</td>
                   ))}
                   <td className="py-2">
-                    {s.status === 'submitted' ? 'Done' : s.status === 'in_progress' ? 'In progress' : 'Not started'}
+                    {s.status === 'submitted' ? t('homework.platform.done') : s.status === 'in_progress' ? t('homework.status.inProgress') : t('homework.status.notStarted')}
                   </td>
                 </tr>
               ))}
               {matrix.students.length === 0 && (
                 <tr>
-                  <td className="py-4 text-muted-foreground" colSpan={modules.length + 2}>No students in this group.</td>
+                  <td className="py-4 text-muted-foreground" colSpan={modules.length + 2}>{t('homework.platform.noStudents')}</td>
                 </tr>
               )}
             </tbody>
@@ -212,6 +222,7 @@ function StaffView({ matrix }: { matrix: PlatformTestMatrix }) {
 
 export default function PlatformTestPanel({ assignment }: { assignment: Assignment }) {
   const { user } = useAuth();
+  const t = useT();
   const [data, setData] = useState<PlatformTestProgress | PlatformTestMatrix | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'off' | 'error'>('loading');
 
@@ -240,7 +251,7 @@ export default function PlatformTestPanel({ assignment }: { assignment: Assignme
   if (state === 'loading') {
     return (
       <div className="flex items-center gap-2 text-muted-foreground p-6">
-        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Loading platform test…
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> {t('homework.platform.loading')}
       </div>
     );
   }
@@ -251,13 +262,13 @@ export default function PlatformTestPanel({ assignment }: { assignment: Assignme
           <CardTitle>{assignment.title}</CardTitle>
           <CardDescription>
             {state === 'off'
-              ? 'Platform tests are not switched on in the LMS yet — open the test on the platform directly.'
-              : 'Could not load the platform progress. Open the test on the platform directly.'}
+              ? t('homework.platform.notEnabled')
+              : t('homework.platform.loadFailed')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={() => void openPlatformPage(track, content.set_path ?? '/')}>
-            Open on the platform
+            {t('homework.platform.openOnPlatform')}
             <ExternalLink className="ml-1.5 h-4 w-4" aria-hidden="true" />
           </Button>
         </CardContent>

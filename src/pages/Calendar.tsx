@@ -24,12 +24,13 @@ import AgendaView from '../components/calendar/AgendaView';
 import EventDetailDialog from '../components/calendar/EventDetailDialog';
 import RecordingPlayerDialog, { type RecordingMeta } from '../components/recordings/RecordingPlayerDialog';
 import {
-  cx, formatTime, styleFor, eventStyle, eventTitle, typeLabel,
-  buildMonthDays, buildWeekDays, eventsOnDay, minutesInAlmaty, MONTH_NAMES,
+  cx, formatTime, styleFor, eventStyle, eventTitle,
+  buildMonthDays, buildWeekDays, eventsOnDay, minutesInAlmaty,
 } from '../components/calendar/calendarUtils';
-import { countLabel } from '../components/calendar/weekLayout';
+import { eventCountText, eventTypeName } from '../components/calendar/calendarText';
 import { matchesRecordingFilter, type RecordingFilter } from '../lib/recordings';
 import { useLocale, useT } from '../lib/i18n/react';
+import { formatDate, type MessageKey } from '../lib/i18n';
 import { matchesMeetFilter, seesMeetMarks, type MeetFilter } from '../lib/meetLinks';
 import MeetMark from '../components/calendar/MeetMark';
 import { useNow } from '../components/meetAttendance/MeetSyncStatus';
@@ -42,12 +43,13 @@ import SubscribeDialog from '../components/calendar/SubscribeDialog';
 import { getEventDetails } from '../services/api/events';
 import { eventIdFromSearch } from '../lib/calendarFeeds';
 import '@/lib/i18n/catalogs/calendar';
+import '@/lib/i18n/catalogs/chatLive';
 
 type CalView = 'month' | 'week' | 'agenda';
-const VIEWS: { id: CalView; label: string }[] = [
-  { id: 'month', label: 'Month' },
-  { id: 'week', label: 'Week' },
-  { id: 'agenda', label: 'Agenda' },
+const VIEWS: { id: CalView; label: MessageKey }[] = [
+  { id: 'month', label: 'chatLive.calendar.view.month' },
+  { id: 'week', label: 'chatLive.calendar.view.week' },
+  { id: 'agenda', label: 'chatLive.calendar.view.agenda' },
 ];
 
 export default function Calendar() {
@@ -170,12 +172,12 @@ export default function Calendar() {
   // Alphabetical, so a long list can be scanned as well as searched ("aug gulz" finds
   // "August 19 SAT - Gulzada"; the teacher is part of the name).
   const groupOptions = useMemo(() => [
-    { value: 'all', label: 'All groups' },
+    { value: 'all', label: t('chatLive.calendar.filter.allGroups') },
     ...groups
       .filter((g) => showArchived || (g.is_active !== false && !g.is_over))
       .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }))
       .map((g) => ({ value: String(g.id), label: g.name })),
-  ], [groups, showArchived]);
+  ], [groups, showArchived, t]);
 
   const monthDays = useMemo(() => buildMonthDays(viewDate, filtered), [viewDate, filtered]);
   const weekDays = useMemo(() => buildWeekDays(viewDate), [viewDate]);
@@ -189,18 +191,18 @@ export default function Calendar() {
     });
   };
 
+  const locale = useLocale();
   const rangeLabel = useMemo(() => {
     if (view === 'week') {
       const a = weekDays[0];
       const b = weekDays[6];
-      const am = MONTH_NAMES[a.getMonth()].slice(0, 3);
-      const bm = MONTH_NAMES[b.getMonth()].slice(0, 3);
+      const end = formatDate(b, { day: 'numeric', month: 'short' }, locale);
       return a.getMonth() === b.getMonth()
-        ? `${am} ${a.getDate()} – ${b.getDate()}`
-        : `${am} ${a.getDate()} – ${bm} ${b.getDate()}`;
+        ? `${a.getDate()} – ${end}`
+        : `${formatDate(a, { day: 'numeric', month: 'short' }, locale)} – ${end}`;
     }
-    return `${MONTH_NAMES[viewDate.getMonth()]} ${viewDate.getFullYear()}`;
-  }, [view, weekDays, viewDate]);
+    return formatDate(viewDate, { month: 'long', year: 'numeric' }, locale);
+  }, [view, weekDays, viewDate, locale]);
 
   const openEvent = (event: Event) => {
     setDayPeek(null);
@@ -266,7 +268,7 @@ export default function Calendar() {
         <div className="flex items-center gap-1">
           <button
             type="button"
-            aria-label="Previous"
+            aria-label={t('chatLive.calendar.previous')}
             onClick={() => goPrevNext('prev')}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
@@ -277,7 +279,7 @@ export default function Calendar() {
           </div>
           <button
             type="button"
-            aria-label="Next"
+            aria-label={t('chatLive.calendar.next')}
             onClick={() => goPrevNext('next')}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
@@ -286,7 +288,7 @@ export default function Calendar() {
         </div>
 
         <Button variant="outline" size="sm" onClick={() => setViewDate(todayInAlmaty())} className="text-xs sm:text-sm">
-          Today
+          {t('chatLive.calendar.today')}
         </Button>
 
         <Button variant="outline" size="sm" onClick={() => setSubscribeOpen(true)} className="text-xs sm:text-sm">
@@ -309,7 +311,7 @@ export default function Calendar() {
                     : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                {v.label}
+                {t(v.label)}
               </button>
             ))}
           </div>
@@ -319,14 +321,14 @@ export default function Calendar() {
             <Filter className="h-4 w-4 flex-none text-muted-foreground" />
             <Select value={eventTypeFilter} onValueChange={(v) => setEventTypeFilter(v as EventType | 'all')}>
               <SelectTrigger className="h-9 w-[130px] sm:w-40">
-                <SelectValue placeholder="All types" />
+                <SelectValue placeholder={t('chatLive.calendar.filter.allTypes')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All types</SelectItem>
-                <SelectItem value="class">Classes</SelectItem>
-                <SelectItem value="weekly_test">Weekly tests</SelectItem>
-                <SelectItem value="webinar">Webinars</SelectItem>
-                <SelectItem value="assignment">Assignments</SelectItem>
+                <SelectItem value="all">{t('chatLive.calendar.filter.allTypes')}</SelectItem>
+                <SelectItem value="class">{t('chatLive.calendar.filter.classes')}</SelectItem>
+                <SelectItem value="weekly_test">{t('chatLive.calendar.filter.weeklyTests')}</SelectItem>
+                <SelectItem value="webinar">{t('chatLive.calendar.filter.webinars')}</SelectItem>
+                <SelectItem value="assignment">{t('chatLive.calendar.filter.assignments')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -339,9 +341,9 @@ export default function Calendar() {
                 options={groupOptions}
                 value={selectedGroupId}
                 onChange={setSelectedGroupId}
-                placeholder="All groups"
-                searchPlaceholder="Search groups or teachers…"
-                emptyText="No group matches"
+                placeholder={t('chatLive.calendar.filter.allGroups')}
+                searchPlaceholder={t('chatLive.calendar.filter.searchGroups')}
+                emptyText={t('chatLive.calendar.filter.noGroupMatches')}
                 className="h-9 w-[150px] sm:w-48"
               />
             </div>
@@ -358,7 +360,7 @@ export default function Calendar() {
                 className="h-4 w-4 cursor-pointer rounded border-border text-brand focus:ring-ring"
               />
               <label htmlFor="show-archived" className="cursor-pointer whitespace-nowrap text-[13px] font-medium text-muted-foreground">
-                Show finished
+                {t('chatLive.calendar.filter.showFinished')}
               </label>
             </div>
           )}
@@ -368,13 +370,13 @@ export default function Calendar() {
             <div className="flex items-center gap-1.5">
               <Video className="h-4 w-4 flex-none text-muted-foreground" />
               <Select value={recordingFilter} onValueChange={(v) => setRecordingFilter(v as RecordingFilter)}>
-                <SelectTrigger className="h-9 w-[150px] sm:w-44" aria-label="Recordings">
-                  <SelectValue placeholder="All lessons" />
+                <SelectTrigger className="h-9 w-[150px] sm:w-44" aria-label={t('chatLive.calendar.filter.recordings')}>
+                  <SelectValue placeholder={t('chatLive.calendar.filter.allLessons')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All lessons</SelectItem>
-                  <SelectItem value="with">With recording</SelectItem>
-                  <SelectItem value="without">Without recording</SelectItem>
+                  <SelectItem value="all">{t('chatLive.calendar.filter.allLessons')}</SelectItem>
+                  <SelectItem value="with">{t('chatLive.calendar.filter.withRecording')}</SelectItem>
+                  <SelectItem value="without">{t('chatLive.calendar.filter.withoutRecording')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -385,13 +387,13 @@ export default function Calendar() {
             <div className="flex items-center gap-1.5">
               <Link2 className="h-4 w-4 flex-none text-muted-foreground" />
               <Select value={meetFilter} onValueChange={(v) => setMeetFilter(v as MeetFilter)}>
-                <SelectTrigger className="h-9 w-[160px] sm:w-48" aria-label="Google Meet link">
-                  <SelectValue placeholder="Any Meet link" />
+                <SelectTrigger className="h-9 w-[160px] sm:w-48" aria-label={t('chatLive.calendar.filter.meetLink')}>
+                  <SelectValue placeholder={t('chatLive.calendar.filter.anyMeetLink')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Any Meet link</SelectItem>
-                  <SelectItem value="with">With Meet link</SelectItem>
-                  <SelectItem value="without">Without Meet link</SelectItem>
+                  <SelectItem value="all">{t('chatLive.calendar.filter.anyMeetLink')}</SelectItem>
+                  <SelectItem value="with">{t('chatLive.calendar.filter.withMeetLink')}</SelectItem>
+                  <SelectItem value="without">{t('chatLive.calendar.filter.withoutMeetLink')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -404,7 +406,7 @@ export default function Calendar() {
               className="gap-1.5"
             >
               <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Create</span>
+              <span className="hidden sm:inline">{t('chatLive.calendar.create')}</span>
             </Button>
           )}
         </div>
@@ -418,14 +420,14 @@ export default function Calendar() {
             <i className="h-2 w-2 rounded-full bg-emerald-500 ring-1 ring-card" />
             <i className="h-2 w-2 rounded-full bg-fuchsia-500 ring-1 ring-card" />
           </span>
-          Classes — by group
+          {t('chatLive.calendar.legend.classes')}
         </span>
-        {(['weekly_test', 'webinar', 'assignment'] as EventType[]).map((t) => {
-          const s = styleFor(t);
+        {(['weekly_test', 'webinar', 'assignment'] as EventType[]).map((type) => {
+          const s = styleFor(type);
           return (
-            <span key={t} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span key={type} className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <i className={cx('h-2 w-2 rounded-full', s.dot)} />
-              {s.label}
+              {eventTypeName(type, locale)}
             </span>
           );
         })}
@@ -433,11 +435,11 @@ export default function Calendar() {
           <>
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Link2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" aria-hidden />
-              Meet link
+              {t('chatLive.calendar.legend.meetLink')}
             </span>
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Link2Off className="h-3 w-3 text-muted-foreground/70" aria-hidden />
-              No Meet link
+              {t('chatLive.calendar.legend.noMeetLink')}
             </span>
           </>
         )}
@@ -464,13 +466,13 @@ export default function Calendar() {
           <DialogHeader className="flex-shrink-0 pb-3">
             <DialogTitle className="flex items-center gap-2">
               <span className="font-bold">
-                {dayPeek?.toLocaleDateString('en-US', { weekday: 'long' })}
+                {dayPeek && formatDate(dayPeek, { weekday: 'long' }, locale)}
               </span>
               <span className="font-normal text-muted-foreground">
-                {dayPeek?.toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}
+                {dayPeek && formatDate(dayPeek, { day: 'numeric', month: 'long' }, locale)}
               </span>
               {dayPeek && dayPeek.toDateString() === todayInAlmaty().toDateString() && (
-                <Badge className="border-0 bg-primary/10 text-primary hover:bg-primary/10">Today</Badge>
+                <Badge className="border-0 bg-primary/10 text-primary hover:bg-primary/10">{t('chatLive.calendar.today')}</Badge>
               )}
             </DialogTitle>
             {peekHour !== null && (
@@ -478,20 +480,20 @@ export default function Calendar() {
                 <span className="font-semibold tabular-nums text-foreground">
                   {hourLabel(peekHour)}–{hourLabel(peekHour + 1)}
                 </span>
-                <span className="text-muted-foreground">{countLabel(dayPeekEvents)}</span>
+                <span className="text-muted-foreground">{eventCountText(dayPeekEvents, locale)}</span>
                 <button
                   type="button"
                   onClick={() => setPeekHour(null)}
                   className="ml-auto text-[13px] font-medium text-primary hover:underline"
                 >
-                  Show the whole day ({dayPeekAll.length})
+                  {t('chatLive.calendar.wholeDay', { count: dayPeekAll.length })}
                 </button>
               </div>
             )}
           </DialogHeader>
           <div className="-mx-1 flex flex-1 flex-col gap-1 overflow-y-auto px-1">
             {dayPeekEvents.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">No events scheduled for this day.</p>
+              <p className="py-6 text-center text-sm text-muted-foreground">{t('chatLive.calendar.noEventsDay')}</p>
             ) : (
               dayPeekEvents.map((event) => {
                 const s = eventStyle(event);
@@ -519,7 +521,7 @@ export default function Calendar() {
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium text-foreground">{eventTitle(event)}</span>
                         <span className="text-xs text-muted-foreground">
-                          <span className={cx('font-semibold', s.time)}>{typeLabel(event.event_type)}</span>
+                          <span className={cx('font-semibold', s.time)}>{eventTypeName(event.event_type, locale)}</span>
                           <MeetMark event={event} role={user?.role} className="ml-1.5 h-3 w-3" />
                           {event.event_type !== 'class' && event.groups && event.groups.length > 0 && ` · ${event.groups.join(', ')}`}
                         </span>
@@ -529,12 +531,12 @@ export default function Calendar() {
                       <button
                         type="button"
                         onClick={() => openRecording(event)}
-                        aria-label={`Open the recording of ${eventTitle(event)}, ${formatTime(event.start_datetime)}`}
+                        aria-label={t('chatLive.calendar.openRecordingOf', { title: eventTitle(event), time: formatTime(event.start_datetime) })}
                         className="inline-flex flex-none items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-[12.5px] font-semibold text-foreground shadow-sm transition hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <Play className="h-3 w-3 fill-current" aria-hidden />
-                        <span className="hidden sm:inline">Open recording</span>
-                        <span className="sm:hidden">Watch</span>
+                        <span className="hidden sm:inline">{t('chatLive.calendar.openRecording')}</span>
+                        <span className="sm:hidden">{t('chatLive.calendar.watch')}</span>
                       </button>
                     )}
                     {onItsWay && (

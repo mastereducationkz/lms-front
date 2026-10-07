@@ -39,6 +39,8 @@ export interface User {
   /** From /auth/me only: what this person has seen of the tour and the one-time tips (lib/guide/state),
    * and their small choices such as Look Up's translation language (components/lesson/lookup). */
   ui_state?: { tour_version_seen: number; tips: Record<string, string>; prefs?: { lookup_lang?: 'ru' | 'kk' } } | null;
+  /** The person's own UI language; null/absent = the role's default (lib/i18n/locale.ts). */
+  ui_language?: 'en' | 'ru' | null;
 }
 
 export type UserRole = 'student' | 'teacher' | 'curator' | 'admin' | 'head_curator' | 'head_teacher' | 'parent';

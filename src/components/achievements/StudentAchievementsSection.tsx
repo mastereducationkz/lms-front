@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import { Flame, Star, Trophy } from 'lucide-react';
-import { recentlyUnlocked } from '@/lib/achievements';
+import { achievementField, recentlyUnlocked } from '@/lib/achievements';
 import type { MessageKey } from '@/lib/i18n';
 import { useT } from '@/lib/i18n/react';
 import { getStudentAchievements, type StudentAchievements } from '@/services/api/achievementsUi';
@@ -56,10 +56,10 @@ export default function StudentAchievementsSection({ studentId }: { studentId: n
           {unlocked.map((a) => (
             <li
               key={a.key}
-              title={a.description || a.how_to || ''}
+              title={achievementField(a, 'description') || achievementField(a, 'how_to') || ''}
               className={`rounded-full px-2.5 py-1 text-xs font-medium ${tierStyle(a.tier).badge}`}
             >
-              {a.title}
+              {achievementField(a, 'title')}
               {a.count > 1 ? ` ×${a.count}` : ''}
             </li>
           ))}

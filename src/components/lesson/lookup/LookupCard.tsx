@@ -6,6 +6,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { BookmarkPlus, Check, CircleAlert, Hourglass, Loader2, RotateCcw, TextSelect, X } from 'lucide-react';
 import { Skeleton } from '../../ui/skeleton';
+import type { MessageKey } from '../../../lib/i18n';
+import { useT } from '../../../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 import type { LookupLang } from '../../../services/api/lookup';
 import { MAX_LOOKUP_CHARS } from './selection';
 import type { LookupState } from './useLookupStream';
@@ -29,14 +32,15 @@ export interface LookupCardProps {
 // Buttons keep the reader's selection: a click inside the card must not collapse it.
 const keepSelection = (event: React.MouseEvent) => event.preventDefault();
 
-const LANGS: Array<{ value: LookupLang; label: string; name: string }> = [
-  { value: 'ru', label: 'RU', name: 'Russian' },
-  { value: 'kk', label: 'KZ', name: 'Kazakh' },
+const LANGS: Array<{ value: LookupLang; label: string; name: MessageKey }> = [
+  { value: 'ru', label: 'RU', name: 'lessonPlayer.lookup.langRussian' },
+  { value: 'kk', label: 'KZ', name: 'lessonPlayer.lookup.langKazakh' },
 ];
 
 function LangToggle({ lang, onLang }: { lang: LookupLang; onLang: (lang: LookupLang) => void }) {
+  const t = useT();
   return (
-    <div role="group" aria-label="Translation language" className="inline-flex shrink-0 rounded-md border border-border bg-muted p-0.5">
+    <div role="group" aria-label={t('lessonPlayer.lookup.langGroup')} className="inline-flex shrink-0 rounded-md border border-border bg-muted p-0.5">
       {LANGS.map((option) => {
         const active = option.value === lang;
         return (
@@ -44,8 +48,8 @@ function LangToggle({ lang, onLang }: { lang: LookupLang; onLang: (lang: LookupL
             key={option.value}
             type="button"
             aria-pressed={active}
-            aria-label={`Translate into ${option.name}`}
-            title={`Translate into ${option.name}`}
+            aria-label={t('lessonPlayer.lookup.translateInto', { language: t(option.name) })}
+            title={t('lessonPlayer.lookup.translateInto', { language: t(option.name) })}
             onMouseDown={keepSelection}
             onClick={() => !active && onLang(option.value)}
             className={`h-6 min-w-[2.25rem] rounded-[5px] px-2 text-[11px] font-semibold tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
@@ -92,6 +96,7 @@ function Example({ text, headword }: { text: string; headword: string }) {
 }
 
 function RateLimited({ message, retryAfter, onRetry }: { message: string; retryAfter?: number; onRetry: () => void }) {
+  const t = useT();
   // A per-minute limit counts down to its retry; a daily one has nothing to wait for today.
   const daily = (retryAfter ?? 0) > 120;
   const [left, setLeft] = useState(daily ? 0 : retryAfter ?? 0);
@@ -104,7 +109,7 @@ function RateLimited({ message, retryAfter, onRetry }: { message: string; retryA
     <Notice icon={<Hourglass className="h-4 w-4" aria-hidden />} message={message}>
       {!daily && (
         <RetryButton onRetry={onRetry} disabled={left > 0}>
-          {left > 0 ? `Try again in ${left} s` : 'Try again'}
+          {left > 0 ? t('lessonPlayer.lookup.retryIn', { seconds: left }) : t('common.retry')}
         </RetryButton>
       )}
     </Notice>
@@ -145,18 +150,19 @@ const Bar = ({ className }: { className: string }) => <Skeleton className={`bg-f
 
 export function LookupCard(props: LookupCardProps) {
   const { kind, selection, state, lang, labelId, save, onLang, onClose, onRetry, onSave } = props;
+  const t = useT();
 
   if (kind === 'too_long') {
     return (
       <div className="flex items-start gap-2.5 px-4 py-3.5">
         <TextSelect className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden />
         <div className="min-w-0 flex-1">
-          <p id={labelId} className="text-sm font-semibold text-foreground">Select up to a sentence or two</p>
+          <p id={labelId} className="text-sm font-semibold text-foreground">{t('lessonPlayer.lookup.tooLongTitle')}</p>
           <p className="mt-1 text-[13px] leading-snug text-muted-foreground">
-            Look Up explains words, phrases and sentences up to {MAX_LOOKUP_CHARS} characters. This selection has {selection.length}.
+            {t('lessonPlayer.lookup.tooLongBody', { max: MAX_LOOKUP_CHARS, count: selection.length })}
           </p>
         </div>
-        <IconButton label="Close" onClick={onClose}><X className="h-4 w-4" /></IconButton>
+        <IconButton label={t('common.close')} onClick={onClose}><X className="h-4 w-4" /></IconButton>
       </div>
     );
   }
@@ -166,8 +172,8 @@ export function LookupCard(props: LookupCardProps) {
   const done = status === 'done';
   const headword = fields.headword || selection;
   const announcement = [
-    finished.translation && fields.translation && `Translation: ${fields.translation}.`,
-    finished.definition && fields.definition && `Definition: ${fields.definition}.`,
+    finished.translation && fields.translation && t('lessonPlayer.lookup.announceTranslation', { text: fields.translation }),
+    finished.definition && fields.definition && t('lessonPlayer.lookup.announceDefinition', { text: fields.definition }),
   ].filter(Boolean).join(' ');
 
   const header = (
@@ -183,11 +189,11 @@ export function LookupCard(props: LookupCardProps) {
             ) : null}
           </p>
         ) : (
-          <p id={labelId} className="text-sm font-semibold leading-tight text-foreground">Translation</p>
+          <p id={labelId} className="text-sm font-semibold leading-tight text-foreground">{t('lessonPlayer.lookup.translation')}</p>
         )}
       </div>
       <LangToggle lang={lang} onLang={onLang} />
-      <IconButton label="Close" onClick={onClose}><X className="h-4 w-4" /></IconButton>
+      <IconButton label={t('common.close')} onClick={onClose}><X className="h-4 w-4" /></IconButton>
     </div>
   );
 
@@ -197,7 +203,7 @@ export function LookupCard(props: LookupCardProps) {
       ? <RateLimited key={state.id} message={error.message} retryAfter={error.retryAfter} onRetry={onRetry} />
       : (
         <Notice icon={<CircleAlert className="h-4 w-4" aria-hidden />} message={error.message}>
-          <RetryButton onRetry={onRetry}>Try again</RetryButton>
+          <RetryButton onRetry={onRetry}>{t('common.retry')}</RetryButton>
         </Notice>
       );
   } else if (kind === 'word') {
@@ -232,7 +238,7 @@ export function LookupCard(props: LookupCardProps) {
         )}
         {(glosses.length > 0 || (busy && finished.translation)) && (
           <div className="border-t border-border pt-2.5">
-            <p className="mb-1.5 text-xs font-medium text-muted-foreground">Words to know</p>
+            <p className="mb-1.5 text-xs font-medium text-muted-foreground">{t('lessonPlayer.lookup.wordsToKnow')}</p>
             <ul className="space-y-2">
               {glosses.map((gloss) => (
                 <li key={gloss.term} className={`text-sm leading-snug ${fade}`}>
@@ -258,7 +264,7 @@ export function LookupCard(props: LookupCardProps) {
           {save === 'saved' ? (
             <p className="inline-flex h-8 items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400" role="status">
               <Check className="h-3.5 w-3.5" aria-hidden />
-              {kind === 'word' ? 'Saved to your flashcards' : 'Phrase card saved'}
+              {kind === 'word' ? t('lessonPlayer.lookup.savedWord') : t('lessonPlayer.lookup.savedPhrase')}
             </p>
           ) : (
             <button
@@ -269,10 +275,10 @@ export function LookupCard(props: LookupCardProps) {
               className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 -ml-2 text-xs font-medium text-brand transition-colors hover:bg-brand-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
             >
               {save === 'saving' ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <BookmarkPlus className="h-3.5 w-3.5" aria-hidden />}
-              {kind === 'word' ? 'Save to flashcards' : 'Save as a phrase card'}
+              {kind === 'word' ? t('lessonPlayer.lookup.saveWord') : t('lessonPlayer.lookup.savePhrase')}
             </button>
           )}
-          {save === 'failed' && <span className="ml-2 text-xs text-destructive dark:text-red-400">Couldn't save. Try again.</span>}
+          {save === 'failed' && <span className="ml-2 text-xs text-destructive dark:text-red-400">{t('lessonPlayer.lookup.saveFailed')}</span>}
         </div>
       )}
       <div aria-live="polite" className="sr-only">{announcement}</div>

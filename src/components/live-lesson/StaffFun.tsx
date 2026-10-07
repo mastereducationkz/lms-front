@@ -12,10 +12,13 @@ import { lostShowing } from '../../lib/liveLesson/reactions';
 import { useLiveEvent } from '../../lib/liveLesson/useLiveEvent';
 import type { LiveAct, LiveSocket } from '../../lib/liveLesson/useLiveLesson';
 import type { LiveState, Person, ReactionEvent } from '../../lib/liveLesson/types';
+import type { MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 import { LiveAvatar } from './orcas';
 import { ReactionGlyph } from './reactionIcons';
 
-const AUTO: Record<string, string> = { focus: 'paused while a pop-check / mistake is open', timer: 'paused while the timer runs' };
+const AUTO: Record<string, MessageKey> = { focus: 'chatLive.live.pausedFocus', timer: 'chatLive.live.pausedTimer' };
 
 export type RenderStar = (student: Person, groupId: number, close: () => void) => ReactNode;
 
@@ -35,15 +38,16 @@ function useTick(ms: number) {
 }
 
 export default function StaffFun({ state, api, act, socket, renderStar }: Props) {
+  const t = useT();
   const id = state.lesson.id;
   const now = useTick(1000);
   const [recent, setRecent] = useState<number[]>([]);
   const [lost, setLost] = useState<{ count: number; until: number } | null>(
     state.lost?.count ? { count: state.lost.count, until: Date.now() + 60_000 } : null);
-  useLiveEvent<ReactionEvent>(socket, id, 'live:reaction', () => setRecent((r) => [...r.filter((t) => Date.now() - t < 60_000), Date.now()]));
+  useLiveEvent<ReactionEvent>(socket, id, 'live:reaction', () => setRecent((r) => [...r.filter((at) => Date.now() - at < 60_000), Date.now()]));
   useLiveEvent<{ event_id: number; count: number; until: string }>(socket, id, 'live:lost',
     (p) => setLost({ count: p.count, until: Date.parse(p.until) }));
-  const perMinute = recent.filter((t) => now - t < 60_000).length;
+  const perMinute = recent.filter((at) => now - at < 60_000).length;
   const energy = state.energy;
   const status = state.reactions;
   const lostNow = lostShowing(lost, now);
@@ -53,25 +57,25 @@ export default function StaffFun({ state, api, act, socket, renderStar }: Props)
     <section className="space-y-3 rounded-xl border border-border p-3">
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 text-xs">
-          <p className="font-semibold uppercase tracking-wide text-muted-foreground">Reactions</p>
+          <p className="font-semibold uppercase tracking-wide text-muted-foreground">{t('chatLive.live.reactions')}</p>
           <p className="truncate text-foreground">
-            <b>{perMinute}</b>/min · <b>{energy?.total ?? 0}</b> total
-            {energy?.top ? <span className="ml-1"><ReactionGlyph kind={energy.top} /> most</span> : null}
+            <b>{perMinute}</b>{t('chatLive.live.perMinute')} · <b>{energy?.total ?? 0}</b> {t('chatLive.live.total')}
+            {energy?.top ? <span className="ml-1"><ReactionGlyph kind={energy.top} /> {t('chatLive.live.most')}</span> : null}
           </p>
           {status && !status.on && status.paused && status.paused !== 'teacher' && (
-            <p className="text-[11px] text-muted-foreground">{AUTO[status.paused]}</p>
+            <p className="text-[11px] text-muted-foreground">{AUTO[status.paused] ? t(AUTO[status.paused]) : null}</p>
           )}
         </div>
         <button type="button" onClick={() => run(() => api.pauseReactions(id, !state.reactions_paused))}
           className="inline-flex flex-none items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs font-semibold text-foreground hover:bg-muted/60">
-          {state.reactions_paused ? <><Play className="h-3.5 w-3.5" />Resume</> : <><Pause className="h-3.5 w-3.5" />Pause</>}
+          {state.reactions_paused ? <><Play className="h-3.5 w-3.5" />{t('chatLive.live.resume')}</> : <><Pause className="h-3.5 w-3.5" />{t('chatLive.live.pause')}</>}
         </button>
       </div>
 
       <div className={cn('flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-opacity duration-700',
         lostNow ? 'bg-amber-50 text-amber-900 opacity-100 dark:bg-amber-950/40 dark:text-amber-100' : 'opacity-0 h-0 overflow-hidden p-0')}
         aria-live="polite">
-        <Frown className="h-5 w-5" aria-hidden /><b>{lostNow}</b> lost right now <span className="text-xs opacity-70">(anonymous)</span>
+        <Frown className="h-5 w-5" aria-hidden /><b>{lostNow}</b> {t('chatLive.live.lostNow', { count: lostNow })} <span className="text-xs opacity-70">{t('chatLive.live.anonymousParen')}</span>
       </div>
 
       <HandQueue state={state} onCall={(userId) => run(() => api.callHand(id, userId))} />
@@ -79,20 +83,21 @@ export default function StaffFun({ state, api, act, socket, renderStar }: Props)
 
       <button type="button" onClick={() => run(() => api.recap(id, !state.recap))}
         className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary/10 px-2 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15">
-        <PartyPopper className="h-3.5 w-3.5" aria-hidden />{state.recap ? 'Hide the closing recap' : 'Show the closing recap'}
+        <PartyPopper className="h-3.5 w-3.5" aria-hidden />{state.recap ? t('chatLive.live.hideRecap') : t('chatLive.live.showRecap')}
       </button>
     </section>
   );
 }
 
 function HandQueue({ state, onCall }: { state: LiveState; onCall: (userId: number) => void }) {
+  const t = useT();
   const hands = state.hands ?? [];
   return (
     <div>
       <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        <Hand className="h-3.5 w-3.5" aria-hidden />Hands up {hands.length ? `· ${hands.length}` : ''}
+        <Hand className="h-3.5 w-3.5" aria-hidden />{t('chatLive.live.handsUp')} {hands.length ? `· ${hands.length}` : ''}
       </p>
-      {hands.length === 0 ? <p className="text-xs text-muted-foreground">Nobody yet.</p> : (
+      {hands.length === 0 ? <p className="text-xs text-muted-foreground">{t('chatLive.live.nobodyYet')}</p> : (
         <ol className="mt-1 space-y-1">
           {hands.map((h, i) => (
             <li key={h.user_id} className="flex items-center justify-between gap-2 text-sm">
@@ -102,7 +107,7 @@ function HandQueue({ state, onCall }: { state: LiveState; onCall: (userId: numbe
                 <span className="truncate">{h.name}</span>
               </span>
               <button type="button" onClick={() => onCall(h.user_id)}
-                className="flex-none rounded-lg bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">Call</button>
+                className="flex-none rounded-lg bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">{t('chatLive.live.call')}</button>
             </li>
           ))}
         </ol>
@@ -114,6 +119,7 @@ function HandQueue({ state, onCall }: { state: LiveState; onCall: (userId: numbe
 function CrownBlock({ state, api, run, renderStar }: {
   state: LiveState; api: LiveApi; run: (write: () => Promise<unknown>) => void; renderStar?: RenderStar;
 }) {
+  const t = useT();
   const id = state.lesson.id;
   const [open, setOpen] = useState(false);
   const [choice, setChoice] = useState<number | ''>('');
@@ -132,10 +138,10 @@ function CrownBlock({ state, api, run, renderStar }: {
     <div className="rounded-lg bg-amber-50/60 p-2 dark:bg-amber-950/20">
       <div className="flex items-center justify-between gap-2">
         <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300">
-          <Crown className="h-3.5 w-3.5" aria-hidden />Kasatik of the lesson
+          <Crown className="h-3.5 w-3.5" aria-hidden />{t('chatLive.live.crown')}
         </p>
         <button type="button" onClick={() => setOpen((v) => !v)} className="text-xs font-semibold text-primary">
-          {crowned ? 'Change' : open ? 'Close' : 'Choose'}
+          {crowned ? t('chatLive.live.change') : open ? t('common.close') : t('chatLive.live.choose')}
         </button>
       </div>
       {crowned && (
@@ -148,21 +154,21 @@ function CrownBlock({ state, api, run, renderStar }: {
         <div className="mt-2 flex gap-1.5">
           <select value={choice} onChange={(e) => setChoice(e.target.value ? Number(e.target.value) : '')}
             className="min-w-0 flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs">
-            <option value="">Pick a student…</option>
+            <option value="">{t('chatLive.live.pickStudent')}</option>
             {candidates.map((p) => <option key={p.user_id} value={p.user_id}>{p.name}</option>)}
           </select>
           <button type="button" disabled={choice === ''}
             onClick={() => { if (choice !== '') { run(() => api.crown(id, choice)); setOpen(false); } }}
-            className="rounded-lg bg-amber-500 px-2 py-1 text-xs font-semibold text-white disabled:opacity-40">Crown</button>
+            className="rounded-lg bg-amber-500 px-2 py-1 text-xs font-semibold text-white disabled:opacity-40">{t('chatLive.live.crownButton')}</button>
         </div>
       )}
-      {open && <p className="mt-1 text-[11px] text-muted-foreground">Suggested from today's participation — change it if you like.</p>}
+      {open && <p className="mt-1 text-[11px] text-muted-foreground">{t('chatLive.live.crownHint')}</p>}
       {crowned && !open && (renderStar && groupId ? (
         <button type="button" onClick={() => setStar(true)} className="mt-1.5 text-xs font-semibold text-primary underline underline-offset-2">
-          Also give Star of the Week?
+          {t('chatLive.live.alsoStar')}
         </button>
       ) : (
-        <p className="mt-1 text-[11px] text-muted-foreground">Star of the Week: give it from the lesson page or the leaderboard.</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">{t('chatLive.live.starElsewhere')}</p>
       ))}
       {star && crowned && groupId && renderStar?.(crowned, groupId, () => setStar(false))}
     </div>

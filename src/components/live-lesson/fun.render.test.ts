@@ -1,6 +1,14 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+// useT() reads AuthContext, whose module pulls the API client in (localStorage at module scope).
+vi.mock('../../contexts/AuthContext', async () => {
+  const { createContext } = await import('react');
+  return { default: createContext(undefined) };
+});
+
+import { setActiveLocale } from '../../lib/i18n';
 import type { LiveApi } from '../../lib/liveLesson/api';
 import type { LiveState } from '../../lib/liveLesson/types';
 import ReactionOrca, { REACTION_KINDS } from '../mascot/ReactionOrca';
@@ -22,6 +30,8 @@ const state = {
 const api = {} as LiveApi;
 
 describe('the fun layer renders', () => {
+  afterEach(() => setActiveLocale('en'));
+
   it('gives the teacher the counter, the auto-pause reason, «lost», the hand queue and the crown', () => {
     const html = renderToStaticMarkup(createElement(StaffFun, { state, api, act: vi.fn() }));
     expect(html).toContain('Reactions');
@@ -31,6 +41,14 @@ describe('the fun layer renders', () => {
     expect(html).toContain('Kasatik of the lesson');
     expect(html).toContain('Мадина К.');
     expect(html).toContain('give it from the lesson page or the leaderboard'); // no Star dialog in the panel
+  });
+  it('speaks Russian to a Russian-speaking teacher, with the count inflected', () => {
+    setActiveLocale('ru');
+    const html = renderToStaticMarkup(createElement(StaffFun, { state, api, act: vi.fn() }));
+    expect(html).toContain('Реакции');
+    expect(html).toContain('сейчас не понимают'); // 5 lost
+    expect(html).toContain('Касатик урока');
+    expect(html).not.toContain('lost right now');
   });
   it('gives a student six reactions on their own orca, the paused note, the hand place and «lost»', () => {
     const html = renderToStaticMarkup(createElement('div', null,

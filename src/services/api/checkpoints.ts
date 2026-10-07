@@ -1,4 +1,6 @@
 import { api } from './client';
+import { activeLocale, formatDateTime, t, type Locale } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 // SAT Checkpoints (docs/superpowers/plans/2026-09-03-sat-checkpoints.md).
 // Backend: /checkpoints/me (student) and /checkpoints/admin/* (staff).
@@ -175,45 +177,38 @@ export function coversLabel(units: CheckpointUnit[]): string {
   return parts.join(' + ');
 }
 
-/**
- * Checkpoint deadlines specifically render in English (e.g. "5 Sep, 17:48"), still in the
- * Asia/Almaty timezone — formatAlmaty's ru-RU locale (used elsewhere) reads oddly here in an
- * otherwise-English UI, so this doesn't delegate to it.
- */
-export const formatDeadline = (iso: string | null | undefined): string => {
+/** "5 Sept, 17:48" / «5 сент., 17:48», on Almaty time, in the user's language. */
+export const formatDeadline = (iso: string | null | undefined, locale: Locale = activeLocale()): string => {
   if (!iso) return '';
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Almaty', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
-  }).formatToParts(date);
-  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
-  return `${get('day')} ${get('month')}, ${get('hour')}:${get('minute')}`;
+  if (Number.isNaN(new Date(iso).getTime())) return iso;
+  return formatDateTime(iso, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }, locale);
 };
 
 /** "5h 12m" / "3d 2h" style duration for countdowns and lateness. */
-export const formatDuration = (minutes: number): string => {
+export const formatDuration = (minutes: number, locale: Locale = activeLocale()): string => {
   const m = Math.max(0, Math.round(minutes));
   const d = Math.floor(m / 1440);
   const h = Math.floor((m % 1440) / 60);
   const min = m % 60;
-  if (d > 0) return `${d}d ${h}h`;
-  if (h > 0) return `${h}h ${min}m`;
-  return `${min}m`;
+  if (d > 0) return t('lessonPlayer.duration.daysHours', { days: d, hours: h }, locale);
+  if (h > 0) return t('lessonPlayer.duration.hoursMinutes', { hours: h, minutes: min }, locale);
+  return t('lessonPlayer.duration.minutes', { minutes: min }, locale);
 };
 
 /** "due in 5h 12m" while the deadline is ahead, "overdue by 3h 05m" once it has passed. */
-export const deadlineCountdown = (iso: string | null | undefined, now: Date = new Date()): string => {
+export const deadlineCountdown = (iso: string | null | undefined, now: Date = new Date(), locale: Locale = activeLocale()): string => {
   if (!iso) return '';
   const deadline = new Date(iso);
   if (Number.isNaN(deadline.getTime())) return '';
   const minutes = (deadline.getTime() - now.getTime()) / 60000;
-  return minutes >= 0 ? `due in ${formatDuration(minutes)}` : `overdue by ${formatDuration(-minutes)}`;
+  return minutes >= 0
+    ? t('lessonPlayer.deadline.dueIn', { duration: formatDuration(minutes, locale) }, locale)
+    : t('lessonPlayer.deadline.overdueBy', { duration: formatDuration(-minutes, locale) }, locale);
 };
 
 /** "late by 3h 12m" for a row submitted after its deadline, '' otherwise. */
-export const lateLabel = (row: Pick<CheckpointRow, 'late' | 'late_minutes'>): string =>
-  row.late && row.late_minutes != null ? `late by ${formatDuration(row.late_minutes)}` : '';
+export const lateLabel = (row: Pick<CheckpointRow, 'late' | 'late_minutes'>, locale: Locale = activeLocale()): string =>
+  row.late && row.late_minutes != null ? t('lessonPlayer.deadline.lateBy', { duration: formatDuration(row.late_minutes, locale) }, locale) : '';
 
 export const STATUS_LABEL: Record<CheckpointStatus, string> = {
   locked: 'Locked', available: 'Available', completed: 'Completed', overdue: 'Overdue', reopened: 'Reopened',

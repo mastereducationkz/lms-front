@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import { Hand, Radio, Users } from 'lucide-react';
 import { playChime } from '../../lib/liveLesson/chime';
-import { activityLabel, correctIndices } from '../../lib/liveLesson/logic';
+import { correctIndices } from '../../lib/liveLesson/logic';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 import { popcheckRight, rightAnswerers, votersByOption } from '../../lib/liveLesson/orcas';
 import type { ActivityView, LiveState } from '../../lib/liveLesson/types';
-import { CloudView, Countdown, OptionRows, QuestionBody } from './parts';
+import { CloudView, Countdown, OptionRows, QuestionBody, activityKindKey } from './parts';
 import { OrcaStack, OrcaStrip, PickReveal } from './orcas';
 import { AnswerLane, ReactionLayer, Recap } from './funScreens';
 import type { LiveSocket } from '../../lib/liveLesson/useLiveLesson';
@@ -19,6 +21,7 @@ import type { LiveSocket } from '../../lib/liveLesson/useLiveLesson';
  * never goes on the big screen. Anonymous activities show no orcas at all.
  */
 export default function PresenterStage({ state, seconds, socket }: { state: LiveState; seconds: number | null; socket?: LiveSocket | null }) {
+  const t = useT();
   const activity = state.activity;
   const idle = !activity || (activity.status === 'closed' && !activity.revealed && !activity.answered);
   return (
@@ -34,7 +37,7 @@ export default function PresenterStage({ state, seconds, socket }: { state: Live
       </header>
       {state.pick && !state.pick.outcome && (
         <div className="mx-auto mt-4 flex items-center gap-4 rounded-3xl bg-amber-100 px-8 py-4 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100">
-          <p className="inline-flex flex-col items-center gap-1 text-base font-semibold uppercase tracking-wide"><Hand className="h-7 w-7" aria-hidden />Your turn</p>
+          <p className="inline-flex flex-col items-center gap-1 text-base font-semibold uppercase tracking-wide"><Hand className="h-7 w-7" aria-hidden />{t('chatLive.live.yourTurn')}</p>
           <PickReveal pickId={state.pick.id} picked={state.pick} room={state.room ?? []} size={idle ? 168 : 104} horizontal={!idle} />
         </div>
       )}
@@ -45,7 +48,7 @@ export default function PresenterStage({ state, seconds, socket }: { state: Live
       <ReactionLayer socket={socket} eventId={state.lesson.id} size={64} />
       {state.room && state.room.length > 0 && (
         <footer className="mx-auto w-full max-w-6xl border-t border-border pt-4">
-          <p className="mb-2 text-center text-sm font-semibold uppercase tracking-wide text-muted-foreground">Here now · {state.room.length}</p>
+          <p className="mb-2 text-center text-sm font-semibold uppercase tracking-wide text-muted-foreground">{t('chatLive.live.hereNow', { count: state.room.length })}</p>
           <OrcaStrip people={state.room} />
         </footer>
       )}
@@ -66,12 +69,13 @@ function useQr(link: string, size: number): string | null {
 }
 
 function Idle({ link }: { link: string }) {
+  const t = useT();
   const qr = useQr(link, 520);
   return (
     <div className="flex flex-col items-center gap-6 text-center">
-      {qr && <img src={qr} alt={`QR code for ${link}`} className="h-[min(52vh,26rem)] w-auto rounded-2xl bg-card p-3" />}
+      {qr && <img src={qr} alt={t('chatLive.live.qrFor', { link })} className="h-[min(52vh,26rem)] w-auto rounded-2xl bg-card p-3" />}
       <p className="text-4xl font-bold tracking-tight">{link.replace(/^https:\/\//, '')}</p>
-      <p className="text-2xl text-muted-foreground">Scan or open the link, sign in to the LMS. Waiting for a question</p>
+      <p className="text-2xl text-muted-foreground">{t('chatLive.live.idleHint')}</p>
     </div>
   );
 }
@@ -82,11 +86,14 @@ function SmallQr({ link }: { link: string }) {
 }
 
 function Answered({ activity }: { activity: ActivityView }) {
+  const t = useT();
   return (
     <div className="mt-6 space-y-4">
       <p className="inline-flex items-center gap-3 text-3xl text-muted-foreground">
         <Users className="h-8 w-8" aria-hidden />
-        <span><b className="text-foreground">{activity.answered}</b>{activity.offered ? ` of ${Math.max(activity.offered, activity.answered)}` : ''} answered</span>
+        <span><b className="text-foreground">{activity.answered}</b> {activity.offered
+          ? t('chatLive.live.answeredOf', { count: activity.answered, total: Math.max(activity.offered, activity.answered) })
+          : t('chatLive.live.answered', { count: activity.answered })}</span>
       </p>
       {/* The answer race: who has answered, never what — each orca swims in as its answer arrives. */}
       {activity.answered_by && activity.answered_by.length > 0 && (
@@ -97,23 +104,25 @@ function Answered({ activity }: { activity: ActivityView }) {
 }
 
 function RightRow({ people, size = 48 }: { people: { user_id: number; name: string | null }[]; size?: number }) {
+  const t = useT();
   if (!people.length) return null;
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <span className="text-xl font-semibold text-emerald-700 dark:text-emerald-400">Got it right</span>
+      <span className="text-xl font-semibold text-emerald-700 dark:text-emerald-400">{t('chatLive.live.gotItRight')}</span>
       <OrcaStack people={people} size={size} max={16} pop />
     </div>
   );
 }
 
 function Stage({ activity }: { activity: ActivityView }) {
+  const t = useT();
   const shown = activity.revealed;
-  const heading = activity.kind === 'popcheck' ? 'Homework pop-check' : activity.kind === 'mistake' ? 'Mistake of the day' : activity.prompt;
+  const heading = activity.kind === 'popcheck' ? t('chatLive.live.homeworkPopcheck') : activity.kind === 'mistake' ? t('chatLive.live.kind.mistake') : activity.prompt;
   return (
     <div className="space-y-6">
       <div>
         {(activity.kind === 'poll' || activity.kind === 'cloud') && (
-          <p className="text-xl font-semibold uppercase tracking-wide text-muted-foreground">{activityLabel(activity.kind)}</p>
+          <p className="text-xl font-semibold uppercase tracking-wide text-muted-foreground">{t(activityKindKey(activity.kind))}</p>
         )}
         {heading && <h1 className="mt-2 text-5xl font-bold leading-tight">{heading}</h1>}
       </div>
@@ -135,11 +144,11 @@ function Stage({ activity }: { activity: ActivityView }) {
         <div className="grid gap-4 sm:grid-cols-3">
           {(activity.items ?? []).map((item, i) => (
             <div key={i} className="rounded-2xl border border-border bg-card p-5 text-center">
-              <p className="text-xl text-muted-foreground">Question {i + 1}</p>
+              <p className="text-xl text-muted-foreground">{t('chatLive.live.question', { n: i + 1 })}</p>
               {shown && item.answered ? (
                 <p className="mt-2 text-6xl font-bold tabular-nums">{Math.round(((item.right ?? 0) / item.answered) * 100)}%</p>
               ) : null}
-              {shown && <p className="mt-1 text-lg text-muted-foreground">right</p>}
+              {shown && <p className="mt-1 text-lg text-muted-foreground">{t('chatLive.live.rightLower')}</p>}
               {shown && activity.answers && (
                 <OrcaStack people={popcheckRight(activity.answers, i)} size={36} max={7} pop className="mt-3 justify-center" />
               )}

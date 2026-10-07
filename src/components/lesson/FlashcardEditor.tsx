@@ -9,6 +9,8 @@ import { Badge } from '../ui/badge';
 import { Plus, Trash2, X, Image as ImageIcon, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import type { FlashcardSet, FlashcardItem } from '../../types';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/courseAuthoring';
 
 interface FlashcardEditorProps {
   flashcardSet: FlashcardSet;
@@ -16,6 +18,7 @@ interface FlashcardEditorProps {
 }
 
 export default function FlashcardEditor({ flashcardSet, setFlashcardSet }: FlashcardEditorProps) {
+  const t = useT();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [bulkUploadText, setBulkUploadText] = useState('');
@@ -75,7 +78,7 @@ export default function FlashcardEditor({ flashcardSet, setFlashcardSet }: Flash
       updateCard(cardId, { [imageField]: result.file_url });
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image. Please try again.');
+      alert(t('courseAuthoring.flashcards.uploadFailed'));
     } finally {
       setIsUploadingImage(false);
     }
@@ -105,7 +108,7 @@ export default function FlashcardEditor({ flashcardSet, setFlashcardSet }: Flash
     const lines = text.split('\n').map(line => line.trim()).filter(line => line !== '');
     
     if (lines.length % 2 !== 0) {
-      errors.push(`Expected even number of lines (pairs of front/back). Found ${lines.length} lines.`);
+      errors.push(t('courseAuthoring.flashcards.oddLines', { count: lines.length }));
       return { cards, errors };
     }
     
@@ -114,7 +117,7 @@ export default function FlashcardEditor({ flashcardSet, setFlashcardSet }: Flash
       const backText = lines[i + 1];
       
       if (!frontText || !backText) {
-        errors.push(`Card ${i / 2 + 1}: Both front and back text are required`);
+        errors.push(t('courseAuthoring.flashcards.bothSidesRequired', { n: i / 2 + 1 }));
         continue;
       }
       
@@ -143,7 +146,7 @@ export default function FlashcardEditor({ flashcardSet, setFlashcardSet }: Flash
     }
     
     if (cards.length === 0) {
-      setBulkUploadErrors(['No valid flashcards found. Please check the format.']);
+      setBulkUploadErrors([t('courseAuthoring.flashcards.noneFound')]);
       return;
     }
     
@@ -161,21 +164,21 @@ export default function FlashcardEditor({ flashcardSet, setFlashcardSet }: Flash
       {/* Flashcard Set Settings */}
       <Card>
         <CardHeader>
-          <CardTitle>Flashcard Set Settings</CardTitle>
+          <CardTitle>{t('courseAuthoring.flashcards.settings')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="set-title">Set Title</Label>
+              <Label htmlFor="set-title">{t('courseAuthoring.flashcards.setTitle')}</Label>
               <Input
                 id="set-title"
                 value={flashcardSet.title}
                 onChange={(e) => updateFlashcardSet({ title: e.target.value })}
-                placeholder="Enter flashcard set title"
+                placeholder={t('courseAuthoring.flashcards.setTitlePlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="study-mode">Study Mode</Label>
+              <Label htmlFor="study-mode">{t('courseAuthoring.flashcards.studyMode')}</Label>
               <Select
                 value={flashcardSet.study_mode}
                 onValueChange={(value: 'sequential' | 'random' | 'spaced_repetition') => 
@@ -186,21 +189,21 @@ export default function FlashcardEditor({ flashcardSet, setFlashcardSet }: Flash
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sequential">Sequential</SelectItem>
-                  <SelectItem value="random">Random</SelectItem>
-                  <SelectItem value="spaced_repetition">Spaced Repetition</SelectItem>
+                  <SelectItem value="sequential">{t('courseAuthoring.flashcards.sequential')}</SelectItem>
+                  <SelectItem value="random">{t('courseAuthoring.flashcards.random')}</SelectItem>
+                  <SelectItem value="spaced_repetition">{t('courseAuthoring.flashcards.spaced')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
+            <Label htmlFor="description">{t('courseAuthoring.flashcards.description')}</Label>
             <Textarea
               id="description"
               value={flashcardSet.description || ''}
               onChange={(e) => updateFlashcardSet({ description: e.target.value })}
-              placeholder="Describe what this flashcard set covers"
+              placeholder={t('courseAuthoring.flashcards.descriptionPlaceholder')}
               rows={2}
             />
           </div>
@@ -212,7 +215,7 @@ export default function FlashcardEditor({ flashcardSet, setFlashcardSet }: Flash
                 checked={flashcardSet.auto_flip}
                 onChange={(e) => updateFlashcardSet({ auto_flip: e.target.checked })}
               />
-              <span className="text-sm">Auto-flip cards after delay</span>
+              <span className="text-sm">{t('courseAuthoring.flashcards.autoFlip')}</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -220,7 +223,7 @@ export default function FlashcardEditor({ flashcardSet, setFlashcardSet }: Flash
                 checked={flashcardSet.show_progress}
                 onChange={(e) => updateFlashcardSet({ show_progress: e.target.checked })}
               />
-              <span className="text-sm">Show progress bar</span>
+              <span className="text-sm">{t('courseAuthoring.flashcards.showProgress')}</span>
             </label>
           </div>
         </CardContent>
@@ -229,42 +232,37 @@ export default function FlashcardEditor({ flashcardSet, setFlashcardSet }: Flash
       {/* Flashcards */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium text-foreground">Flashcards</h3>
+          <h3 className="text-lg font-medium text-foreground">{t('courseAuthoring.flashcards.title')}</h3>
           <div className="flex gap-2">
             <Dialog open={showBulkUploadModal} onOpenChange={setShowBulkUploadModal}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
                   <Upload className="w-4 h-4" />
-                  Bulk Upload
+                  {t('courseAuthoring.flashcards.bulkUpload')}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Bulk Upload Flashcards</DialogTitle>
+                  <DialogTitle>{t('courseAuthoring.flashcards.bulkTitle')}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label>Format</Label>
+                    <Label>{t('courseAuthoring.flashcards.format')}</Label>
                     <div className="text-sm text-muted-foreground mb-2">
-                      Enter pairs of lines: first line is the front (question), second line is the back (answer).
+                      {t('courseAuthoring.flashcards.formatHint')}
                     </div>
                     <pre className="bg-muted p-3 rounded text-xs">
-{`'tis
-it is
-'twas
-it was
-o'er
-over`}
+{t('courseAuthoring.flashcards.formatExample')}
                     </pre>
                   </div>
                   
                   <div>
-                    <Label htmlFor="bulk-text">Paste your flashcards</Label>
+                    <Label htmlFor="bulk-text">{t('courseAuthoring.flashcards.paste')}</Label>
                     <Textarea
                       id="bulk-text"
                       value={bulkUploadText}
                       onChange={(e) => setBulkUploadText(e.target.value)}
-                      placeholder="Enter flashcard pairs, each on a new line..."
+                      placeholder={t('courseAuthoring.flashcards.pastePlaceholder')}
                       rows={15}
                       className="font-mono text-sm"
                     />
@@ -272,7 +270,7 @@ over`}
 
                   {bulkUploadErrors.length > 0 && (
                     <div className="bg-red-50 border border-red-200 rounded p-3 dark:bg-red-950/40 dark:border-red-800/60">
-                      <h4 className="text-sm font-medium text-red-800 mb-2 dark:text-red-300">Errors:</h4>
+                      <h4 className="text-sm font-medium text-red-800 mb-2 dark:text-red-300">{t('courseAuthoring.flashcards.errors')}</h4>
                       <ul className="list-disc list-inside text-sm text-red-700 space-y-1 dark:text-red-300">
                         {bulkUploadErrors.map((error, i) => (
                           <li key={i}>{error}</li>
@@ -283,10 +281,10 @@ over`}
 
                   <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={() => setShowBulkUploadModal(false)}>
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                     <Button onClick={handleBulkUpload}>
-                      Import Flashcards
+                      {t('courseAuthoring.flashcards.import')}
                     </Button>
                   </div>
                 </div>
@@ -295,7 +293,7 @@ over`}
             
             <Button onClick={addCard} className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
-              Add Card
+              {t('courseAuthoring.flashcards.addCard')}
             </Button>
           </div>
         </div>
@@ -309,7 +307,7 @@ over`}
                     <span className="flex items-center justify-center w-6 h-6 bg-primary text-primary-foreground rounded-full text-sm font-medium">
                       {index + 1}
                     </span>
-                    <h4 className="font-medium">Card {index + 1}</h4>
+                    <h4 className="font-medium">{t('courseAuthoring.flashcards.card', { n: index + 1 })}</h4>
                   </div>
                   <div className="flex items-center gap-2">
                     <Select
@@ -322,9 +320,9 @@ over`}
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="easy">Easy</SelectItem>
-                        <SelectItem value="normal">Normal</SelectItem>
-                        <SelectItem value="hard">Hard</SelectItem>
+                        <SelectItem value="easy">{t('courseAuthoring.flashcards.easy')}</SelectItem>
+                        <SelectItem value="normal">{t('courseAuthoring.flashcards.normal')}</SelectItem>
+                        <SelectItem value="hard">{t('courseAuthoring.flashcards.hard')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <Button
@@ -342,11 +340,11 @@ over`}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Front Side */}
                   <div className="space-y-3">
-                    <Label>Front (Question)</Label>
+                    <Label>{t('courseAuthoring.flashcards.front')}</Label>
                     <Textarea
                       value={card.front_text}
                       onChange={(e) => updateCard(card.id, { front_text: e.target.value })}
-                      placeholder="Enter the question or term"
+                      placeholder={t('courseAuthoring.flashcards.frontPlaceholder')}
                       rows={3}
                     />
                     
@@ -356,7 +354,7 @@ over`}
                         <div className="relative">
                           <img 
                             src={card.front_image_url} 
-                            alt="Front" 
+                            alt={t('courseAuthoring.flashcards.frontAlt')}
                             className="w-full max-h-32 object-contain rounded border"
                           />
                           <Button
@@ -383,7 +381,7 @@ over`}
                           <label htmlFor={`front-image-${card.id}`} className="cursor-pointer">
                             <ImageIcon className="w-6 h-6 mx-auto mb-1 text-muted-foreground" />
                             <div className="text-xs text-muted-foreground">
-                              {isUploadingImage ? 'Uploading...' : 'Add image'}
+                              {isUploadingImage ? t('courseAuthoring.upload.uploading') : t('courseAuthoring.flashcards.addImage')}
                             </div>
                           </label>
                         </div>
@@ -393,11 +391,11 @@ over`}
 
                   {/* Back Side */}
                   <div className="space-y-3">
-                    <Label>Back (Answer)</Label>
+                    <Label>{t('courseAuthoring.flashcards.back')}</Label>
                     <Textarea
                       value={card.back_text}
                       onChange={(e) => updateCard(card.id, { back_text: e.target.value })}
-                      placeholder="Enter the answer or definition"
+                      placeholder={t('courseAuthoring.flashcards.backPlaceholder')}
                       rows={3}
                     />
                     
@@ -407,7 +405,7 @@ over`}
                         <div className="relative">
                           <img 
                             src={card.back_image_url} 
-                            alt="Back" 
+                            alt={t('courseAuthoring.flashcards.backAlt')}
                             className="w-full max-h-32 object-contain rounded border"
                           />
                           <Button
@@ -434,7 +432,7 @@ over`}
                           <label htmlFor={`back-image-${card.id}`} className="cursor-pointer">
                             <ImageIcon className="w-6 h-6 mx-auto mb-1 text-muted-foreground" />
                             <div className="text-xs text-muted-foreground">
-                              {isUploadingImage ? 'Uploading...' : 'Add image'}
+                              {isUploadingImage ? t('courseAuthoring.upload.uploading') : t('courseAuthoring.flashcards.addImage')}
                             </div>
                           </label>
                         </div>
@@ -445,7 +443,7 @@ over`}
 
                 {/* Tags */}
                 <div className="space-y-2">
-                  <Label>Tags</Label>
+                  <Label>{t('courseAuthoring.create.tags')}</Label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {card.tags?.map(tag => (
                       <Badge key={tag} variant="secondary" className="flex items-center gap-1">
@@ -461,7 +459,7 @@ over`}
                   </div>
                   <div className="flex gap-2">
                     <Input
-                      placeholder="Add a tag"
+                      placeholder={t('courseAuthoring.flashcards.addTag')}
                       onKeyPress={(e) => {
                         if (e.key === 'Enter') {
                           const target = e.target as HTMLInputElement;
@@ -481,7 +479,7 @@ over`}
         {flashcardSet.cards.length === 0 && (
           <Card>
             <CardContent className="text-center py-8 text-muted-foreground">
-              <p>No flashcards added yet. Click "Add Card" to get started.</p>
+              <p>{t('courseAuthoring.flashcards.empty')}</p>
             </CardContent>
           </Card>
         )}

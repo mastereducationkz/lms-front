@@ -1,4 +1,6 @@
 import type { Lesson } from '../types';
+import { activeLocale, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 // Shared by LessonPage's sidebar and CourseOverviewPage's lesson list: how far a
 // student has gotten through a unit's steps, for the progress fill behind each row.
@@ -18,19 +20,19 @@ export interface UnitProgress {
   showFill: boolean;
 }
 
-export function unitStepProgress(lesson: Pick<Lesson, 'steps' | 'is_completed'>): UnitProgress {
+export function unitStepProgress(lesson: Pick<Lesson, 'steps' | 'is_completed'>, locale: Locale = activeLocale()): UnitProgress {
   if (lesson.is_completed) {
-    return { ratio: 1, title: 'Completed', showFill: false };
+    return { ratio: 1, title: t('lessonPlayer.unitProgress.completed', undefined, locale), showFill: false };
   }
   const steps = (lesson.steps || []).filter((s) => !s.is_optional);
   if (steps.length === 0) {
-    return { ratio: 0, title: 'Not started', showFill: false };
+    return { ratio: 0, title: t('lessonPlayer.unitProgress.notStarted', undefined, locale), showFill: false };
   }
   const completed = steps.filter((s) => s.is_completed).length;
   const ratio = completed / steps.length;
   return {
     ratio,
-    title: `${completed} of ${steps.length} steps done`,
+    title: t('lessonPlayer.unitProgress.stepsDone', { done: completed, count: steps.length }, locale),
     showFill: ratio > 0 && ratio < 1,
   };
 }
