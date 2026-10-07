@@ -11,7 +11,8 @@ import {
   getClassMaterials, getClassMaterialsFeed,
   type FeedLessonEntry, type MaterialItem,
 } from '../services/api/classMaterials';
-import { materialsLocale, t } from '../lib/classMaterials';
+import { t } from '../lib/classMaterials';
+import { useLocale } from '../lib/i18n/react';
 import { initialMaterialsTab, type MaterialsTab } from '../lib/library';
 import {
   buildVisibleLessons, feedFooter, filtersChanged, mergeFeedLessons, shouldFetchDeepLinkDirectly, toFeedEntry,
@@ -43,7 +44,7 @@ function toOptions(groups: GroupOption[] | undefined, allLabel?: string): Search
  */
 export default function ClassMaterialsPage() {
   const { user } = useAuth();
-  const locale = materialsLocale(user?.role);
+  const locale = useLocale();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = initialMaterialsTab(searchParams);
 
@@ -103,7 +104,7 @@ export default function ClassMaterialsPage() {
 function LessonMaterialsFeed() {
   const { user } = useAuth();
   const role = user?.role;
-  const locale = materialsLocale(role);
+  const locale = useLocale();
   const isModerator = !!role && MODERATOR_ROLES.has(role);
 
   const [searchParams] = useSearchParams();

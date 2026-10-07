@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { ExternalLink, FileText, Image as ImageIcon, Link2, Loader2, Music } from 'lucide-react';
-import type { LessonLocale } from '../../services/api/classLessons';
+import { t as translate, type Locale, type MessageKey } from '../../lib/i18n';
 import type { MaterialItem } from '../../services/api/classMaterials';
 import { ApiError, SessionLost } from '../api';
 import { lessons } from '../lessons';
+import '@/lib/i18n/catalogs/classLesson';
+import '@/lib/i18n/catalogs/materials';
 
 /** What the panel lists: live items only (a moderated-away one is the lesson page's business). */
 export function visibleMaterials(items: MaterialItem[]): MaterialItem[] {
@@ -15,9 +17,8 @@ export function visibleMaterials(items: MaterialItem[]): MaterialItem[] {
  * the materials' own `open` endpoint (it logs the open and signs a file's URL); the window is
  * opened first, inside the click, so the browser lets it through.
  */
-export default function MaterialsCard({ eventId, locale }: { eventId: number; locale: LessonLocale }) {
-  const ru = locale === 'ru';
-  const t = (r: string, e: string) => (ru ? r : e);
+export default function MaterialsCard({ eventId, locale }: { eventId: number; locale: Locale }) {
+  const t = (key: MessageKey) => translate(key, undefined, locale);
   const [items, setItems] = useState<MaterialItem[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [opening, setOpening] = useState<number | null>(null);
@@ -54,9 +55,9 @@ export default function MaterialsCard({ eventId, locale }: { eventId: number; lo
     }
   };
 
-  if (failed) return <p className="text-xs text-muted-foreground">{t('Материалы не загрузились.', 'Materials did not load.')}</p>;
+  if (failed) return <p className="text-xs text-muted-foreground">{t('classLesson.panel.materialsFailed')}</p>;
   if (items === null) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
-  if (items.length === 0) return <p className="text-xs text-muted-foreground">{t('Материалов пока нет.', 'No materials yet.')}</p>;
+  if (items.length === 0) return <p className="text-xs text-muted-foreground">{t('classLesson.panel.noMaterials')}</p>;
   return (
     <ul className="space-y-1">
       {items.map((item) => (
@@ -68,7 +69,7 @@ export default function MaterialsCard({ eventId, locale }: { eventId: number; lo
           >
             {opening === item.id ? <Loader2 className="h-4 w-4 flex-none animate-spin text-muted-foreground" /> : <KindIcon item={item} />}
             <span className="min-w-0 flex-1 truncate">{item.title}</span>
-            {item.hidden_until_end && <span className="flex-none text-[10px] text-muted-foreground">{t('после урока', 'after class')}</span>}
+            {item.hidden_until_end && <span className="flex-none text-[10px] text-muted-foreground">{t('materials.item.afterClassChip')}</span>}
             <ExternalLink className="h-3 w-3 flex-none text-muted-foreground" aria-hidden />
           </button>
         </li>

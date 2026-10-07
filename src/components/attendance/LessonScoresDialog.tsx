@@ -3,9 +3,12 @@ import { Loader2, Star } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
+import type { MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
 import { canScore, changedScores, lessonStarted, scoredCount } from '../../lib/lessonScores';
 import { getEventParticipants, saveActivityScores } from '../../services/api/events';
 import type { EventStudent } from '../../types';
+import '@/lib/i18n/catalogs/attendance';
 
 interface Props {
   open: boolean;
@@ -14,29 +17,27 @@ interface Props {
   /** Naive UTC, as every lesson time. */
   start: string;
   title?: string;
-  /** Teachers read the LMS in English, everyone else in Russian. */
-  en: boolean;
   /** The scores just saved: student_id → score. */
   onSaved?: (saved: Map<number, number>) => void;
 }
 
 const SCORES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-const STATUS: Record<string, [string, string]> = {
-  attended: ['Был', 'Present'],
-  late: ['Опоздал', 'Late'],
-  missed: ['Не был', 'Absent'],
-  cancelled: ['Отменён', 'Cancelled'],
-  registered: ['Ещё не отмечен', 'Not marked yet'],
+const STATUS: Record<string, MessageKey> = {
+  attended: 'attendance.status.present',
+  late: 'attendance.status.late',
+  missed: 'attendance.status.absent',
+  cancelled: 'attendance.status.cancelled',
+  registered: 'attendance.status.notMarkedYet',
 };
 
-const RUBRIC: [string, string, string][] = [
-  ['0', 'Не участвовал(а) вообще', 'Did not participate at all'],
-  ['1-3', 'Минимальное участие, преимущественно пассивен(на)', 'Minimal participation, mostly passive'],
-  ['4-5', 'Среднее участие, отвечал(а) при обращении', 'Average participation, answered when called on'],
-  ['6-7', 'Активен(на), вызывался(лась) отвечать, вовлечён(а)', 'Active, volunteered to answer, engaged'],
-  ['8-9', 'Очень активен(на), помогал(а) другим, задавал(а) вопросы', 'Very active, helped others, asked questions'],
-  ['10', 'Выдающееся участие, вёл(а) обсуждение, исключительные усилия', 'Outstanding participation, led the discussion, exceptional effort'],
+const RUBRIC: [string, MessageKey][] = [
+  ['0', 'attendance.rubric.r0'],
+  ['1-3', 'attendance.rubric.r1to3'],
+  ['4-5', 'attendance.rubric.r4to5'],
+  ['6-7', 'attendance.rubric.r6to7'],
+  ['8-9', 'attendance.rubric.r8to9'],
+  ['10', 'attendance.rubric.r10'],
 ];
 
 /**
@@ -44,8 +45,8 @@ const RUBRIC: [string, string, string][] = [
  * lesson is fresh. Meet writes the register 20–30 minutes after the end; a score given before that
  * waits on the student and stays when Meet marks them. Saves scores only — never a mark.
  */
-export default function LessonScoresDialog({ open, onOpenChange, eventId, start, title, en, onSaved }: Props) {
-  const t = (ru: string, eng: string) => (en ? eng : ru);
+export default function LessonScoresDialog({ open, onOpenChange, eventId, start, title, onSaved }: Props) {
+  const t = useT();
   const [students, setStudents] = useState<EventStudent[] | null>(null);
   const [loaded, setLoaded] = useState<Map<number, number | null>>(new Map());
   const [current, setCurrent] = useState<Map<number, number | null>>(new Map());
@@ -95,25 +96,24 @@ export default function LessonScoresDialog({ open, onOpenChange, eventId, start,
         <DialogHeader className="space-y-1 border-b border-border px-5 py-4">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Star className="h-4 w-4 text-yellow-500 dark:text-yellow-400" aria-hidden />
-            {t('Баллы за урок', 'Activity scores')}
+            {t('attendance.scores.title')}
           </DialogTitle>
           {title && <p className="truncate text-xs text-muted-foreground">{title}</p>}
           <p className="text-xs text-muted-foreground">
-            {t('Поставьте баллы сразу после урока, пока помните. Посещаемость Meet отметит сам через 20–30 минут — баллы останутся.',
-              'Score right after the lesson while it is fresh. Meet marks attendance itself 20–30 minutes later — your scores stay.')}
+            {t('attendance.scores.intro')}
           </p>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-5 py-3">
           {!started ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              {t('Баллы можно ставить с начала урока.', 'Scores open when the lesson starts.')}
+              {t('attendance.scores.notStarted')}
             </p>
           ) : !students ? (
             error ? <p className="py-6 text-center text-sm text-rose-600 dark:text-rose-400">{error}</p>
               : <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : students.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">{t('На уроке нет учеников.', 'No students on this lesson.')}</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{t('attendance.scores.noStudents')}</p>
           ) : (
             <ul className="divide-y divide-border">
               {students.map((s) => {
@@ -125,7 +125,7 @@ export default function LessonScoresDialog({ open, onOpenChange, eventId, start,
                     <div className="min-w-0 sm:w-48 sm:flex-none">
                       <div className="truncate text-sm font-medium text-foreground">{s.name}</div>
                       <div className={cn('text-[11px]', open_ ? 'text-muted-foreground' : 'text-rose-600 dark:text-rose-400')}>
-                        {t(label[0], label[1])}{!open_ && t(' — без балла', ' — no score')}
+                        {open_ ? t(label) : t('attendance.scores.statusNoScore', { status: t(label) })}
                       </div>
                     </div>
                     {open_ && (
@@ -157,10 +157,10 @@ export default function LessonScoresDialog({ open, onOpenChange, eventId, start,
 
           {started && students && students.length > 0 && (
             <details className="mt-3 rounded-lg border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-              <summary className="cursor-pointer font-semibold text-foreground">{t('Шкала оценки', 'Scoring guide')}</summary>
+              <summary className="cursor-pointer font-semibold text-foreground">{t('attendance.rubric.title')}</summary>
               <div className="mt-2 space-y-1">
-                {RUBRIC.map(([range, ru, eng]) => (
-                  <div key={range} className="flex gap-2"><span className="w-8 flex-none font-medium">{range}</span>{t(ru, eng)}</div>
+                {RUBRIC.map(([range, key]) => (
+                  <div key={range} className="flex gap-2"><span className="w-8 flex-none font-medium">{range}</span>{t(key)}</div>
                 ))}
               </div>
             </details>
@@ -169,13 +169,13 @@ export default function LessonScoresDialog({ open, onOpenChange, eventId, start,
 
         <DialogFooter className="flex-row items-center gap-2 border-t border-border px-5 py-3 sm:justify-between">
           <span className="mr-auto text-xs text-muted-foreground">
-            {count && count.of > 0 && t(`Оценено ${count.scored} из ${count.of}`, `Scored ${count.scored} of ${count.of}`)}
+            {count && count.of > 0 && t('attendance.scores.scoredCount', { scored: count.scored, total: count.of })}
             {error && students && <span className="ml-2 text-rose-600 dark:text-rose-400">{error}</span>}
           </span>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>{t('Отмена', 'Cancel')}</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>{t('common.cancel')}</Button>
           <Button onClick={save} disabled={!changes.length || saving} className="bg-yellow-500 text-yellow-950 hover:bg-yellow-600">
             {saving && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-            {t('Сохранить', 'Save')}{changes.length > 0 && ` (${changes.length})`}
+            {t('common.save')}{changes.length > 0 && ` (${changes.length})`}
           </Button>
         </DialogFooter>
       </DialogContent>

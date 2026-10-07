@@ -1,6 +1,8 @@
-import { almatyDayKey, recordingsLocale, type Locale } from './recordings';
+import { almatyDayKey } from './recordings';
 import { parseAsUTC } from './datetime';
 import { MAX_UPLOAD_BYTES, uploadFailureReason } from './uploadFailure';
+import { activeLocale, formatDate, formatNumber, t as tr, type Locale, type MessageKey, type Params } from './i18n';
+import '@/lib/i18n/catalogs/materials';
 
 export type { Locale };
 
@@ -8,10 +10,8 @@ export type { Locale };
  * «Материалы урока» — per-lesson teacher files and links. This is the pure half: copy,
  * upload pre-checks, link validation and the small formatting helpers every surface (the
  * lesson pop-up, the teacher shelf, the /materials page and Telegram notices) shares. The
- * language rule mirrors recordings: curators and head curators read Russian, everyone else
- * English.
+ * language comes from the caller (useLocale), like everywhere else.
  */
-export const materialsLocale = (role?: string | null): Locale => recordingsLocale(role);
 
 export const ALLOWED_EXTS = [
   'pdf', 'ppt', 'pptx', 'doc', 'docx', 'xls', 'xlsx',
@@ -25,134 +25,129 @@ export const VIDEO_EXTS = [
 
 export const OFFICE_EXTS = ['ppt', 'pptx', 'doc', 'docx', 'xls', 'xlsx'] as const;
 
-export const COPY = {
-  sectionTitle: { ru: 'Материалы урока', en: 'Lesson materials' },
-  add: { ru: 'Добавить', en: 'Add' },
-  uploadFiles: { ru: 'Загрузить файлы', en: 'Upload files' },
-  fromMyFiles: { ru: 'Из моих файлов', en: 'From my files' },
-  copyFromLesson: { ru: 'Скопировать из урока…', en: 'Copy from a lesson…' },
-  link: { ru: 'Ссылка', en: 'Link' },
-  linkUrl: { ru: 'Адрес ссылки', en: 'Link address' },
-  linkTitle: { ru: 'Название (необязательно)', en: 'Title (optional)' },
-  googleWarning: { ru: 'Проверьте доступ: "Все, у кого есть ссылка"', en: 'Check sharing: "Anyone with the link"' },
-  afterClassChip: { ru: 'после урока', en: 'after class' },
-  showAfterClass: { ru: 'Показать после урока', en: 'Show after class' },
-  rename: { ru: 'Переименовать', en: 'Rename' },
-  moreActions: { ru: 'Действия', en: 'More actions' },
-  detach: { ru: 'Открепить от урока', en: 'Remove from lesson' },
-  moderate: { ru: 'Удалить (модерация)', en: 'Remove (moderation)' },
-  reason: { ru: 'Причина удаления', en: 'Reason for removal' },
-  restore: { ru: 'Восстановить', en: 'Restore' },
-  removedLabel: { ru: 'Удалено модератором', en: 'Removed by a moderator' },
-  empty: { ru: 'Учитель пока не добавил материалы к этому уроку', en: "The teacher hasn't added materials to this lesson yet" },
-  homeworkLink: { ru: 'Домашнее задание к уроку', en: 'Homework for this lesson' },
-  homeworkPrefix: { ru: 'Домашнее задание', en: 'Homework' },
-  catchUp: { ru: 'Пропустили урок и не открыли материалы', en: "Missed the lesson and haven't opened the materials" },
-  officeNudge: { ru: 'Загрузите PDF — его откроют прямо в браузере', en: 'Upload a PDF — it opens right in the browser' },
-  topicLabel: { ru: 'Тема урока', en: 'Lesson topic' },
-  topicHint: { ru: 'Предложено по названиям файлов', en: 'Suggested from file names' },
-  topicPrefix: { ru: 'Тема', en: 'Topic' },
-  save: { ru: 'Сохранить', en: 'Save' },
-  cancel: { ru: 'Отмена', en: 'Cancel' },
-  close: { ru: 'Закрыть', en: 'Close' },
-  cancelledLesson: { ru: 'Урок снят с расписания', en: 'Lesson taken off the schedule' },
-  pageTitle: { ru: 'Материалы', en: 'Materials' },
-  search: { ru: 'Поиск по названию или теме', en: 'Search by name or topic' },
-  allGroups: { ru: 'Все группы', en: 'All groups' },
-  searchGroups: { ru: 'Поиск группы', en: 'Search groups' },
-  pickGroup: { ru: 'Выберите группу, чтобы увидеть материалы', en: 'Pick a group to see its materials' },
-  download: { ru: 'Скачать', en: 'Download' },
-  openLink: { ru: 'Открыть ссылку', en: 'Open link' },
-  openInNewTab: { ru: 'Открыть в новой вкладке', en: 'Open in a new tab' },
-  loadMore: { ru: 'Показать ещё', en: 'Load more' },
-  noMaterialsYet: { ru: 'Материалов пока нет', en: 'No materials yet' },
-  searchNothing: { ru: 'Ничего не найдено', en: 'Nothing found' },
-  myFilesEmpty: { ru: 'Вы ещё не загружали файлы', en: "You haven't uploaded any files yet" },
-  noLessonsToCopy: { ru: 'Нет недавних уроков с материалами', en: 'No recent lessons with materials' },
-  hideFromMyFiles: { ru: 'Скрыть из моих файлов', en: 'Hide from my files' },
-  notifications: { ru: 'Уведомления', en: 'Notifications' },
-  noNotifications: { ru: 'Новых уведомлений нет', en: 'No new notifications' },
-  markAllRead: { ru: 'Отметить все прочитанными', en: 'Mark all as read' },
-  too_large: { ru: 'Файл больше 50 МБ', en: 'File is larger than 50 MB' },
-  unsupported_type: { ru: 'Этот тип файла не поддерживается', en: 'This file type is not supported' },
-  video_not_allowed: { ru: 'Видео добавьте ссылкой (YouTube, Google Drive)', en: 'Add videos as a link (YouTube, Google Drive)' },
-  corrupt_file: { ru: 'Файл повреждён или не совпадает с расширением', en: "The file is damaged or doesn't match its extension" },
-  empty_file: { ru: 'Файл пустой', en: 'The file is empty' },
-  bad_url: { ru: 'Ссылка должна начинаться с http:// или https://', en: 'The link must start with http:// or https://' },
-  duplicate: { ru: 'Этот файл уже прикреплён к уроку', en: 'Already attached to this lesson' },
-  no_group: { ru: 'У урока нет группы', en: 'This lesson has no group' },
-  reason_required: { ru: 'Укажите причину', en: 'Please give a reason' },
-  storage_unavailable: { ru: 'Хранилище недоступно, попробуйте позже', en: 'Storage is unavailable, try again later' },
-  somethingWrong: { ru: 'Что-то пошло не так', en: 'Something went wrong' },
-  loadFailed: { ru: 'Не удалось загрузить материалы', en: "Couldn't load materials" },
-  retry: { ru: 'Повторить', en: 'Retry' },
+/**
+ * The short names every materials component passes to `t`, each backed by a catalog message
+ * (lib/i18n, namespace `materials`). The names that look like `too_large` are the backend's
+ * `detail.code` values, so `errorMessage` can turn a code straight into a sentence.
+ */
+export const COPY_KEYS = {
+  sectionTitle: 'materials.section.title',
+  add: 'materials.add.button',
+  uploadFiles: 'materials.add.uploadFiles',
+  fromMyFiles: 'materials.add.fromMyFiles',
+  copyFromLesson: 'materials.add.copyFromLesson',
+  link: 'materials.add.link',
+  linkUrl: 'materials.link.url',
+  linkTitle: 'materials.link.title',
+  googleWarning: 'materials.link.googleSharingWarning',
+  afterClassChip: 'materials.item.afterClassChip',
+  showAfterClass: 'materials.item.showAfterClass',
+  rename: 'materials.item.rename',
+  moreActions: 'materials.item.moreActions',
+  detach: 'materials.item.detach',
+  moderate: 'materials.moderation.remove',
+  reason: 'materials.moderation.reason',
+  restore: 'materials.moderation.restore',
+  removedLabel: 'materials.moderation.removedLabel',
+  empty: 'materials.section.empty',
+  homeworkLink: 'materials.homework.untitled',
+  catchUp: 'materials.section.catchUp',
+  officeNudge: 'materials.add.officeNudge',
+  uploaded: 'materials.add.uploaded',
+  topicLabel: 'materials.topic.label',
+  topicHint: 'materials.topic.hint',
+  topicPrefix: 'materials.topic.prefix',
+  save: 'common.save',
+  cancel: 'common.cancel',
+  close: 'common.close',
+  cancelledLesson: 'materials.lesson.cancelled',
+  openLesson: 'materials.lesson.open',
+  pageTitle: 'materials.page.title',
+  search: 'materials.page.search',
+  allGroups: 'materials.page.allGroups',
+  searchGroups: 'materials.page.searchGroups',
+  pickGroup: 'materials.page.pickGroup',
+  download: 'materials.item.download',
+  openLink: 'materials.item.openLink',
+  openInNewTab: 'materials.item.openInNewTab',
+  itemCount: 'materials.item.count',
+  loadMore: 'materials.page.loadMore',
+  noMaterialsYet: 'materials.page.noMaterialsYet',
+  searchNothing: 'materials.page.nothingFound',
+  myFilesEmpty: 'materials.myFiles.empty',
+  noLessonsToCopy: 'materials.copy.noLessons',
+  hideFromMyFiles: 'materials.myFiles.hide',
+  notifications: 'materials.notifications.title',
+  noNotifications: 'materials.notifications.empty',
+  markAllRead: 'materials.notifications.markAllRead',
+  too_large: 'materials.error.tooLarge',
+  unsupported_type: 'materials.error.unsupportedType',
+  video_not_allowed: 'materials.error.videoNotAllowed',
+  corrupt_file: 'materials.error.corruptFile',
+  empty_file: 'materials.error.emptyFile',
+  bad_url: 'materials.error.badUrl',
+  duplicate: 'materials.error.duplicate',
+  no_group: 'materials.error.noGroup',
+  reason_required: 'materials.error.reasonRequired',
+  storage_unavailable: 'materials.error.storageUnavailable',
+  somethingWrong: 'common.error',
+  loadFailed: 'materials.error.loadFailed',
+  retry: 'materials.action.retry',
   // «Библиотека» (docs/materials-library/SPEC.md §9)
-  tabLessons: { ru: 'Материалы урока', en: 'Lesson materials' },
-  tabLibrary: { ru: 'Библиотека', en: 'Library' },
-  libraryOf: { ru: 'Библиотека', en: 'Library' },
-  fromTeacher: { ru: 'От преподавателя', en: 'From the teacher' },
-  mySections: { ru: 'Мои разделы', en: 'My sections' },
-  mySectionsHint: { ru: 'Создайте раздел и поделитесь им со своими группами', en: 'Create a section and share it with your groups' },
-  newSection: { ru: 'Новый раздел', en: 'New section' },
-  sectionName: { ru: 'Название раздела', en: 'Section name' },
-  create: { ru: 'Создать', en: 'Create' },
-  teachersOnly: { ru: 'Только для преподавателей', en: 'Teachers only' },
-  teachersOnlyChip: { ru: 'для преподавателей', en: 'teachers only' },
-  teachersOnlyHint: { ru: 'Студенты этот раздел не увидят', en: "Students won't see this section" },
-  shareWithGroups: { ru: 'Поделиться с группами', en: 'Share with groups' },
-  sharedWith: { ru: 'Видят', en: 'Shared with' },
-  notShared: { ru: 'Пока ни с одной группой', en: 'Not shared with any group yet' },
-  noShareableGroups: { ru: 'У вас пока нет групп', en: "You don't have any groups yet" },
-  deleteSection: { ru: 'Удалить раздел', en: 'Delete section' },
-  deleteSectionHint: { ru: 'Раздел пропадёт у всех. Файлы останутся в «Моих файлах».', en: 'The section disappears for everyone. Its files stay in My files.' },
-  sectionActions: { ru: 'Действия с разделом', en: 'Section actions' },
-  moveUp: { ru: 'Выше', en: 'Move up' },
-  moveDown: { ru: 'Ниже', en: 'Move down' },
-  removeFromSection: { ru: 'Убрать из раздела', en: 'Remove from section' },
-  sectionEmpty: { ru: 'В разделе пока ничего нет', en: 'Nothing in this section yet' },
-  libraryEmpty: { ru: 'Здесь появятся книги и материалы вашей программы', en: 'Books and materials for your program will appear here' },
-  programEmpty: { ru: 'В этой библиотеке пока нет разделов', en: 'No sections in this library yet' },
-  librarySearch: { ru: 'Поиск по библиотеке', en: 'Search the library' },
-  opensCount: { ru: 'открыли', en: 'opened' },
-  expand: { ru: 'Развернуть', en: 'Expand' },
-  collapse: { ru: 'Свернуть', en: 'Collapse' },
-  library_too_large: { ru: 'Файл больше 150 МБ', en: 'File is larger than 150 MB' },
-  uploadCancelled: { ru: 'Загрузка отменена', en: 'Upload cancelled' },
-  alreadyInSection: { ru: 'Этот файл уже есть в разделе', en: 'Already in this section' },
-  removeFromGroup: { ru: 'Убрать из этой группы', en: 'Remove from this group' },
-} as const;
+  tabLessons: 'materials.tab.lessons',
+  tabLibrary: 'materials.tab.library',
+  libraryOf: 'materials.library.title',
+  fromTeacher: 'materials.library.fromTeacher',
+  mySections: 'materials.library.mySections',
+  mySectionsHint: 'materials.library.mySectionsHint',
+  newSection: 'materials.library.newSection',
+  sectionName: 'materials.library.sectionName',
+  create: 'materials.library.create',
+  teachersOnly: 'materials.library.teachersOnly',
+  teachersOnlyChip: 'materials.library.teachersOnlyChip',
+  teachersOnlyHint: 'materials.library.teachersOnlyHint',
+  shareWithGroups: 'materials.library.shareWithGroups',
+  sharedWithGroups: 'materials.library.sharedWithGroups',
+  notShared: 'materials.library.notShared',
+  noShareableGroups: 'materials.library.noShareableGroups',
+  deleteSection: 'materials.library.deleteSection',
+  deleteSectionHint: 'materials.library.deleteSectionHint',
+  sectionActions: 'materials.library.sectionActions',
+  moveUp: 'materials.library.moveUp',
+  moveDown: 'materials.library.moveDown',
+  removeFromSection: 'materials.library.removeFromSection',
+  sectionEmpty: 'materials.library.sectionEmpty',
+  libraryEmpty: 'materials.library.empty',
+  programEmpty: 'materials.library.programEmpty',
+  librarySearch: 'materials.library.search',
+  opensCount: 'materials.library.opensCount',
+  expand: 'materials.library.expand',
+  collapse: 'materials.library.collapse',
+  library_too_large: 'materials.error.libraryTooLarge',
+  uploadCancelled: 'materials.error.uploadCancelled',
+  alreadyInSection: 'materials.error.alreadyInSection',
+  removeFromGroup: 'materials.library.removeFromGroup',
+} as const satisfies Record<string, MessageKey>;
 
-export type CopyKey = keyof typeof COPY;
+export type CopyKey = keyof typeof COPY_KEYS;
 
-export function t(key: CopyKey, locale: Locale): string {
-  return COPY[key][locale];
+export function isCopyKey(code: string): code is CopyKey {
+  return Object.prototype.hasOwnProperty.call(COPY_KEYS, code);
 }
 
-/** The standard Russian 1/2-4/5+ plural rule, without the leading count. */
-function ruPluralForm(n: number, [one, few, many]: [string, string, string]): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return one;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
-  return many;
-}
-
-/** "2 материала" / "2 materials" — the count and the word together. */
-export function plural(n: number, locale: Locale, ru: [string, string, string], en: [string, string]): string {
-  if (locale === 'en') return `${n} ${n === 1 ? en[0] : en[1]}`;
-  return `${n} ${ruPluralForm(n, ru)}`;
+/** A materials message in `locale`; `params` fill its placeholders (`count` picks a plural form). */
+export function t(key: CopyKey, locale: Locale, params?: Params): string {
+  return tr(COPY_KEYS[key], params, locale);
 }
 
 /** "Ещё 3 материала откроются после урока" — the bell/section line for items still hidden. */
 export function pendingAfterClass(n: number, locale: Locale): string {
-  if (locale === 'en') return `${n} more will open after class`;
-  const form = ruPluralForm(n, ['материал откроется', 'материала откроются', 'материалов откроются']);
-  return `Ещё ${n} ${form} после урока`;
+  return tr('materials.section.pendingAfterClass', { count: n }, locale);
 }
 
 /** "Открыли 3 из 10" — the teacher-facing open-rate stat. */
 export function openedCount(a: number, b: number, locale: Locale): string {
-  return locale === 'ru' ? `Открыли ${a} из ${b}` : `Opened by ${a} of ${b}`;
+  return tr('materials.section.openedBy', { opened: a, total: b }, locale);
 }
 
 /** The lower-cased extension of a filename, or '' when there isn't one. */
@@ -259,7 +254,7 @@ export function topicInputValue(draft: string | null, topic: string | null, titl
 
 /** A backend error code as a sentence the viewer can act on, falling back to a generic one. */
 export function errorMessage(code: string | undefined, locale: Locale): string {
-  if (code && Object.prototype.hasOwnProperty.call(COPY, code)) return t(code as CopyKey, locale);
+  if (code && isCopyKey(code)) return t(code, locale);
   return t('somethingWrong', locale);
 }
 
@@ -267,10 +262,10 @@ export function errorMessage(code: string | undefined, locale: Locale): string {
  * Why a class-material upload failed, for the queue row. A class-materials route answers with a
  * `detail.code` we have copy for; anything without one (a dropped connection, the stall watchdog,
  * nginx's bare 413, a 5xx) gets the shared upload reason instead of a generic "Something went
- * wrong". Uploaders are teachers/head teachers/admins, who all read English.
+ * wrong". It runs outside React, so the language is the signed-in user's (activeLocale).
  */
-export function uploadErrorReason(error: unknown, code: string | undefined): string {
-  if (code) return errorMessage(code, 'en');
+export function uploadErrorReason(error: unknown, code: string | undefined, locale: Locale = activeLocale()): string {
+  if (code) return errorMessage(code, locale);
   const reason = uploadFailureReason(error);
   return reason.charAt(0).toUpperCase() + reason.slice(1);
 }
@@ -278,7 +273,7 @@ export function uploadErrorReason(error: unknown, code: string | undefined): str
 /** «Домашнее задание: Unit 3», or the untitled line when the homework has no title (the link draws its own arrow). */
 export function homeworkLinkLabel(title: string | null | undefined, locale: Locale): string {
   const name = title?.trim();
-  return name ? `${t('homeworkPrefix', locale)}: ${name}` : t('homeworkLink', locale);
+  return name ? tr('materials.homework.titled', { title: name }, locale) : t('homeworkLink', locale);
 }
 
 export type CopyResultToast = { kind: 'success' | 'info'; text: string } | null;
@@ -305,19 +300,16 @@ export function bellPollDelayMs(random: number): number {
   return Math.round(BELL_POLL_MS + (r * 2 - 1) * BELL_POLL_JITTER_MS);
 }
 
-const WEEKDAY_ABBR: Record<Locale, string[]> = {
-  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-  ru: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
-};
-
 /** "12.09, Fri · SAT-3 · Topic" — the lesson header used on cards and in notices, in Almaty. */
 export function lessonHeading(
   l: { start_datetime: string; group_names: string[]; topic?: string | null },
   locale: Locale,
 ): string {
   const dayKey = almatyDayKey(parseAsUTC(l.start_datetime));
-  const [year, month, day] = dayKey.split('-').map(Number);
-  const weekday = WEEKDAY_ABBR[locale][new Date(Date.UTC(year, month - 1, day, 12)).getUTCDay()];
+  const [, month, day] = dayKey.split('-').map(Number);
+  // «сб» → «Сб»: the abbreviation opens the heading, so it is capitalised in both languages.
+  const short = formatDate(dayKey, { weekday: 'short' }, locale);
+  const weekday = short.charAt(0).toUpperCase() + short.slice(1);
   const ddmm = `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}`;
   const parts = [`${ddmm}, ${weekday}`, l.group_names.join(', ')];
   if (l.topic) parts.push(l.topic);
@@ -328,11 +320,10 @@ export function lessonHeading(
 export function formatSize(bytes: number, locale: Locale): string {
   const MB = 1024 * 1024;
   if (bytes >= MB) {
-    const value = (bytes / MB).toFixed(1);
-    return `${locale === 'ru' ? value.replace('.', ',') : value} ${locale === 'ru' ? 'МБ' : 'MB'}`;
+    const size = formatNumber(bytes / MB, { minimumFractionDigits: 1, maximumFractionDigits: 1, useGrouping: false }, locale);
+    return tr('materials.size.megabytes', { size }, locale);
   }
-  const kb = Math.round(bytes / 1024);
-  return `${kb} ${locale === 'ru' ? 'КБ' : 'KB'}`;
+  return tr('materials.size.kilobytes', { size: Math.round(bytes / 1024) }, locale);
 }
 
 const MINUTE_MS = 60_000;
@@ -348,19 +339,10 @@ const WEEK_MS = 7 * DAY_MS;
 export function relativeTime(iso: string, now: number, locale: Locale): string {
   const then = parseAsUTC(iso);
   const ms = Math.max(0, now - then.getTime());
-  if (ms < MINUTE_MS) return locale === 'ru' ? 'только что' : 'just now';
-  if (ms < HOUR_MS) {
-    const n = Math.floor(ms / MINUTE_MS);
-    return locale === 'ru' ? `${n} ${ruPluralForm(n, ['минуту', 'минуты', 'минут'])} назад` : `${n} min ago`;
-  }
-  if (ms < DAY_MS) {
-    const n = Math.floor(ms / HOUR_MS);
-    return locale === 'ru' ? `${n} ${ruPluralForm(n, ['час', 'часа', 'часов'])} назад` : `${n} h ago`;
-  }
-  if (ms < WEEK_MS) {
-    const n = Math.floor(ms / DAY_MS);
-    return locale === 'ru' ? `${n} ${ruPluralForm(n, ['день', 'дня', 'дней'])} назад` : `${n} d ago`;
-  }
+  if (ms < MINUTE_MS) return tr('materials.time.justNow', undefined, locale);
+  if (ms < HOUR_MS) return tr('materials.time.minutesAgo', { count: Math.floor(ms / MINUTE_MS) }, locale);
+  if (ms < DAY_MS) return tr('materials.time.hoursAgo', { count: Math.floor(ms / HOUR_MS) }, locale);
+  if (ms < WEEK_MS) return tr('materials.time.daysAgo', { count: Math.floor(ms / DAY_MS) }, locale);
   const [, month, day] = almatyDayKey(then).split('-');
   return `${day}.${month}`;
 }

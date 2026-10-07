@@ -15,6 +15,7 @@ import MultiTaskSubmission from '../../components/assignments/MultiTaskSubmissio
 import { SubmissionFileDownloadLink } from '../../components/assignments/SubmissionFileDownloadLink';
 import { AudioPlayer } from '../../components/AudioPlayer';
 import { safeUploadUrl } from '../../lib/mediaUrl';
+import { formatDate, formatDateTime } from '../../lib/i18n';
 
 const AUDIO_FILE_EXTENSIONS = ['webm', 'ogg', 'mp4', 'm4a', 'mp3', 'mpeg', 'wav', 'x-m4a', 'aac'];
 
@@ -271,14 +272,14 @@ export default function AssignmentGradingPage() {
                   <div>
                     <div className="font-medium text-lg text-foreground">{currentSubmission.user_name || `User ${currentSubmission.user_id}`}</div>
                     <div className="text-sm text-muted-foreground">{studentSubmissions.length} attempt{studentSubmissions.length === 1 ? '' : 's'}</div>
-                    {studentExtension && <div className="text-sm text-green-600 dark:text-green-400 flex items-center mt-1"><Calendar className="w-3 h-3 mr-1" />Extended Deadline: {new Date(studentExtension.extended_deadline).toLocaleDateString()}{studentExtension.reason && ` - ${studentExtension.reason}`}</div>}
+                    {studentExtension && <div className="text-sm text-green-600 dark:text-green-400 flex items-center mt-1"><Calendar className="w-3 h-3 mr-1" />Extended Deadline: {formatDate(new Date(studentExtension.extended_deadline))}{studentExtension.reason && ` - ${studentExtension.reason}`}</div>}
                   </div>
                 </div>
                 {visibleAttempts.map((submission) => (
                   <div key={submission.id} className="rounded-md border border-border p-3 flex items-center justify-between gap-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2"><Badge variant={submission.is_current ? 'default' : 'secondary'}>Attempt {submission.attempt_number || 1}{submission.is_current ? ' · Current' : ' · Previous'}</Badge>{submission.is_graded ? <Badge variant={(submission.score || 0) >= (submission.max_score * 0.6) ? 'default' : 'destructive'}>{submission.is_grade_superseded ? 'Superseded score' : 'Score'}: {submission.score || 0}/{submission.max_score}</Badge> : <Badge variant="secondary">Pending Grading</Badge>}</div>
-                      <div className="text-sm text-muted-foreground  flex items-center mt-2"><Clock className="w-3 h-3 mr-1" />Submitted: {new Date(submission.submitted_at).toLocaleString()}</div>
+                      <div className="text-sm text-muted-foreground  flex items-center mt-2"><Clock className="w-3 h-3 mr-1" />Submitted: {formatDateTime(new Date(submission.submitted_at))}</div>
                       {submission.is_late && <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center mt-1 font-medium"><AlertCircle className="w-3 h-3 mr-1" />Late Submission</div>}
                     </div>
                     {submission.is_current ? <div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={() => openExtensionModal(submission)}>{studentExtension ? 'Edit Extension' : 'Grant Extension'}</Button>{submission.is_graded && <Button variant="outline" size="sm" onClick={() => openResubmissionModal(submission)} data-tip="allow-attempt"><RotateCcw className="w-4 h-4 mr-1" />Allow another attempt</Button>}<Button onClick={() => openGradingModal(submission)}>{submission.is_graded ? 'Update Grade' : 'Grade'}</Button></div> : <Button variant="outline" onClick={() => openAttemptPreview(submission)}>View attempt</Button>}

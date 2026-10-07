@@ -9,25 +9,17 @@ import {
   type RecordingLibraryQuery,
 } from '../../services/api/recordings';
 import { dayHeading, groupByDay, type Locale } from '../../lib/recordings';
+import type { MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/recordings';
 
 const PAGE_SIZE = 24;
 const FOLDER_BUTTON_CLASS = 'inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:bg-muted';
 
-const TEXT = {
-  en: {
-    root: 'Teachers', folders: 'Folders', groups: 'groups', videos: 'videos',
-    noTeacher: 'No teacher assigned', noFolders: 'No folders match these filters.',
-    noVideos: 'No recordings match these filters in this group.', error: 'The folders could not be loaded.',
-    retry: 'Try again', more: 'Show more', active: 'Active', finished: 'Finished', archived: 'Archived',
-    substitution: (name: string) => `Substitution · regular teacher: ${name}`,
-  },
-  ru: {
-    root: 'Учителя', folders: 'Папки', groups: 'групп', videos: 'видео',
-    noTeacher: 'Учитель не назначен', noFolders: 'Нет папок по этим фильтрам.',
-    noVideos: 'В этой группе нет записей по этим фильтрам.', error: 'Не удалось загрузить папки.',
-    retry: 'Повторить', more: 'Показать ещё', active: 'Активная', finished: 'Завершена', archived: 'Архивная',
-    substitution: (name: string) => `Замена · основной учитель: ${name}`,
-  },
+const GROUP_STATE: Record<RecordingFolderGroup['state'], MessageKey> = {
+  active: 'recordings.folders.active',
+  finished: 'recordings.folders.finished',
+  archived: 'recordings.folders.archived',
 };
 
 type FolderFilters = Omit<RecordingLibraryQuery, 'limit' | 'cursor'>;
@@ -36,10 +28,6 @@ interface Props {
   filters: FolderFilters;
   locale: Locale;
   onOpen: (item: RecordingLibraryItem) => void;
-}
-
-function numberLabel(n: number, word: string): string {
-  return `${n} ${word}`;
 }
 
 function groupStateClass(state: RecordingFolderGroup['state']): string {
@@ -54,7 +42,7 @@ function groupStateClass(state: RecordingFolderGroup['state']): string {
  * the first gallery page and never exposes a media URL in the navigation response.
  */
 export default function RecordingFoldersView({ filters, locale, onOpen }: Props) {
-  const t = TEXT[locale];
+  const t = useT();
   const [tree, setTree] = useState<RecordingFolderTeacher[] | null>(null);
   const [treeLoading, setTreeLoading] = useState(true);
   const [treeFailed, setTreeFailed] = useState(false);
@@ -134,7 +122,7 @@ export default function RecordingFoldersView({ filters, locale, onOpen }: Props)
     }
   };
 
-  const stateLabel = (state: RecordingFolderGroup['state']) => t[state];
+  const stateLabel = (state: RecordingFolderGroup['state']) => t(GROUP_STATE[state]);
   const days = useMemo(() => groupByDay(items), [items]);
   const now = new Date();
   const substitutionFor = selectedTeacher && selectedGroup?.regular_teacher
@@ -148,9 +136,9 @@ export default function RecordingFoldersView({ filters, locale, onOpen }: Props)
 
   if (treeFailed && !tree) {
     return (
-      <EmptyState icon={<Folder className="h-6 w-6" aria-hidden />} title={t.error}>
+      <EmptyState icon={<Folder className="h-6 w-6" aria-hidden />} title={t('recordings.folders.error')}>
         <button type="button" onClick={() => setTreeReload((key) => key + 1)} className={`${FOLDER_BUTTON_CLASS} mt-5`}>
-          <RotateCcw className="h-3.5 w-3.5" aria-hidden /> {t.retry}
+          <RotateCcw className="h-3.5 w-3.5" aria-hidden /> {t('common.retry')}
         </button>
       </EmptyState>
     );
@@ -158,16 +146,16 @@ export default function RecordingFoldersView({ filters, locale, onOpen }: Props)
 
   return (
     <div className="space-y-4">
-      <nav aria-label={t.folders} className="flex min-h-7 flex-wrap items-center gap-1 text-sm">
+      <nav aria-label={t('recordings.folders.folders')} className="flex min-h-7 flex-wrap items-center gap-1 text-sm">
         <button type="button" onClick={() => { setTeacherId(undefined); setGroupId(undefined); }}
           className={cx('rounded px-1.5 py-0.5 font-medium hover:bg-muted', teacherId === undefined ? 'text-foreground' : 'text-muted-foreground hover:text-foreground')}>
-          {t.root}
+          {t('recordings.folders.root')}
         </button>
         {selectedTeacher && <>
           <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden />
           <button type="button" onClick={() => setGroupId(undefined)}
             className={cx('max-w-[15rem] truncate rounded px-1.5 py-0.5 font-medium hover:bg-muted', groupId === undefined ? 'text-foreground' : 'text-muted-foreground hover:text-foreground')}>
-            {selectedTeacher.name ?? t.noTeacher}
+            {selectedTeacher.name ?? t('recordings.folders.noTeacher')}
           </button>
         </>}
         {selectedGroup && <>
@@ -186,16 +174,18 @@ export default function RecordingFoldersView({ filters, locale, onOpen }: Props)
                   <UserRound className="h-5 w-5" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-foreground">{teacher.name ?? t.noTeacher}</span>
-                  <span className="mt-1 block text-xs text-muted-foreground">{numberLabel(teacher.group_count, t.groups)} · {numberLabel(teacher.video_count, t.videos)}</span>
+                  <span className="block truncate text-sm font-semibold text-foreground">{teacher.name ?? t('recordings.folders.noTeacher')}</span>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    {t('common.groups', { count: teacher.group_count })} · {t('recordings.folders.videos', { count: teacher.video_count })}
+                  </span>
                 </span>
                 <ChevronRight className="mt-2 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
               </button>
             ))}
           </div>
-        ) : <EmptyState icon={<Folder className="h-6 w-6" aria-hidden />} title={t.noFolders} />
+        ) : <EmptyState icon={<Folder className="h-6 w-6" aria-hidden />} title={t('recordings.folders.noFolders')} />
       ) : !selectedTeacher ? (
-        <EmptyState icon={<Folder className="h-6 w-6" aria-hidden />} title={t.noFolders} />
+        <EmptyState icon={<Folder className="h-6 w-6" aria-hidden />} title={t('recordings.folders.noFolders')} />
       ) : groupId === undefined ? (
         <div className="grid grid-cols-1 gap-3 @lg:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4">
           {selectedTeacher.groups.map((group) => (
@@ -207,9 +197,9 @@ export default function RecordingFoldersView({ filters, locale, onOpen }: Props)
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-foreground">{group.name}</span>
                 <span className={cx('mt-2 inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium', groupStateClass(group.state))}>{stateLabel(group.state)}</span>
-                <span className="mt-2 block text-xs text-muted-foreground">{numberLabel(group.video_count, t.videos)}</span>
+                <span className="mt-2 block text-xs text-muted-foreground">{t('recordings.folders.videos', { count: group.video_count })}</span>
                 {group.substitution_count > 0 && group.regular_teacher?.name && (
-                  <span className="mt-1 block truncate text-xs text-muted-foreground">{t.substitution(group.regular_teacher.name)}</span>
+                  <span className="mt-1 block truncate text-xs text-muted-foreground">{t('recordings.folders.substitution', { name: group.regular_teacher.name })}</span>
                 )}
               </span>
               <ChevronRight className="mt-2 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
@@ -217,15 +207,15 @@ export default function RecordingFoldersView({ filters, locale, onOpen }: Props)
           ))}
         </div>
       ) : !selectedGroup ? (
-        <EmptyState icon={<Folder className="h-6 w-6" aria-hidden />} title={t.noFolders} />
+        <EmptyState icon={<Folder className="h-6 w-6" aria-hidden />} title={t('recordings.folders.noFolders')} />
       ) : videosLoading ? <FolderSkeleton /> : videosFailed && items.length === 0 ? (
-        <EmptyState icon={<Video className="h-6 w-6" aria-hidden />} title={t.error}>
+        <EmptyState icon={<Video className="h-6 w-6" aria-hidden />} title={t('recordings.folders.error')}>
           <button type="button" onClick={() => setVideosReload((key) => key + 1)} className={`${FOLDER_BUTTON_CLASS} mt-5`}>
-            <RotateCcw className="h-3.5 w-3.5" aria-hidden /> {t.retry}
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden /> {t('common.retry')}
           </button>
         </EmptyState>
       ) : items.length === 0 ? (
-        <EmptyState icon={<Video className="h-6 w-6" aria-hidden />} title={t.noVideos} />
+        <EmptyState icon={<Video className="h-6 w-6" aria-hidden />} title={t('recordings.folders.noVideos')} />
       ) : (
         <div className="space-y-7">
           {days.map((day) => (
@@ -242,7 +232,7 @@ export default function RecordingFoldersView({ filters, locale, onOpen }: Props)
           {cursor && (
             <div className="flex justify-center pt-1">
               <button type="button" onClick={loadMore} disabled={loadingMore} className={`${FOLDER_BUTTON_CLASS} disabled:opacity-60`}>
-                {loadingMore && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />} {t.more}
+                {loadingMore && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />} {t('recordings.folders.more')}
               </button>
             </div>
           )}

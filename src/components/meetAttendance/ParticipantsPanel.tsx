@@ -2,13 +2,11 @@ import { useState } from 'react';
 import { Check, ChevronDown, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import {
-  MARK_LABEL,
-  MARK_LABEL_RU,
   classOrder,
   clock,
   flagText,
-  flagTextRu,
   isMismatch,
+  markLabel,
   reasonText,
   verdictDiffers,
   verdictHint,
@@ -16,86 +14,26 @@ import {
   type ParticipantRow,
   type ParticipantsView,
 } from '../../lib/meetAttendance';
-import type { MeetFlag, MeetMark } from '../../services/api/meetAttendance';
+import { t, type Locale, type MessageKey } from '../../lib/i18n';
+import { useLocale } from '../../lib/i18n/react';
+import type { MeetFlag, MeetMark, MeetWaitingStage } from '../../services/api/meetAttendance';
+import '@/lib/i18n/catalogs/meet';
 
-type Locale = 'ru' | 'en';
+const STAGE: Record<MeetWaitingStage, MessageKey> = {
+  lesson_running: 'meet.participants.stageLessonRunning',
+  call_open: 'meet.participants.stageCallOpen',
+  collecting: 'meet.participants.stageCollecting',
+  awaiting_google: 'meet.participants.stageAwaitingGoogle',
+  settling: 'meet.participants.stageSettling',
+};
 
-const TEXT = {
-  ru: {
-    title: 'Участники урока',
-    show: 'Показать список участников',
-    hide: 'Скрыть список',
-    inRoom: (n: number, total: number) => `В комнате ${n} из ${total} ${total === 1 ? 'ученика' : 'учеников'}`,
-    classSize: (n: number) => `Учеников в группе: ${n}`,
-    teacher: 'Преподаватель',
-    disagree: (n: number) => `${n} ${n === 1 ? 'отметка расходится' : 'отметки расходятся'} с Meet`,
-    explained: (n: number) => `${n} с объяснением`,
-    reviewed: 'Проверено', reason: 'Причина',
-    noMeet: 'Подключения к Meet для этого урока не записаны — ниже список учеников и их отметки.',
-    waiting: 'Ждём данные из Google Meet. Пока — список учеников и отметки.',
-    untilThen: 'Пока — список учеников и отметки.',
-    stage: {
-      lesson_running: 'Урок ещё идёт — кто подключался, появится после его окончания.',
-      call_open: 'В Google Meet звонок ещё открыт — кто подключался, появится, когда все выйдут.',
-      collecting: 'Google Meet передал звонок — LMS сохраняет, кто подключался.',
-      awaiting_google: 'Ждём, пока Google Meet передаст звонок урока.',
-      settling: 'Звонок урока сохранён — осталось сравнить его с отметками.',
-    },
-    heldBack: 'Некоторые аккаунты в комнате ещё не подтверждены, поэтому «не заходил» может быть неточным.',
-    partial: 'Часть данных из Google ещё не пришла.',
-    student: 'Ученик', mark: 'Отметка', room: 'В комнате', notes: 'Замечания',
-    notInRoom: 'Не заходил', noAccount: 'Аккаунт не подтверждён', notMarked: 'Не отмечен',
-    joins: (n: number) => `${n} ${n < 5 ? 'входа' : 'входов'}`,
-    unconfirmed: 'Неподтверждённые аккаунты', others: 'Другие участники',
-    guest: 'гость', google: 'Google-аккаунт', phone: 'телефон', min: 'мин',
-    webinar: {
-      title: 'Кто был на вебинаре',
-      joined: (n: number) => `Подключились: ${n}`,
-      host: 'Ведущий',
-      people: 'Участники',
-      unlinked: 'Аккаунт не связан с LMS',
-      waiting: 'Кто подключался, появится после окончания вебинара.',
-      role: { curator: 'куратор', head_curator: 'старший куратор', teacher: 'преподаватель', head_teacher: 'старший преподаватель', admin: 'администратор' } as Record<string, string>,
-    },
-  },
-  en: {
-    title: 'Participants',
-    show: 'Show participants',
-    hide: 'Hide list',
-    inRoom: (n: number, total: number) => `${n} of ${total} students in the room`,
-    classSize: (n: number) => `${n} students in the class`,
-    teacher: 'Teacher',
-    disagree: (n: number) => `${n} mark${n === 1 ? '' : 's'} disagree with Meet`,
-    explained: (n: number) => `${n} explained`,
-    reviewed: 'Reviewed', reason: 'Reason',
-    noMeet: 'No Meet joins were recorded for this lesson — below is the class with its marks.',
-    waiting: 'Waiting for Google Meet. Until then, the class and its marks.',
-    untilThen: 'Until then, the class and its marks.',
-    stage: {
-      lesson_running: 'The lesson is still on — who joined appears once it ends.',
-      call_open: 'Google Meet still shows the call as open — who joined appears once everyone has left.',
-      collecting: 'Google Meet has handed over the call — the LMS is saving who joined.',
-      awaiting_google: 'Waiting for Google Meet to hand over the lesson’s call.',
-      settling: 'The lesson’s call is saved — comparing it with the marks next.',
-    },
-    heldBack: 'Some accounts in the room are not confirmed yet, so "not in the room" may be wrong.',
-    partial: 'Part of this lesson has not come through from Google yet.',
-    student: 'Student', mark: 'Mark', room: 'In the room', notes: 'Notes',
-    notInRoom: 'Not in the room', noAccount: 'Account not confirmed', notMarked: 'Not marked',
-    joins: (n: number) => `${n} joins`,
-    unconfirmed: 'Unconfirmed accounts', others: 'Others in the room',
-    guest: 'guest', google: 'Google account', phone: 'phone', min: 'min',
-    webinar: {
-      title: 'Who came',
-      joined: (n: number) => `${n} joined`,
-      host: 'Host',
-      people: 'Participants',
-      unlinked: 'Not linked to an LMS account',
-      waiting: 'Who joined appears once the webinar ends.',
-      role: { curator: 'curator', head_curator: 'head curator', teacher: 'teacher', head_teacher: 'head teacher', admin: 'admin' } as Record<string, string>,
-    },
-  },
-} as const;
+const ROLE: Record<string, MessageKey> = {
+  curator: 'meet.webinar.roleCurator',
+  head_curator: 'meet.webinar.roleHeadCurator',
+  teacher: 'meet.webinar.roleTeacher',
+  head_teacher: 'meet.webinar.roleHeadTeacher',
+  admin: 'meet.webinar.roleAdmin',
+};
 
 const MARK_CHIP: Record<Exclude<MeetMark, null>, string> = {
   present: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
@@ -105,13 +43,12 @@ const MARK_CHIP: Record<Exclude<MeetMark, null>, string> = {
 };
 
 function Mark({ mark, locale }: { mark: MeetMark; locale: Locale }) {
-  const t = TEXT[locale];
   if (!mark) {
-    return <span className="inline-flex rounded border border-dashed border-muted-foreground/40 px-1.5 py-px text-[11px] text-muted-foreground">{t.notMarked}</span>;
+    return <span className="inline-flex rounded border border-dashed border-muted-foreground/40 px-1.5 py-px text-[11px] text-muted-foreground">{t('meet.participants.notMarked', undefined, locale)}</span>;
   }
   return (
     <span className={cn('inline-flex rounded px-1.5 py-px text-[11px] font-medium', MARK_CHIP[mark])}>
-      {(locale === 'ru' ? MARK_LABEL_RU : MARK_LABEL)[mark]}
+      {markLabel(mark, locale)}
     </span>
   );
 }
@@ -120,7 +57,7 @@ const isOpenMismatch = (flag: MeetFlag) => isMismatch(flag.code) && !flag.review
 
 /** A flag, and once someone answered it, the answer on its own line — in words an accountant can read. */
 function Flag({ flag, locale }: { flag: MeetFlag; locale: Locale }) {
-  const t = TEXT[locale];
+  const reviewed = t('meet.participants.reviewed', undefined, locale);
   const reason = reasonText(flag.review);
   return (
     <span className="inline-flex max-w-full flex-col items-start gap-0.5">
@@ -132,12 +69,12 @@ function Flag({ flag, locale }: { flag: MeetFlag; locale: Locale }) {
             ? 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900'
             : 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-900',
       )}>
-        {flag.review && <Check className="h-3 w-3 flex-none" aria-label={t.reviewed} />}
-        <span className="min-w-0">{locale === 'ru' ? flagTextRu(flag) : flagText(flag)}</span>
+        {flag.review && <Check className="h-3 w-3 flex-none" aria-label={reviewed} />}
+        <span className="min-w-0">{flagText(flag, locale)}</span>
       </span>
       {flag.review && (
         <span className="px-0.5 text-[11px] leading-snug text-muted-foreground">
-          {reason ? `${t.reason}: ${reason}` : t.reviewed}
+          {reason ? t('meet.participants.reason', { reason }, locale) : reviewed}
         </span>
       )}
     </span>
@@ -145,18 +82,21 @@ function Flag({ flag, locale }: { flag: MeetFlag; locale: Locale }) {
 }
 
 function Stretch({ row, locale, heldBack }: { row: Pick<ParticipantRow, 'first_join' | 'last_leave' | 'minutes_in_lesson' | 'joins'>; locale: Locale; heldBack: boolean }) {
-  const t = TEXT[locale];
-  if (!row.first_join) return <span className="text-muted-foreground">{heldBack ? t.noAccount : t.notInRoom}</span>;
+  if (!row.first_join) {
+    return <span className="text-muted-foreground">{t(heldBack ? 'meet.participants.noAccount' : 'meet.participants.notInRoom', undefined, locale)}</span>;
+  }
   return (
     <span className="tabular-nums">
       {clock(row.first_join)}–{clock(row.last_leave)}
-      <span className="text-muted-foreground"> · {row.minutes_in_lesson} {t.min}{row.joins > 1 ? ` · ${t.joins(row.joins)}` : ''}</span>
+      <span className="text-muted-foreground"> · {t('meet.duration.minutes', { minutes: row.minutes_in_lesson }, locale)}
+        {row.joins > 1 ? ` · ${t('meet.participants.joins', { count: row.joins }, locale)}` : ''}</span>
     </span>
   );
 }
 
 interface Props {
   view: ParticipantsView;
+  /** The signed-in user's by default; the watch-link page, read by accountants, passes 'ru'. */
   locale?: Locale;
   defaultOpen?: boolean;
   className?: string;
@@ -168,8 +108,10 @@ interface Props {
  * Without a Meet record it is still the whole class with marks, which is what an accountant
  * checking a lesson needs either way.
  */
-export function ParticipantsPanel({ view, locale = 'en', defaultOpen = false, className }: Props) {
-  const t = TEXT[locale];
+export function ParticipantsPanel({ view, locale: forced, defaultOpen = false, className }: Props) {
+  const userLocale = useLocale();
+  const locale = forced ?? userLocale;
+  const say = (key: MessageKey, params?: Record<string, string | number>) => t(key, params, locale);
   const [open, setOpen] = useState(defaultOpen);
   if (view.kind === 'webinar') {
     return <WebinarAudience view={view} locale={locale} open={open} onToggle={() => setOpen((v) => !v)} className={className} />;
@@ -183,24 +125,26 @@ export function ParticipantsPanel({ view, locale = 'en', defaultOpen = false, cl
 
   const summary = ready
     ? [
-        t.inRoom(joined, students.length),
-        view.teacher?.first_join ? `${t.teacher} ${clock(view.teacher.first_join)}–${clock(view.teacher.last_leave)}` : null,
-        disagree ? t.disagree(disagree) : null,
-        explained ? t.explained(explained) : null,
+        say('meet.participants.inRoom', { joined, count: students.length }),
+        view.teacher?.first_join
+          ? say('meet.participants.teacherTime', { from: clock(view.teacher.first_join), to: clock(view.teacher.last_leave) }) : null,
+        disagree ? say('meet.participants.disagree', { count: disagree }) : null,
+        explained ? say('meet.participants.explained', { count: explained }) : null,
       ].filter(Boolean).join(' · ')
-    : t.classSize(students.length);
+    : say('meet.participants.classSize', { count: students.length });
   const note = !ready
-    ? (view.waiting ? `${t.stage[view.waiting.stage]} ${t.untilThen}`
-      : view.state === 'waiting' || view.state === 'not_started' ? t.waiting : t.noMeet)
-    : view.held_back ? t.heldBack : view.partial ? t.partial : null;
+    ? (view.waiting ? `${say(STAGE[view.waiting.stage])} ${say('meet.participants.untilThen')}`
+      : view.state === 'waiting' || view.state === 'not_started' ? say('meet.participants.waiting') : say('meet.participants.noMeet'))
+    : view.held_back ? say('meet.participants.heldBack') : view.partial ? say('meet.participants.partial') : null;
+  const title = say('meet.participants.title');
 
   if (students.length === 0 && !view.teacher && view.unknown.length === 0) return null;
 
   return (
-    <section className={cn('rounded-xl border border-border bg-card', className)} aria-label={t.title}>
+    <section className={cn('rounded-xl border border-border bg-card', className)} aria-label={title}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3">
         <Users className="h-4 w-4 flex-none text-muted-foreground" aria-hidden />
-        <h2 className="text-sm font-semibold text-foreground">{t.title}</h2>
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         <span className={cn('text-sm', disagree ? 'text-rose-700 dark:text-rose-300' : 'text-muted-foreground')}>{summary}</span>
         <button
           type="button"
@@ -208,7 +152,7 @@ export function ParticipantsPanel({ view, locale = 'en', defaultOpen = false, cl
           aria-expanded={open}
           className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          {open ? t.hide : t.show}
+          {say(open ? 'meet.participants.hide' : 'meet.participants.show')}
           <ChevronDown className={cn('h-3.5 w-3.5 transition', open && 'rotate-180')} aria-hidden />
         </button>
       </div>
@@ -218,22 +162,22 @@ export function ParticipantsPanel({ view, locale = 'en', defaultOpen = false, cl
         <div className="border-t border-border text-sm">
           {view.teacher && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border bg-muted/30 px-4 py-2.5">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">{t.teacher}</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">{say('meet.participants.teacher')}</span>
               <span className="font-medium text-foreground">{view.teacher.name}</span>
               <Stretch row={view.teacher} locale={locale} heldBack={view.held_back} />
               {view.teacher.flags.map((f) => <Flag key={f.code} flag={f} locale={locale} />)}
             </div>
           )}
 
-          <div role="table" aria-label={t.title}>
+          <div role="table" aria-label={title}>
             <div role="row" className={cn(
               'hidden gap-x-3 px-4 py-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground sm:grid',
               ready ? 'sm:grid-cols-[minmax(0,1.5fr)_7.5rem_minmax(0,1.3fr)_minmax(0,1.5fr)]' : 'sm:grid-cols-[minmax(0,1.5fr)_7.5rem]',
             )}>
-              <span role="columnheader">{t.student}</span>
-              <span role="columnheader">{t.mark}</span>
-              {ready && <span role="columnheader">{t.room}</span>}
-              {ready && <span role="columnheader">{t.notes}</span>}
+              <span role="columnheader">{say('meet.participants.student')}</span>
+              <span role="columnheader">{say('meet.participants.mark')}</span>
+              {ready && <span role="columnheader">{say('meet.participants.room')}</span>}
+              {ready && <span role="columnheader">{say('meet.participants.notes')}</span>}
             </div>
             <div className="divide-y divide-border/70">
               {students.map((s, i) => (
@@ -271,13 +215,13 @@ export function ParticipantsPanel({ view, locale = 'en', defaultOpen = false, cl
           {view.unknown.length > 0 && (
             <div className="border-t border-border px-4 py-3">
               <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                {t.unconfirmed} · {view.unknown.length}
+                {say('meet.participants.unconfirmed')} · {view.unknown.length}
               </h3>
               <ul className="space-y-1 text-[13px]">
                 {view.unknown.map((u, i) => (
                   <li key={i} className="flex flex-wrap gap-x-2">
                     <span className="font-medium text-foreground">{u.display_name || '—'}</span>
-                    <span className="text-muted-foreground">({u.kind === 'signed_in' ? t.google : u.kind === 'phone' ? t.phone : t.guest})</span>
+                    <span className="text-muted-foreground">({say(u.kind === 'signed_in' ? 'meet.participants.google' : u.kind === 'phone' ? 'meet.participants.phone' : 'meet.participants.guest')})</span>
                     <Stretch row={u} locale={locale} heldBack={false} />
                   </li>
                 ))}
@@ -287,7 +231,7 @@ export function ParticipantsPanel({ view, locale = 'en', defaultOpen = false, cl
 
           {view.others.length > 0 && (
             <div className="border-t border-border px-4 py-3">
-              <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t.others}</h3>
+              <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{say('meet.participants.others')}</h3>
               <ul className="space-y-1 text-[13px]">
                 {view.others.map((o, i) => (
                   <li key={i} className="flex flex-wrap gap-x-2">
@@ -311,24 +255,24 @@ export function ParticipantsPanel({ view, locale = 'en', defaultOpen = false, cl
 function WebinarAudience({ view, locale, open, onToggle, className }: {
   view: ParticipantsView; locale: Locale; open: boolean; onToggle: () => void; className?: string;
 }) {
-  const t = TEXT[locale];
-  const w = t.webinar;
+  const say = (key: MessageKey, params?: Record<string, string | number>) => t(key, params, locale);
+  const title = say('meet.webinar.title');
   const ready = view.state === 'ready';
   const waiting = view.state === 'waiting' || view.state === 'not_started';
   if (!ready && !waiting) return null;
   const people = classOrder([...view.students, ...view.others]).filter((p) => p.first_join);
   const count = people.length + view.unknown.length;
   const summary = ready
-    ? [w.joined(count),
-       view.teacher?.first_join ? `${w.host} ${clock(view.teacher.first_join)}–${clock(view.teacher.last_leave)}` : null,
+    ? [say('meet.webinar.joined', { count }),
+       view.teacher?.first_join ? say('meet.webinar.host', { from: clock(view.teacher.first_join), to: clock(view.teacher.last_leave) }) : null,
       ].filter(Boolean).join(' · ')
     : null;
 
   return (
-    <section className={cn('rounded-xl border border-border bg-card', className)} aria-label={w.title}>
+    <section className={cn('rounded-xl border border-border bg-card', className)} aria-label={title}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3">
         <Users className="h-4 w-4 flex-none text-muted-foreground" aria-hidden />
-        <h2 className="text-sm font-semibold text-foreground">{w.title}</h2>
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         {summary && <span className="text-sm text-muted-foreground">{summary}</span>}
         {ready && count > 0 && (
           <button
@@ -337,29 +281,29 @@ function WebinarAudience({ view, locale, open, onToggle, className }: {
             aria-expanded={open}
             className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            {open ? t.hide : t.show}
+            {say(open ? 'meet.participants.hide' : 'meet.participants.show')}
             <ChevronDown className={cn('h-3.5 w-3.5 transition', open && 'rotate-180')} aria-hidden />
           </button>
         )}
       </div>
-      {!ready && <p className="px-4 pb-3 text-xs text-muted-foreground">{w.waiting}</p>}
-      {ready && view.partial && <p className="px-4 pb-3 text-xs text-muted-foreground">{t.partial}</p>}
+      {!ready && <p className="px-4 pb-3 text-xs text-muted-foreground">{say('meet.webinar.waiting')}</p>}
+      {ready && view.partial && <p className="px-4 pb-3 text-xs text-muted-foreground">{say('meet.participants.partial')}</p>}
 
       {ready && open && count > 0 && (
         <div className="border-t border-border px-4 py-3 text-[13px]">
-          <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{w.people} · {count}</h3>
+          <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{say('meet.webinar.people')} · {count}</h3>
           <ul className="space-y-1">
             {people.map((p, i) => (
               <li key={`${p.name}-${i}`} className="flex flex-wrap gap-x-2">
                 <span className="font-medium text-foreground">{p.name}</span>
-                {p.role && w.role[p.role] && <span className="text-muted-foreground">({w.role[p.role]})</span>}
+                {p.role && ROLE[p.role] && <span className="text-muted-foreground">({say(ROLE[p.role])})</span>}
                 <Stretch row={p} locale={locale} heldBack={false} />
               </li>
             ))}
             {view.unknown.map((u, i) => (
               <li key={`unknown-${i}`} className="flex flex-wrap gap-x-2">
                 <span className="font-medium text-foreground">{u.display_name || '—'}</span>
-                <span className="text-muted-foreground">({w.unlinked})</span>
+                <span className="text-muted-foreground">({say('meet.webinar.unlinked')})</span>
                 <Stretch row={u} locale={locale} heldBack={false} />
               </li>
             ))}

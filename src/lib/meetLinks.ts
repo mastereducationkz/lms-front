@@ -1,5 +1,7 @@
 import { lessonUrl } from './lessonLinks';
-import { ALMATY_TZ, splitLessonTitle, timeRange } from './recordings';
+import { splitLessonTitle, timeRange } from './recordings';
+import { activeLocale, formatDate, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/calendar';
 
 /**
  * Point a Google Meet link at the viewer's work account.
@@ -36,16 +38,16 @@ export function meetJoinUrl(url: string | null | undefined, workspaceEmail?: str
 }
 
 /**
- * A ready-to-send Russian invitation to one lesson, for a group chat.
+ * A ready-to-send invitation to one lesson, for a group chat, in the reader's language.
  *
- * The date is absolute ("Четверг, 10 сентября"), never "today": the message is read
+ * The date is absolute ("Thursday 10 September" / «Четверг, 10 сентября»), never "today": the message is read
  * whenever someone opens the chat. The link is the lesson's own clean Meet link — never the
  * viewer's Join link, which may carry their account (?authuser=…) and would ask every
  * student to sign in as the teacher.
  *
  * With the lesson's id it also links the lesson's own page (2026-09-28) — materials and the
- * recording live there. The line is the backend's ``invitation_text`` word for word: the bot's
- * 5-minutes-before post and this copy button must send the same text.
+ * recording live there. In Russian it is the backend's ``invitation_text`` word for word: the bot's
+ * 5-minutes-before post and a curator's copy button send the same text.
  */
 export function meetInvitationText(lesson: {
   id?: number | null;
@@ -54,22 +56,23 @@ export function meetInvitationText(lesson: {
   start_datetime: string;
   end_datetime: string;
   meeting_url: string;
-}): string {
+}, locale: Locale = activeLocale()): string {
   const { name, lesson: number } = splitLessonTitle(
     lesson.title,
     (lesson.groups ?? []).map((g) => ({ name: g })),
-    'ru',
+    locale,
   );
-  const day = new Intl.DateTimeFormat('ru-RU', {
-    timeZone: ALMATY_TZ, weekday: 'long', day: 'numeric', month: 'long',
-  }).format(new Date(lesson.start_datetime));
+  const day = formatDate(lesson.start_datetime, { weekday: 'long', day: 'numeric', month: 'long' }, locale);
   return [
-    'Приглашение на урок',
+    t('calendar.invitation.title', undefined, locale),
     number ? `${name}, ${number.toLowerCase()}` : name,
-    `${day[0].toLocaleUpperCase()}${day.slice(1)}, ${timeRange(lesson.start_datetime, lesson.end_datetime)} (время Алматы)`,
+    t('calendar.invitation.when', {
+      day: `${day.charAt(0).toLocaleUpperCase()}${day.slice(1)}`,
+      time: timeRange(lesson.start_datetime, lesson.end_datetime),
+    }, locale),
     `Google Meet: ${lesson.meeting_url}`,
-    ...(lesson.id ? [`Материалы и запись: ${lessonUrl(lesson.id)}`] : []),
-    'Подключайтесь за пару минут до начала.',
+    ...(lesson.id ? [t('calendar.invitation.materials', { url: lessonUrl(lesson.id) }, locale)] : []),
+    t('calendar.invitation.joinEarly', undefined, locale),
   ].join('\n');
 }
 

@@ -19,7 +19,7 @@ import {
   unshareLibrarySection, updateLibrarySection,
   type LibrarySection,
 } from '../../services/api/library';
-import { plural, t, type Locale } from '../../lib/classMaterials';
+import { t, type Locale } from '../../lib/classMaterials';
 import { moveId, toMaterialItem } from '../../lib/library';
 
 interface Props {
@@ -81,7 +81,7 @@ export default function SectionCard({
     if (next) void run(() => reorderLibraryItems(section.id, next));
   };
 
-  const count = plural(visibleItems.length, locale, ['материал', 'материала', 'материалов'], ['item', 'items']);
+  const count = t('itemCount', locale, { count: visibleItems.length });
 
   return (
     <section className="rounded-xl border border-border bg-card shadow-sm" aria-labelledby={`library-section-${section.id}`}>
@@ -112,7 +112,7 @@ export default function SectionCard({
                   <span className="truncate">
                     {sharedIds.length === 0
                       ? t('notShared', locale)
-                      : `${t('sharedWith', locale)}: ${sharedNames.length ? sharedNames.join(', ') : sharedIds.length}`}
+                      : t('sharedWithGroups', locale, { groups: sharedNames.length ? sharedNames.join(', ') : sharedIds.length })}
                   </span>
                 </span>
               )}

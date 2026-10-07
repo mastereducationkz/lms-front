@@ -29,7 +29,7 @@ function Driver({ eventId }: { eventId: number }) {
     <div className="space-y-4">
       <LiveControls state={state} api={live} seconds={seconds} act={act} presenterUrl={`/live/present/${eventId}`} socket={socket}
         renderStar={(student, groupId, close) => (
-          <StarOfWeekDialog groupId={groupId} lang="ru" onClose={close} initialStudentId={student.user_id}
+          <StarOfWeekDialog groupId={groupId} onClose={close} initialStudentId={student.user_id}
             students={(state.room ?? [student]).map((p) => ({ id: p.user_id, name: p.name ?? '' }))} />
         )} />
       <details className="rounded-xl border border-border p-3">

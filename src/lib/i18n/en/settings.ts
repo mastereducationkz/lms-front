@@ -1,0 +1,48 @@
+import type { MessageTable } from '../types';
+
+/** The Settings page: the admin's student-progress tools, password change, tour replay. */
+export const settings = {
+  'settings.title': 'Settings',
+
+  'settings.progress.title': 'Manage student progress',
+  'settings.progress.description': 'Complete or reset steps on a student’s behalf',
+  'settings.progress.student': 'Student',
+  'settings.progress.searchPlaceholder': 'Search by name or email…',
+  'settings.progress.noStudents': 'No students found',
+  'settings.progress.typeToSearch': 'Type a name or email',
+  'settings.progress.shownOf': 'Showing {shown} of {total}. Narrow your search.',
+  'settings.progress.course': 'Course',
+  'settings.progress.coursePlaceholder': 'Choose a course…',
+  'settings.progress.loading': 'Loading progress…',
+  'settings.progress.steps': '{done} / {total} steps',
+  'settings.progress.chooseLessons': 'Choose lessons (or leave empty for all)',
+  'settings.progress.selectedCount': 'Selected: {count}',
+  'settings.progress.allLessons': 'All lessons',
+  'settings.progress.selectAll': 'Select all',
+  'settings.progress.clearSelection': 'Clear selection',
+  'settings.progress.completeLessons': { one: 'Complete ({count} lesson)', other: 'Complete ({count} lessons)' },
+  'settings.progress.completeAll': 'Complete all steps',
+  'settings.progress.reset': 'Reset progress',
+  'settings.progress.pickBoth': 'Choose a student and a course to manage their progress',
+  'settings.progress.pickCourse': 'Choose a course to see the progress',
+  'settings.progress.completeResult': '{newly} steps completed, {updated} updated, {already} were already complete',
+  'settings.progress.completeFailed': 'Couldn’t complete the steps',
+  'settings.progress.resetConfirm': 'Reset this progress? This can’t be undone.',
+  'settings.progress.resetResult': { one: 'Deleted {count} progress record', other: 'Deleted {count} progress records' },
+  'settings.progress.resetFailed': 'Couldn’t reset the progress',
+
+  'settings.password.title': 'Change password',
+  'settings.password.description': 'Update your account password.',
+  'settings.password.current': 'Current password',
+  'settings.password.new': 'New password',
+  'settings.password.newPlaceholder': 'At least 8 characters, including a digit',
+  'settings.password.confirm': 'Confirm new password',
+  'settings.password.saving': 'Saving…',
+  'settings.password.submit': 'Change password',
+  'settings.password.mismatch': 'Passwords don’t match',
+  'settings.password.changed': 'Password changed',
+  'settings.password.failed': 'Couldn’t change the password',
+
+  'settings.tour.title': 'Platform tour',
+  'settings.tour.description': 'A one-minute walk through the main sections. It runs on your dashboard.',
+} as const satisfies MessageTable;

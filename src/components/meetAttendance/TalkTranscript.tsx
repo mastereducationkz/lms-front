@@ -1,41 +1,19 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDownToLine, Loader2, Play, Search, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { clockAt, highlightParts, linesInBlock, searchTranscript, stamp, type TalkLocale } from '../../lib/meetTalk';
+import { clockAt, highlightParts, linesInBlock, searchTranscript, stamp } from '../../lib/meetTalk';
+import { t, type Locale, type MessageKey, type Params } from '../../lib/i18n';
 import { currentLineIndex, isSpeaking, lessonAt, revealScrollTop } from '../../lib/transcriptFollow';
 import type { TalkRole, TalkTranscript as TranscriptData, TranscriptLine } from '../../services/api/meetTalk';
 import type { TalkFocus } from './TalkGrid';
+import '@/lib/i18n/catalogs/meet';
 
-const TEXT = {
-  en: {
-    transcript: 'Transcript', search: 'Search the transcript', lines: (n: number) => `${n} line${n === 1 ? '' : 's'}`,
-    noMatch: 'Nothing in the transcript matches.', playFrom: 'Play the recording from here',
-    showAll: 'Show the whole transcript', focusLines: (n: number) => `${n} line${n === 1 ? '' : 's'} in this block`,
-    follow: 'Follow the video', following: 'Following the video', paused: 'Not following',
-    backToNow: 'Back to now', searching: 'Following pauses while you search.',
-    now: 'Now playing', beforeFirst: 'Nothing said yet',
-    transcriptState: {
-      pending: 'The transcript is being prepared. It appears about half an hour after the recording is ready.',
-      off: 'Transcripts are switched off, so this lesson has no text and no interaction figures.',
-      failed: 'The transcript could not be made.',
-      not_available: 'No transcript for this lesson: it has no recording, or it is from before transcripts were switched on.',
-    },
-  },
-  ru: {
-    transcript: 'Расшифровка', search: 'Поиск по расшифровке', lines: (n: number) => `${n} строк`,
-    noMatch: 'В расшифровке ничего не найдено.', playFrom: 'Воспроизвести запись с этого места',
-    showAll: 'Показать всю расшифровку', focusLines: (n: number) => `${n} строк в этом блоке`,
-    follow: 'Следовать за видео', following: 'Следует за видео', paused: 'Не следует',
-    backToNow: 'К текущему месту', searching: 'Во время поиска расшифровка не следует за видео.',
-    now: 'Сейчас', beforeFirst: 'Пока никто не говорил',
-    transcriptState: {
-      pending: 'Расшифровка готовится. Она появится примерно через полчаса после того, как будет готова запись.',
-      off: 'Расшифровки выключены, поэтому у этого урока нет текста и показателей взаимодействия.',
-      failed: 'Не удалось сделать расшифровку.',
-      not_available: 'Для этого урока нет расшифровки: нет записи, или урок был до включения расшифровок.',
-    },
-  },
-} as const;
+const TRANSCRIPT_STATE: Record<Exclude<TranscriptData['state'], 'ready'>, MessageKey> = {
+  pending: 'meet.transcript.statePending',
+  off: 'meet.transcript.stateOff',
+  failed: 'meet.transcript.stateFailed',
+  not_available: 'meet.transcript.stateNotAvailable',
+};
 
 const INK: Record<TalkRole, string> = {
   teacher: 'text-violet-700 dark:text-violet-300',
@@ -112,7 +90,7 @@ interface Props {
   transcript: TranscriptData | undefined;
   /** The lesson's start: lines are stamped on the Almaty clock, the same as the blocks. */
   start: string;
-  locale: TalkLocale;
+  locale: Locale;
   /** When given, clicking a line plays the recording from there. */
   onSeek?: (recordingSeconds: number) => void;
   showErrors?: boolean;
@@ -146,7 +124,7 @@ export function TalkTranscript({
   transcript, start, locale, onSeek, showErrors = false, focus, onClearFocus, playhead,
   fill = false, narrow = false, hideTitle = false, short = false, className,
 }: Props) {
-  const t = TEXT[locale];
+  const say = (key: MessageKey, params?: Params) => t(key, params, locale);
   const [query, setQuery] = useState('');
   const [follow, setFollow] = useState(true);
   const listRef = useRef<HTMLOListElement>(null);
@@ -194,10 +172,10 @@ export function TalkTranscript({
   if (transcript.state !== 'ready') {
     return (
       <section className={cn('flex flex-col gap-2', className)}>
-        {!hideTitle && <h4 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t.transcript}</h4>}
+        {!hideTitle && <h4 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{say('meet.transcript.title')}</h4>}
         <p className="text-[13px] text-muted-foreground">
           {transcript.state === 'pending' && <Loader2 className="mr-1.5 inline h-3.5 w-3.5 animate-spin align-[-2px]" aria-hidden />}
-          {t.transcriptState[transcript.state]}
+          {say(TRANSCRIPT_STATE[transcript.state])}
           {transcript.state === 'failed' && showErrors && transcript.error && (
             <span className="mt-1 block font-mono text-[11px] text-rose-600 dark:text-rose-400">{transcript.error}</span>
           )}
@@ -207,12 +185,12 @@ export function TalkTranscript({
   }
 
   return (
-    <section className={cn('flex flex-col gap-2', fill && 'min-h-0 flex-1', className)} aria-label={t.transcript}>
+    <section className={cn('flex flex-col gap-2', fill && 'min-h-0 flex-1', className)} aria-label={say('meet.transcript.title')}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        {!hideTitle && <h4 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t.transcript}</h4>}
+        {!hideTitle && <h4 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{say('meet.transcript.title')}</h4>}
         {tracking && (
           <span className="inline-flex items-center gap-1.5 text-[12px] tabular-nums text-muted-foreground" aria-live="off">
-            <span className="text-[11px] uppercase tracking-wide">{t.now}</span>
+            <span className="text-[11px] uppercase tracking-wide">{say('meet.transcript.now')}</span>
             <span className="font-semibold text-foreground">{nowLabel ?? '—'}</span>
           </span>
         )}
@@ -222,17 +200,17 @@ export function TalkTranscript({
               type="button"
               aria-pressed={follow}
               onClick={() => (follow ? setFollow(false) : backToNow())}
-              title={t.follow}
+              title={say('meet.transcript.follow')}
               className={cn('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 following
                   ? 'border-primary/40 bg-primary/10 text-foreground'
                   : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground')}
             >
               <span className={cn('h-1.5 w-1.5 rounded-full', following ? 'bg-primary' : 'bg-muted-foreground/50')} aria-hidden />
-              {following ? t.following : t.follow}
+              {say(following ? 'meet.transcript.following' : 'meet.transcript.follow')}
             </button>
           )}
-          <span className="text-[11px] tabular-nums text-muted-foreground">{t.lines(searching ? hits.length : lines.length)}</span>
+          <span className="text-[11px] tabular-nums text-muted-foreground">{say('meet.transcript.lines', { count: searching ? hits.length : lines.length })}</span>
         </div>
       </div>
 
@@ -240,10 +218,10 @@ export function TalkTranscript({
         <div className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/60 px-3 py-2 text-[13px]">
           <span className="font-semibold text-foreground">{focus.name}</span>
           <span className="tabular-nums text-muted-foreground">{focus.label}</span>
-          <span className="text-muted-foreground">· {t.focusLines(lines.length)}</span>
+          <span className="text-muted-foreground">· {say('meet.transcript.focusLines', { count: lines.length })}</span>
           <button type="button" onClick={onClearFocus}
             className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium text-muted-foreground transition hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <X className="h-3.5 w-3.5" aria-hidden /> {t.showAll}
+            <X className="h-3.5 w-3.5" aria-hidden /> {say('meet.transcript.showAll')}
           </button>
         </div>
       )}
@@ -254,15 +232,15 @@ export function TalkTranscript({
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={t.search}
-          aria-label={t.search}
+          placeholder={say('meet.transcript.search')}
+          aria-label={say('meet.transcript.search')}
           className="h-9 w-full rounded-md border border-border bg-background pl-8 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </div>
-      {tracking && searching && <p className="text-[11px] text-muted-foreground">{t.searching}</p>}
+      {tracking && searching && <p className="text-[11px] text-muted-foreground">{say('meet.transcript.searching')}</p>}
 
       {hits.length === 0 ? (
-        <p className="px-1 py-3 text-[13px] text-muted-foreground">{t.noMatch}</p>
+        <p className="px-1 py-3 text-[13px] text-muted-foreground">{say('meet.transcript.noMatch')}</p>
       ) : (
         <div className={cn('relative', fill && 'min-h-0 flex-1')}>
           <ol
@@ -288,7 +266,7 @@ export function TalkTranscript({
                 speaking={index === current && speaking}
                 narrow={narrow}
                 onSeek={onSeek ? seekAndFollow : undefined}
-                playLabel={t.playFrom}
+                playLabel={say('meet.transcript.playFrom')}
               />
             ))}
           </ol>
@@ -299,7 +277,7 @@ export function TalkTranscript({
               className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-md transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <ArrowDownToLine className="h-3.5 w-3.5" aria-hidden />
-              {t.backToNow}
+              {say('meet.transcript.backToNow')}
               {nowLabel && <span className="tabular-nums text-muted-foreground">· {nowLabel}</span>}
             </button>
           )}

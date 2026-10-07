@@ -68,7 +68,7 @@ import { createTrial, getTrials, updateTrial, revokeTrial, resendTrialInvite, co
 import { getAllGroups, getGroups, getMyGroups, getTeacherGroups, getCourseGroups, grantCourseAccessToGroup, revokeCourseAccessFromGroup, createGroup, updateGroup, deleteGroup, assignTeacherToGroup, getGroupStudents, addStudentToGroup, removeStudentFromGroup, bulkAddStudentsToGroup } from './groups';
 import { getDetailedStudentAnalytics, getCourseAnalyticsOverview, getVideoEngagementAnalytics, getQuizPerformanceAnalytics, getQuizErrors, getAllStudentsAnalytics, getGroupsAnalytics, getCourseGroupsAnalytics, getCourseProgressHistory, getGroupStudentsAnalytics, getStudentProgressHistory, exportStudentReport, exportGroupReport, exportAllStudentsReport, exportAnalyticsExcel, getStudentDetailedProgress, getStudentSatScores, getStudentLearningPath } from './analytics';
 import { getCuratorPendingSubmissions, getCuratorRecentSubmissions, getCuratorStudentsProgress, getCuratorAssignmentsAnalytics, getCuratorHomeworkByGroup, getCuratorGroups, getGroupSchedule, getGroupLeaderboard, getWeeklyLessonsWithHwStatus, getGroupFullAttendanceMatrix, updateLeaderboardConfig, updateAttendanceBulk, updateLeaderboardEntriesBulk, setLessonTopic, updateLeaderboardEntry, updateAttendance, generateSchedule, getGroupSchedules, bulkScheduleUpload, getCuratorDetails } from './curator';
-import { addFavoriteFlashcard, getFavoriteFlashcards, removeFavoriteFlashcard, removeFavoriteByCardId, checkIsFavorite, lookupWord, quickCreateFlashcard, getVocabularyCards } from './flashcards';
+import { addFavoriteFlashcard, getFavoriteFlashcards, removeFavoriteFlashcard, removeFavoriteByCardId, checkIsFavorite, quickCreateFlashcard, getVocabularyCards } from './flashcards';
 import { addFavoriteStep, removeFavoriteStep, getFavoriteSteps, checkStepIsFavorite } from './favoriteSteps';
 import { getGamificationStatus, getBonusAllowance, giveTeacherBonus, getGamificationLeaderboard, getPointHistory, getStudentLeaderboard } from './gamification';
 import { getHeadTeacherManagedCourses, getHeadTeacherCourseTeachers, getHeadTeacherTeacherDetails, getHeadTeacherTeacherFeedbacks, getHeadTeacherTeacherAssignments, getHeadTeacherAttendanceGaps, getHeadTeacherHwGapsByTeacher } from './head-teacher';
@@ -164,7 +164,7 @@ const apiClient = {
   bulkScheduleUpload, getCuratorDetails,
   // Flashcards & Vocabulary
   addFavoriteFlashcard, getFavoriteFlashcards, removeFavoriteFlashcard,
-  removeFavoriteByCardId, checkIsFavorite, lookupWord, quickCreateFlashcard, getVocabularyCards,
+  removeFavoriteByCardId, checkIsFavorite, quickCreateFlashcard, getVocabularyCards,
   // Favorite Steps (page bookmarks)
   addFavoriteStep, removeFavoriteStep, getFavoriteSteps, checkStepIsFavorite,
   // Gamification

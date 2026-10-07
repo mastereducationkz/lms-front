@@ -9,6 +9,7 @@ import { collegeBoardPasswordDisplay } from '../lib/assignmentZeroCollegeBoard';
 import { checkpointLabel, lessonsLabel, type CheckpointSummary } from '../lib/completion';
 import UserAvatar from '@/components/mascot/UserAvatar';
 import StudentAchievementsSection from '@/components/achievements/StudentAchievementsSection';
+import { formatDate as formatDay } from '@/lib/i18n';
 
 // Older backends may not send `can_reveal_college_board_password` yet; on this
 // page (reachable by curators generally, not just admins) treat that as "no".
@@ -99,7 +100,7 @@ interface StudentProfile {
 
 function formatDate(iso: string | null) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', year: 'numeric' });
+  return formatDay(iso, { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function attendanceStatusBadge(status: string) {
@@ -232,8 +233,8 @@ export default function StudentProfilePage() {
             label: 'LMS прогресс',
             value: lms_progress.overall !== null ? `${lms_progress.overall}%` : '—',
             sub: [
-              lessonsLabel(lms_progress.lessons_done, lms_progress.lessons_total) || `${lms_progress.courses.length} курс(а)`,
-              checkpointLabel(lms_progress.checkpoints),
+              lessonsLabel(lms_progress.lessons_done, lms_progress.lessons_total, 'ru') || `${lms_progress.courses.length} курс(а)`,
+              checkpointLabel(lms_progress.checkpoints, 'ru'),
             ].filter(Boolean).join(' · '),
             color: 'text-brand-subtle-foreground',
           },
@@ -508,11 +509,11 @@ export default function StudentProfilePage() {
                       <p className="text-sm font-medium text-foreground text-left">{course.course_name ?? `Курс ${course.course_id}`}</p>
                       <p className="text-xs text-muted-foreground text-left">
                         {course.total_lessons > 0
-                          ? lessonsLabel(course.lessons_done ?? course.completed_lessons, course.lessons_total ?? course.total_lessons)
+                          ? lessonsLabel(course.lessons_done ?? course.completed_lessons, course.lessons_total ?? course.total_lessons, 'ru')
                           : `Статус: ${course.status === 'completed' ? 'Завершён' : course.status === 'in_progress' ? 'В процессе' : 'Не начат'}`}
                       </p>
-                      {checkpointLabel(course.checkpoints) && (
-                        <p className="text-xs text-muted-foreground text-left">{checkpointLabel(course.checkpoints)}</p>
+                      {checkpointLabel(course.checkpoints, 'ru') && (
+                        <p className="text-xs text-muted-foreground text-left">{checkpointLabel(course.checkpoints, 'ru')}</p>
                       )}
                     </div>
                   </div>

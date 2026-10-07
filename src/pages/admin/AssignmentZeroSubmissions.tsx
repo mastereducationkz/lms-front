@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import apiClient from '../../services/api';
 import { safeUploadUrl } from '../../lib/mediaUrl';
+import { DATE, TIME, formatDate as formatAppDate, formatDateTime as formatAppDateTime } from '../../lib/i18n';
 import { CollegeBoardPasswordReveal } from '../../components/CollegeBoardPasswordReveal';
 import { Search, Download, Eye, Filter, BookOpen, Headphones, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
@@ -346,7 +347,7 @@ const AssignmentZeroSubmissions = () => {
         passagesAvg,
         s.math_topics.length,
         s.is_draft ? 'Draft' : 'Submitted',
-        new Date(s.updated_at).toLocaleString(),
+        formatAppDateTime(s.updated_at, { ...DATE, ...TIME }),
       ];
     });
 
@@ -367,7 +368,7 @@ const AssignmentZeroSubmissions = () => {
 
   const formatDateTime = (value?: string | null) => {
     if (!value) return 'N/A';
-    return new Date(value).toLocaleString();
+    return formatAppDateTime(value, { ...DATE, ...TIME });
   };
 
   const SAT_MONTH_TEMPLATE_DAY: Record<number, number> = {
@@ -436,7 +437,7 @@ const AssignmentZeroSubmissions = () => {
 
   const formatDateOnly = (value?: string | null) => {
     const parsedDate = parseDateValue(value);
-    return parsedDate ? parsedDate.toLocaleDateString() : 'N/A';
+    return parsedDate ? formatAppDate(parsedDate) : 'N/A';
   };
 
   const getNextIeltsPromptAt = (value?: string | null) => {
@@ -636,7 +637,7 @@ const AssignmentZeroSubmissions = () => {
                       </TableCell>
                       <TableCell>{submission.sat_target_date || '-'}</TableCell>
                       <TableCell>{submission.ielts_target_date || '-'}</TableCell>
-                      <TableCell>{new Date(submission.updated_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{formatAppDate(submission.updated_at)}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm" onClick={() => setSelectedSubmission(submission)}>
                           <Eye className="w-4 h-4 mr-2" />
@@ -811,7 +812,7 @@ const AssignmentZeroSubmissions = () => {
                         {(() => {
                           const satPlannedDate = selectedSubmission.sat_planned_test_date || selectedSubmission.sat_target_date || null;
                           const satAskDate = getCollectionAskDate(satPlannedDate);
-                          return satAskDate ? satAskDate.toLocaleDateString() : 'N/A';
+                          return satAskDate ? formatAppDate(satAskDate) : 'N/A';
                         })()}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -832,7 +833,7 @@ const AssignmentZeroSubmissions = () => {
                         {(() => {
                           const ieltsPlannedDate = selectedSubmission.ielts_planned_test_date || selectedSubmission.ielts_target_date;
                           const ieltsAskDate = getCollectionAskDate(ieltsPlannedDate);
-                          return ieltsAskDate ? ieltsAskDate.toLocaleDateString() : 'N/A';
+                          return ieltsAskDate ? formatAppDate(ieltsAskDate) : 'N/A';
                         })()}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -1219,7 +1220,7 @@ const AssignmentZeroSubmissions = () => {
 
                 {/* Submission Info */}
                 <div className="text-xs text-muted-foreground text-center pt-4 border-t dark:border-border">
-                  Submitted: {new Date(selectedSubmission.updated_at).toLocaleString()} | 
+                  Submitted: {formatAppDateTime(selectedSubmission.updated_at, { ...DATE, ...TIME })} | 
                 </div>
               </div>
             </CardContent>

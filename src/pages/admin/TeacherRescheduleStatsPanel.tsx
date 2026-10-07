@@ -10,6 +10,8 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonRequests';
 
 /** "2026-08" default = current month, computed without pulling in a date lib. */
 function currentYearMonth(): string {
@@ -20,6 +22,7 @@ function currentYearMonth(): string {
 }
 
 export default function TeacherRescheduleStatsPanel() {
+  const t = useT();
   const [month, setMonth] = useState<string>(currentYearMonth());
   const [rows, setRows] = useState<TeacherRequestStats[]>([]);
   const [loading, setLoading] = useState(false);
@@ -35,7 +38,7 @@ export default function TeacherRescheduleStatsPanel() {
     setError(null);
     getTeacherRequestStats(year, mon, 2)
       .then(data => { if (!cancelled) setRows(data); })
-      .catch(() => { if (!cancelled) setError('Не удалось загрузить статистику'); })
+      .catch(() => { if (!cancelled) setError(t('lessonRequests.stats.loadFailed')); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [month]);
@@ -44,7 +47,7 @@ export default function TeacherRescheduleStatsPanel() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-          Месяц
+          {t('lessonRequests.stats.month')}
           <Input
             type="month"
             className="h-9 w-[180px]"
@@ -62,35 +65,35 @@ export default function TeacherRescheduleStatsPanel() {
 
       <Card>
         <CardHeader className="px-6 py-4 border-b">
-          <CardTitle className="text-lg">Учителя с 2+ обращениями за месяц</CardTitle>
+          <CardTitle className="text-lg">{t('lessonRequests.stats.title')}</CardTitle>
           <CardDescription>
             {loading
-              ? 'Загрузка…'
-              : `Замены, переносы и отмены. Учителей: ${rows.length}`}
+              ? t('common.loading')
+              : t('lessonRequests.stats.description', { count: rows.length })}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Учитель</TableHead>
-                <TableHead className="text-right w-[90px]">Всего</TableHead>
-                <TableHead className="text-right w-[110px]">Замена</TableHead>
-                <TableHead className="text-right w-[110px]">Перенос</TableHead>
-                <TableHead className="text-right w-[110px]">Отмена</TableHead>
+                <TableHead>{t('lessonRequests.stats.teacher')}</TableHead>
+                <TableHead className="text-right w-[90px]">{t('lessonRequests.stats.total')}</TableHead>
+                <TableHead className="text-right w-[110px]">{t('lessonRequests.type.substitution')}</TableHead>
+                <TableHead className="text-right w-[110px]">{t('lessonRequests.type.reschedule')}</TableHead>
+                <TableHead className="text-right w-[110px]">{t('lessonRequests.type.cancel')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                    Загрузка…
+                    {t('common.loading')}
                   </TableCell>
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                    Нет учителей с 2+ обращениями за этот месяц
+                    {t('lessonRequests.stats.empty')}
                   </TableCell>
                 </TableRow>
               ) : (

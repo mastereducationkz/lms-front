@@ -1,9 +1,11 @@
 import { APP_TIMEZONE, parseAsUTC } from './datetime';
+import { activeLocale, formatDate, formatDateTime, formatTime, t, type Locale, type MessageKey } from './i18n';
 import type { LessonSection } from './lessonLinks';
 import type {
-  LessonLocale, LessonStatus, LessonView, LessonViewer, RegisterStudent, UiMark,
+  LessonStatus, LessonView, LessonViewer, RegisterStudent, UiMark,
 } from '../services/api/classLessons';
 import type { Event } from '../types';
+import '@/lib/i18n/catalogs/classLesson';
 
 /**
  * `/lessons/:id` (owner, 2026-09-28): the rules the page follows, kept apart from the components so
@@ -59,18 +61,18 @@ export function sectionOrder(status: LessonStatus, flags: SectionFlags): PageSec
   });
 }
 
-/** Chip labels, per locale. */
-export const SECTION_LABELS: Record<PageSection, [string, string]> = {
-  live: ['Сейчас в уроке', 'In the room'],
-  me: ['Моя отметка', 'My mark'],
-  activities: ['Активности', 'Activities'],
-  materials: ['Материалы', 'Materials'],
-  recording: ['Запись', 'Recording'],
-  register: ['Посещаемость', 'Attendance'],
-  homework: ['Домашнее задание', 'Homework'],
-  notes: ['Заметки', 'Notes'],
-  meet: ['Meet', 'Meet'],
-  requests: ['Заявки', 'Requests'],
+/** Chip labels (catalog keys). */
+export const SECTION_LABELS: Record<PageSection, MessageKey> = {
+  live: 'classLesson.section.live',
+  me: 'classLesson.section.me',
+  activities: 'classLesson.section.activities',
+  materials: 'classLesson.section.materials',
+  recording: 'classLesson.section.recording',
+  register: 'classLesson.section.register',
+  homework: 'classLesson.section.homework',
+  notes: 'classLesson.section.notes',
+  meet: 'classLesson.section.meet',
+  requests: 'classLesson.section.requests',
 };
 
 export type JoinState =
@@ -155,15 +157,14 @@ export function registerSummary(students: { status: UiMark; activity_score: numb
   return out;
 }
 
-export function summaryLine(summary: RegisterSummary, locale: LessonLocale): string {
-  const ru = locale === 'ru';
+export function summaryLine(summary: RegisterSummary, locale: Locale = activeLocale()): string {
   const parts = [
-    `${ru ? 'Был' : 'Present'} ${summary.present}`,
-    `${ru ? 'Опоздал' : 'Late'} ${summary.late}`,
-    `${ru ? 'Не был' : 'Absent'} ${summary.absent}`,
+    t('classLesson.register.summaryPresent', { count: summary.present }, locale),
+    t('classLesson.register.summaryLate', { count: summary.late }, locale),
+    t('classLesson.register.summaryAbsent', { count: summary.absent }, locale),
   ];
-  if (summary.unmarked) parts.push(`${ru ? 'Не отмечено' : 'Not marked'} ${summary.unmarked}`);
-  parts.push(`${ru ? 'баллы' : 'scores'} ${summary.scored}/${summary.attended}`);
+  if (summary.unmarked) parts.push(t('classLesson.register.summaryUnmarked', { count: summary.unmarked }, locale));
+  parts.push(t('classLesson.register.summaryScores', { scored: summary.scored, attended: summary.attended }, locale));
   return parts.join(' · ');
 }
 
@@ -211,24 +212,22 @@ export function asCalendarEvent(view: LessonView): Event {
   };
 }
 
-/** «пн, 28 сент., 18:00–19:00» / «Mon, 28 Sep, 18:00–19:00», on the school's clock. */
-export function lessonWhen(start: string, end: string, locale: LessonLocale): string {
-  const tag = locale === 'ru' ? 'ru-RU' : 'en-GB';
-  const day = parseAsUTC(start).toLocaleDateString(tag, { timeZone: APP_TIMEZONE, weekday: 'short', day: 'numeric', month: 'short' });
-  const clock = (iso: string) => parseAsUTC(iso).toLocaleTimeString(tag, { timeZone: APP_TIMEZONE, hour: '2-digit', minute: '2-digit' });
-  return `${day}, ${clock(start)}–${clock(end)}`;
+/** «пн, 28 сент., 18:00–19:00» / «Mon 28 Sept, 18:00–19:00», on the school's clock. */
+export function lessonWhen(start: string, end: string, locale: Locale = activeLocale()): string {
+  const day = formatDate(start, { weekday: 'short', day: 'numeric', month: 'short' }, locale);
+  return `${day}, ${clockKz(start, locale)}–${clockKz(end, locale)}`;
 }
 
 /** «HH:MM» on the school's clock. */
-export function clockKz(iso: string | Date, locale: LessonLocale): string {
-  const date = typeof iso === 'string' ? parseAsUTC(iso) : iso;
-  return date.toLocaleTimeString(locale === 'ru' ? 'ru-RU' : 'en-GB', { timeZone: APP_TIMEZONE, hour: '2-digit', minute: '2-digit' });
+export function clockKz(iso: string | Date, locale: Locale = activeLocale()): string {
+  // A moment, never a calendar day: a Date goes in as its timestamp so a lesson at local midnight
+  // still reads on Almaty time.
+  return formatTime(typeof iso === 'string' ? iso : iso.getTime(), undefined, locale);
 }
 
 /** «28 сент., 18:05» — a note's or a request's time. */
-export function stampKz(iso: string, locale: LessonLocale): string {
-  const tag = locale === 'ru' ? 'ru-RU' : 'en-GB';
-  return parseAsUTC(iso).toLocaleString(tag, { timeZone: APP_TIMEZONE, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+export function stampKz(iso: string, locale: Locale = activeLocale()): string {
+  return formatDateTime(iso, undefined, locale);
 }
 
 export const NOTE_LIMIT = 3000;

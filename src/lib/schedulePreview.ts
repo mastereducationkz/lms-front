@@ -4,14 +4,14 @@
 //
 // Changing a group's schedule moves, resizes, creates and switches off lessons in one go, and a
 // curator used to see the result only afterwards, on the calendar. These helpers turn the
-// preview into the lines the dialog shows before the button is pressed. Every date is read as a
-// UTC instant (an offset-less server string included) and shown in Almaty time, with the zone
-// passed explicitly — never the viewer's own zone.
+// preview into the lines the dialog shows before the button is pressed, in the viewer's language.
+// Every date is read as a UTC instant (an offset-less server string included) and shown in Almaty
+// time by lib/i18n's formatters — never the viewer's own zone.
 //
 // Ported from crm-master frontend/src/lib/schedulePreview.ts (2026-09-17) — keep the two in
 // step; do not import across repos.
 
-import { APP_TIMEZONE, parseAsUTC } from './datetime';
+import { activeLocale, formatDate, t, type Locale, type MessageKey } from './i18n';
 import {
   MAX_LESSON_MINUTES,
   MIN_LESSON_MINUTES,
@@ -20,6 +20,7 @@ import {
   type ScheduleConfig,
   type ScheduleSlot,
 } from './scheduleShorthand';
+import '@/lib/i18n/catalogs/schedule';
 
 export type SchedulePreviewChange = 'keep' | 'move' | 'resize' | 'create';
 
@@ -58,80 +59,75 @@ export interface SchedulePreviewPayload {
 /** The largest «Кол-во уроков» the API accepts. */
 export const MAX_LESSONS_COUNT = 500;
 
-/** The small tag beside a planned date; an untouched lesson gets none. */
-export const PREVIEW_CHANGE_TAGS: Record<SchedulePreviewChange, string | null> = {
+const CHANGE_TAGS: Record<SchedulePreviewChange, MessageKey | null> = {
   keep: null,
-  move: 'перенос',
-  resize: 'длительность',
-  create: 'новый',
+  move: 'schedule.preview.tag.move',
+  resize: 'schedule.preview.tag.resize',
+  create: 'schedule.preview.tag.create',
 };
+
+/** The small tag beside a planned date; an untouched lesson gets none. */
+export function previewChangeTag(change: SchedulePreviewChange, locale: Locale = activeLocale()): string | null {
+  const key = CHANGE_TAGS[change];
+  return key ? t(key, undefined, locale) : null;
+}
 
 /** Past this many, the switched-off dates end in «…» — the count beside them stays exact. */
 const MAX_LISTED_DEACTIVATED = 5;
 
-const formatInAlmaty = (iso: string | null | undefined, options: Intl.DateTimeFormatOptions): string => {
-  if (!iso) return '';
-  const date = parseAsUTC(iso);
-  if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat('ru-RU', { ...options, timeZone: APP_TIMEZONE }).format(date);
-};
+const dayMonth = (iso: string | null | undefined, locale: Locale): string =>
+  formatDate(iso, { day: '2-digit', month: '2-digit' }, locale);
 
-const dayMonth = (iso: string | null | undefined): string => formatInAlmaty(iso, { day: '2-digit', month: '2-digit' });
+const clock = (iso: string, locale: Locale): string =>
+  formatDate(iso, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }, locale);
 
-const clock = (iso: string): string => formatInAlmaty(iso, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-
-/** «1 урок», «3 урока», «14 уроков». */
-export const formatLessonsRu = (count: number): string => {
-  const mod10 = Math.abs(count) % 10;
-  const mod100 = Math.abs(count) % 100;
-  if (mod100 >= 11 && mod100 <= 14) return `${count} уроков`;
-  if (mod10 === 1) return `${count} урок`;
-  if (mod10 >= 2 && mod10 <= 4) return `${count} урока`;
-  return `${count} уроков`;
-};
-
-/** «14 ч», «22 ч 30 мин», «45 мин». */
-export const formatHoursTotal = (minutes: number): string => {
+/** «14 h», «22 h 30 min», «45 min» (ru: «14 ч», «22 ч 30 мин», «45 мин»). */
+export const formatHoursTotal = (minutes: number, locale: Locale = activeLocale()): string => {
   const total = Number.isFinite(minutes) ? Math.max(0, Math.round(minutes)) : 0;
   const hours = Math.floor(total / 60);
   const rest = total % 60;
-  if (!hours && rest) return `${rest} мин`;
-  if (!rest) return `${hours} ч`;
-  return `${hours} ч ${rest} мин`;
+  if (!hours && rest) return t('schedule.length.minutes', { minutes: rest }, locale);
+  if (!rest) return t('schedule.length.hours', { hours }, locale);
+  return t('schedule.length.hoursMinutes', { hours, minutes: rest }, locale);
 };
 
-const counted = (lessons: number, minutes: number): string => `${formatLessonsRu(lessons)} · ${formatHoursTotal(minutes)}`;
+const counted = (lessons: number, minutes: number, locale: Locale): string =>
+  `${t('common.lessons', { count: lessons }, locale)} · ${formatHoursTotal(minutes, locale)}`;
 
-export function previewSummary(preview: SchedulePreview): {
+export function previewSummary(preview: SchedulePreview, locale: Locale = activeLocale()): {
   started: string;
   planned: string;
   total: string;
   changes: string;
 } {
-  const from = dayMonth(preview.first_start);
-  const to = dayMonth(preview.last_end);
+  const from = dayMonth(preview.first_start, locale);
+  const to = dayMonth(preview.last_end, locale);
   const range = from && to ? ` · ${from}–${to}` : '';
 
   const count = (change: SchedulePreviewChange) => preview.lessons.filter((lesson) => lesson.change === change).length;
 
-  const offDates = preview.deactivated.slice(0, MAX_LISTED_DEACTIVATED).map((item) => dayMonth(item.start));
+  const offDates = preview.deactivated.slice(0, MAX_LISTED_DEACTIVATED).map((item) => dayMonth(item.start, locale));
   if (preview.deactivated.length > MAX_LISTED_DEACTIVATED) offDates.push('…');
   const offList = offDates.length > 0 ? ` (${offDates.join(', ')})` : '';
 
   return {
-    started: `Прошло: ${counted(preview.started_lessons, preview.started_minutes)}`,
-    planned: `Будет запланировано: ${counted(preview.planned_lessons, preview.planned_minutes)}${range}`,
-    total: `Итого по курсу: ${counted(preview.total_lessons, preview.total_minutes)}`,
-    changes:
-      `Перенесено: ${count('move')} · изменена длительность: ${count('resize')} · ` +
-      `новых: ${count('create')} · отключено: ${preview.deactivated.length}${offList}`,
+    started: t('schedule.preview.started', { amount: counted(preview.started_lessons, preview.started_minutes, locale) }, locale),
+    planned: t('schedule.preview.planned', { amount: counted(preview.planned_lessons, preview.planned_minutes, locale), range }, locale),
+    total: t('schedule.preview.total', { amount: counted(preview.total_lessons, preview.total_minutes, locale) }, locale),
+    changes: t('schedule.preview.changes', {
+      moved: count('move'),
+      resized: count('resize'),
+      created: count('create'),
+      off: preview.deactivated.length,
+      offDates: offList,
+    }, locale),
   };
 }
 
-/** «пт 18.09 18:00–19:00» — one planned lesson, in Almaty time. */
-export function formatPreviewLessonRow(start: string, end: string): string {
-  const weekday = formatInAlmaty(start, { weekday: 'short' });
-  return `${weekday} ${dayMonth(start)} ${clock(start)}–${clock(end)}`.trim();
+/** «Fri 18/09 18:00–19:00» (ru: «пт 18.09 18:00–19:00») — one planned lesson, in Almaty time. */
+export function formatPreviewLessonRow(start: string, end: string, locale: Locale = activeLocale()): string {
+  const weekday = formatDate(start, { weekday: 'short' }, locale);
+  return `${weekday} ${dayMonth(start, locale)} ${clock(start, locale)}–${clock(end, locale)}`.trim();
 }
 
 const ISO_DAY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;

@@ -11,6 +11,7 @@ import {
   trackInflight,
 } from './cache';
 import { watchUpload, type UploadRequestConfig } from './uploadWatchdog';
+import { localizeServerError } from '../../lib/i18n/serverError';
 
 const RAW_API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 let API_BASE_URL = RAW_API_BASE_URL;
@@ -65,7 +66,7 @@ class TokenManager {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('current_user');
-      console.info('Токены перенесены из localStorage в cookies');
+      console.info('Tokens moved from localStorage to cookies');
     }
   }
 
@@ -410,6 +411,8 @@ api.interceptors.response.use(
   },
   (error) => {
     (error?.config as UploadRequestConfig | undefined)?.stopUploadWatch?.();
+    // A refusal the backend names with a reason_code reads in the user's language.
+    localizeServerError(error?.response?.data);
     return Promise.reject(error);
   }
 );

@@ -58,8 +58,20 @@ describe('meetInvitationText', () => {
     meeting_url: MEET,
   };
 
-  it('reads as a Russian invitation a group chat can use as is', () => {
-    expect(meetInvitationText(lesson)).toBe(
+  it('reads as an English invitation a group chat can use as is', () => {
+    expect(meetInvitationText(lesson, 'en')).toBe(
+      [
+        'Lesson invitation',
+        'July 8 SAT, lesson 29',
+        'Thursday 10 September, 19:00–20:00 (Almaty time)',
+        `Google Meet: ${MEET}`,
+        'Please join a couple of minutes before the start.',
+      ].join('\n'),
+    );
+  });
+
+  it('reads as the bot\'s Russian invitation for a Russian reader', () => {
+    expect(meetInvitationText(lesson, 'ru')).toBe(
       [
         'Приглашение на урок',
         'July 8 SAT, урок 29',
@@ -71,7 +83,7 @@ describe('meetInvitationText', () => {
   });
 
   it('links the lesson\'s own page when it knows the lesson — the bot\'s invitation says the same', () => {
-    expect(meetInvitationText({ ...lesson, id: 123 })).toBe(
+    expect(meetInvitationText({ ...lesson, id: 123 }, 'ru')).toBe(
       [
         'Приглашение на урок',
         'July 8 SAT, урок 29',

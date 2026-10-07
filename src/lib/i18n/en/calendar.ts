@@ -1,0 +1,43 @@
+import type { MessageTable } from '../types';
+
+/** The calendar: subscribing to feeds, the event card, and the lesson invitation for group chats. */
+export const calendar = {
+  'calendar.subscribe.button': 'Subscribe',
+  'calendar.subscribe.title': 'Subscribe to the calendar',
+  'calendar.subscribe.description': 'Google Calendar updates right away. Apple and Outlook refresh a subscription on their own schedule.',
+  'calendar.subscribe.loadFailed': 'Couldn’t load the calendars. Please try again.',
+  'calendar.subscribe.groupCalendars': 'Group calendars',
+  'calendar.subscribe.noGroups': 'No groups yet.',
+  'calendar.subscribe.addToGoogle': 'Add to Google Calendar',
+  'calendar.subscribe.googlePending': 'Google Calendar is being set up',
+  'calendar.subscribe.myCalendar': 'My calendar',
+  'calendar.subscribe.myCalendarHint': 'All your lessons and deadlines in one subscription. The link is personal — don’t share it.',
+  'calendar.subscribe.copyLink': 'Copy link',
+  'calendar.subscribe.resetLink': 'Reset link',
+  'calendar.subscribe.copied': 'Link copied',
+  'calendar.subscribe.copiedHint': 'Paste it into “Add calendar from URL”.',
+  'calendar.subscribe.copyFailed': 'Couldn’t copy the link',
+  'calendar.subscribe.linkReset': 'Link reset',
+  'calendar.subscribe.linkResetHint': 'Old subscriptions to your personal calendar no longer update.',
+  'calendar.subscribe.resetFailed': 'Couldn’t reset the link',
+  'calendar.subscribe.resetConfirmTitle': 'Reset your personal calendar link?',
+  'calendar.subscribe.resetConfirmBody': 'Every subscription added with the old link will stop updating. You’ll need to add the new link again.',
+  'calendar.subscribe.reset': 'Reset',
+
+  'calendar.event.substituted': 'Substituted',
+  'calendar.event.due': 'Due {time} · {date}',
+  'calendar.event.enterClass': 'Enter class',
+  'calendar.event.openOnPlatform': 'Open on {platform}',
+  'calendar.event.join': 'Join',
+  'calendar.event.copyInvitation': 'Copy invitation',
+  'calendar.event.copyInvitationTitle': 'Copy an invitation for the group chat',
+  'calendar.event.invitationCopied': 'Invitation copied',
+  'calendar.event.invitationCopiedHint': 'You can send it to the group chat.',
+  'calendar.event.invitationCopyFailed': 'Couldn’t copy the invitation',
+  'calendar.event.openLesson': 'Open lesson',
+
+  'calendar.invitation.title': 'Lesson invitation',
+  'calendar.invitation.when': '{day}, {time} (Almaty time)',
+  'calendar.invitation.materials': 'Materials and recording: {url}',
+  'calendar.invitation.joinEarly': 'Please join a couple of minutes before the start.',
+} as const satisfies MessageTable;

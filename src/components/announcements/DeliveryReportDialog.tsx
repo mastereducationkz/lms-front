@@ -1,4 +1,5 @@
 import { Check, Pin } from 'lucide-react';
+import { sanitizeHtml } from '../../lib/safeHtml';
 import {
   Dialog,
   DialogContent,
@@ -52,7 +53,7 @@ export function DeliveryReportDialog({ announcement, onClose }: DeliveryReportDi
                 and staff should see the message the way recipients saw it. */}
             <div className="rounded-md bg-muted p-3 text-sm leading-relaxed text-foreground [&_a]:text-primary [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_code]:rounded [&_code]:bg-background [&_code]:px-1 [&_code]:font-mono">
               {announcement.body ? (
-                <span dangerouslySetInnerHTML={{ __html: renderStoredBodyHtml(announcement.body) }} />
+                <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderStoredBodyHtml(announcement.body)) }} />
               ) : (
                 <span className="text-muted-foreground">(images only)</span>
               )}

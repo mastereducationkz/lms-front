@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, ChevronUp, Timer } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { renderTextWithLatex } from '../../utils/latex';
+import { sanitizeHtml } from '../../lib/safeHtml';
 import { LETTERS, cloudSize, formatSeconds, percents } from '../../lib/liveLesson/logic';
 import type { CloudGroup, LiveOption, Person, PublicQuestion } from '../../lib/liveLesson/types';
 import { OrcaStack } from './orcas';
@@ -11,7 +12,7 @@ const BLANK = '▁▁▁▁';
 
 /** Course text with formulas (quiz content is authored by staff, as in the quiz itself). */
 export function RichText({ text, className }: { text: string; className?: string }) {
-  return <div className={cn('live-rich break-words [&_p]:my-1', className)} dangerouslySetInnerHTML={{ __html: renderTextWithLatex(text) }} />;
+  return <div className={cn('live-rich break-words [&_p]:my-1', className)} dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(text)) }} />;
 }
 
 /** A quiz question as a student sees it: passage (folded when long), text, image. */

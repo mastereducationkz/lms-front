@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AnalyticsAchievement, AnalyticsGroup } from '@/services/api/achievementsAnalytics';
-import { barWidth, filterGroups, formatPct, highlights, langForRole, staffRoleLabel, weekLabel } from './achievementsAnalytics';
+import { barWidth, filterGroups, formatPct, highlights, staffRoleLabel, weekLabel } from './achievementsAnalytics';
 
 const item = (key: string, unlocked: number): AnalyticsAchievement => ({
   key, title: key, tier: 'rare', category: 'x', secret: false, unlocked, pct: 0, last_7_days: 0, last_30_days: 0,
@@ -20,12 +20,12 @@ describe('achievements analytics helpers', () => {
     expect(barWidth(140)).toBe('100%');
   });
 
-  it('labels weeks and roles, Russian for curator roles', () => {
+  it('labels weeks and roles', () => {
     expect(weekLabel('2026-09-28')).toBe('28.09');
-    expect(langForRole('head_curator')).toBe('ru');
-    expect(langForRole('admin')).toBe('en');
     expect(staffRoleLabel('curator', 'ru')).toBe('Куратор');
     expect(staffRoleLabel('teacher', 'en')).toBe('Teacher');
+    expect(staffRoleLabel('head_curator', 'en')).toBe('Head Curator');
+    expect(staffRoleLabel('parent', 'ru')).toBe('parent');
   });
 
   it('searches groups by name, keeping the server order', () => {

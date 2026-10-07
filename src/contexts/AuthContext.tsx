@@ -3,6 +3,7 @@ import apiClient from "../services/api";
 import type { User, UserRole } from '../types';
 import { clearOidcSession, isOidcSession } from '../services/oidc';
 import { setSentryUser } from '../lib/sentry';
+import { localeForUser, setActiveLocale } from '../lib/i18n/locale';
 import { setPwaUser } from '../services/pwaInstall';
 import { detachPushOnSignOut, syncPushSubscription } from '../services/webPush';
 
@@ -56,6 +57,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     initializeAuth();
   }, []);
+
+  // One language per person (owner, 2026-10-07). Set during render, before any child renders, so
+  // code outside React (lib helpers, toasts, the error screen) already speaks the new user's language.
+  const locale = localeForUser(user);
+  setActiveLocale(locale);
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   // Error reports carry who hit the error (WS9, 2026-09-26): id, email, name and role, so the
   // owner can see who was affected. Runs after login and after the /auth/me session restore

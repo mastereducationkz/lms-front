@@ -13,7 +13,7 @@ import { TrackPlatformLinks } from "../components/dashboard/TrackPlatformLinks";
 import { WeeklyTestCountdown } from "../components/dashboard/WeeklyTestCountdown";
 import { CheckpointsCard } from "../components/dashboard/CheckpointsCard";
 import CourseCard from "../components/courses/CourseCard";
-import { mediaUrl } from "../lib/mediaUrl";
+import { mediaUrl, safeLinkUrl } from "../lib/mediaUrl";
 import { TargetsTile } from "../components/dashboard/TargetsTile";
 
 import { useEffect, useMemo, useState } from "react";
@@ -610,9 +610,9 @@ export default function StudentDashboard({
                     <span>{formatWebinarSlot(ev)}</span>
                   </div>
                 </div>
-                {ev.meeting_url && (
+                {safeLinkUrl(ev.meeting_url) && (
                   <Button asChild size="sm" variant="secondary">
-                    <a href={ev.meeting_url} target="_blank" rel="noopener noreferrer">
+                    <a href={safeLinkUrl(ev.meeting_url)!} target="_blank" rel="noopener noreferrer">
                       <Video className="mr-1.5 h-4 w-4" /> Join
                     </a>
                   </Button>

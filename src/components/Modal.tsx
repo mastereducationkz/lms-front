@@ -8,11 +8,12 @@ interface ModalProps {
   onClose: () => void;
   onSubmit: () => void;
   submitText?: string;
+  submitDisabled?: boolean;
   cancelText?: string;
   onCancel?: () => void;
 }
 
-export default function Modal({ open, title, children, onClose, onSubmit, submitText = 'Save', cancelText = 'Cancel', onCancel }: ModalProps) {
+export default function Modal({ open, title, children, onClose, onSubmit, submitText = 'Save', submitDisabled = false, cancelText = 'Cancel', onCancel }: ModalProps) {
   const titleId = useId()
   if (!open) return null
   const content = (
@@ -34,7 +35,7 @@ export default function Modal({ open, title, children, onClose, onSubmit, submit
           <button type="button" onClick={onCancel || onClose} className="px-4 py-2 rounded-lg bg-muted dark:bg-secondary hover:bg-border dark:hover:bg-secondary/80">
             {cancelText}
           </button>
-          <button type="button" onClick={onSubmit} className="px-4 py-2 rounded-lg bg-brand-solid text-white hover:bg-brand-solid-hover">
+          <button type="button" onClick={onSubmit} disabled={submitDisabled} className="px-4 py-2 rounded-lg bg-brand-solid text-white hover:bg-brand-solid-hover disabled:cursor-not-allowed disabled:opacity-50">
             {submitText}
           </button>
         </div>
