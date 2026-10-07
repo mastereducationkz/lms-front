@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { centerInViewport, clampToViewport, containedIn, EDGE, isRenderable, spotlightBox, visibleInViewport } from './geometry';
-import { neighbourStep, settleStep, shownSteps, stepPosition, type StepLike } from './steps';
+import { LAYOUT_WAIT_MS, QUIET_WAIT_MS, TARGET_WAIT_MS, neighbourStep, reachable, settleStep, shownSteps, stepPosition, targetPhase, type StepLike } from './steps';
 
 const view = { width: 1440, height: 800 };
 const card = { width: 352, height: 240 };
@@ -101,5 +101,44 @@ describe('stepping through a tour', () => {
     expect(settleStep(steps, 'stars', phone)?.id).toBe('stars');
     expect(settleStep(steps, 'homework', (sel) => sel === '#calendar')?.id).toBe('calendar');
     expect(settleStep(steps, 'nope', desktop)?.id).toBe('welcome');
+  });
+
+  it('a content stop waits for a slow element: quiet, then loading, skipped only after ~5 s', () => {
+    expect(TARGET_WAIT_MS).toBeGreaterThanOrEqual(5000);
+    expect(targetPhase(0, false, true)).toBe('quiet');
+    expect(targetPhase(QUIET_WAIT_MS - 1, false, true)).toBe('quiet');
+    expect(targetPhase(QUIET_WAIT_MS, false, true)).toBe('loading');
+    // The Today card or a course card on a slow phone: 2–4 s is still waited for.
+    for (const ms of [1000, 2000, 3000, 4000, TARGET_WAIT_MS - 1]) expect(targetPhase(ms, false, true)).toBe('loading');
+    expect(targetPhase(TARGET_WAIT_MS, false, true)).toBe('skip');
+  });
+
+  it('a layout stop (sidebar, menu) never shows a loader and gives up after a render’s worth', () => {
+    expect(targetPhase(QUIET_WAIT_MS + 1, false)).toBe('quiet');
+    expect(targetPhase(LAYOUT_WAIT_MS - 1, false)).toBe('quiet');
+    expect(targetPhase(LAYOUT_WAIT_MS, false)).toBe('skip');
+  });
+
+  it('shows an element the moment it is there, early or late', () => {
+    for (const ms of [0, 50, QUIET_WAIT_MS, 3000, TARGET_WAIT_MS - 1]) {
+      expect(targetPhase(ms, true, true)).toBe('show');
+      expect(targetPhase(ms, true)).toBe('show');
+    }
+  });
+
+  it('Next goes to a content stop still loading, but skips a hidden layout stop at once', () => {
+    const tour: StepLike[] = [
+      { id: 'welcome' },
+      { id: 'continue', target: '#course-card', waits: true },
+      { id: 'calendar', target: '#calendar' },
+      { id: 'menu', target: '#menu' },
+    ];
+    const phoneLoading = (sel: string) => sel === '#menu'; // course card not rendered yet, sidebar hidden
+    const canReach = reachable(tour, phoneLoading);
+    expect(neighbourStep(tour, 'welcome', 1, canReach)?.id).toBe('continue');
+    expect(neighbourStep(tour, 'continue', 1, canReach)?.id).toBe('menu');
+    // While it loads it counts, so «2 of 3» holds still, and a resize keeps it.
+    expect(stepPosition(tour, 'continue', canReach)).toEqual({ index: 1, total: 3 });
+    expect(settleStep(tour, 'continue', canReach)?.id).toBe('continue');
   });
 });

@@ -28,6 +28,11 @@ describe('tour and tip copy', () => {
     for (const s of TOURS.teacher.steps) expect(`${s.title} ${s.body}`).not.toMatch(/creat(e|ing) (a |new )?course|course builder/i);
   });
 
+  it('says «loading» in each tour’s language', () => {
+    expect(TOURS.student.text.loading).not.toMatch(CYRILLIC);
+    expect(TOURS.curator.text.loading).toMatch(CYRILLIC);
+  });
+
   it('starts every tour with a centred welcome and keeps step ids unique', () => {
     for (const tour of Object.values(TOURS)) {
       expect(tour.steps[0].target).toBeUndefined();

@@ -30,21 +30,6 @@ export function findShown(selector: string): HTMLElement | null {
 
 export const resolves = (selector: string): boolean => findShown(selector) !== null;
 
-/** Waits up to `ms` for a selector to show (a page still rendering), then gives up with null. */
-export function waitForShown(selector: string, ms: number): Promise<HTMLElement | null> {
-  const found = findShown(selector);
-  if (found || ms <= 0) return Promise.resolve(found);
-  return new Promise((resolve) => {
-    const until = Date.now() + ms;
-    const poll = () => {
-      const el = findShown(selector);
-      if (el || Date.now() >= until) resolve(el);
-      else window.setTimeout(poll, 80);
-    };
-    window.setTimeout(poll, 80);
-  });
-}
-
 const scrolls = (style: CSSStyleDeclaration) => /(auto|scroll|hidden|clip)/.test(`${style.overflowX} ${style.overflowY}`);
 
 /** The whole element is inside the viewport and inside every clipping ancestor's visible box. */

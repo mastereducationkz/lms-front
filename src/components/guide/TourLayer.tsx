@@ -3,15 +3,16 @@
  *
  * Nothing here can trap anyone: the dim and the ring are `pointer-events: none`, so the page keeps
  * scrolling and clicking; the card is clamped inside the viewport, its Skip and Close always there;
- * Escape closes. A stop whose target is missing or has no size is skipped silently. Before a card is
- * placed, its target is scrolled into view in whatever container holds it.
+ * Escape closes. A stop whose element is still rendering waits for it — silently for a moment, then
+ * as a centred card that says it's loading, Skip at hand — and is skipped only after TARGET_WAIT_MS.
+ * Before a card is placed, its target is scrolled into view in whatever container holds it.
  */
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { autoUpdate } from '@floating-ui/react-dom';
 import { centerInViewport, spotlightBox } from '@/lib/guide/geometry';
-import { neighbourStep, settleStep, stepPosition } from '@/lib/guide/steps';
-import { bringIntoView, otherDialogOpen, prefersReducedMotion, resolves, viewportSize, waitForShown } from './dom';
+import { neighbourStep, reachable, settleStep, stepPosition, targetPhase } from '@/lib/guide/steps';
+import { bringIntoView, findShown, otherDialogOpen, prefersReducedMotion, resolves, viewportSize } from './dom';
 import { TourCard } from './GuideCards';
 import type { TourDefinition, TourStep } from './tours';
 import { useAnchoredCard } from './useAnchoredCard';
@@ -27,9 +28,9 @@ interface Props {
   onEnd: (how: TourEnd) => void;
 }
 
-/** How long a stop waits for its element to render before it is skipped. */
-const TARGET_WAIT_MS = 1000;
 const GLIDE_MS = 420;
+/** How often a stop still loading looks for its element. */
+const LOOK_MS = 100;
 
 function Spotlight({ target, gliding }: { target: HTMLElement | null; gliding: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -67,10 +68,19 @@ function Spotlight({ target, gliding }: { target: HTMLElement | null; gliding: b
 export default function TourLayer({ tour, stepId, welcomeLeading, onGoTo, onEnd }: Props) {
   const steps = tour.steps;
   const step: TourStep = steps.find((s) => s.id === stepId) ?? steps[0];
+  // Stops Next and Back can land on: on screen now, or content still loading that its stop waits for.
+  const canReach = useMemo(() => reachable(steps, resolves), [steps]);
   // What is on screen: a stop and its element, swapped together once the element is in view, so the
   // card never shows one stop's words at another stop's place.
-  const [shown, setShown] = useState<{ stepId: string; el: HTMLElement | null } | null>(null);
+  const [shown, setShown] = useState<{ stepId: string; el: HTMLElement | null; loading?: boolean } | null>(null);
   const [gliding, setGliding] = useState(false);
+  const glideTimer = useRef(0);
+  const glide = useCallback(() => {
+    setGliding(true);
+    window.clearTimeout(glideTimer.current);
+    glideTimer.current = window.setTimeout(() => setGliding(false), GLIDE_MS + 300);
+  }, []);
+  useEffect(() => () => window.clearTimeout(glideTimer.current), []);
   const [, setLayoutTick] = useState(0);
   const direction = useRef<1 | -1>(1);
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -92,42 +102,55 @@ export default function TourLayer({ tour, stepId, welcomeLeading, onGoTo, onEnd 
     };
   }, []);
 
-  // Resolve this stop's element, bring it into view, then place the card. Missing → skip it.
+  // Resolve this stop's element, bring it into view, then place the card. An element that shows up
+  // early is used at once; one still rendering gets the loading card; one that never comes is skipped.
   useEffect(() => {
     let cancelled = false;
-    setGliding(true);
-    const glide = window.setTimeout(() => setGliding(false), GLIDE_MS + 300);
-    if (!step.target) {
+    let timer = 0;
+    glide();
+    const selector = step.target;
+    if (!selector) {
       setShown({ stepId: step.id, el: null });
-      return () => {
-        cancelled = true;
-        window.clearTimeout(glide);
-      };
+      return undefined;
     }
-    void (async () => {
-      const el = await waitForShown(step.target as string, TARGET_WAIT_MS);
+    const started = Date.now();
+    const look = () => {
       if (cancelled) return;
-      if (!el) {
-        const next = neighbourStep(steps, step.id, direction.current, resolves) ?? neighbourStep(steps, step.id, -direction.current as 1 | -1, resolves);
+      const el = findShown(selector);
+      const phase = targetPhase(Date.now() - started, el !== null, step.waits);
+      if (phase === 'show' && el) {
+        void bringIntoView(el, !prefersReducedMotion()).then(() => {
+          if (cancelled) return;
+          glide();
+          setShown({ stepId: step.id, el });
+        });
+        return;
+      }
+      if (phase === 'skip') {
+        // Past this stop now, so only stops that show (or wait) count; never back onto this one.
+        const others = (sel: string) => sel !== selector && canReach(sel);
+        const next = neighbourStep(steps, step.id, direction.current, others) ?? neighbourStep(steps, step.id, -direction.current as 1 | -1, others);
         if (next) goToRef.current(next.id);
         else endRef.current('finish');
         return;
       }
-      await bringIntoView(el, !prefersReducedMotion());
-      if (cancelled) return;
-      setShown({ stepId: step.id, el });
-    })();
+      if (phase === 'loading') {
+        setShown((prev) => (prev?.stepId === step.id && prev.loading ? prev : { stepId: step.id, el: null, loading: true }));
+      }
+      timer = window.setTimeout(look, LOOK_MS);
+    };
+    look();
     return () => {
       cancelled = true;
-      window.clearTimeout(glide);
+      window.clearTimeout(timer);
     };
-  }, [step.id, step.target, steps]);
+  }, [step.id, step.target, step.waits, steps, glide, canReach]);
 
   // A resize can hide this stop's element (desktop → phone): move to the nearest stop that shows.
   useEffect(() => {
     const onResize = () => {
       setLayoutTick((n) => n + 1);
-      const settled = settleStep(steps, step.id, resolves);
+      const settled = settleStep(steps, step.id, canReach);
       if (settled && settled.id !== step.id) goToRef.current(settled.id);
     };
     window.addEventListener('resize', onResize);
@@ -135,16 +158,16 @@ export default function TourLayer({ tour, stepId, welcomeLeading, onGoTo, onEnd 
   }, [steps, step.id]);
 
   const current: TourStep = steps.find((s) => s.id === shown?.stepId) ?? step;
-  const position = stepPosition(steps, current.id, resolves);
+  const position = stepPosition(steps, current.id, canReach);
 
   const go = useCallback(
     (dir: 1 | -1) => {
       direction.current = dir;
-      const next = neighbourStep(steps, current.id, dir, resolves);
+      const next = neighbourStep(steps, current.id, dir, canReach);
       if (next) goToRef.current(next.id);
       else if (dir === 1) endRef.current('finish');
     },
-    [steps, current.id],
+    [steps, current.id, canReach],
   );
 
   // Escape closes (unless something above the tour wants it); arrows step while the card has focus.
@@ -226,6 +249,7 @@ export default function TourLayer({ tour, stepId, welcomeLeading, onGoTo, onEnd 
         index={position.index}
         total={position.total}
         text={tour.text}
+        loading={Boolean(shown?.loading)}
         leading={current.target ? undefined : welcomeLeading}
         style={style}
         arrowRef={anchored ? floating.arrowRef : undefined}
@@ -236,7 +260,7 @@ export default function TourLayer({ tour, stepId, welcomeLeading, onGoTo, onEnd 
         onClose={() => endRef.current('close')}
       />
       <div className="sr-only" aria-live="polite" aria-atomic="true">
-        {ready ? `${tour.text.stepOf(position.index + 1, position.total)}: ${current.title}` : ''}
+        {ready ? `${tour.text.stepOf(position.index + 1, position.total)}: ${current.title}${shown?.loading ? `. ${tour.text.loading}` : ''}` : ''}
       </div>
     </>,
     document.body,

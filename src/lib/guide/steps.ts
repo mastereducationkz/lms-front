@@ -8,6 +8,12 @@ export interface StepLike {
   id: string;
   /** CSS selector of the element the card points at; none = a centred card. */
   target?: string;
+  /**
+   * The element is page content that loads after the page (a dashboard card): wait for it, up to
+   * TARGET_WAIT_MS. Without it the element belongs to the layout (sidebar, menu), which is there from
+   * the first paint, so «not on screen» means «not for this person or this width»: skip at once.
+   */
+  waits?: boolean;
 }
 
 export type Resolves = (selector: string) => boolean;
@@ -44,3 +50,30 @@ export function stepPosition(steps: readonly StepLike[], currentId: string, reso
   const shown = shownSteps(steps, resolves);
   return { index: Math.max(0, shown.findIndex((s) => s.id === currentId)), total: shown.length };
 }
+
+/** A stop waits this long in silence first, so an element that renders quickly never flashes a loader. */
+export const QUIET_WAIT_MS = 250;
+/** A waiting stop gives up after this long: on slow phones and links a card often takes 2–4 s. */
+export const TARGET_WAIT_MS = 5000;
+/** A layout stop (no `waits`) allows only a render's worth of delay, e.g. right after a reload. */
+export const LAYOUT_WAIT_MS = 1000;
+
+export type TargetPhase = 'show' | 'quiet' | 'loading' | 'skip';
+
+/** What a stop does `elapsedMs` after it was asked for, given whether its element is on screen yet. */
+export function targetPhase(elapsedMs: number, found: boolean, waits = false): TargetPhase {
+  if (found) return 'show';
+  if (elapsedMs < QUIET_WAIT_MS) return 'quiet';
+  if (!waits) return elapsedMs < LAYOUT_WAIT_MS ? 'quiet' : 'skip';
+  return elapsedMs < TARGET_WAIT_MS ? 'loading' : 'skip';
+}
+
+/**
+ * Where Next and Back may go: a stop that shows now, or a waiting stop (its content may still be on
+ * its way — the stop itself waits for it).
+ */
+export const reachable = (steps: readonly StepLike[], resolves: Resolves): Resolves => {
+  const waiting = new Set(steps.filter((s) => s.waits && s.target).map((s) => s.target as string));
+  return (selector) => waiting.has(selector) || resolves(selector);
+};
+

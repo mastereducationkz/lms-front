@@ -17,6 +17,8 @@ export interface TourStep extends StepLike {
 }
 
 export interface TourText {
+  /** Shown while a stop waits for its part of the page to load. */
+  loading: string;
   next: string;
   back: string;
   done: string;
@@ -38,6 +40,7 @@ const MENU = nav('mobile-menu');
 const SIDE: Placement = 'right';
 
 const EN: TourText = {
+  loading: 'Loading this part of the page…',
   next: 'Next',
   back: 'Back',
   done: 'Done',
@@ -48,6 +51,7 @@ const EN: TourText = {
 };
 
 const RU: TourText = {
+  loading: 'Загружаем эту часть страницы…',
   next: 'Далее',
   back: 'Назад',
   done: 'Готово',
@@ -70,6 +74,7 @@ const student: TourDefinition = {
     {
       id: 'continue',
       target: `${nav('recent-courses')} > div > :first-child`,
+      waits: true,
       placement: 'top-start',
       title: 'Pick up where you left off',
       body: 'Your courses, with how far you’ve got. Lessons go at your own pace and your progress saves as you go.',
@@ -112,6 +117,7 @@ const student: TourDefinition = {
     {
       id: 'stars',
       target: nav('stars-pill'),
+      waits: true,
       placement: 'bottom-end',
       title: 'Your stars',
       body: 'Homework, quizzes and daily questions earn stars, and a daily streak multiplies them. Tap to see where each one came from.',
@@ -139,6 +145,7 @@ const teacher: TourDefinition = {
     {
       id: 'today',
       target: nav('today-lessons'),
+      waits: true,
       placement: 'bottom-start',
       title: 'Today, lesson by lesson',
       body: 'Each lesson opens its own page: register, scores, homework and notes in one place. Join opens ten minutes before the start; the full week is in the Calendar.',
@@ -208,6 +215,7 @@ const curator: TourDefinition = {
     {
       id: 'search',
       target: nav('student-search'),
+      waits: true,
       placement: 'bottom-start',
       title: 'Найти ученика',
       body: 'Начните вводить имя или email — откроется отчёт об успеваемости ученика.',

@@ -3,7 +3,7 @@
  * tour's card was white on white in dark), lucide icons only, no emoji.
  */
 import { forwardRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
-import { ArrowRight, Check, Lightbulb, X } from 'lucide-react';
+import { ArrowRight, Check, Lightbulb, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TourText } from './tours';
 
@@ -29,6 +29,8 @@ interface TourCardProps extends ArrowProps {
   index: number;
   total: number;
   text: TourText;
+  /** The stop's part of the page hasn't rendered yet: the card waits in the middle, Skip at hand. */
+  loading?: boolean;
   leading?: ReactNode;
   style?: CSSProperties;
   className?: string;
@@ -40,7 +42,7 @@ interface TourCardProps extends ArrowProps {
 }
 
 export const TourCard = forwardRef<HTMLDivElement, TourCardProps>(function TourCard(
-  { titleId, bodyId, title, body, index, total, text, leading, style, className, stepId, onNext, onBack, onSkip, onClose, arrowRef, arrowStyle },
+  { titleId, bodyId, title, body, index, total, text, loading, leading, style, className, stepId, onNext, onBack, onSkip, onClose, arrowRef, arrowStyle },
   ref,
 ) {
   const isFirst = index === 0;
@@ -57,6 +59,8 @@ export const TourCard = forwardRef<HTMLDivElement, TourCardProps>(function TourC
       data-step-id={stepId}
       data-step-index={index + 1}
       data-step-total={total}
+      data-step-loading={loading ? 'true' : undefined}
+      aria-busy={loading || undefined}
       style={style}
       className={cn('pointer-events-auto fixed left-0 top-0 z-[71] flex w-[min(22rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-1.5rem)] outline-none', className)}
     >
@@ -85,9 +89,16 @@ export const TourCard = forwardRef<HTMLDivElement, TourCardProps>(function TourC
             <X className="h-4 w-4" aria-hidden />
           </button>
         </div>
-        <p id={bodyId} className="min-h-0 overflow-y-auto px-4 pt-1.5 text-sm leading-relaxed text-muted-foreground">
-          {body}
-        </p>
+        {loading ? (
+          <p id={bodyId} className="flex items-center gap-2 px-4 pt-1.5 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 flex-none animate-spin motion-reduce:animate-none" aria-hidden />
+            {text.loading}
+          </p>
+        ) : (
+          <p id={bodyId} className="min-h-0 overflow-y-auto px-4 pt-1.5 text-sm leading-relaxed text-muted-foreground">
+            {body}
+          </p>
+        )}
         <div className="flex flex-wrap items-center gap-2 px-4 pb-4 pt-4">
           <button
             type="button"
