@@ -4,6 +4,7 @@ import './index.css';
 import 'katex/dist/katex.min.css';
 import Router from "./routes/Router";
 import ErrorBoundary from "./components/ErrorBoundary";
+import StagingBadge from "./components/StagingBadge";
 import { registerPwa } from "./services/pwa";
 import { startPwaInstall } from "./services/pwaInstall";
 import { installDomErrorGuard } from "./utils/domErrorGuard";
@@ -27,6 +28,7 @@ ReactDOM.createRoot(rootElement).render(
     <ErrorBoundary>
       <Router />
     </ErrorBoundary>
+    <StagingBadge />
   </React.StrictMode>
 );
 
