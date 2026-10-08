@@ -4,6 +4,13 @@ export const offboarding = {
   // ── Offboard dialog (components/offboarding) ─────────────────────────────
   'offboarding.action.offboard': 'Offboard',
   'offboarding.userForm.hint': 'Staff accounts are switched off through offboarding, which hands over their groups first.',
+  'offboarding.bulk.staffSkipped': {
+    one: '{count} staff member left out: staff are switched off and on through Offboarding, one at a time.',
+    other: '{count} staff members left out: staff are switched off and on through Offboarding, one at a time.',
+  },
+  'offboarding.reactivate.title': 'Reactivate {name}',
+  'offboarding.reactivate.left': 'Left on {date}',
+  'offboarding.reactivate.notFound': 'No completed offboarding was found for this person. Open Offboarding to check their records.',
   'offboarding.dialog.title': 'Offboard {name}',
   'offboarding.dialog.loading': 'Checking what {name} owns…',
   'offboarding.dialog.loadFailed': 'Could not check this person. Try again.',
@@ -55,6 +62,7 @@ export const offboarding = {
   'offboarding.form.immediatelyHint': 'Access ends as soon as you confirm.',
   'offboarding.form.emergency': 'Emergency',
   'offboarding.form.emergencyHint': 'Access ends at once, without a hand-over. Their groups, lessons and courses are listed for reassignment.',
+  'offboarding.form.emergencyWarning': 'Emergency: access ends now and nothing is handed over. Their groups, lessons and courses stay assigned to them and are flagged «teacher/curator left — reassign» until someone takes them over; the programme heads get the list.',
   'offboarding.form.onDate': 'On a date',
   'offboarding.form.reason': 'Reason',
   'offboarding.form.chooseReason': 'Choose a reason',

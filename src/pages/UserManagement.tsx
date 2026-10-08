@@ -94,6 +94,12 @@ import '@/lib/i18n/catalogs/offboarding';
 import { useOffboardLauncher } from '../components/offboarding/useOffboardLauncher';
 import { STAFF_ROLES } from '../lib/offboarding';
 
+/** The server's reason for a refusal (already in the reader's language when it has a reason_code). */
+const serverDetail = (error: unknown): string | null => {
+  const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+  return typeof detail === 'string' && detail ? detail : null;
+};
+
 /** A translated sentence with its <b>…</b> spans shown in bold. */
 const withBold = (message: string) =>
   message.split(/<\/?b>/).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part));
@@ -511,8 +517,15 @@ export default function UserManagement() {
   };
 
   const handleBulkSetActive = async (isActive: boolean) => {
-    const ids = [...selectedIds];
-    if (ids.length === 0) return;
+    // Staff are switched off and on one at a time through offboarding (SPEC §12 Q92).
+    const staff = new Set(users.filter(offboardsInstead).map((u) => Number(u.id)));
+    const ids = [...selectedIds].filter((id) => !staff.has(id));
+    const skipped = selectedIds.size - ids.length;
+    if (skipped > 0) toast(t('offboarding.bulk.staffSkipped', { count: skipped }), 'info');
+    if (ids.length === 0) {
+      if (skipped > 0) setSelectedIds(new Set());
+      return;
+    }
     const { ok, failed } = await apiClient.bulkSetUsersActive(ids, isActive);
     toast(
       failed === 0
@@ -712,6 +725,13 @@ export default function UserManagement() {
     }
   };
 
+  // While offboarding is on, staff leave through it: it hands over their groups and switches
+  // off every system, which the old Deactivate never did (SPEC §12 Q92). Students are unchanged.
+  // The server refuses the old paths for staff (409 use_offboarding / use_reactivate); those
+  // refusals open the right dialog.
+  const offboard = useOffboardLauncher(() => loadUsers());
+  const offboardsInstead = (user: User) => offboard.enabled && STAFF_ROLES.has(user.role);
+
   const handleUpdateUser = async () => {
     if (!selectedUser) return;
     
@@ -769,6 +789,10 @@ export default function UserManagement() {
       resetForm();
       loadUsers();
     } catch (error: any) {
+      if (offboard.handleRefusal(error, selectedUser)) {
+        setShowEditModal(false);
+        return;
+      }
       console.error('Failed to update user:', error);
       const detail = error?.response?.data?.detail;
       toast(typeof detail === 'string' && detail ? detail : t('adminUsers.user.updateFailed'), 'error');
@@ -785,6 +809,10 @@ export default function UserManagement() {
       setSelectedUser(null);
       loadUsers();
     } catch (error: any) {
+      if (offboard.handleRefusal(error, selectedUser)) {
+        setShowDeleteModal(false);
+        return;
+      }
       console.error('Failed to deactivate user:', error);
       const errorMessage = error.response?.data?.detail || t('adminUsers.user.deactivateFailed');
       toast(errorMessage, 'error');
@@ -898,7 +926,7 @@ export default function UserManagement() {
       setShowScheduleModal(true);
     } catch (error) {
       console.error('Failed to create group:', error);
-      toast(t('adminUsers.group.createFailed'), 'error');
+      toast(serverDetail(error) ?? t('adminUsers.group.createFailed'), 'error');
     }
   };
 
@@ -949,7 +977,7 @@ export default function UserManagement() {
       setShowScheduleModal(true);
     } catch (error) {
       console.error('Failed to create special group:', error);
-      toast(t('adminUsers.group.specialCreateFailed'), 'error');
+      toast(serverDetail(error) ?? t('adminUsers.group.specialCreateFailed'), 'error');
     }
   };
 
@@ -996,7 +1024,7 @@ export default function UserManagement() {
       loadUsers(); // Reload users to update group information
     } catch (error) {
       console.error('Failed to update group:', error);
-      toast(t('adminUsers.group.updateFailed'), 'error');
+      toast(serverDetail(error) ?? t('adminUsers.group.updateFailed'), 'error');
     }
   };
 
@@ -1047,11 +1075,6 @@ export default function UserManagement() {
     });
     setShowEditModal(true);
   };
-
-  // While offboarding is on, staff leave through it: it hands over their groups and switches
-  // off every system, which the old Deactivate never did (SPEC §12 Q92). Students are unchanged.
-  const offboard = useOffboardLauncher(() => loadUsers());
-  const offboardsInstead = (user: User) => offboard.enabled && STAFF_ROLES.has(user.role);
 
   const openDeleteModal = (user: User) => {
     setSelectedUser(user);

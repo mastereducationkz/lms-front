@@ -5,6 +5,15 @@ export const offboarding: RuTable<typeof en> = {
   // ── Оформление ухода (components/offboarding) ─────────────────────────────
   'offboarding.action.offboard': 'Оформить уход',
   'offboarding.userForm.hint': 'Сотрудника отключают через оформление ухода: сначала его группы передаются другим.',
+  'offboarding.bulk.staffSkipped': {
+    one: '{count} сотрудник пропущен: сотрудников отключают и возвращают через «Уход сотрудников», по одному.',
+    few: '{count} сотрудника пропущены: сотрудников отключают и возвращают через «Уход сотрудников», по одному.',
+    many: '{count} сотрудников пропущены: сотрудников отключают и возвращают через «Уход сотрудников», по одному.',
+    other: '{count} сотрудника пропущены: сотрудников отключают и возвращают через «Уход сотрудников», по одному.',
+  },
+  'offboarding.reactivate.title': 'Вернуть: {name}',
+  'offboarding.reactivate.left': 'Ушёл {date}',
+  'offboarding.reactivate.notFound': 'Завершённый уход этого сотрудника не найден. Проверьте записи в разделе «Уход сотрудников».',
   'offboarding.dialog.title': 'Уход: {name}',
   'offboarding.dialog.loading': 'Проверяем, что числится за {name}…',
   'offboarding.dialog.loadFailed': 'Не удалось проверить сотрудника. Попробуйте ещё раз.',
@@ -62,6 +71,7 @@ export const offboarding: RuTable<typeof en> = {
   'offboarding.form.immediatelyHint': 'Доступ закроется, как только вы подтвердите.',
   'offboarding.form.emergency': 'Экстренно',
   'offboarding.form.emergencyHint': 'Доступ закроется сразу, без передачи дел. Его группы, уроки и курсы попадут в список на передачу.',
+  'offboarding.form.emergencyWarning': 'Экстренно: доступ закроется сейчас, дела не передаются. Группы, уроки и курсы остаются за сотрудником и помечаются «педагог/куратор ушёл — передайте», пока их кто-то не примет; старшие по программе получат список.',
   'offboarding.form.onDate': 'В определённый день',
   'offboarding.form.reason': 'Причина',
   'offboarding.form.chooseReason': 'Выберите причину',

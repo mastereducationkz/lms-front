@@ -8,6 +8,7 @@ import {
   formProblems,
   handoverItems,
   initialAssignments,
+  latestCompletedRecord,
   latestLastDay,
   mayOfferOffboard,
   mayUseEmergency,
@@ -15,6 +16,7 @@ import {
   ownerOptions,
   reassignPlan,
   recordActions,
+  refusalRoute,
   targetRef,
   unresolvedItems,
   type OffboardForm,
@@ -237,5 +239,31 @@ describe('emergency switch-off (SPEC §12 Q93)', () => {
     ];
     expect(unresolvedItems(record({ status: 'completed', open_items: items })).map((i) => i.id)).toEqual([9911]);
     expect(unresolvedItems(record({ status: 'completed' }))).toEqual([]);
+  });
+});
+
+describe('old switch-off paths while offboarding is on (SPEC §12 Q92)', () => {
+  const refusal = (data: unknown) => ({ response: { status: 409, data } });
+
+  it('sends a staff deactivate to the Offboard dialog and an activate to Reactivate', () => {
+    expect(refusalRoute(refusal({ detail: 'Use offboarding', reason_code: 'use_offboarding' }))).toEqual({ kind: 'offboard' });
+    expect(refusalRoute(refusal({ reason_code: 'use_reactivate', reason_details: { record_id: 7 } }))).toEqual({ kind: 'reactivate', recordId: 7 });
+    expect(refusalRoute(refusal({ code: 'use_reactivate' }))).toEqual({ kind: 'reactivate', recordId: null });
+  });
+
+  it('leaves every other refusal to the screen', () => {
+    expect(refusalRoute(refusal({ detail: 'Cannot deactivate the last admin' }))).toBeNull();
+    expect(refusalRoute(new Error('Network Error'))).toBeNull();
+  });
+
+  it('finds the newest completed record of that person', () => {
+    const records = [
+      record({ id: 1, status: 'completed', created_at: '2026-01-01T00:00:00Z' }),
+      record({ id: 2, status: 'completed', created_at: '2026-09-01T00:00:00Z' }),
+      record({ id: 3, status: 'reactivated', created_at: '2026-10-01T00:00:00Z' }),
+      record({ id: 4, status: 'completed', lms_user_id: 999, created_at: '2026-10-02T00:00:00Z' }),
+    ];
+    expect(latestCompletedRecord(records, 123)?.id).toBe(2);
+    expect(latestCompletedRecord(records, 5)).toBeNull();
   });
 });

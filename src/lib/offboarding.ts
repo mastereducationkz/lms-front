@@ -128,6 +128,26 @@ export function unresolvedItems(record: Pick<OffboardingRecord, 'open_items'>): 
   return (record.open_items ?? []).filter((item) => !item.resolved);
 }
 
+/** The record a «use Reactivate» refusal points at: the newest completed one of this person. */
+export function latestCompletedRecord(records: OffboardingRecord[], lmsUserId: number): OffboardingRecord | null {
+  return records
+    .filter((r) => r.status === 'completed' && r.lms_user_id === lmsUserId)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))[0] ?? null;
+}
+
+/**
+ * What a refusal from the old switch-off paths asks for while offboarding is on (SPEC §12 Q92):
+ * staff are switched off through the Offboard dialog and brought back with Reactivate.
+ */
+export function refusalRoute(error: unknown): { kind: 'offboard' } | { kind: 'reactivate'; recordId: number | null } | null {
+  const data = (error as { response?: { status?: number; data?: { reason_code?: unknown; reason_details?: unknown } } })?.response?.data;
+  const code = data?.reason_code ?? (data as { code?: unknown } | undefined)?.code;
+  if (code === 'use_offboarding') return { kind: 'offboard' };
+  if (code !== 'use_reactivate') return null;
+  const recordId = (data?.reason_details as { record_id?: unknown } | undefined)?.record_id;
+  return { kind: 'reactivate', recordId: typeof recordId === 'number' ? recordId : null };
+}
+
 /** Where the dialog is, given what the preview says. */
 export type DialogStage = 'not_allowed' | 'open_record' | 'handover' | 'details';
 

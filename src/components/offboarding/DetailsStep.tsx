@@ -108,6 +108,12 @@ export default function DetailsStep({ name, form, onChange, reasons, today, need
           {t('offboarding.handover.satNotChecked')}{satWarning ? ` (${satWarning})` : ''}
         </p>
       )}
+      {form.mode === 'emergency' && (
+        <p role="alert" className="flex gap-2 rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/30 dark:text-red-300">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          {t('offboarding.form.emergencyWarning')}
+        </p>
+      )}
       {needsSecondAdmin && (
         <p className="rounded-md bg-amber-100 p-3 text-sm text-amber-900 dark:bg-amber-900/35 dark:text-amber-200">
           {t('offboarding.form.secondAdmin', { name })}
