@@ -94,6 +94,13 @@ export const COPY_KEYS = {
   loadFailed: 'materials.error.loadFailed',
   retry: 'materials.action.retry',
   // «Библиотека» (docs/materials-library/SPEC.md §9)
+  addButton: 'materials.add.button',
+  addMaterials: 'materials.page.addMaterials',
+  addFirst: 'materials.page.addFirst',
+  pickerTitle: 'materials.picker.title',
+  pickerHint: 'materials.picker.hint',
+  pickerPickGroup: 'materials.picker.pickGroup',
+  pickerEmpty: 'materials.picker.empty',
   tabLessons: 'materials.tab.lessons',
   tabLibrary: 'materials.tab.library',
   libraryOf: 'materials.library.title',

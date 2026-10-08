@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Loader2, RotateCcw, Search } from 'lucide-react';
+import { Loader2, Plus, RotateCcw, Search } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { SearchableSelect, type SearchableOption } from '../components/ui/searchable-select';
+import AddToLessonDialog from '../components/class-materials/AddToLessonDialog';
 import LessonMaterialsCard from '../components/class-materials/LessonMaterialsCard';
+import { LessonMaterialsDialog } from '../components/class-materials/LessonMaterialsBadge';
 import LibraryTab from '../components/library/LibraryTab';
 import MaterialViewer from '../components/class-materials/MaterialViewer';
 import {
@@ -14,6 +16,7 @@ import {
 import { t } from '../lib/classMaterials';
 import { useLocale } from '../lib/i18n/react';
 import { initialMaterialsTab, type MaterialsTab } from '../lib/library';
+import { canStartAdding } from '../lib/classMaterialsAdd';
 import {
   buildVisibleLessons, feedFooter, filtersChanged, mergeFeedLessons, shouldFetchDeepLinkDirectly, toFeedEntry,
   type FeedFilters,
@@ -140,6 +143,12 @@ function LessonMaterialsFeed() {
   const [viewerItem, setViewerItem] = useState<MaterialItem | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
 
+  // Adding from the tab: step one picks a lesson (or a card's own Add names it), step two is the
+  // lesson page's own materials section in a dialog, so the add rules live in one place.
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [addingLessonId, setAddingLessonId] = useState<number | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+
   // Rendering only — the fetch below always runs, even for a moderator with no group chosen:
   // that call is what fills the picker in the first place (Controller Ruling 15).
   const pickingGroup = isModerator && groupId === null;
@@ -238,6 +247,12 @@ function LessonMaterialsFeed() {
     setViewerOpen(true);
   }, []);
 
+  const startAdding = useCallback((lessonId: number) => {
+    setAddingLessonId(lessonId);
+    setAddOpen(true);
+  }, []);
+  const refreshFeed = useCallback(() => setReloadKey((n) => n + 1), []);
+
   const visibleEntries = useMemo(() => buildVisibleLessons(entries, pinnedEntry), [entries, pinnedEntry]);
 
   const groupOptions = useMemo(
@@ -247,12 +262,25 @@ function LessonMaterialsFeed() {
   const showGroupSelect = isModerator || feedGroups.length > 1;
   const groupSelectValue = isModerator ? (groupId === null ? null : String(groupId)) : (groupId === null ? ALL_GROUPS : String(groupId));
 
+  const canAdd = canStartAdding(role) && feedGroups.length > 0;
   const searching = q.trim().length > 0;
   const footer = feedFooter({ loading, failed, loadMoreFailed, nextBefore });
 
   return (
     <div className="space-y-4">
       <div className="space-y-2.5">
+        {canAdd && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="inline-flex h-11 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:h-10"
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+              {t('addMaterials', locale)}
+            </button>
+          </div>
+        )}
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <input
@@ -287,6 +315,7 @@ function LessonMaterialsFeed() {
               entry={entry}
               locale={locale}
               onOpenItem={openItem}
+              onAdd={startAdding}
               highlighted={entry.lesson.id === highlightId}
             />
           ))}
@@ -328,6 +357,7 @@ function LessonMaterialsFeed() {
               entry={entry}
               locale={locale}
               onOpenItem={openItem}
+              onAdd={startAdding}
               highlighted={entry.lesson.id === highlightId}
             />
           ))}
@@ -361,6 +391,18 @@ function LessonMaterialsFeed() {
           )}
         </div>
       )}
+
+      {canAdd && (
+        <AddToLessonDialog
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          groups={feedGroups}
+          initialGroupId={groupId}
+          locale={locale}
+          onPick={startAdding}
+        />
+      )}
+      <LessonMaterialsDialog eventId={addingLessonId} open={addOpen} onOpenChange={setAddOpen} onChanged={refreshFeed} />
 
       <MaterialViewer
         item={viewerItem}
