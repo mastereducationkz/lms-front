@@ -9,6 +9,7 @@ import {
   questionOptions,
   shouldCacheRecommendations,
   usableQuestions,
+  dailyAnswerIsCorrect,
 } from './dailyQuestions';
 import type { DailyQuestionItem, DailyQuestionsRecommendations } from '../types';
 
@@ -203,5 +204,29 @@ describe('formatTag / difficultyLabel (LMS-FRONT-7/8/9)', () => {
     expect(difficultyLabel('easy', 'ru')).toBe('Лёгкий');
     expect(difficultyLabel('very_hard')).toBe('very_hard');
     expect(difficultyLabel(undefined)).toBe('');
+  });
+});
+
+describe('dailyAnswerIsCorrect', () => {
+  const typed = (correctAnswer: string) => ({ questionId: 'q', correctAnswer, text: 'x' }) as unknown as DailyQuestionItem;
+  const choice = (correctAnswer: string) =>
+    ({ questionId: 'q', correctAnswer, text: 'x', isMultipleChoice: true }) as unknown as DailyQuestionItem;
+
+  it('reads a typed number the way the quiz does', () => {
+    expect(dailyAnswerIsCorrect(typed('13.5'), '13,5')).toBe(true);
+    expect(dailyAnswerIsCorrect(typed('0.5'), '.5')).toBe(true);
+    expect(dailyAnswerIsCorrect(typed('16.5|33/2'), '33/2')).toBe(true);
+    expect(dailyAnswerIsCorrect(typed('801'), '800')).toBe(false);
+  });
+
+  it('keeps comparing a multiple-choice letter case-insensitively', () => {
+    expect(dailyAnswerIsCorrect(choice('B'), 'b')).toBe(true);
+    expect(dailyAnswerIsCorrect(choice('B'), 'C')).toBe(false);
+  });
+
+  it('is false for a missing answer or a missing key', () => {
+    expect(dailyAnswerIsCorrect(typed('5'), undefined)).toBe(false);
+    expect(dailyAnswerIsCorrect(typed('5'), '')).toBe(false);
+    expect(dailyAnswerIsCorrect(typed(''), '5')).toBe(false);
   });
 });

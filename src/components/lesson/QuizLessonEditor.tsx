@@ -18,6 +18,7 @@ import { FillInBlankRenderer } from './FillInBlankRenderer';
 import { TextCompletionRenderer } from './TextCompletionRenderer';
 import { parseGap } from '../../utils/gapParser';
 import { useT } from '../../lib/i18n/react';
+import { acceptedFormsPreview, flagsDisagreeWithKey, truncatedDecimalKeys, withFlagsFromKey } from '../../lib/quizKeyChecks';
 import type { MessageKey } from '../../lib/i18n';
 import {
   DEFAULT_QUIZ_PASSING_SCORE_OPTIONAL,
@@ -477,6 +478,12 @@ export default function QuizLessonEditor({
       }
     }
 
+    // The key and the option flag are two records of one fact; a disagreement is a question somebody
+    // must look at again, not one to save as it is.
+    if (flagsDisagreeWithKey(question)) {
+      errors.push(tr('courseAuthoring.quiz.validation.keyFlagMismatch'));
+    }
+
     return { isValid: errors.length === 0, errors };
   };
 
@@ -520,13 +527,13 @@ export default function QuizLessonEditor({
   const setDraftCorrect = (idx: number, checked: boolean) => {
     if (!draftQuestion) return;
     if (draftQuestion.question_type === 'single_choice' || draftQuestion.question_type === 'media_question') {
-      if (checked) applyDraftUpdate({ correct_answer: idx });
+      if (checked) applyDraftUpdate(withFlagsFromKey({ ...draftQuestion, correct_answer: idx }));
     } else if (draftQuestion.question_type === 'multiple_choice') {
       const current = Array.isArray(draftQuestion.correct_answer)
         ? [...draftQuestion.correct_answer]
         : [];
       const next = checked ? Array.from(new Set([...current, idx])) : current.filter((i) => i !== idx);
-      applyDraftUpdate({ correct_answer: next });
+      applyDraftUpdate(withFlagsFromKey({ ...draftQuestion, correct_answer: next }));
     }
   };
 
@@ -551,11 +558,11 @@ export default function QuizLessonEditor({
         .filter(Boolean);
       correctAnswer = corrects;
     }
-    const toSave: Question = {
+    const toSave: Question = withFlagsFromKey({
       ...draftQuestion,
       correct_answer: correctAnswer,
       order_index: editingQuestionIndex !== null ? draftQuestion.order_index : quizQuestions.length,
-    };
+    });
 
     if (editingQuestionIndex !== null) {
       // Update existing question
@@ -1995,6 +2002,26 @@ export default function QuizLessonEditor({
                         <p className="text-xs text-muted-foreground">
                           {tr('courseAuthoring.quiz.variationsHint')}
                         </p>
+                        {(() => {
+                          // What the grader will accept besides the variations written above, computed with
+                          // the grader itself, and a warning for a key students will round (4.666 for 14/3).
+                          const forms = acceptedFormsPreview(draftQuestion.correct_answer);
+                          const truncated = truncatedDecimalKeys(draftQuestion.correct_answer);
+                          return (
+                            <>
+                              {forms.length > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  {tr('courseAuthoring.quiz.key.alsoAccepted', { forms: forms.join('   ') })}
+                                </p>
+                              )}
+                              {truncated.length > 0 && (
+                                <p className="text-xs text-amber-700 dark:text-amber-400">
+                                  {tr('courseAuthoring.quiz.key.truncated', { key: truncated[0] })}
+                                </p>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                   )}
 

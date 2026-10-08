@@ -23,8 +23,12 @@ export async function getDailyQuestionsRecommendations(): Promise<DailyQuestions
 
 export async function completeDailyQuestions(questionsData?: Record<string, any>): Promise<{ message: string; completed_today: boolean }> {
   try {
+    // The server reads the score from the top level of the body; sent only inside questions_data it
+    // never arrived, and every completion paid the 10-star minimum.
     const response = await api.post('/daily-questions/complete', {
-      questions_data: questionsData || null
+      questions_data: questionsData || null,
+      score: questionsData?.score,
+      total_questions: questionsData?.total_questions,
     });
     return response.data;
   } catch (error) {
