@@ -5,6 +5,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { connectSocket } from '../services/socket';
 import { useVisiblePolling } from '../hooks/useVisiblePolling';
+import { useOffboardingConfig } from '../hooks/useOffboardingConfig';
 import apiClient from '../services/api';
 import logoIco from '../assets/masteredlogo-ico.ico';
 import { CRM_ONBOARDING_URL, CRM_TASKS_URL, CRM_WORKSPACE_URL } from '../lib/crmLinks';
@@ -45,6 +46,7 @@ import {
   MonitorPlay,
   Paperclip,
   Route,
+  UserMinus,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Course } from '../types';
@@ -99,7 +101,8 @@ function getNavigationItems(
   unseenGradedCount: number = 0,
   isSpecialGroupStudent: boolean = false,
   lessonRequestCount: number = 0,
-  attendanceDue?: AttendanceDue
+  attendanceDue?: AttendanceDue,
+  offboardingEnabled: boolean = false
 ): NavItemTuple[] {
   // Muted while Google Meet still owes us the call, red the moment the register can actually
   // be taken — see lib/attendanceBadge.
@@ -140,6 +143,10 @@ function getNavigationItems(
     ['/curator/groups', t('shell.nav.myGroups'), UsersRound, 0, ['curator', 'head_curator'], 'curator-groups-nav', 'curator'],
     ['/admin/courses', t('shell.nav.manageCourses'), BookMarked, 0, ['admin', 'head_teacher'], 'courses-management', 'admin'],
     ['/admin/users', t('shell.nav.manageUsers'), Users, 0, ['admin', 'head_curator'], 'users-management', 'admin'],
+    // Staff offboarding (SPEC §9): only once the backend switch is on.
+    ...(offboardingEnabled
+      ? [['/admin/offboarding', t('shell.nav.offboarding'), UserMinus, 0, ['admin', 'head_curator', 'head_teacher'], 'offboarding-nav', 'admin'] as NavItemTuple]
+      : []),
     ['/admin/weekly-top-students', t('shell.nav.weeklyTopStudents'), Trophy, 0, ['admin'], 'weekly-top-students-nav', 'admin'],
     ['/admin/announcements', t('shell.nav.announcements'), Megaphone, 0, ['admin', 'head_curator', 'head_teacher'], 'announcements-nav', 'admin'],
     ['/admin/checkpoints', t('shell.nav.satCheckpoints'), ClipboardCheck, 0, ['admin', 'head_curator', 'head_teacher', 'teacher', 'curator'], 'checkpoints-admin-nav', 'admin'],
@@ -216,6 +223,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const replayKind = replayTourFor(user?.role);
+  const offboarding = useOffboardingConfig(user?.role);
 
   // Hide restricted student nav items until role-specific special-group state is resolved.
   const hideRestrictedStudentNav = useMemo(() => {
@@ -409,7 +417,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
       
       <nav className="flex flex-col flex-1 overflow-y-auto min-h-0 pt-1">
         {buildNavSections(
-          getNavigationItems(t, user?.role, unread, unseenGraded, hideRestrictedStudentNav, lessonRequestCount, attendanceDue),
+          getNavigationItems(t, user?.role, unread, unseenGraded, hideRestrictedStudentNav, lessonRequestCount, attendanceDue, !!offboarding?.enabled),
           t
         )
           .map((section) => ({

@@ -20,3 +20,15 @@ export function localizeServerError(data: unknown, locale?: Locale): void {
   );
   body.detail = t(key, params, locale);
 }
+
+/**
+ * A refusal that arrives inside a 200 body rather than as the response (a per-item reassign
+ * result, a preview's `why_not`): the catalog's sentence for `code` in the reader's language, or
+ * the server's English when the code is unknown or a blank would stay unfilled.
+ */
+export function serverMessage(code: string | null | undefined, english: string, locale?: Locale): string {
+  const key = `serverErrors.${code}`;
+  if (!code || !hasMessage(key)) return english;
+  const text = t(key, undefined, locale);
+  return /\{\w+\}/.test(text) ? english : text;
+}

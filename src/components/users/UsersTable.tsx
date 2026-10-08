@@ -1,4 +1,4 @@
-import { Edit, Trash2, Eye, EyeOff, UploadCloud, GraduationCap, UserCog } from 'lucide-react';
+import { Edit, Trash2, Eye, EyeOff, UploadCloud, GraduationCap, UserCog, UserMinus } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import {
@@ -12,6 +12,7 @@ import type { User } from '../../types';
 import { roleLabel } from '@/lib/roleLabel';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/users';
+import '@/lib/i18n/catalogs/offboarding';
 
 interface UsersTableProps {
   users: User[];
@@ -24,6 +25,9 @@ interface UsersTableProps {
   onToggleAll?: (checked: boolean) => void;
   onEdit?: (u: User) => void;
   onDelete?: (u: User) => void;
+  /** Staff rows switch off through offboarding (SPEC §12 Q92): this replaces Deactivate where it says so. */
+  offboards?: (u: User) => boolean;
+  onOffboard?: (u: User) => void;
   onToggleAnalyticsHidden?: (u: User) => void;
   /** Provision a student onto an external platform (SAT/NUET or IELTS). Student rows only. */
   onProvisionPlatform?: (u: User, platform: 'ielts' | 'sat') => void;
@@ -76,6 +80,8 @@ export function UsersTable({
   onToggleAll,
   onEdit,
   onDelete,
+  offboards,
+  onOffboard,
   onToggleAnalyticsHidden,
   onProvisionPlatform,
   provisioningIds,
@@ -180,7 +186,9 @@ export function UsersTable({
                     {onEdit && (
                       <Button onClick={() => onEdit(user)} variant="ghost" size="sm" title={t('users.table.editUser')}><Edit className="w-4 h-4" /></Button>
                     )}
-                    {onDelete && (
+                    {onOffboard && offboards?.(user) ? (
+                      <Button onClick={() => onOffboard(user)} variant="ghost" size="sm" title={t('offboarding.action.offboard')}><UserMinus className="w-4 h-4" /></Button>
+                    ) : onDelete && (
                       <Button onClick={() => onDelete(user)} variant="ghost" size="sm" title={t('users.table.deactivateUser')}><Trash2 className="w-4 h-4" /></Button>
                     )}
                   </div>

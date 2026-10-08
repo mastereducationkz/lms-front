@@ -42,6 +42,7 @@ export const shell: RuTable<typeof en> = {
   'shell.nav.myGroups': 'Мои группы',
   'shell.nav.manageCourses': 'Управление курсами',
   'shell.nav.manageUsers': 'Пользователи',
+  'shell.nav.offboarding': 'Уход сотрудников',
   'shell.nav.weeklyTopStudents': 'Лучшие студенты недели',
   'shell.nav.announcements': 'Объявления в Telegram',
   'shell.nav.satCheckpoints': 'Чекпоинты SAT',

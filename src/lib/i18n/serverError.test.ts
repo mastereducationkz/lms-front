@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { localizeServerError } from './serverError';
+import { localizeServerError, serverMessage } from './serverError';
 
 describe('localizeServerError', () => {
   it('shows a known refusal in the reader’s language, with its blanks filled', () => {
@@ -22,5 +22,17 @@ describe('localizeServerError', () => {
   it('ignores bodies that are not objects', () => {
     expect(() => localizeServerError(undefined)).not.toThrow();
     expect(() => localizeServerError('Bad Gateway')).not.toThrow();
+  });
+});
+
+describe('serverMessage', () => {
+  it('words a code sent inside a body (a per-item result) in the reader’s language', () => {
+    expect(serverMessage('offboarding_owner_role', 'Dana S. cannot take a lesson', 'ru')).toBe('Этому человеку такое передать нельзя');
+  });
+
+  it('keeps the server’s sentence for an unknown code, no code, or a sentence with unfilled blanks', () => {
+    expect(serverMessage('brand_new_code', 'As sent', 'ru')).toBe('As sent');
+    expect(serverMessage(null, 'As sent', 'ru')).toBe('As sent');
+    expect(serverMessage('staff_leaving', 'Aida is leaving on 2026-10-31', 'ru')).toBe('Aida is leaving on 2026-10-31');
   });
 });

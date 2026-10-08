@@ -42,6 +42,7 @@ export const shell = {
   'shell.nav.myGroups': 'My groups',
   'shell.nav.manageCourses': 'Manage Courses',
   'shell.nav.manageUsers': 'Manage Users',
+  'shell.nav.offboarding': 'Offboarding',
   'shell.nav.weeklyTopStudents': 'Weekly Top Students',
   'shell.nav.announcements': 'Telegram Announcements',
   'shell.nav.satCheckpoints': 'SAT Checkpoints',

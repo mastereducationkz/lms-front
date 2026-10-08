@@ -90,6 +90,9 @@ import { useT } from '../lib/i18n/react';
 import type { MessageKey } from '../lib/i18n';
 import '@/lib/i18n/catalogs/users';
 import '@/lib/i18n/catalogs/adminUsers';
+import '@/lib/i18n/catalogs/offboarding';
+import { useOffboardLauncher } from '../components/offboarding/useOffboardLauncher';
+import { STAFF_ROLES } from '../lib/offboarding';
 
 /** A translated sentence with its <b>…</b> spans shown in bold. */
 const withBold = (message: string) =>
@@ -1045,6 +1048,11 @@ export default function UserManagement() {
     setShowEditModal(true);
   };
 
+  // While offboarding is on, staff leave through it: it hands over their groups and switches
+  // off every system, which the old Deactivate never did (SPEC §12 Q92). Students are unchanged.
+  const offboard = useOffboardLauncher(() => loadUsers());
+  const offboardsInstead = (user: User) => offboard.enabled && STAFF_ROLES.has(user.role);
+
   const openDeleteModal = (user: User) => {
     setSelectedUser(user);
     setShowDeleteModal(true);
@@ -1407,6 +1415,8 @@ export default function UserManagement() {
                 onToggleAll={toggleSelectAll}
                 onEdit={openEditModal}
                 onDelete={openDeleteModal}
+                offboards={offboardsInstead}
+                onOffboard={offboard.open}
                 onToggleAnalyticsHidden={handleToggleAnalyticsHidden}
                 onProvisionPlatform={handleProvisionPlatform}
                 provisioningIds={provisioningIds}
@@ -1711,9 +1721,14 @@ export default function UserManagement() {
           isHeadCurator={isHeadCurator}
           canEditPersonalEmail={isAdmin}
           isEdit
+          onOffboard={selectedUser && selectedUser.is_active && offboardsInstead(selectedUser)
+            ? () => { setShowEditModal(false); offboard.open(selectedUser); }
+            : undefined}
         />
 
       </Modal>
+
+      {offboard.dialog}
 
       {/* Generated Password Modal */}
       <Modal
@@ -1956,9 +1971,11 @@ interface UserFormProps {
   isHeadCurator?: boolean;
   canEditPersonalEmail?: boolean;
   isEdit?: boolean;
+  /** An active staff member is switched off through offboarding, not this checkbox (SPEC §12 Q92). */
+  onOffboard?: () => void;
 }
 
-function UserForm({ formData, setFormData, groups, courses, students, errors = {}, isHeadCurator = false, canEditPersonalEmail = false, isEdit = false }: UserFormProps) {
+function UserForm({ formData, setFormData, groups, courses, students, errors = {}, isHeadCurator = false, canEditPersonalEmail = false, isEdit = false, onOffboard }: UserFormProps) {
   const t = useT();
   const [groupSearch, setGroupSearch] = useState('');
   const [childSearch, setChildSearch] = useState('');
@@ -2303,16 +2320,23 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
         )}
       </div>
       
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="is_active"
-          checked={formData.is_active}
-          onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked as boolean })}
-        />
-        <Label htmlFor="is_active" className="text-sm">
-          {t('adminUsers.fields.userActive')}
-        </Label>
-      </div>
+      {onOffboard ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">{t('offboarding.userForm.hint')}</span>
+          <Button type="button" variant="outline" size="sm" onClick={onOffboard}>{t('offboarding.action.offboard')}</Button>
+        </div>
+      ) : (
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="is_active"
+            checked={formData.is_active}
+            onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked as boolean })}
+          />
+          <Label htmlFor="is_active" className="text-sm">
+            {t('adminUsers.fields.userActive')}
+          </Label>
+        </div>
+      )}
     </div>
   );
 }

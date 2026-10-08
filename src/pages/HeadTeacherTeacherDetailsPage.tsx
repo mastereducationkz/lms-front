@@ -49,6 +49,7 @@ import { parseAsUTC } from '../lib/datetime';
 import { formatDate } from '../lib/i18n';
 import { useT } from '../lib/i18n/react';
 import '@/lib/i18n/catalogs/teacherInsights';
+import OffboardButton from '../components/offboarding/OffboardButton';
 
 interface MissedAttendanceItem {
   event_id: number;
@@ -293,11 +294,12 @@ export default function HeadTeacherTeacherDetailsPage() {
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> {t('teacherInsights.teacherDetails.backToDashboard')}
         </Button>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">{teacherDetails.teacher_name}</h1>
             <p className="text-muted-foreground">{teacherDetails.email}</p>
           </div>
+          <OffboardButton userId={Number(teacherId)} name={teacherDetails.teacher_name} role="teacher" />
         </div>
       </div>
 

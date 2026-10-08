@@ -47,6 +47,7 @@ import { adminPages } from './ru/adminPages';
 import { quizReview } from './ru/quizReview';
 import { sharedUi } from './ru/sharedUi';
 import { live } from './ru/live';
+import { offboarding } from './ru/offboarding';
 
 export const RU_NAMESPACES = {
   common,
@@ -96,6 +97,7 @@ export const RU_NAMESPACES = {
   quizReview,
   sharedUi,
   live,
+  offboarding,
 } as const;
 
 export const ru: Readonly<Record<string, Message>> = {
@@ -146,4 +148,5 @@ export const ru: Readonly<Record<string, Message>> = {
   ...quizReview,
   ...sharedUi,
   ...live,
+  ...offboarding,
 };

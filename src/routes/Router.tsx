@@ -12,6 +12,7 @@ import ProtectedRoute from '../components/ProtectedRoute.tsx';
 import AppLayout from '../layouts/AppLayout.tsx';
 import ThinkingLoader from '../components/ThinkingLoader';
 import { t } from '../lib/i18n';
+import { offboardingRoutes } from './offboardingRoutes';
 import '@/lib/i18n/catalogs/shell';
 
 // Pages are code-split with React.lazy so the initial download is a small app shell plus only
@@ -749,6 +750,8 @@ export default function Router() {
               </AppLayout>
             </ProtectedRoute>
           } />
+
+          {offboardingRoutes()}
 
           {/* Head Teacher Routes */}
           {/* Dashboard is handled by /dashboard route and DashboardPage dispatcher */}
