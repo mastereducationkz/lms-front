@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { User } from '../../types';
 import { api, tokenManager, API_BASE_URL, CookieUtils, setLogoutHandler, clearCache } from './client';
+import { apiError } from './apiError';
 import { t } from '../../lib/i18n';
 import '@/lib/i18n/catalogs/sharedUi';
 
@@ -49,7 +50,7 @@ export async function login(email: string, password: string): Promise<{ success:
 
     return { success: true, user };
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || t('sharedUi.auth.loginFailed'));
+    throw apiError(error, t('sharedUi.auth.loginFailed'));
   }
 }
 
@@ -120,7 +121,7 @@ export async function updateProfile(userId: number, profileData: { name?: string
     const response = await api.put(`/users/${userId}`, profileData);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to update profile');
+    throw apiError(error, 'Failed to update profile');
   }
 }
 
@@ -130,7 +131,7 @@ export async function updateMyMascot(mascot: string | null): Promise<User> {
     const response = await api.put('/users/me/mascot', { mascot });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Could not save your orca');
+    throw apiError(error, 'Could not save your orca');
   }
 }
 
@@ -148,7 +149,7 @@ export async function resetPassword(token: string, newPassword: string): Promise
     });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to reset password');
+    throw apiError(error, 'Failed to reset password');
   }
 }
 
@@ -160,7 +161,7 @@ export async function changePassword(currentPassword: string, newPassword: strin
     });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to change password');
+    throw apiError(error, 'Failed to change password');
   }
 }
 

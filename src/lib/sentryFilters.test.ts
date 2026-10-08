@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ErrorEvent, EventHint } from '@sentry/react';
+import { apiError } from '../services/api/apiError';
 import { beforeSend, buildSentryInitOptions } from './sentry';
 import {
   AxiosReportBudget,
@@ -53,6 +54,33 @@ describe('failed API calls that are never reported', () => {
   it('only the axios rules decide an axios error: no frame of ours is not a reason to drop it', () => {
     const frameless = { exception: { values: [{ type: 'AxiosError', value: 'Request failed with status code 404', stacktrace: { frames: [{ filename: '<anonymous>' }] } }] } } as ErrorEvent;
     expect(ignoredBy(frameless, { originalException: failed(404) } as EventHint)).toBeNull();
+  });
+});
+
+describe('a failed API call an API wrapper rethrew as a plain Error', () => {
+  const wrapped = (cause: AxiosLike) => apiError(cause, 'Failed to add flashcard to favorites');
+  const sendWrapped = (cause: AxiosLike) => {
+    const error = wrapped(cause);
+    return beforeSend(event('Error', error.message), { originalException: error } as EventHint);
+  };
+
+  it('is judged by the AxiosError it carries: a dropped connection is not reported (LMS-FRONT-C)', () => {
+    const network = axiosError({ code: 'ERR_NETWORK', config: { method: 'post', url: '/flashcards/favorites' } });
+    expect(ignoredBy(event('Error'), { originalException: wrapped(network) } as EventHint)).toBe('axios_network');
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    expect(sendWrapped(network)).toBeNull();
+  });
+
+  it('is reported with the axios fingerprint, so one broken route is one issue', () => {
+    const out = sendWrapped(failed(422, '/flashcards/favorites', 'post'));
+    expect(out?.level).toBe('warning');
+    expect(out?.fingerprint).toEqual(['axios', 'POST', '/flashcards/favorites', '422']);
+    expect(sendWrapped(failed(422, '/flashcards/favorites', 'post'))).toBeNull();
+  });
+
+  it('a plain Error with some other cause is still judged by its own frames', () => {
+    const error = Object.assign(new Error('boom'), { cause: new Error('inner') });
+    expect(ignoredBy(event('Error', 'boom'), { originalException: error } as EventHint)).toBeNull();
   });
 });
 

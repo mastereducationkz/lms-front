@@ -8,6 +8,7 @@ import type {
   ManualLessonUnlockListResponse,
 } from '../../types';
 import { api } from './client';
+import { apiError } from './apiError';
 import { t } from '../../lib/i18n';
 import '@/lib/i18n/catalogs/shell';
 
@@ -160,7 +161,7 @@ export async function completeStepsForUser(data: {
     const response = await api.post('/admin/complete-steps-for-user', data);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to complete steps for user');
+    throw apiError(error, 'Failed to complete steps for user');
   }
 }
 
@@ -178,7 +179,7 @@ export async function resetStepsForUser(data: {
     const response = await api.post('/admin/reset-steps-for-user', data);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to reset steps for user');
+    throw apiError(error, 'Failed to reset steps for user');
   }
 }
 
@@ -203,7 +204,7 @@ export async function getUserProgressSummary(userId: number, courseId: number): 
     const response = await api.get(`/admin/user-progress-summary/${userId}/${courseId}`);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to get user progress summary');
+    throw apiError(error, 'Failed to get user progress summary');
   }
 }
 
@@ -370,7 +371,7 @@ export async function toggleCuratorAnalyticsHidden(userId: number): Promise<any>
     const response = await api.post(`/admin/users/${userId}/toggle-analytics-hidden`);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to toggle curator visibility');
+    throw apiError(error, 'Failed to toggle curator visibility');
   }
 }
 
@@ -393,6 +394,6 @@ export async function provisionUserToPlatform(
     const response = await api.post(`/admin/users/${userId}/provision-platform`, { platform });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || t('shell.errors.platformAccountFailed'));
+    throw apiError(error, t('shell.errors.platformAccountFailed'));
   }
 }

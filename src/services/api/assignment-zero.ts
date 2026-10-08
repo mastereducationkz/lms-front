@@ -1,5 +1,6 @@
 import type { AxiosError } from 'axios';
 import { api } from './client';
+import { apiError } from './apiError';
 import { t } from '../../lib/i18n';
 import '@/lib/i18n/catalogs/sharedUi';
 
@@ -53,7 +54,7 @@ export async function getAssignmentZeroStatus(): Promise<{
     const response = await api.get('/assignment-zero/status');
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to get Assignment Zero status');
+    throw apiError(error, 'Failed to get Assignment Zero status');
   }
 }
 
@@ -62,7 +63,7 @@ export async function getMyAssignmentZeroSubmission(): Promise<any> {
     const response = await api.get('/assignment-zero/my-submission');
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to get Assignment Zero submission');
+    throw apiError(error, 'Failed to get Assignment Zero submission');
   }
 }
 
@@ -107,7 +108,7 @@ export async function updateAssignmentZeroExamResult(data: {
     const response = await api.patch('/assignment-zero/exam-result', data);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to update exam result');
+    throw apiError(error, 'Failed to update exam result');
   }
 }
 
@@ -116,7 +117,7 @@ export async function getCuratorUpcomingExamResults(params?: { days?: number }):
     const response = await api.get('/assignment-zero/curator/upcoming', { params })
     return response.data
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to load upcoming exam results')
+    throw apiError(error, 'Failed to load upcoming exam results')
   }
 }
 
@@ -129,7 +130,7 @@ export async function curatorUpdatePlannedExamDate(data: {
     const response = await api.patch('/assignment-zero/curator/planned-date', data, { params: { user_id: data.user_id } })
     return response.data
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to update planned exam date')
+    throw apiError(error, 'Failed to update planned exam date')
   }
 }
 
@@ -143,7 +144,7 @@ export async function curatorUpdateExamResult(data: {
     const response = await api.patch('/assignment-zero/curator/exam-result', data, { params: { user_id: data.user_id } })
     return response.data
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to update exam result')
+    throw apiError(error, 'Failed to update exam result')
   }
 }
 
@@ -158,7 +159,7 @@ export async function getIeltsDatePromptStatus(): Promise<{
     const response = await api.get('/assignment-zero/ielts-date-prompt-status');
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to get IELTS prompt status');
+    throw apiError(error, 'Failed to get IELTS prompt status');
   }
 }
 
@@ -167,7 +168,7 @@ export async function touchIeltsDatePrompt(): Promise<{ success: boolean; ielts_
     const response = await api.post('/assignment-zero/ielts-date-prompt-touch');
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to update IELTS prompt status');
+    throw apiError(error, 'Failed to update IELTS prompt status');
   }
 }
 
@@ -240,7 +241,7 @@ export async function saveAssignmentZeroProgress(data: Partial<{
     const response = await api.post('/assignment-zero/save-progress', data);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to save progress');
+    throw apiError(error, 'Failed to save progress');
   }
 }
 
@@ -312,7 +313,7 @@ export async function submitAssignmentZero(data: {
     const response = await api.post('/assignment-zero/submit', data);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || t('sharedUi.assignmentZero.submitFailed'));
+    throw apiError(error, t('sharedUi.assignmentZero.submitFailed'));
   }
 }
 
@@ -342,7 +343,7 @@ export async function getAllAssignmentZeroSubmissions(options?: {
     const response = await api.get('/assignment-zero/submissions', { params });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to get submissions');
+    throw apiError(error, 'Failed to get submissions');
   }
 }
 
@@ -351,7 +352,7 @@ export async function getAssignmentZeroSubmissionByUser(userId: number): Promise
     const response = await api.get(`/assignment-zero/submissions/${userId}`);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to get submission');
+    throw apiError(error, 'Failed to get submission');
   }
 }
 

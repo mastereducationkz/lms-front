@@ -1,5 +1,6 @@
 import type { User, UserListResponse, CreateUserRequest, UpdateUserRequest, BulkCreateUsersResponse, TeacherGroupListResponse, TeacherGroupStudentsResponse } from '../../types';
 import { api } from './client';
+import { apiError } from './apiError';
 
 export async function getUsers(params?: {
   skip?: number;
@@ -144,7 +145,7 @@ export async function bulkCreateUsersFromText(
     });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to bulk create users from text');
+    throw apiError(error, 'Failed to bulk create users from text');
   }
 }
 

@@ -1,6 +1,7 @@
 import type { Group, StudentProgress } from '../../types';
 import type { SchedulePreview, SchedulePreviewPayload } from '../../lib/schedulePreview';
 import { api } from './client';
+import { apiError } from './apiError';
 
 export async function getCuratorPendingSubmissions(): Promise<any[]> {
   try {
@@ -322,7 +323,7 @@ export async function bulkScheduleUpload(text: string): Promise<any> {
     const response = await api.post('/admin/groups/bulk-schedule-upload', { text });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to bulk upload schedules');
+    throw apiError(error, 'Failed to bulk upload schedules');
   }
 }
 

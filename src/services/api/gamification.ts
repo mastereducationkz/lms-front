@@ -1,4 +1,5 @@
 import { api } from './client';
+import { apiError } from './apiError';
 
 export async function getGamificationStatus(): Promise<{
   activity_points: number;
@@ -84,7 +85,7 @@ export async function giveTeacherBonus(data: {
     const response = await api.post('/gamification/bonus', data);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to give bonus');
+    throw apiError(error, 'Failed to give bonus');
   }
 }
 
@@ -175,6 +176,6 @@ export async function getStudentLeaderboard(period: 'all_time' | 'this_week' | '
     const response = await api.get('/leaderboard/student/my-ranking', { params: { period } });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to load leaderboard');
+    throw apiError(error, 'Failed to load leaderboard');
   }
 }

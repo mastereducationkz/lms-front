@@ -1,5 +1,6 @@
 import type { StepProgress, CourseStepsProgress, StudentProgressOverview, DailyStreakInfo, CourseCompletion } from '../../types';
 import { api } from './client';
+import { apiError } from './apiError';
 
 export async function markLessonComplete(lessonId: string, timeSpent: number = 0) {
   try {
@@ -208,7 +209,7 @@ export async function getLessonProgressSummary(params: {
     const response = await api.get('/progress/lesson-progress-summary', { params });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to load lesson progress');
+    throw apiError(error, 'Failed to load lesson progress');
   }
 }
 
@@ -222,7 +223,7 @@ export async function completeLessonsForTarget(data: {
     const response = await api.post('/progress/complete-lessons', data);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to complete lessons');
+    throw apiError(error, 'Failed to complete lessons');
   }
 }
 
@@ -236,6 +237,6 @@ export async function resetLessonsForTarget(data: {
     const response = await api.post('/progress/reset-lessons', data);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to reset lessons');
+    throw apiError(error, 'Failed to reset lessons');
   }
 }

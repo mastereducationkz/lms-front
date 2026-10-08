@@ -27,7 +27,7 @@ import type { Breadcrumb, BreadcrumbHint, ErrorEvent, EventHint, RequestEventDat
 // this is erased entirely at build time and adds nothing to the lazy chunk (see sentryClient.ts's
 // own comment on why VALUE imports here matter and type imports don't).
 import type { QueryParams, SpanJSON, TransactionEvent } from '@sentry/core';
-import { EXTENSION_URL_RE, asAxiosError, axiosFingerprint, axiosReports, exceptionValues, ignoredBy } from './sentryFilters';
+import { EXTENSION_URL_RE, axiosErrorOf, axiosFingerprint, axiosReports, exceptionValues, ignoredBy } from './sentryFilters';
 
 // The noise rules moved to sentryFilters.ts; re-exported for the callers and tests that import them here.
 export { ignoredBy, isIgnoredEvent } from './sentryFilters';
@@ -399,7 +399,7 @@ const DROPPED_SAMPLE_RATE = 0.01;
 
 export function beforeSend(event: ErrorEvent, hint: EventHint): ErrorEvent | null {
   const rule = ignoredBy(event, hint);
-  const axiosError = asAxiosError(hint?.originalException);
+  const axiosError = axiosErrorOf(hint?.originalException);
   if (rule) {
     if (Math.random() >= DROPPED_SAMPLE_RATE) return null;
     event.level = 'info';

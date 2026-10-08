@@ -1,5 +1,6 @@
 import type { Event, CreateEventRequest, UpdateEventRequest, EventType, EventStudent, AttendanceBulkUpdate, SubstitutionLesson } from '../../types';
 import { api } from './client';
+import { apiError } from './apiError';
 
 export async function getAllEvents(params?: {
   skip?: number;
@@ -23,7 +24,7 @@ export async function createEvent(eventData: CreateEventRequest): Promise<Event>
     const response = await api.post('/admin/events', eventData);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to create event');
+    throw apiError(error, 'Failed to create event');
   }
 }
 
@@ -32,7 +33,7 @@ export async function createCuratorEvent(eventData: CreateEventRequest): Promise
     const response = await api.post('/events/curator/create', eventData);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to create event');
+    throw apiError(error, 'Failed to create event');
   }
 }
 
@@ -41,7 +42,7 @@ export async function updateEvent(eventId: number, eventData: UpdateEventRequest
     const response = await api.put(`/admin/events/${eventId}`, eventData);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to update event');
+    throw apiError(error, 'Failed to update event');
   }
 }
 
@@ -49,7 +50,7 @@ export async function deleteEvent(eventId: number): Promise<void> {
   try {
     await api.delete(`/admin/events/${eventId}`);
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to delete event');
+    throw apiError(error, 'Failed to delete event');
   }
 }
 
@@ -57,7 +58,7 @@ export async function bulkDeleteEvents(eventIds: number[]): Promise<void> {
   try {
     await api.post('/admin/events/bulk-delete', eventIds);
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to delete events');
+    throw apiError(error, 'Failed to delete events');
   }
 }
 
@@ -66,7 +67,7 @@ export async function createBulkEvents(eventsData: CreateEventRequest[]): Promis
     const response = await api.post('/admin/events/bulk', eventsData);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to create bulk events');
+    throw apiError(error, 'Failed to create bulk events');
   }
 }
 
@@ -119,7 +120,7 @@ export async function getEventDetails(eventId: number): Promise<Event> {
     const response = await api.get(`/events/${eventId}`);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to load event details');
+    throw apiError(error, 'Failed to load event details');
   }
 }
 
@@ -127,7 +128,7 @@ export async function registerForEvent(eventId: number): Promise<void> {
   try {
     await api.post(`/events/${eventId}/register`);
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to register for event');
+    throw apiError(error, 'Failed to register for event');
   }
 }
 
@@ -135,7 +136,7 @@ export async function unregisterFromEvent(eventId: number): Promise<void> {
   try {
     await api.delete(`/events/${eventId}/register`);
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to unregister from event');
+    throw apiError(error, 'Failed to unregister from event');
   }
 }
 
@@ -146,7 +147,7 @@ export async function getEventParticipants(eventId: number, groupId?: number): P
     });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to load participants');
+    throw apiError(error, 'Failed to load participants');
   }
 }
 
@@ -183,6 +184,6 @@ export async function getMySubstitutions(): Promise<SubstitutionLesson[]> {
     const response = await api.get('/events/my-substitutions');
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to load substitutions');
+    throw apiError(error, 'Failed to load substitutions');
   }
 }
