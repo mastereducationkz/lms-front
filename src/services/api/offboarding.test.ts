@@ -16,7 +16,14 @@ import {
   saveOffboardingSettings,
   setChecklistItem,
 } from './offboarding';
-import { getAccessReview, rowActions } from './accessReview';
+import {
+  clearContactDetails,
+  getAccessReview,
+  getAccessReviewHistory,
+  keepAccessReviewRow,
+  runAccessReview,
+  unkeepAccessReviewRow,
+} from './accessReview';
 
 const get = api.get as unknown as ReturnType<typeof vi.fn>;
 const post = api.post as unknown as ReturnType<typeof vi.fn>;
@@ -133,17 +140,18 @@ describe('lists and settings', () => {
   });
 });
 
-describe('access review (phase 2)', () => {
-  it('reads a missing endpoint as «not available yet»', async () => {
-    get.mockRejectedValue(httpError(404, { detail: 'Not Found' }));
+describe('access review (API.md §9)', () => {
+  it('reads a missing endpoint as «not available yet», and no review yet as an empty page', async () => {
+    get.mockRejectedValueOnce(httpError(404, { detail: 'Not Found', reason_code: 'offboarding_disabled' }));
     expect(await getAccessReview()).toBeNull();
+    get.mockResolvedValueOnce({ data: { review: null, rows: [] } });
+    expect(await getAccessReview()).toEqual({ review: null, rows: [] });
   });
 
-  it('takes rows in an object or a bare list', async () => {
-    get.mockResolvedValueOnce({ data: { built_at: '2026-11-01T01:00:00Z', rows: [{ id: 1, system: 'lms', account: 'a@x' }] } });
-    expect((await getAccessReview())?.rows).toHaveLength(1);
-    get.mockResolvedValueOnce({ data: [{ id: 2, system: 'crm', account: 'b@x' }] });
-    expect(await getAccessReview()).toEqual({ rows: [{ id: 2, system: 'crm', account: 'b@x' }] });
+  it('asks for an older review by id, without the cache', async () => {
+    get.mockResolvedValue({ data: { review: { id: 2 }, rows: [{ id: 41 }] } });
+    expect((await getAccessReview(2))?.rows).toHaveLength(1);
+    expect(get.mock.calls[0]).toEqual(['/admin/offboarding/access-review', { params: { review_id: 2 }, cache: false }]);
   });
 
   it('still fails loudly on a real error', async () => {
@@ -151,10 +159,28 @@ describe('access review (phase 2)', () => {
     await expect(getAccessReview()).rejects.toThrow('boom');
   });
 
-  it('offers keep/offboard by default, clear-contacts for retention rows, or what the server lists', () => {
-    expect(rowActions({ id: 1, system: 'lms', account: 'a', lms_user_id: 5 })).toEqual(['keep', 'offboard']);
-    expect(rowActions({ id: 1, system: 'workspace', account: 'a' })).toEqual(['keep']);
-    expect(rowActions({ id: 1, system: 'lms', account: 'a', kind: 'contact_retention' })).toEqual(['clear_contacts']);
-    expect(rowActions({ id: 1, system: 'lms', account: 'a', actions: ['keep'] })).toEqual(['keep']);
+  it('runs a review, keeps, un-keeps and clears contacts with confirm: true', async () => {
+    post.mockResolvedValue({ data: { review: { id: 4, status: 'building' } } });
+    expect((await runAccessReview()).status).toBe('building');
+    post.mockResolvedValue({ data: { id: 41 } });
+    await keepAccessReviewRow(41, 'developer');
+    await unkeepAccessReviewRow(41);
+    await clearContactDetails(41);
+    expect(post.mock.calls.slice(1)).toEqual([
+      ['/admin/offboarding/access-review/41/keep', { reason: 'developer' }],
+      ['/admin/offboarding/access-review/41/unkeep'],
+      ['/admin/offboarding/access-review/41/clear-contacts', { confirm: true }],
+    ]);
+  });
+
+  it('hands back the code of a refused run', async () => {
+    post.mockRejectedValue(httpError(409, { detail: 'running', reason_code: 'access_review_running' }));
+    await expect(runAccessReview()).rejects.toMatchObject({ code: 'access_review_running' });
+  });
+
+  it('lists past reviews', async () => {
+    get.mockResolvedValue({ data: { items: [{ id: 3 }, { id: 2 }] } });
+    expect((await getAccessReviewHistory()).map((r) => r.id)).toEqual([3, 2]);
+    expect(get.mock.calls[0][0]).toBe('/admin/offboarding/access-review/history');
   });
 });

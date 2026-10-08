@@ -1,48 +1,106 @@
 import { api } from './client';
-import { toOffboardingError } from './offboarding';
+import { toOffboardingError, type Actor, type OffboardingStatus } from './offboarding';
 
 /**
- * The monthly access review (docs/offboarding/SPEC.md §10, phase 2). Its endpoints come after the
- * offboarding engine, so the page is built to show whatever rows the server returns and to read a
- * missing endpoint (404) as "not available yet" rather than an error.
+ * The monthly access review (docs/offboarding/SPEC.md §10, API.md §9): accounts in every system
+ * that belong to no active staff member. Admin-only and dark with the rest of offboarding. The
+ * endpoints ship after the offboarding engine, so a 404 (not deployed yet, or switched off)
+ * reads as "not available" rather than an error.
  */
 
 const BASE = '/admin/offboarding/access-review';
 const NO_CACHE = { cache: false } as never;
 
-export type ReviewKind = 'not_staff' | 'no_workspace' | 'contact_retention';
-export type ReviewAction = 'keep' | 'offboard' | 'clear_contacts';
+export type ReviewSystem = 'lms' | 'crm' | 'support' | 'ielts' | 'sat' | 'zitadel' | 'workspace';
 
-export interface AccessReviewRow {
-  id: string | number;
-  /** lms | crm | ielts | sat | support | zitadel | workspace */
-  system: string;
-  /** The sign-in: an email or a username. */
-  account: string;
-  name?: string | null;
-  kind?: ReviewKind | string | null;
-  /** The server's English explanation, shown when the kind is not one the catalog knows. */
-  reason?: string | null;
-  lms_user_id?: number | null;
-  crm_user_id?: number | null;
-  last_login?: string | null;
-  /** «Keep» with its reason, remembered until the account changes. */
-  decision?: { action: 'keep'; reason: string; by?: string | null; at?: string | null } | null;
-  /** What may be done on the row; when absent, the kind decides. */
-  actions?: ReviewAction[] | null;
+export type ReviewCategory = 'orphan' | 'active_after_offboarding' | 'no_email' | 'no_workspace' | 'contacts_due';
+
+export interface ReviewSource {
+  checked: boolean;
+  accounts: number;
+  /** Why it was not checked ("SAT not checked: HTTP 503"): a warning, never a failure. */
+  error: string | null;
+  /** Workspace only: when the users CSV was uploaded. */
+  uploaded_at?: string | null;
 }
 
 export interface AccessReview {
-  built_at?: string | null;
+  id: number;
+  /** YYYY-MM */
+  period: string;
+  kind: 'scheduled' | 'manual';
+  /** `building`: rows are not there yet, poll. */
+  status: 'building' | 'ready' | 'failed';
+  started_at: string;
+  finished_at: string | null;
+  triggered_by: Actor | null;
+  error?: string | null;
+  sources: Partial<Record<ReviewSystem, ReviewSource>>;
+  counts: { rows: number; open: number; kept: number; done: number };
+}
+
+export interface ReviewKeep {
+  reason: string;
+  at: string;
+  by: Actor | null;
+}
+
+export interface AccessReviewRow {
+  id: number;
+  system: ReviewSystem;
+  category: ReviewCategory;
+  account: {
+    /** Stable per system: an id, or the email for Workspace. */
+    key: string;
+    id: string | null;
+    email: string | null;
+    name: string | null;
+    role: string | null;
+    is_active: boolean;
+    last_seen: string | null;
+  };
+  /** The LMS / CRM person the account maps to; null for a stranger. */
+  person: { lms_user_id: number | null; crm_user_id: number | null; name: string } | null;
+  /** English: why the account is listed. */
+  why: string;
+  /** What «Offboard» passes to the dialog; null when no LMS / CRM person owns the account. */
+  offboard_target: { lms_user_id: number | null; crm_user_id: number | null } | null;
+  /** That person's latest offboarding, live. */
+  offboarding: { record_id: number; status: OffboardingStatus } | null;
+  decision: null | 'keep' | 'contacts_cleared';
+  keep: ReviewKeep | null;
+  /** A keep that no longer applies because the account changed since. */
+  previous_keep: ReviewKeep | null;
+  /** `contacts_due` only: what is still stored, never the values. */
+  contacts: {
+    last_day: string;
+    last_day_source: 'offboarding' | 'account_updated';
+    personal_email: boolean;
+    avatar: boolean;
+    telegram: boolean;
+  } | null;
+}
+
+export interface AccessReviewPage {
+  /** null before the first review. */
+  review: AccessReview | null;
   rows: AccessReviewRow[];
 }
 
-/** The latest review, or null while the backend has none (endpoint not deployed yet). */
-export async function getAccessReview(): Promise<AccessReview | null> {
+async function call<T>(request: () => Promise<{ data: T }>): Promise<T> {
   try {
-    const data = (await api.get(BASE, NO_CACHE)).data as Partial<AccessReview> | AccessReviewRow[];
-    if (Array.isArray(data)) return { rows: data };
-    return { built_at: data?.built_at ?? null, rows: Array.isArray(data?.rows) ? data.rows : [] };
+    return (await request()).data;
+  } catch (error) {
+    throw toOffboardingError(error);
+  }
+}
+
+/** The latest review (or an older one by id); null while the endpoint is not there. */
+export async function getAccessReview(reviewId?: number): Promise<AccessReviewPage | null> {
+  try {
+    const params = reviewId != null ? { review_id: reviewId } : {};
+    const data = (await api.get(BASE, { params, cache: false } as never)).data as Partial<AccessReviewPage>;
+    return { review: data?.review ?? null, rows: Array.isArray(data?.rows) ? data.rows : [] };
   } catch (error) {
     const failure = toOffboardingError(error);
     if (failure.status === 404) return null;
@@ -50,26 +108,27 @@ export async function getAccessReview(): Promise<AccessReview | null> {
   }
 }
 
-export async function keepAccessReviewRow(id: AccessReviewRow['id'], reason: string): Promise<void> {
-  try {
-    await api.post(`${BASE}/${encodeURIComponent(String(id))}/keep`, { reason });
-  } catch (error) {
-    throw toOffboardingError(error);
-  }
+/** Build a review now; it comes back `building` (409 access_review_running while one is). */
+export async function runAccessReview(): Promise<AccessReview> {
+  return (await call<{ review: AccessReview }>(() => api.post(`${BASE}/run`))).review;
 }
 
-export async function clearContactDetails(id: AccessReviewRow['id']): Promise<void> {
-  try {
-    await api.post(`${BASE}/${encodeURIComponent(String(id))}/clear-contacts`);
-  } catch (error) {
-    throw toOffboardingError(error);
-  }
+/** Past reviews, newest first (the last 24). */
+export async function getAccessReviewHistory(): Promise<AccessReview[]> {
+  const data = await call<{ items?: AccessReview[] }>(() => api.get(`${BASE}/history`, NO_CACHE));
+  return Array.isArray(data.items) ? data.items : [];
 }
 
-/** The actions a row offers: the server's list, or by kind (SPEC §10). */
-export function rowActions(row: AccessReviewRow): ReviewAction[] {
-  if (Array.isArray(row.actions)) return row.actions;
-  if (row.kind === 'contact_retention') return ['clear_contacts'];
-  const offboard: ReviewAction[] = row.lms_user_id != null || row.crm_user_id != null ? ['offboard'] : [];
-  return ['keep', ...offboard];
+export function keepAccessReviewRow(rowId: number, reason: string): Promise<AccessReviewRow> {
+  return call(() => api.post(`${BASE}/${rowId}/keep`, { reason }));
+}
+
+/** Forget the keep for that account. */
+export function unkeepAccessReviewRow(rowId: number): Promise<AccessReviewRow> {
+  return call(() => api.post(`${BASE}/${rowId}/unkeep`));
+}
+
+/** `contacts_due` rows only: clears the stored personal email, avatar and Telegram link. */
+export function clearContactDetails(rowId: number): Promise<AccessReviewRow> {
+  return call(() => api.post(`${BASE}/${rowId}/clear-contacts`, { confirm: true }));
 }
