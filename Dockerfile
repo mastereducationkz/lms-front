@@ -14,7 +14,15 @@ ARG VITE_SENTRY_RELEASE=""
 ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN \
     VITE_SENTRY_ENVIRONMENT=$VITE_SENTRY_ENVIRONMENT \
     VITE_SENTRY_RELEASE=$VITE_SENTRY_RELEASE
-RUN npm run build
+# Staging (deploy-staging.yml): `--mode staging` loads .env.staging instead of .env.production, and
+# the branch and commit go into the «STAGING · branch · commit» badge. Production leaves all three
+# at their defaults.
+ARG VITE_MODE=production
+ARG VITE_STAGING_BRANCH=""
+ARG VITE_STAGING_COMMIT=""
+ENV VITE_STAGING_BRANCH=$VITE_STAGING_BRANCH \
+    VITE_STAGING_COMMIT=$VITE_STAGING_COMMIT
+RUN npm run build -- --mode "$VITE_MODE"
 
 # Serve stage: static files via nginx
 FROM nginx:1.27-alpine

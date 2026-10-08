@@ -1,9 +1,10 @@
 import { activeLocale, t, type Locale } from '../i18n';
+import { LMS_ORIGIN } from '../lessonLinks';
 import type { ActivityView, LiveTimer, QuestionKey } from './types';
 import '@/lib/i18n/catalogs/chatLive';
 
 /** The fixed link students open; the QR and «Copy for chat» carry it. */
-export const LIVE_LINK = 'https://lms.mastereducation.kz/live';
+export const LIVE_LINK = `${LMS_ORIGIN}/live`;
 
 export const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
