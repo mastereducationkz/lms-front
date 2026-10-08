@@ -1,4 +1,4 @@
-import type { AccessReview, AccessReviewRow, ReviewSource, ReviewSystem } from '../services/api/accessReview';
+import type { AccessReview, AccessReviewRow, CrmContactField, ReviewSource, ReviewSystem } from '../services/api/accessReview';
 
 /**
  * The access review page's rules (API.md §9), kept out of the components so they can be tested.
@@ -54,6 +54,17 @@ export function uncheckedSources(review: Pick<AccessReview, 'sources'>): Array<{
   return REVIEW_SYSTEMS
     .map((system) => ({ system, source: review.sources?.[system] }))
     .filter((entry): entry is { system: ReviewSystem; source: ReviewSource } => !!entry.source && !entry.source.checked);
+}
+
+const LMS_CONTACTS = ['personal_email', 'avatar', 'telegram'] as const;
+const CRM_CONTACTS: readonly CrmContactField[] = ['phone', 'telegram', 'personal_email', 'other_text'];
+
+/** What a contacts row still stores, per system (kinds only, never the values). */
+export function storedContacts(contacts: NonNullable<AccessReviewRow['contacts']>): { lms: Array<(typeof LMS_CONTACTS)[number]>; crm: CrmContactField[] } {
+  return {
+    lms: LMS_CONTACTS.filter((field) => contacts[field]),
+    crm: contacts.crm ? CRM_CONTACTS.filter((field) => contacts.crm![field]) : [],
+  };
 }
 
 /** How long to wait before asking again while a review is building. */

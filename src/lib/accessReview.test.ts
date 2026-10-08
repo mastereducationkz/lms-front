@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { filterRows, offboardingStarted, rowActions, rowState, uncheckedSources } from './accessReview';
+import { filterRows, offboardingStarted, rowActions, rowState, storedContacts, uncheckedSources } from './accessReview';
 import type { AccessReviewRow } from '../services/api/accessReview';
 
 const row = (patch: Partial<AccessReviewRow>): AccessReviewRow => ({
@@ -60,5 +60,16 @@ describe('review sources', () => {
     };
     expect(uncheckedSources({ sources }).map((s) => s.system)).toEqual(['ielts', 'sat']);
     expect(uncheckedSources({ sources: {} })).toEqual([]);
+  });
+});
+
+describe('contact details still stored', () => {
+  const contacts = { last_day: '2023-05-31', last_day_source: 'offboarding' as const, personal_email: true, avatar: false, telegram: true };
+
+  it('lists the LMS kinds, and the CRM kinds when the CRM was asked', () => {
+    expect(storedContacts({ ...contacts, crm: { phone: true, telegram: false, personal_email: false, other_text: true } }))
+      .toEqual({ lms: ['personal_email', 'telegram'], crm: ['phone', 'other_text'] });
+    expect(storedContacts({ ...contacts, crm: null })).toEqual({ lms: ['personal_email', 'telegram'], crm: [] });
+    expect(storedContacts(contacts).crm).toEqual([]);
   });
 });

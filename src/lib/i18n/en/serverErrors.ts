@@ -63,6 +63,7 @@ export const serverErrors = {
   'serverErrors.access_review_not_contacts_row': 'Only a contact-details row can have its contacts cleared',
   'serverErrors.access_review_confirm_required': 'Confirm clearing the contact details',
   'serverErrors.access_review_row_not_found': 'This row is no longer in the review; refresh the page',
+  'serverErrors.access_review_crm_unreachable': 'The LMS contact details were cleared, but the CRM did not answer: try again',
   'serverErrors.staff_leaving': '{name} is leaving on {last_day}',
   'serverErrors.use_offboarding': 'Staff are switched off through offboarding: use Offboard',
   'serverErrors.use_reactivate': 'Bring them back with Reactivate on their offboarding record',

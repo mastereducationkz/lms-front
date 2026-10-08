@@ -5,7 +5,7 @@ import { Input } from '../ui/input';
 import { TableCell, TableRow } from '../ui/table';
 import { toast } from '../Toast';
 import { StatusBadge } from './parts';
-import { rowActions } from '../../lib/accessReview';
+import { rowActions, storedContacts } from '../../lib/accessReview';
 import {
   keepAccessReviewRow,
   unkeepAccessReviewRow,
@@ -23,8 +23,6 @@ interface AccessReviewRowViewProps {
   onOffboard: (ref: TargetRef, name: string) => void;
   onClearContacts: (row: AccessReviewRow) => void;
 }
-
-const CONTACTS = ['personal_email', 'avatar', 'telegram'] as const;
 
 /** One account of the access review with its decision: keep (with a reason), offboard, or clear contacts. */
 export default function AccessReviewRowView({ row, onChanged, onOffboard, onClearContacts }: AccessReviewRowViewProps) {
@@ -48,7 +46,10 @@ export default function AccessReviewRowView({ row, onChanged, onOffboard, onClea
     }
   };
 
-  const stored = row.contacts ? CONTACTS.filter((c) => row.contacts![c]).map((c) => t(`offboarding.review.contact.${c}`)) : [];
+  const stored = row.contacts ? storedContacts(row.contacts) : { lms: [], crm: [] };
+  const lmsStored = stored.lms.map((c) => t(`offboarding.review.contact.${c}`));
+  const crmStored = stored.crm.map((c) => t(`offboarding.review.crmContact.${c}`));
+  const crmCleared = (row.contacts?.crm_cleared ?? []).map((c) => t(`offboarding.review.crmContact.${c}`));
 
   return (
     <TableRow>
@@ -70,7 +71,8 @@ export default function AccessReviewRowView({ row, onChanged, onOffboard, onClea
             {row.contacts.last_day_source === 'offboarding'
               ? t('offboarding.review.lastDay', { date: formatDate(row.contacts.last_day) })
               : t('offboarding.review.lastChange', { date: formatDate(row.contacts.last_day) })}
-            {stored.length > 0 && <> · {t('offboarding.review.stored', { list: stored.join(', ') })}</>}
+            {lmsStored.length > 0 && <> · {t('offboarding.review.stored', { list: lmsStored.join(', ') })}</>}
+            {crmStored.length > 0 && <div>{t('offboarding.review.crmStored', { list: crmStored.join(', ') })}</div>}
           </div>
         )}
       </TableCell>
@@ -84,7 +86,12 @@ export default function AccessReviewRowView({ row, onChanged, onOffboard, onClea
         {row.decision === 'keep' && row.keep && (
           <p className="text-sm text-muted-foreground">{t('offboarding.review.keptBy', { name: row.keep.by?.name ?? '—', reason: row.keep.reason })}</p>
         )}
-        {row.decision === 'contacts_cleared' && <p className="text-sm text-muted-foreground">{t('offboarding.review.contactsCleared')}</p>}
+        {row.decision === 'contacts_cleared' && (
+          <p className="text-sm text-muted-foreground">
+            {t('offboarding.review.contactsCleared')}
+            {crmCleared.length > 0 && <> {t('offboarding.review.crmCleared', { list: crmCleared.join(', ') })}</>}
+          </p>
+        )}
         {!row.decision && row.previous_keep && (
           <p className="text-xs text-amber-700 dark:text-amber-300">{t('offboarding.review.previousKeep', { reason: row.previous_keep.reason })}</p>
         )}

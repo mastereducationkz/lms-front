@@ -20,6 +20,7 @@ import {
   type AccessReviewPage as ReviewData,
   type AccessReviewRow,
 } from '../../services/api/accessReview';
+import { OffboardingError } from '../../services/api/offboarding';
 import { formatDate, formatDateTime } from '../../lib/i18n';
 import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/offboarding';
@@ -95,6 +96,8 @@ export default function AccessReviewPage() {
       toast(t('offboarding.review.cleared'), 'success');
     } catch (e) {
       toast((e instanceof Error && e.message) || t('offboarding.review.actionFailed'), 'error');
+      // The CRM did not answer, but the LMS part is done: show what is left; the row stays open to try again.
+      if (e instanceof OffboardingError && e.code === 'access_review_crm_unreachable') load();
     }
   };
 

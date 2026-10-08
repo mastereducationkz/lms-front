@@ -78,8 +78,14 @@ export interface AccessReviewRow {
     personal_email: boolean;
     avatar: boolean;
     telegram: boolean;
+    /** The CRM's contact fields still stored; null when the CRM was not asked or not reachable. */
+    crm?: { phone: boolean; telegram: boolean; personal_email: boolean; other_text: boolean } | null;
+    /** After clearing: the CRM fields that were cleared. */
+    crm_cleared?: CrmContactField[] | null;
   } | null;
 }
+
+export type CrmContactField = 'phone' | 'telegram' | 'personal_email' | 'other_text';
 
 export interface AccessReviewPage {
   /** null before the first review. */
@@ -128,7 +134,11 @@ export function unkeepAccessReviewRow(rowId: number): Promise<AccessReviewRow> {
   return call(() => api.post(`${BASE}/${rowId}/unkeep`));
 }
 
-/** `contacts_due` rows only: clears the stored personal email, avatar and Telegram link. */
+/**
+ * `contacts_due` rows only: clears the stored personal email, avatar and Telegram link, and the
+ * CRM's contact fields. 502 access_review_crm_unreachable: the LMS part is done, the CRM part is
+ * not, and the row stays open to try again.
+ */
 export function clearContactDetails(rowId: number): Promise<AccessReviewRow> {
   return call(() => api.post(`${BASE}/${rowId}/clear-contacts`, { confirm: true }));
 }
