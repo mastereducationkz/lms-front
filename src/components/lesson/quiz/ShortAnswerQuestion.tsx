@@ -1,6 +1,7 @@
 import React from 'react';
 import { useT } from '../../../lib/i18n/react';
 import '@/lib/i18n/catalogs/lessonPlayer';
+import { matchesAnyAnswer, splitAlternatives } from './answerMatch';
 
 interface ShortAnswerQuestionProps {
   question: any;
@@ -20,10 +21,9 @@ export const ShortAnswerQuestion: React.FC<ShortAnswerQuestionProps> = ({
   revealCorrect
 }) => {
   const t = useT();
-  const expectedAnswers = (question.correct_answer || '').toString().split('|').map((a: string) => a.trim()).filter((a: string) => a.length > 0);
-  const correctAnswers = expectedAnswers.map((a: string) => a.toLowerCase());
-  const userVal = (value || '').toString().trim().toLowerCase();
-  const isCorrect = correctAnswers.includes(userVal);
+  const expectedAnswers = splitAlternatives(question.correct_answer);
+  // The same matcher the score uses, so a border never disagrees with the points (13,5 is 13.5).
+  const isCorrect = matchesAnyAnswer(question.correct_answer, value);
 
   return (
     <div className="space-y-4">

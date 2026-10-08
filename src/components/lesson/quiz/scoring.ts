@@ -43,7 +43,7 @@ const ERROR_CLASS = 'border border-rose-500/30 bg-rose-500/10 text-rose-400'
 const PARTIAL_CLASS = 'border border-amber-500/30 bg-amber-500/10 text-amber-400'
 const REVIEW_CLASS = 'border border-border bg-muted text-muted-foreground'
 
-import { answersMatch } from './answerMatch'
+import { answersMatch, matchesAnyAnswer } from './answerMatch'
 
 export const getAnswerKey = (q: { id: string | number } | { id: string | number } | null | undefined): string => {
   if (!q || q.id === undefined || q.id === null) return ''
@@ -213,14 +213,9 @@ export const gradeQuestion = (
   }
 
   if (type === 'short_answer' || type === 'media_open_question') {
-    const allowed = (question.correct_answer || '')
-      .toString()
-      .split('|')
-      .map((a: string) => a.trim())
-      .filter((a: string) => a.length > 0)
     // Any of the accepted answers, compared as a number when both sides are one — see
     // answerMatch.ts for why a plain string comparison was marking correct work wrong.
-    const isCorrect = allowed.some((a: string) => answersMatch(a, answer))
+    const isCorrect = matchesAnyAnswer(question.correct_answer, answer)
     return { isCorrect, correctParts: isCorrect ? 1 : 0, totalParts: 1, isReview: false }
   }
 

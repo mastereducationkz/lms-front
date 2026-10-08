@@ -1,0 +1,452 @@
+[
+ {
+  "key": "13.5",
+  "answer": "13.5",
+  "accepted": true,
+  "note": "exact"
+ },
+ {
+  "key": "13.5",
+  "answer": "13,5",
+  "accepted": true,
+  "note": "comma decimal (reported)"
+ },
+ {
+  "key": "2.5",
+  "answer": "5/2",
+  "accepted": true,
+  "note": "fraction"
+ },
+ {
+  "key": "0.75",
+  "answer": "3/4",
+  "accepted": true,
+  "note": "fraction"
+ },
+ {
+  "key": "3/4",
+  "answer": "0.75",
+  "accepted": true,
+  "note": "fraction key, decimal answer"
+ },
+ {
+  "key": "13.5",
+  "answer": "  13.5  ",
+  "accepted": true,
+  "note": "padding"
+ },
+ {
+  "key": "5",
+  "answer": "+5",
+  "accepted": true,
+  "note": "leading plus"
+ },
+ {
+  "key": "5",
+  "answer": "6",
+  "accepted": false,
+  "note": "wrong number"
+ },
+ {
+  "key": "Cat",
+  "answer": "cat ",
+  "accepted": true,
+  "note": "words ignore case and padding"
+ },
+ {
+  "key": "Cat",
+  "answer": "cats",
+  "accepted": false,
+  "note": "words are exact"
+ },
+ {
+  "key": "1000",
+  "answer": "1,000",
+  "accepted": true,
+  "note": "comma thousands"
+ },
+ {
+  "key": "1",
+  "answer": "1,000",
+  "accepted": false,
+  "note": "1,000 is not 1"
+ },
+ {
+  "key": "-5",
+  "answer": "−5",
+  "accepted": true,
+  "note": "unicode minus"
+ },
+ {
+  "key": "5",
+  "answer": "",
+  "accepted": false,
+  "note": "empty answer"
+ },
+ {
+  "key": "",
+  "answer": "5",
+  "accepted": false,
+  "note": "empty key"
+ },
+ {
+  "key": "40260",
+  "answer": "40,260",
+  "accepted": true,
+  "note": "reported: comma thousands"
+ },
+ {
+  "key": "16.5|33/2",
+  "answer": "16,5",
+  "accepted": true,
+  "note": "reported: alternatives, comma decimal"
+ },
+ {
+  "key": "16.5|33/2",
+  "answer": "33/2",
+  "accepted": true,
+  "note": "reported: alternatives, fraction"
+ },
+ {
+  "key": "16.5|33/2",
+  "answer": "17",
+  "accepted": false,
+  "note": "reported: other value"
+ },
+ {
+  "key": "0.5",
+  "answer": ".5",
+  "accepted": true,
+  "note": "leading dot"
+ },
+ {
+  "key": "5",
+  "answer": "5.",
+  "accepted": true,
+  "note": "trailing dot"
+ },
+ {
+  "key": "0.5",
+  "answer": "0.50",
+  "accepted": true,
+  "note": "trailing zero"
+ },
+ {
+  "key": "-0.25",
+  "answer": "-.25",
+  "accepted": true,
+  "note": "signed leading dot"
+ },
+ {
+  "key": ".3833",
+  "answer": "0.3833",
+  "accepted": true,
+  "note": "key written with a leading dot"
+ },
+ {
+  "key": ".3833",
+  "answer": ".3833",
+  "accepted": true,
+  "note": "key and answer both leading dot"
+ },
+ {
+  "key": ".3833",
+  "answer": "0.38",
+  "accepted": false,
+  "note": "leading-dot key is not a tolerance"
+ },
+ {
+  "key": "17",
+  "answer": "17%",
+  "accepted": true,
+  "note": "percent sign"
+ },
+ {
+  "key": "17%",
+  "answer": "17",
+  "accepted": true,
+  "note": "percent sign in the key"
+ },
+ {
+  "key": "17",
+  "answer": "17 %",
+  "accepted": true,
+  "note": "space before the percent sign"
+ },
+ {
+  "key": "0.17",
+  "answer": "17%",
+  "accepted": false,
+  "note": "17% is 17, not 0.17"
+ },
+ {
+  "key": "17",
+  "answer": "18%",
+  "accepted": false,
+  "note": "wrong percent"
+ },
+ {
+  "key": "1.5",
+  "answer": "1 1/2",
+  "accepted": true,
+  "note": "mixed number"
+ },
+ {
+  "key": "-1.5",
+  "answer": "-1 1/2",
+  "accepted": true,
+  "note": "negative mixed number"
+ },
+ {
+  "key": "5.5",
+  "answer": "1 1/2",
+  "accepted": false,
+  "note": "1 1/2 is not 11/2"
+ },
+ {
+  "key": "5.5",
+  "answer": "5 1/2",
+  "accepted": true,
+  "note": "mixed number"
+ },
+ {
+  "key": "3",
+  "answer": "x=3",
+  "accepted": true,
+  "note": "x= prefix"
+ },
+ {
+  "key": "3",
+  "answer": "k = 3",
+  "accepted": true,
+  "note": "k = prefix with spaces"
+ },
+ {
+  "key": "3",
+  "answer": "x=4",
+  "accepted": false,
+  "note": "wrong value after x="
+ },
+ {
+  "key": "x=3",
+  "answer": "x=3",
+  "accepted": true,
+  "note": "key itself has the prefix"
+ },
+ {
+  "key": "3",
+  "answer": "x+3",
+  "accepted": false,
+  "note": "an expression is not a number"
+ },
+ {
+  "key": "12",
+  "answer": "12 cm",
+  "accepted": true,
+  "note": "trailing unit"
+ },
+ {
+  "key": "12",
+  "answer": "13 cm",
+  "accepted": false,
+  "note": "wrong value with a unit"
+ },
+ {
+  "key": "12 cm",
+  "answer": "12",
+  "accepted": true,
+  "note": "unit only in the key"
+ },
+ {
+  "key": "12 cm",
+  "answer": "12 cm",
+  "accepted": true,
+  "note": "unit in both"
+ },
+ {
+  "key": "12 cm",
+  "answer": "12 kg",
+  "accepted": false,
+  "note": "different units"
+ },
+ {
+  "key": "45",
+  "answer": "45°",
+  "accepted": true,
+  "note": "degree sign"
+ },
+ {
+  "key": "12",
+  "answer": "12 million",
+  "accepted": false,
+  "note": "a scale word changes the value"
+ },
+ {
+  "key": "12",
+  "answer": "12 thousand",
+  "accepted": false,
+  "note": "a scale word changes the value"
+ },
+ {
+  "key": "12",
+  "answer": "12k",
+  "accepted": false,
+  "note": "a scale suffix changes the value"
+ },
+ {
+  "key": "12",
+  "answer": "12 m",
+  "accepted": false,
+  "note": "m is ambiguous with million"
+ },
+ {
+  "key": "5",
+  "answer": "5x",
+  "accepted": false,
+  "note": "a coefficient is not a value"
+ },
+ {
+  "key": "35728",
+  "answer": "35.728",
+  "accepted": true,
+  "note": "dot thousands, whole key >= 1000"
+ },
+ {
+  "key": "40260",
+  "answer": "40.260",
+  "accepted": true,
+  "note": "dot thousands"
+ },
+ {
+  "key": "1234567",
+  "answer": "1.234.567",
+  "accepted": true,
+  "note": "two dot groups"
+ },
+ {
+  "key": "40260",
+  "answer": "40.26",
+  "accepted": false,
+  "note": "40.26 is not 40260"
+ },
+ {
+  "key": "4.5",
+  "answer": "4.500",
+  "accepted": true,
+  "note": "same decimal, trailing zeros"
+ },
+ {
+  "key": "900",
+  "answer": "0.900",
+  "accepted": false,
+  "note": "key below 1000 never reads dots as thousands"
+ },
+ {
+  "key": "999",
+  "answer": "9.990",
+  "accepted": false,
+  "note": "9.990 is 9.99, not 999"
+ },
+ {
+  "key": "1000",
+  "answer": "1 000",
+  "accepted": true,
+  "note": "space thousands"
+ },
+ {
+  "key": "1000",
+  "answer": "1 000",
+  "accepted": true,
+  "note": "non-breaking space thousands"
+ },
+ {
+  "key": "1000.5",
+  "answer": "1 000,5",
+  "accepted": true,
+  "note": "space thousands with a decimal comma"
+ },
+ {
+  "key": "15",
+  "answer": "1 5",
+  "accepted": false,
+  "note": "digits are not glued together"
+ },
+ {
+  "key": "5.5",
+  "answer": "5 5",
+  "accepted": false,
+  "note": "digits are not glued together"
+ },
+ {
+  "key": "0.75",
+  "answer": "3 / 4",
+  "accepted": true,
+  "note": "spaces around the slash"
+ },
+ {
+  "key": "94",
+  "answer": "94.16",
+  "accepted": false,
+  "note": "no rounding"
+ },
+ {
+  "key": "4.666",
+  "answer": "4.67",
+  "accepted": false,
+  "note": "no tolerance"
+ },
+ {
+  "key": "801",
+  "answer": "800",
+  "accepted": false,
+  "note": "no tolerance"
+ },
+ {
+  "key": "17",
+  "answer": "≈17",
+  "accepted": false,
+  "note": "approximately sign is not accepted"
+ },
+ {
+  "key": "1/0",
+  "answer": "1/0",
+  "accepted": true,
+  "note": "division by zero compares as text"
+ },
+ {
+  "key": "1/0",
+  "answer": "0",
+  "accepted": false,
+  "note": "division by zero is no number"
+ },
+ {
+  "key": "14:3|14/3|4.666",
+  "answer": "14/3",
+  "accepted": true,
+  "note": "alternatives"
+ },
+ {
+  "key": "14:3|14/3|4.666",
+  "answer": "14:3",
+  "accepted": true,
+  "note": "alternatives, ratio as text"
+ },
+ {
+  "key": "14:3|14/3|4.666",
+  "answer": "4.67",
+  "accepted": false,
+  "note": "none of the alternatives"
+ },
+ {
+  "key": "a| b |c",
+  "answer": "B",
+  "accepted": true,
+  "note": "alternatives are trimmed"
+ },
+ {
+  "key": "a||b",
+  "answer": "",
+  "accepted": false,
+  "note": "empty alternatives never match an empty answer"
+ }
+]

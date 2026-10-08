@@ -13,6 +13,7 @@ import {
   difficultyLabel,
   formatTag,
   isMultipleChoice,
+  dailyAnswerIsCorrect,
   questionOptions,
   shouldCacheRecommendations,
   usableQuestions,
@@ -356,20 +357,7 @@ function DailyQuestionsPopupInner({
       const totalCount = allQuestions.length;
       
       allQuestions.forEach(q => {
-        const userAnswer = answers[q.questionId];
-        if (userAnswer && q.correctAnswer) {
-          // For multiple choice, compare letter; for free text, compare trimmed lowercase
-          const isMultiple = isMultipleChoice(q);
-          if (isMultiple) {
-            if (userAnswer.toUpperCase() === q.correctAnswer.toUpperCase()) {
-              correctCount++;
-            }
-          } else {
-            if (userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) {
-              correctCount++;
-            }
-          }
-        }
+        if (dailyAnswerIsCorrect(q, answers[q.questionId])) correctCount++;
       });
       
       setScore({ correct: correctCount, total: totalCount });
@@ -725,12 +713,7 @@ function DailyQuestionsPopupInner({
             <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
               {allQuestions.map((q, idx) => {
                 const userAnswer = answers[q.questionId];
-                const isMultiple = isMultipleChoice(q);
-                const isCorrect = userAnswer && q.correctAnswer
-                  ? isMultiple
-                    ? userAnswer.toUpperCase() === q.correctAnswer.toUpperCase()
-                    : userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()
-                  : false;
+                const isCorrect = dailyAnswerIsCorrect(q, userAnswer);
                 const wasAnswered = !!userAnswer;
 
                 return (

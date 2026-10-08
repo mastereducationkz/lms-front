@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { answersMatch } from './answerMatch';
+import { answersMatch, matchesAnyAnswer, numericValue, splitAlternatives } from './answerMatch';
+import vectors from './answerMatch.vectors.json';
 
 describe('answersMatch', () => {
   it('accepts the answer exactly as stored', () => {
@@ -53,5 +54,36 @@ describe('answersMatch', () => {
   it('handles a negative and a unicode minus', () => {
     expect(answersMatch('-3', '−3')).toBe(true);
     expect(answersMatch('-3', '3')).toBe(false);
+  });
+});
+
+// The same table the server runs (lms-backend tests/fixtures/answer_match_vectors.json): keep the two
+// files identical, and add a case to both, never to one.
+describe('shared vectors', () => {
+  it.each(vectors.map((v) => [v.key, v.answer, v.accepted, v.note] as const))('%j vs %j -> %s (%s)', (key, answer, accepted) => {
+    expect(matchesAnyAnswer(key, answer)).toBe(accepted);
+  });
+});
+
+describe('numericValue', () => {
+  it('reads the forms students type', () => {
+    expect(numericValue('13,5')).toBe(13.5);
+    expect(numericValue(' .5 ')).toBe(0.5);
+    expect(numericValue('1 1/2')).toBe(1.5);
+    expect(numericValue('40,260')).toBe(40260);
+    expect(numericValue('1 000')).toBe(1000);
+    expect(numericValue('17%')).toBe(17);
+    expect(numericValue('1/0')).toBeNull();
+    expect(numericValue('abc')).toBeNull();
+    expect(numericValue(null)).toBeNull();
+  });
+});
+
+describe('splitAlternatives', () => {
+  it('trims, drops empty parts and takes a list key as its alternatives', () => {
+    expect(splitAlternatives(' a | b ||c ')).toEqual(['a', 'b', 'c']);
+    expect(splitAlternatives(null)).toEqual([]);
+    expect(splitAlternatives(['x', ' y '])).toEqual(['x', 'y']);
+    expect(splitAlternatives(12)).toEqual(['12']);
   });
 });

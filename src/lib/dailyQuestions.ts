@@ -1,4 +1,5 @@
 import type { DailyQuestionItem, DailyQuestionsRecommendations } from '../types';
+import { matchesAnyAnswer } from '../components/lesson/quiz/answerMatch';
 import { activeLocale, t, type Locale } from './i18n';
 import '@/lib/i18n/catalogs/studentHome';
 
@@ -109,6 +110,14 @@ export function questionOptions(q: DailyQuestionItem): QuestionOption[] {
 /** Multiple choice when the SAT says so, or when the question has at least two options. */
 export function isMultipleChoice(q: DailyQuestionItem): boolean {
   return !!q.isMultipleChoice || q.questionType === 'Multiple Choice' || questionOptions(q).length >= 2;
+}
+
+/** Is `userAnswer` right? A multiple-choice letter compares case-insensitively; anything typed goes
+ *  through the quiz's matcher, so `13,5` is right for a key of `13.5` and `.5` for `0.5`. */
+export function dailyAnswerIsCorrect(q: DailyQuestionItem, userAnswer: string | undefined): boolean {
+  if (!userAnswer || !q.correctAnswer) return false;
+  if (isMultipleChoice(q)) return userAnswer.toUpperCase() === q.correctAnswer.toUpperCase();
+  return matchesAnyAnswer(q.correctAnswer, userAnswer);
 }
 
 /** «reading_comprehension» → «Reading Comprehension». The SAT omits null fields from its JSON,
