@@ -59,6 +59,7 @@ export const serverErrors: RuTable<typeof en> = {
   'serverErrors.access_review_not_contacts_row': 'Удалить контакты можно только в строке с контактами',
   'serverErrors.access_review_confirm_required': 'Подтвердите удаление контактов',
   'serverErrors.access_review_row_not_found': 'Этой строки больше нет в проверке — обновите страницу',
+  'serverErrors.access_review_crm_unreachable': 'Контакты в LMS удалены, но CRM не ответила — попробуйте ещё раз',
   'serverErrors.staff_leaving': '{name} уходит {last_day}',
   'serverErrors.use_offboarding': 'Сотрудников отключают через оформление ухода: нажмите «Оформить уход»',
   'serverErrors.use_reactivate': 'Вернуть сотрудника можно кнопкой «Вернуть» в записи об уходе',
