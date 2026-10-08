@@ -1,4 +1,5 @@
 import { api } from './client';
+import { apiError } from './apiError';
 
 export async function addFavoriteFlashcard(data: {
   step_id: number;
@@ -11,7 +12,7 @@ export async function addFavoriteFlashcard(data: {
     const response = await api.post('/flashcards/favorites', data);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to add flashcard to favorites');
+    throw apiError(error, 'Failed to add flashcard to favorites');
   }
 }
 
@@ -20,7 +21,7 @@ export async function getFavoriteFlashcards(): Promise<any[]> {
     const response = await api.get('/flashcards/favorites');
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to load favorite flashcards');
+    throw apiError(error, 'Failed to load favorite flashcards');
   }
 }
 
@@ -28,7 +29,7 @@ export async function removeFavoriteFlashcard(favoriteId: number): Promise<void>
   try {
     await api.delete(`/flashcards/favorites/${favoriteId}`);
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to remove flashcard from favorites');
+    throw apiError(error, 'Failed to remove flashcard from favorites');
   }
 }
 
@@ -36,7 +37,7 @@ export async function removeFavoriteByCardId(stepId: number, flashcardId: string
   try {
     await api.delete(`/flashcards/favorites/by-card/${stepId}/${flashcardId}`);
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to remove flashcard from favorites');
+    throw apiError(error, 'Failed to remove flashcard from favorites');
   }
 }
 
@@ -45,7 +46,7 @@ export async function checkIsFavorite(stepId: number, flashcardId: string): Prom
     const response = await api.get(`/flashcards/favorites/check/${stepId}/${flashcardId}`);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to check favorite status');
+    throw apiError(error, 'Failed to check favorite status');
   }
 }
 
@@ -65,7 +66,7 @@ export async function quickCreateFlashcard(data: {
     const response = await api.post('/flashcards/quick_create', data);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to create flashcard');
+    throw apiError(error, 'Failed to create flashcard');
   }
 }
 

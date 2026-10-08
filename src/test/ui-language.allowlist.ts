@@ -30,6 +30,7 @@ export const SAME_IN_BOTH_LANGUAGES: Record<string, string> = {
   'https://www.youtube.com/watch?v=...': 'example URL', 'https://.../image.jpg': 'example URL', 'https://…': 'example URL',
   'https://...': 'example URL', 'https://teams.microsoft.com/...': 'example URL', 'https://example.com/resource': 'example URL',
   'SAT SAT SAT SAT': 'decorative pattern on a share card',
+  'STAGING ·': 'environment marker on the staging build only',
   // Not text: values the scan cannot tell from copy.
   outline: 'a button variant', '/register': 'a path', '?group=': 'a query string',
 };

@@ -44,6 +44,12 @@ export function asAxiosError(value: unknown): AxiosLike | null {
   return value && typeof value === 'object' && (value as AxiosLike).isAxiosError ? (value as AxiosLike) : null;
 }
 
+/** The failed API call behind an error: the AxiosError itself, or the one an API wrapper kept as
+ * the `cause` of the plain Error it rethrew (`apiError`, src/services/api/apiError.ts). */
+export function axiosErrorOf(value: unknown): AxiosLike | null {
+  return asAxiosError(value) ?? asAxiosError((value as { cause?: unknown } | null | undefined)?.cause);
+}
+
 export function browserOnline(): boolean {
   return typeof navigator === 'undefined' || navigator.onLine !== false;
 }
@@ -156,7 +162,7 @@ export function isIgnoredEvent(event: ErrorEvent, hint?: EventHint): boolean {
 export function ignoredBy(event: ErrorEvent, hint?: EventHint): string | null {
   // A failed API call is decided by the axios rules alone: its stack can be all axios/native
   // frames, which the frame rules below would take for injected code.
-  const axiosError = asAxiosError(hint?.originalException);
+  const axiosError = axiosErrorOf(hint?.originalException);
   if (axiosError) return ignoredAxiosRule(axiosError, browserOnline());
   const original = hint?.originalException as { name?: string; message?: string } | undefined;
   if (original && typeof original === 'object' && original.name && IGNORED_TYPES.has(original.name)) {

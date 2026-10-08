@@ -1,4 +1,5 @@
 import { api } from './client';
+import { apiError } from './apiError';
 
 export interface FavoriteStepItem {
   id: number;
@@ -18,7 +19,7 @@ export async function addFavoriteStep(stepId: number): Promise<FavoriteStepItem>
     const response = await api.post('/favorite-steps', { step_id: stepId });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to save page to favorites');
+    throw apiError(error, 'Failed to save page to favorites');
   }
 }
 
@@ -26,7 +27,7 @@ export async function removeFavoriteStep(stepId: number): Promise<void> {
   try {
     await api.delete(`/favorite-steps/${stepId}`);
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to remove page from favorites');
+    throw apiError(error, 'Failed to remove page from favorites');
   }
 }
 
@@ -35,7 +36,7 @@ export async function getFavoriteSteps(): Promise<FavoriteStepItem[]> {
     const response = await api.get('/favorite-steps');
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to load saved pages');
+    throw apiError(error, 'Failed to load saved pages');
   }
 }
 
@@ -46,6 +47,6 @@ export async function checkStepIsFavorite(
     const response = await api.get(`/favorite-steps/check/${stepId}`);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to check favorite status');
+    throw apiError(error, 'Failed to check favorite status');
   }
 }

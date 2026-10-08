@@ -1,4 +1,5 @@
 import { api } from './client';
+import { apiError } from './apiError';
 import { notePwaHomeworkSubmitted } from '../pwaInstall';
 
 export async function getAssignments(params = {}) {
@@ -30,7 +31,7 @@ export async function uploadAssignmentAudio(file: Blob | File): Promise<{ url: s
     });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to upload audio recording');
+    throw apiError(error, 'Failed to upload audio recording');
   }
 }
 
