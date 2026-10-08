@@ -52,6 +52,8 @@ export const serverErrors: RuTable<typeof en> = {
   'serverErrors.offboarding_item_scope': 'Это вне вашей зоны',
   'serverErrors.offboarding_item_not_found': 'Не найдено',
   'serverErrors.offboarding_item_failed': 'С этим пунктом что-то пошло не так — ничего не изменено',
+  'serverErrors.offboarding_emergency_admins_only': 'Экстренно отключить может только администратор',
+  'serverErrors.offboarding_step_not_retryable': 'Этот шаг нельзя запустить ещё раз',
   'serverErrors.staff_leaving': '{name} уходит {last_day}',
   'serverErrors.use_offboarding': 'Сотрудников отключают через оформление ухода: нажмите «Оформить уход»',
   'serverErrors.use_reactivate': 'Вернуть сотрудника можно кнопкой «Вернуть» в записи об уходе',

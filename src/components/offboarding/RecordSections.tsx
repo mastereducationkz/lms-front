@@ -1,3 +1,4 @@
+import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { StepBadge } from './parts';
 import { checklistText } from '../../lib/offboarding';
@@ -15,8 +16,16 @@ import { formatDate, formatDateTime, hasMessage, t as translate } from '../../li
 import { useLocale, useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/offboarding';
 
+interface StepsListProps {
+  steps: Partial<Record<StepName, StepResult>> | null | undefined;
+  /** Failed or refused steps the viewer may re-run (`allowed.retry_steps`). */
+  retryable?: readonly StepName[];
+  onRetry?: (step: StepName) => void;
+  busy?: boolean;
+}
+
 /** Each system's result (SPEC §5), in the order the engine runs them. */
-export function StepsList({ steps }: { steps: Partial<Record<StepName, StepResult>> | null | undefined }) {
+export function StepsList({ steps, retryable = [], onRetry, busy }: StepsListProps) {
   const t = useT();
   const ran = STEP_NAMES.filter((s) => steps?.[s]);
   if (!ran.length) return <p className="text-sm text-muted-foreground">{t('offboarding.record.stepsNotRun')}</p>;
@@ -31,6 +40,9 @@ export function StepsList({ steps }: { steps: Partial<Record<StepName, StepResul
               <StepBadge status={step.status} />
               {step.reason && <p className="text-sm text-muted-foreground">{step.reason}</p>}
               {step.detail && <p className="break-words text-sm text-muted-foreground">{step.detail}</p>}
+              {onRetry && retryable.includes(name) && (step.status === 'failed' || step.status === 'refused') && (
+                <Button variant="outline" size="sm" disabled={busy} onClick={() => onRetry(name)}>{t('offboarding.record.retry')}</Button>
+              )}
             </div>
             <div className="shrink-0 text-xs text-muted-foreground">
               {[step.at ? formatDateTime(step.at) : '', step.attempts && step.attempts > 1 ? t('offboarding.record.attempts', { count: step.attempts }) : '']
@@ -90,9 +102,17 @@ export function OpenItemsList({ items }: { items: OpenItem[] }) {
       <p className="text-sm text-muted-foreground">{t('offboarding.record.openItemsIntro')}</p>
       <ul className="space-y-1 text-sm">
         {items.map((item) => (
-          <li key={`${item.kind}:${item.id}`} className={item.resolved ? 'text-muted-foreground line-through' : 'text-foreground'}>
+          <li key={`${item.kind}:${item.id}`} className={item.resolved ? 'text-muted-foreground' : 'text-foreground'}>
             <span className="text-muted-foreground">{t(`offboarding.handover.${item.kind}`)}:</span>{' '}
-            {item.label || item.group_name || `#${item.id}`}
+            <span className={item.resolved ? 'line-through' : ''}>{item.label || `#${item.id}`}</span>
+            {item.start_at && <span className="ml-1 text-xs text-muted-foreground">{formatDateTime(item.start_at)}</span>}
+            {item.resolved && (
+              <span className="ml-2 text-xs">
+                {item.resolution === 'reassigned' && item.resolved_to
+                  ? t('offboarding.record.openItemTo', { name: item.resolved_to.name })
+                  : item.resolution === 'ended' ? t('offboarding.record.openItemEnded') : t('offboarding.record.openItemDone')}
+              </span>
+            )}
           </li>
         ))}
       </ul>

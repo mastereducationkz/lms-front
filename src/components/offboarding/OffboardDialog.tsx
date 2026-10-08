@@ -11,9 +11,9 @@ import {
   createRequest,
   dialogStage,
   formProblems,
-  hasBlockers,
-  mayUseEmergency,
+  offersEmergency,
   targetRef,
+  unresolvedItems,
   type FormProblem,
   type OffboardForm,
 } from '../../lib/offboarding';
@@ -84,10 +84,18 @@ export default function OffboardDialog({ open, onOpenChange, target, name, confi
     load();
   }, [open, load]);
 
-  const allowEmergency = mayUseEmergency(user?.role, config.modes);
-  // An emergency switch-off skips the hand-over: what they own stays assigned and is listed on the record.
-  const previewStage = preview ? dialogStage(preview) : null;
-  const stage = previewStage === 'handover' && form.mode === 'emergency' ? 'details' : previewStage;
+  // An emergency switch-off (admins) skips the hand-over and an open record: what they own stays
+  // assigned and is listed on the record (SPEC §12 Q93).
+  const allowEmergency = preview ? offersEmergency(preview) : false;
+  const stage = preview ? dialogStage(preview, form.mode) : null;
+  const emergencyBox = allowEmergency && (
+    <div className="space-y-2 rounded-md border border-destructive/40 p-3">
+      <p className="text-sm text-foreground">{t('offboarding.handover.emergencyIntro')}</p>
+      <Button variant="outline" size="sm" onClick={() => setForm({ ...form, mode: 'emergency' })}>
+        {t('offboarding.handover.emergencyButton')}
+      </Button>
+    </div>
+  );
   const shownName = preview?.target.name || name;
 
   const submit = async () => {
@@ -144,19 +152,17 @@ export default function OffboardDialog({ open, onOpenChange, target, name, confi
         ) : preview && stage === 'not_allowed' ? (
           <p className="text-sm text-foreground">{whyNot(preview.why_not, locale) || t('offboarding.dialog.notAllowed')}</p>
         ) : preview && stage === 'open_record' && preview.open_record ? (
-          <OpenRecordPanel record={preview.open_record} viewerId={viewerId} onChanged={recordChanged} />
+          <>
+            <OpenRecordPanel record={preview.open_record} viewerId={viewerId} onChanged={recordChanged} />
+            {emergencyBox}
+          </>
+        ) : preview && stage === 'already_off' ? (
+          <p className="text-sm text-foreground">{t('offboarding.dialog.alreadyOff', { name: shownName })}</p>
         ) : preview && stage === 'handover' ? (
           <>
             {submitError && <p role="alert" className="text-sm text-destructive">{submitError}</p>}
             <HandoverStep preview={preview} onRecheck={load} />
-            {allowEmergency && (
-              <div className="space-y-2 rounded-md border border-destructive/40 p-3">
-                <p className="text-sm text-foreground">{t('offboarding.handover.emergencyIntro')}</p>
-                <Button variant="outline" size="sm" onClick={() => setForm({ ...form, mode: 'emergency' })}>
-                  {t('offboarding.handover.emergencyButton')}
-                </Button>
-              </div>
-            )}
+            {emergencyBox}
           </>
         ) : preview && stage === 'details' ? (
           <DetailsStep
@@ -166,8 +172,7 @@ export default function OffboardDialog({ open, onOpenChange, target, name, confi
             reasons={config.reasons}
             today={today}
             needsSecondAdmin={preview.needs_second_admin}
-            // With nothing owned, an emergency is the same as «immediately».
-            allowEmergency={allowEmergency && hasBlockers(preview.blockers)}
+            allowEmergency={allowEmergency}
             satWarning={preview.blockers.sat_checked ? null : preview.blockers.sat_warning ?? ''}
             problems={problems}
             disabled={submitting}
@@ -196,6 +201,7 @@ function whyNot(why: OffboardPreview['why_not'], locale: Locale): string {
 
 function CreatedResult({ record }: { record: OffboardingRecord }) {
   const t = useT();
+  const left = unresolvedItems(record).length;
   const text = record.status === 'awaiting_confirmation'
     ? t('offboarding.result.awaiting')
     : record.status === 'completed'
@@ -204,6 +210,9 @@ function CreatedResult({ record }: { record: OffboardingRecord }) {
   return (
     <div className="space-y-2">
       <p className="text-sm text-foreground">{text}</p>
+      {record.status === 'completed' && left > 0 && (
+        <p className="text-sm text-destructive">{t('offboarding.page.openItemsCount', { count: left })}</p>
+      )}
       <Button variant="outline" size="sm" asChild>
         <Link to={`/admin/offboarding/${record.id}`}>{t('offboarding.result.openRecord')}</Link>
       </Button>

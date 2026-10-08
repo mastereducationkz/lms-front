@@ -11,7 +11,7 @@ import {
   latestCompletedRecord,
   latestLastDay,
   mayOfferOffboard,
-  mayUseEmergency,
+  offersEmergency,
   mergeAssignments,
   ownerOptions,
   reassignPlan,
@@ -68,6 +68,15 @@ describe('the hand-over list', () => {
     expect(items.map((i) => i.key)).toEqual(['group_teacher:310', 'group_curator:311', 'lesson:9911', 'course_head:7']);
     expect(items[0].movingLessons).toBe(18);
     expect(items[2]).toMatchObject({ startAt: '2026-10-12T09:00:00Z', groupName: 'IELTS Oct - Dana' });
+  });
+
+  it('takes the suggestion inline on the item before the list', () => {
+    const inline = {
+      blockers: { ...NO_BLOCKERS, groups: [{ id: 310, name: 'SAT Sep', role: 'teacher' as const, suggested_owner: dana }] },
+      suggested_owners: [{ kind: 'group_teacher' as const, id: 310, owner: headT }],
+    };
+    expect(handoverItems(inline)[0].suggested?.id).toBe(61);
+    expect(handoverItems({ blockers: inline.blockers })[0].suggested?.id).toBe(61);
   });
 
   it('preselects the suggested owner and leaves the rest unchosen', () => {
@@ -213,6 +222,13 @@ describe('checklist lines', () => {
     expect(checklistText({ kind: 'workspace', text: 'Suspend aida@x', params: { email: 'aida@x' } }, translate)).toBe('Приостановить аккаунт aida@x');
   });
 
+  it('words a line by its id first (sat_native is kind sat with other params)', () => {
+    const withId = (key: string, params: Record<string, string | number>) =>
+      key === 'offboarding.checklist.sat_native' ? 'Группы SAT всё ещё за ним' : translate(key, params);
+    expect(checklistText({ id: 'sat_native', kind: 'sat', text: 'SAT groups', params: { groups: [] as unknown as string } }, withId)).toBe('Группы SAT всё ещё за ним');
+    expect(checklistText({ id: 'telegram:210', kind: 'telegram_chat', text: 'x', params: { chat_title: 'SAT Sep' } }, translate)).toBe('Удалить из чата «SAT Sep»');
+  });
+
   it('falls back to the server’s text for a new kind or a missing blank', () => {
     expect(checklistText({ kind: 'github', text: 'Remove from GitHub', params: {} }, translate)).toBe('Remove from GitHub');
     expect(checklistText({ kind: 'telegram_chat', text: 'Remove them from «SAT Sep»', params: { group_id: 310 } }, translate)).toBe('Remove them from «SAT Sep»');
@@ -220,10 +236,21 @@ describe('checklist lines', () => {
 });
 
 describe('emergency switch-off (SPEC §12 Q93)', () => {
-  it('is for admins only, and only when the server lists the mode', () => {
-    expect(mayUseEmergency('admin', ['scheduled', 'immediate', 'emergency'])).toBe(true);
-    expect(mayUseEmergency('admin', ['scheduled', 'immediate'])).toBe(false);
-    expect(mayUseEmergency('head_curator', ['scheduled', 'immediate', 'emergency'])).toBe(false);
+  const base = { open_record: null, can_offboard: true, blockers: NO_BLOCKERS, can_emergency: true, target: { is_active: true } };
+
+  it('is offered only when the server allows it for this caller and something is in the way', () => {
+    expect(offersEmergency({ ...base, blockers: preview.blockers })).toBe(true);
+    expect(offersEmergency({ ...base, can_offboard: false, open_record: record({ status: 'pending' }) })).toBe(true);
+    expect(offersEmergency(base)).toBe(false); // nothing owned: «immediately» does the same
+    expect(offersEmergency({ ...base, blockers: preview.blockers, can_emergency: false })).toBe(false);
+    expect(offersEmergency({ ...base, blockers: preview.blockers, target: { is_active: false } })).toBe(false);
+  });
+
+  it('skips the hand-over and an open record once chosen', () => {
+    expect(dialogStage({ ...base, blockers: preview.blockers }, 'emergency')).toBe('details');
+    expect(dialogStage({ ...base, can_offboard: false, open_record: record({ status: 'blocked' }) }, 'emergency')).toBe('details');
+    expect(dialogStage({ ...base, blockers: preview.blockers, can_emergency: false }, 'emergency')).toBe('handover');
+    expect(dialogStage({ ...base, blockers: preview.blockers }, 'scheduled')).toBe('handover');
   });
 
   it('needs no date and sends today', () => {
@@ -234,11 +261,17 @@ describe('emergency switch-off (SPEC §12 Q93)', () => {
 
   it('lists what nobody has taken over yet', () => {
     const items = [
-      { kind: 'group_teacher' as const, id: 310, label: 'SAT Sep', resolved: true },
-      { kind: 'lesson' as const, id: 9911, label: 'Lesson 4' },
+      { kind: 'group_teacher' as const, id: 310, label: 'SAT Sep', resolved: true, resolution: 'reassigned' as const, resolved_to: { id: 61, name: 'Dana S.' } },
+      { kind: 'lesson' as const, id: 9911, label: 'Lesson 4', resolved: false },
     ];
     expect(unresolvedItems(record({ status: 'completed', open_items: items })).map((i) => i.id)).toEqual([9911]);
-    expect(unresolvedItems(record({ status: 'completed' }))).toEqual([]);
+    expect(unresolvedItems(record({ status: 'completed', open_items: null }))).toEqual([]);
+  });
+
+  it('offers only the hand-over for someone already switched off', () => {
+    const off = { ...base, target: { is_active: false } };
+    expect(dialogStage({ ...off, blockers: preview.blockers })).toBe('handover');
+    expect(dialogStage(off)).toBe('already_off');
   });
 });
 
@@ -247,8 +280,8 @@ describe('old switch-off paths while offboarding is on (SPEC §12 Q92)', () => {
 
   it('sends a staff deactivate to the Offboard dialog and an activate to Reactivate', () => {
     expect(refusalRoute(refusal({ detail: 'Use offboarding', reason_code: 'use_offboarding' }))).toEqual({ kind: 'offboard' });
-    expect(refusalRoute(refusal({ reason_code: 'use_reactivate', reason_details: { record_id: 7 } }))).toEqual({ kind: 'reactivate', recordId: 7 });
-    expect(refusalRoute(refusal({ code: 'use_reactivate' }))).toEqual({ kind: 'reactivate', recordId: null });
+    expect(refusalRoute(refusal({ reason_code: 'use_reactivate', reason_details: { user_id: 5, record_id: 7 } }))).toEqual({ kind: 'reactivate', recordId: 7 });
+    expect(refusalRoute(refusal({ reason_code: 'use_reactivate', reason_details: { user_id: 5 } }))).toEqual({ kind: 'reactivate', recordId: null });
   });
 
   it('leaves every other refusal to the screen', () => {

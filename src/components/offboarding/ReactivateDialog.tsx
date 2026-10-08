@@ -39,7 +39,8 @@ export default function ReactivateDialog({ open, onOpenChange, lmsUserId, name, 
     setMissing(false);
     if (recordId != null) return;
     let live = true;
-    listOffboardings(['completed'], { limit: 500 })
+    // Normally the refusal names the record; this is the fallback when it did not.
+    listOffboardings({ status: ['completed'], lms_user_id: lmsUserId, limit: 5 })
       .then((page) => {
         if (!live) return;
         const found = latestCompletedRecord(page.items, lmsUserId);

@@ -39,8 +39,12 @@ type Open =
 
 const nameOf = (p: OffboardCandidate) => p.name || p.full_name || p.email || '';
 
-/** Everything a page needs to offer «Offboard» (and Reactivate) on its staff rows. */
-export function useOffboardLauncher(onChanged?: (record: OffboardingRecord) => void): OffboardLauncher {
+/**
+ * Everything a page needs to offer «Offboard» (and Reactivate) on its staff rows. `onChanged`
+ * follows a record created, cancelled, confirmed or reactivated; `onClosed` any close (a
+ * hand-over moves groups without touching a record).
+ */
+export function useOffboardLauncher(onChanged?: (record: OffboardingRecord) => void, onClosed?: () => void): OffboardLauncher {
   const { user } = useAuth();
   const config = useOffboardingConfig(user?.role);
   const [target, setTarget] = useState<Open | null>(null);
@@ -64,7 +68,9 @@ export function useOffboardLauncher(onChanged?: (record: OffboardingRecord) => v
   }, [enabled]);
 
   const close = (isOpen: boolean) => {
-    if (!isOpen) setTarget(null);
+    if (isOpen) return;
+    setTarget(null);
+    onClosed?.();
   };
   const dialog = target && config?.enabled ? (
     <Suspense fallback={null}>

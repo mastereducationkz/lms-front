@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { toast } from '../../components/Toast';
 import { StatusBadge } from '../../components/offboarding/parts';
+import { useOffboardLauncher } from '../../components/offboarding/useOffboardLauncher';
 import { useAuth } from '../../contexts/AuthContext';
 import { useOffboardingConfig } from '../../hooks/useOffboardingConfig';
 import { recordActions, unresolvedItems } from '../../lib/offboarding';
@@ -13,6 +14,7 @@ import {
   cancelOffboarding,
   confirmOffboarding,
   listOffboardings,
+  type ListToken,
   type OffboardingRecord,
 } from '../../services/api/offboarding';
 import { roleLabel } from '../../lib/roleLabel';
@@ -21,7 +23,11 @@ import { useLocale, useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/offboarding';
 
 type Tab = 'open' | 'needs' | 'history';
-const HISTORY = ['completed', 'cancelled', 'reactivated'] as const;
+const STATUS_OF: Record<Tab, readonly ListToken[]> = {
+  open: ['open'],
+  needs: ['needs_reassignment'],
+  history: ['completed', 'cancelled', 'reactivated'],
+};
 const PAGE = 100;
 const TABS: ReadonlyArray<{ tab: Tab; label: MessageKey; empty: MessageKey }> = [
   { tab: 'open', label: 'offboarding.page.leavingSoon', empty: 'offboarding.page.emptyLeaving' },
@@ -32,7 +38,7 @@ const TABS: ReadonlyArray<{ tab: Tab; label: MessageKey; empty: MessageKey }> = 
 /**
  * Offboarding (SPEC §9): «Leaving soon» — records waiting for their last day, a second admin, or
  * a hand-over — with cancel and confirm; «Needs reassignment» — emergency switch-offs whose groups
- * and lessons nobody has taken over yet (SPEC §12, read from completed records); and the history. Heads see the records of the people
+ * and lessons nobody has taken over yet (SPEC §12); and the history. Heads see the records of the people
  * they may offboard (the server scopes the list).
  */
 export default function OffboardingPage() {
@@ -48,19 +54,14 @@ export default function OffboardingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [asking, setAsking] = useState<{ record: OffboardingRecord; action: 'cancel' | 'confirm' } | null>(null);
+  // «Reassign» on a needs-reassignment row: the Offboard dialog shows only the hand-over for someone already off.
+  const handover = useOffboardLauncher(undefined, () => load());
 
   const load = useCallback(async (offset = 0) => {
     setLoading(true);
     setError(null);
     try {
-      if (tab === 'needs') {
-        const page = await listOffboardings(['completed'], { limit: 500 });
-        const needs = page.items.filter((r) => unresolvedItems(r).length > 0);
-        setRecords(needs);
-        setTotal(needs.length);
-        return;
-      }
-      const page = await listOffboardings(tab === 'open' ? 'open' : HISTORY, { limit: PAGE, offset });
+      const page = await listOffboardings({ status: STATUS_OF[tab], limit: PAGE, offset });
       setRecords((current) => (offset ? [...current, ...page.items] : page.items));
       setTotal(page.total);
     } catch (e) {
@@ -178,6 +179,11 @@ export default function OffboardingPage() {
                         {tab === 'open' && allowed.cancel && (
                           <Button size="sm" variant="outline" onClick={() => setAsking({ record, action: 'cancel' })}>{t('offboarding.page.cancel')}</Button>
                         )}
+                        {record.needs_reassignment && record.lms_user_id != null && (
+                          <Button size="sm" onClick={() => handover.open({ id: record.lms_user_id!, role: record.target.role ?? '', name: record.target.name })}>
+                            {t('offboarding.page.reassign')}
+                          </Button>
+                        )}
                         <Button size="sm" variant="ghost" asChild>
                           <Link to={`/admin/offboarding/${record.id}`}>{t('offboarding.page.view')}</Link>
                         </Button>
@@ -195,6 +201,7 @@ export default function OffboardingPage() {
         <Button variant="outline" onClick={() => load(records.length)} disabled={loading}>{t('offboarding.page.more')}</Button>
       )}
 
+      {handover.dialog}
       <ConfirmDialog
         open={asking !== null}
         description={asking ? t(asking.action === 'cancel' ? 'offboarding.open.cancelQuestion' : 'offboarding.record.confirmQuestion', { name: asking.record.target.name }) : undefined}

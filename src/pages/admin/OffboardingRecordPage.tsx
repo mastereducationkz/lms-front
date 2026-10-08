@@ -42,7 +42,7 @@ export default function OffboardingRecordPage() {
         <Link to="/admin/offboarding"><ChevronLeft className="mr-2 h-4 w-4" aria-hidden="true" />{t('offboarding.record.back')}</Link>
       </Button>
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-      {record && <RecordView record={record} viewerId={viewerId} onChanged={setRecord} />}
+      {record && <RecordView record={record} viewerId={viewerId} onChanged={setRecord} onReload={load} />}
     </div>
   );
 }

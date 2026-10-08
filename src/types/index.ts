@@ -287,6 +287,9 @@ export interface Group {
    * среды не воспроизводится — только форматируется.
    */
   closes_at?: string | null;
+  /** Running group whose teacher / curator account is switched off (GET /admin/groups, offboarding Q93). */
+  teacher_left?: boolean;
+  curator_left?: boolean;
   group_type?: GroupType;
   /** SAT / IELTS / General English — дублирует смысл course_type курса, удобно для поиска групп */
   program_type?: CourseType;

@@ -92,6 +92,7 @@ import '@/lib/i18n/catalogs/users';
 import '@/lib/i18n/catalogs/adminUsers';
 import '@/lib/i18n/catalogs/offboarding';
 import { useOffboardLauncher } from '../components/offboarding/useOffboardLauncher';
+import LeftBadge from '../components/offboarding/LeftBadge';
 import { STAFF_ROLES } from '../lib/offboarding';
 
 /** The server's reason for a refusal (already in the reader's language when it has a reason_code). */
@@ -1634,6 +1635,7 @@ export default function UserManagement() {
                         <span className="px-2 py-1 text-xs rounded-full bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 text-purple-700">
                           {group.teacher_name || t('adminUsers.groups.noTeacher')}
                         </span>
+                        {offboard.enabled && group.teacher_left && <LeftBadge who="teacher" />}
                       </td>
                       <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
                         {group.curator_name ? (
@@ -1643,6 +1645,7 @@ export default function UserManagement() {
                         ) : (
                           <span className="text-sm text-muted-foreground">{t('adminUsers.groups.noCurator')}</span>
                         )}
+                        {offboard.enabled && group.curator_left && <LeftBadge who="curator" />}
                       </td>
                       <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700">

@@ -10,9 +10,12 @@ import {
   cancelOffboarding,
   confirmOffboarding,
   reactivateOffboarding,
+  retryStep,
   setChecklistItem,
   type OffboardingRecord,
+  type StepName,
 } from '../../services/api/offboarding';
+import { useOffboardLauncher } from './useOffboardLauncher';
 import { roleLabel } from '../../lib/roleLabel';
 import { formatDate, formatDateTime } from '../../lib/i18n';
 import { useLocale, useT } from '../../lib/i18n/react';
@@ -22,6 +25,8 @@ interface RecordViewProps {
   record: OffboardingRecord;
   viewerId: number | null;
   onChanged: (record: OffboardingRecord) => void;
+  /** Fetch the record again (after a hand-over from here, which changes its open items). */
+  onReload: () => void;
 }
 
 type Action = 'cancel' | 'confirm' | 'reactivate';
@@ -35,9 +40,12 @@ const RUN: Record<Action, (id: number) => Promise<OffboardingRecord>> = {
 const DONE = { cancel: 'offboarding.open.cancelled', confirm: 'offboarding.open.confirmed', reactivate: 'offboarding.record.reactivated' } as const;
 
 /** One offboarding: who, when, why, each system's result, the manual checklist (SPEC §1, §5, §6). */
-export default function RecordView({ record, viewerId, onChanged }: RecordViewProps) {
+export default function RecordView({ record, viewerId, onChanged, onReload }: RecordViewProps) {
   const t = useT();
   const locale = useLocale();
+  // «Hand over what is left» reuses the Offboard dialog: for someone already switched off it shows
+  // only the reassign helper (the server takes /reassign for an inactive leaver, SPEC §12 Q93).
+  const handover = useOffboardLauncher(undefined, onReload);
   const [busy, setBusy] = useState(false);
   const [asking, setAsking] = useState<Action | null>(null);
   const actions = recordActions(record, viewerId);
@@ -50,6 +58,18 @@ export default function RecordView({ record, viewerId, onChanged }: RecordViewPr
     try {
       onChanged(await RUN[action](record.id));
       toast(t(DONE[action]), 'success');
+    } catch (e) {
+      toast((e instanceof Error && e.message) || t('offboarding.open.actionFailed'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const retry = async (step: StepName) => {
+    setBusy(true);
+    try {
+      onChanged(await retryStep(record.id, step));
+      toast(t('offboarding.record.retried'), 'success');
     } catch (e) {
       toast((e instanceof Error && e.message) || t('offboarding.open.actionFailed'), 'error');
     } finally {
@@ -130,18 +150,34 @@ export default function RecordView({ record, viewerId, onChanged }: RecordViewPr
         <section className="space-y-2">
           <h2 className="font-semibold text-foreground">{t('offboarding.record.openItems')}</h2>
           <OpenItemsList items={record.open_items ?? []} />
+          {record.needs_reassignment && record.lms_user_id != null && handover.enabled && (
+            <Button size="sm" onClick={() => handover.open({ id: record.lms_user_id!, role: record.target.role ?? '', name: record.target.name })}>
+              {t('offboarding.record.handOverLeft')}
+            </Button>
+          )}
+          {handover.dialog}
         </section>
       )}
 
       <section className="space-y-2">
         <h2 className="font-semibold text-foreground">{t('offboarding.record.steps')}</h2>
-        <StepsList steps={record.steps} />
+        <StepsList
+          steps={record.steps}
+          retryable={record.status === 'completed' ? actions.retry_steps : []}
+          onRetry={retry}
+          busy={busy}
+        />
       </section>
 
       {record.reactivation_steps && (
         <section className="space-y-2">
           <h2 className="font-semibold text-foreground">{t('offboarding.record.reactivationSteps')}</h2>
-          <StepsList steps={record.reactivation_steps} />
+          <StepsList
+            steps={record.reactivation_steps}
+            retryable={record.status === 'reactivated' ? actions.retry_steps : []}
+            onRetry={retry}
+            busy={busy}
+          />
         </section>
       )}
 

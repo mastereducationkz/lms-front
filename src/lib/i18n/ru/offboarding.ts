@@ -5,6 +5,8 @@ export const offboarding: RuTable<typeof en> = {
   // ── Оформление ухода (components/offboarding) ─────────────────────────────
   'offboarding.action.offboard': 'Оформить уход',
   'offboarding.userForm.hint': 'Сотрудника отключают через оформление ухода: сначала его группы передаются другим.',
+  'offboarding.left.teacher': 'Педагог ушёл — передайте',
+  'offboarding.left.curator': 'Куратор ушёл — передайте',
   'offboarding.bulk.staffSkipped': {
     one: '{count} сотрудник пропущен: сотрудников отключают и возвращают через «Уход сотрудников», по одному.',
     few: '{count} сотрудника пропущены: сотрудников отключают и возвращают через «Уход сотрудников», по одному.',
@@ -21,9 +23,11 @@ export const offboarding: RuTable<typeof en> = {
   'offboarding.dialog.close': 'Закрыть',
   'offboarding.dialog.back': 'Назад',
   'offboarding.dialog.retry': 'Попробовать ещё раз',
+  'offboarding.dialog.alreadyOff': '{name} уже отключён, и за ним больше ничего не числится. Запись — в разделе «Уход сотрудников».',
 
   'offboarding.handover.title': 'Сначала передайте дела',
   'offboarding.handover.intro': 'За {name} ещё числится то, что ниже. Выберите, кто примет каждое, и передайте. Уход можно оформить, когда ничего не останется.',
+  'offboarding.handover.introAlreadyOff': '{name} уже отключён, но это всё ещё числится за ним. Выберите, кто примет каждое, и передайте.',
   'offboarding.handover.group_teacher': 'Группа (педагог)',
   'offboarding.handover.group_curator': 'Группа (куратор)',
   'offboarding.handover.lesson': 'Урок',
@@ -159,6 +163,7 @@ export const offboarding: RuTable<typeof en> = {
   'offboarding.page.view': 'Открыть',
   'offboarding.page.cancel': 'Отменить',
   'offboarding.page.confirm': 'Подтвердить',
+  'offboarding.page.reassign': 'Передать',
   'offboarding.page.more': 'Показать ещё',
 
   'offboarding.record.back': 'Все записи',
@@ -197,8 +202,14 @@ export const offboarding: RuTable<typeof en> = {
   'offboarding.record.handedTo': '{item} → {name}',
   'offboarding.record.tickedBy': '{name}, {date}',
   'offboarding.record.openItems': 'Ещё не передано',
-  'offboarding.record.openItemsIntro': 'После экстренного отключения это осталось за сотрудником. Передайте в группе или курсе — список очистится сам.',
+  'offboarding.record.openItemsIntro': 'После экстренного отключения это осталось за сотрудником. Передайте здесь или в самой группе или курсе — список очистится сам.',
   'offboarding.record.openItemsDone': 'Всё передано.',
+  'offboarding.record.openItemTo': 'теперь у {name}',
+  'offboarding.record.openItemEnded': 'закончилось',
+  'offboarding.record.openItemDone': 'готово',
+  'offboarding.record.handOverLeft': 'Передать оставшееся',
+  'offboarding.record.retry': 'Повторить',
+  'offboarding.record.retried': 'Запускаем ещё раз.',
 
   'offboarding.checklist.workspace': 'Приостановить аккаунт Google Workspace {email}',
   'offboarding.checklist.amocrm': 'Передать сделки и отключить пользователя amoCRM, если он есть',
@@ -207,6 +218,9 @@ export const offboarding: RuTable<typeof en> = {
   'offboarding.checklist.support': 'Support не отключил профиль — отключите в Support',
   'offboarding.checklist.crm': 'CRM не отключила сотрудника — отключите в CRM',
   'offboarding.checklist.zitadel_ielts': 'Единый вход и IELTS не отключились — отключите в Zitadel и IELTS',
+  'offboarding.checklist.sat_native': 'Группы на платформе SAT всё ещё за ним — передайте их в админке SAT',
+  'offboarding.checklist.crm_tasks_error': 'CRM не смогла передать его задачи куратора ({tasks_error}) — передайте в CRM',
+  'offboarding.checklist.crm_pay_profile_error': 'CRM не смогла закрыть его профиль оплаты ({pay_profile_error}) — закройте в CRM',
 
   // ── Настройки (pages/admin/OffboardingSettingsPage) ───────────────────────
   'offboarding.settings.title': 'Настройки ухода сотрудников',

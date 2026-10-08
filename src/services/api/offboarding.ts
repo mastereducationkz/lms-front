@@ -33,8 +33,10 @@ export type StepStatus = 'pending' | 'done' | 'failed' | 'refused' | 'skipped';
 export interface OffboardingConfig {
   enabled: boolean;
   reasons: ReasonCode[];
+  /** Always all three; whether THIS caller may use `emergency` is `can_emergency`. */
   modes: OffboardingMode[];
   programmes: Programme[];
+  can_emergency: boolean;
 }
 
 export interface Person {
@@ -67,6 +69,8 @@ export interface BlockerGroup {
   students?: number;
   /** Future class lessons that move with a teacher handover. */
   future_lessons?: number;
+  /** Preview only: the programme default (or the course's head teacher); null when none fits. */
+  suggested_owner?: Person | null;
 }
 
 /** A future lesson that does NOT move with a listed group (substitution, override, webinar…). */
@@ -77,12 +81,14 @@ export interface BlockerLesson {
   group_id?: number | null;
   group_name?: string | null;
   event_type?: string | null;
+  suggested_owner?: Person | null;
 }
 
 export interface BlockerCourse {
   id: number;
   title: string;
   course_type?: string | null;
+  suggested_owner?: Person | null;
 }
 
 export interface SatNativeGroup {
@@ -167,10 +173,15 @@ export interface Handover {
 export interface OpenItem {
   kind: ReassignKind;
   id: number;
-  label?: string | null;
-  group_name?: string | null;
-  resolved?: boolean;
+  label: string;
+  program_type?: string | null;
+  /** Lessons only. */
+  start_at?: string | null;
+  resolved: boolean;
   resolved_at?: string | null;
+  /** `reassigned`: someone else holds it; `ended`: the group finished, the lesson passed or was cancelled. */
+  resolution?: 'reassigned' | 'ended' | null;
+  resolved_to?: { id: number; name: string } | null;
 }
 
 export interface RecordPermissions {
@@ -178,6 +189,8 @@ export interface RecordPermissions {
   confirm: boolean;
   reactivate: boolean;
   tick_checklist: boolean;
+  /** Failed or refused steps this caller may re-run (sat, support, crm). */
+  retry_steps?: StepName[];
 }
 
 export interface OffboardingRecord {
@@ -201,7 +214,10 @@ export interface OffboardingRecord {
   owned_snapshot?: OwnedSnapshot | null;
   handovers?: Handover[];
   blocked_reason?: { blockers: Blockers; at: string } | null;
+  /** Emergency records only: what was left assigned to them (SPEC §12 Q93). */
   open_items?: OpenItem[] | null;
+  /** Completed with an unresolved open item. */
+  needs_reassignment?: boolean;
   created_at: string;
   cancelled_at?: string | null;
   cancelled_by?: Actor | null;
@@ -214,6 +230,8 @@ export interface OffboardingRecord {
 export interface OffboardPreview {
   target: OffboardTarget;
   can_offboard: boolean;
+  /** The caller is an admin and the target may be offboarded; an open record does not prevent it. */
+  can_emergency?: boolean;
   why_not?: { code: string; message: string } | null;
   needs_second_admin: boolean;
   blocked: boolean;
@@ -335,7 +353,7 @@ export function normaliseBlockers(raw: unknown): Blockers {
   };
 }
 
-const DISABLED: OffboardingConfig = { enabled: false, reasons: [], modes: [], programmes: [] };
+const DISABLED: OffboardingConfig = { enabled: false, reasons: [], modes: [], programmes: [], can_emergency: false };
 
 /**
  * The feature switch. Anything but a clear "enabled" — the endpoint missing (backend not
@@ -349,8 +367,9 @@ export async function getOffboardingConfig(): Promise<OffboardingConfig> {
     return {
       enabled: true,
       reasons: list(data.reasons, REASON_CODES),
-      modes: list(data.modes, ['scheduled', 'immediate'] as const),
+      modes: list(data.modes, ['scheduled', 'immediate', 'emergency'] as const),
       programmes: list(data.programmes, PROGRAMMES),
+      can_emergency: data.can_emergency === true,
     };
   } catch {
     return DISABLED;
@@ -392,19 +411,38 @@ export function reactivateOffboarding(id: number): Promise<OffboardingRecord> {
   return call(() => api.post(`${BASE}/${id}/reactivate`));
 }
 
-/** `status`: 'open' (Leaving soon), a list of statuses, or nothing for every record. */
-export async function listOffboardings(
-  status?: 'open' | readonly OffboardingStatus[],
-  page: { limit?: number; offset?: number } = {},
-): Promise<RecordList> {
-  const params: Record<string, string | number> = { ...page };
-  if (status) params.status = typeof status === 'string' ? status : status.join(',');
+/**
+ * A status filter: statuses and the server's tokens `open` («Leaving soon»: awaiting_confirmation,
+ * pending, blocked) and `needs_reassignment` (completed emergency switch-offs with open items).
+ */
+export type ListToken = OffboardingStatus | 'open' | 'needs_reassignment';
+
+export interface ListQuery {
+  /** Several combine with commas; none lists every record. */
+  status?: readonly ListToken[];
+  lms_user_id?: number;
+  crm_user_id?: number;
+  limit?: number;
+  offset?: number;
+}
+
+/** Newest first. */
+export async function listOffboardings({ status, ...rest }: ListQuery = {}): Promise<RecordList> {
+  const params: Record<string, string | number> = Object.fromEntries(
+    Object.entries(rest).filter((entry): entry is [string, number] => entry[1] != null),
+  );
+  if (status?.length) params.status = status.join(',');
   const data = await call<RecordList>(() => api.get(`${BASE}`, { params, cache: false } as never));
   return { items: Array.isArray(data.items) ? data.items : [], total: data.total ?? 0 };
 }
 
 export function getOffboarding(id: number): Promise<OffboardingRecord> {
   return call(() => api.get(`${BASE}/${id}`, NO_CACHE));
+}
+
+/** Re-run a failed or refused sat / support / crm step once its cause is fixed (admins). */
+export function retryStep(id: number, step: StepName): Promise<OffboardingRecord> {
+  return call(() => api.post(`${BASE}/${id}/steps/${step}/retry`));
 }
 
 export function setChecklistItem(id: number, itemId: string, done: boolean): Promise<OffboardingRecord> {

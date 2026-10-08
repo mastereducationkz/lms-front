@@ -51,22 +51,23 @@ export interface HandoverItem {
 export const itemKey = (kind: ReassignKind, id: number) => `${kind}:${id}`;
 
 /**
- * The reassignable blockers in the order the dialog lists them, each with its suggested owner.
- * The server lists only lessons that do not move with a listed group (substitutions, overrides,
- * webinars), so every lesson here needs its own choice.
+ * The reassignable blockers in the order the dialog lists them, each with its suggested owner
+ * (inline on the item; the `suggested_owners` list as a fallback). The server lists only lessons
+ * that do not move with a listed group (substitutions, overrides, webinars), so every lesson
+ * here needs its own choice.
  */
-export function handoverItems(preview: Pick<OffboardPreview, 'blockers' | 'suggested_owners'>): HandoverItem[] {
-  const suggested = new Map((preview.suggested_owners ?? []).map((s) => [itemKey(s.kind, s.id), s.owner ?? null]));
+export function handoverItems(preview: Pick<OffboardPreview, 'blockers'> & Partial<Pick<OffboardPreview, 'suggested_owners'>>): HandoverItem[] {
+  const listed = new Map((preview.suggested_owners ?? []).map((s) => [itemKey(s.kind, s.id), s.owner ?? null]));
   const { blockers } = preview;
-  const make = (kind: ReassignKind, id: number, label: string, extra: Partial<HandoverItem> = {}): HandoverItem => ({
-    key: itemKey(kind, id), kind, id, label, suggested: suggested.get(itemKey(kind, id)) ?? null, ...extra,
+  const make = (kind: ReassignKind, id: number, label: string, inline: Person | null | undefined, extra: Partial<HandoverItem> = {}): HandoverItem => ({
+    key: itemKey(kind, id), kind, id, label, suggested: inline ?? listed.get(itemKey(kind, id)) ?? null, ...extra,
   });
   return [
     ...blockers.groups.map((g) => g.role === 'curator'
-      ? make('group_curator', g.id, g.name)
-      : make('group_teacher', g.id, g.name, { movingLessons: g.future_lessons ?? 0 })),
-    ...blockers.lessons.map((l) => make('lesson', l.id, l.title, { startAt: l.start_at, groupName: l.group_name ?? null })),
-    ...blockers.courses.map((c) => make('course_head', c.id, c.title)),
+      ? make('group_curator', g.id, g.name, g.suggested_owner)
+      : make('group_teacher', g.id, g.name, g.suggested_owner, { movingLessons: g.future_lessons ?? 0 })),
+    ...blockers.lessons.map((l) => make('lesson', l.id, l.title, l.suggested_owner, { startAt: l.start_at, groupName: l.group_name ?? null })),
+    ...blockers.courses.map((c) => make('course_head', c.id, c.title, c.suggested_owner)),
   ];
 }
 
@@ -118,11 +119,6 @@ export function hasBlockers(blockers: Blockers): boolean {
   return blockers.groups.length + blockers.lessons.length + blockers.courses.length + blockers.sat_native.length > 0;
 }
 
-/** Emergency switch-off is for admins, and only when the server offers it (SPEC §12 Q93). */
-export function mayUseEmergency(viewerRole: string | null | undefined, modes: readonly OffboardingMode[]): boolean {
-  return viewerRole === 'admin' && modes.includes('emergency');
-}
-
 /** Items an emergency switch-off left assigned and nobody has taken over yet. */
 export function unresolvedItems(record: Pick<OffboardingRecord, 'open_items'>): NonNullable<OffboardingRecord['open_items']> {
   return (record.open_items ?? []).filter((item) => !item.resolved);
@@ -140,20 +136,40 @@ export function latestCompletedRecord(records: OffboardingRecord[], lmsUserId: n
  * staff are switched off through the Offboard dialog and brought back with Reactivate.
  */
 export function refusalRoute(error: unknown): { kind: 'offboard' } | { kind: 'reactivate'; recordId: number | null } | null {
-  const data = (error as { response?: { status?: number; data?: { reason_code?: unknown; reason_details?: unknown } } })?.response?.data;
-  const code = data?.reason_code ?? (data as { code?: unknown } | undefined)?.code;
-  if (code === 'use_offboarding') return { kind: 'offboard' };
-  if (code !== 'use_reactivate') return null;
+  const data = (error as { response?: { data?: { reason_code?: unknown; reason_details?: unknown } } })?.response?.data;
+  if (data?.reason_code === 'use_offboarding') return { kind: 'offboard' };
+  if (data?.reason_code !== 'use_reactivate') return null;
   const recordId = (data?.reason_details as { record_id?: unknown } | undefined)?.record_id;
   return { kind: 'reactivate', recordId: typeof recordId === 'number' ? recordId : null };
 }
 
 /** Where the dialog is, given what the preview says. */
-export type DialogStage = 'not_allowed' | 'open_record' | 'handover' | 'details';
+export type DialogStage = 'not_allowed' | 'open_record' | 'handover' | 'details' | 'already_off';
 
-export function dialogStage(preview: Pick<OffboardPreview, 'open_record' | 'can_offboard' | 'blockers'>): DialogStage {
-  if (preview.open_record && OPEN_STATUSES.includes(preview.open_record.status)) return 'open_record';
+type StagePreview = Pick<OffboardPreview, 'open_record' | 'can_offboard' | 'blockers'>
+  & Partial<Pick<OffboardPreview, 'can_emergency'>> & { target?: { is_active?: boolean } };
+
+/** Someone already switched off (an emergency, the CRM, by hand): only what is still theirs can be done. */
+export const alreadyOff = (preview: StagePreview) => preview.target?.is_active === false;
+
+/**
+ * Emergency (SPEC §12 Q93, admins: `can_emergency`) is offered while there is something an
+ * ordinary offboarding would wait for — things still owned, or an open record, which the server
+ * then turns into the emergency switch-off. With nothing in the way it is the same as «immediately».
+ */
+export function offersEmergency(preview: StagePreview): boolean {
+  if (!preview.can_emergency || alreadyOff(preview)) return false;
+  return hasBlockers(preview.blockers) || isOpenRecord(preview);
+}
+
+const isOpenRecord = (preview: StagePreview) => !!preview.open_record && OPEN_STATUSES.includes(preview.open_record.status);
+
+/** Where the dialog is: `mode` is the form's, so choosing emergency skips the hand-over and an open record. */
+export function dialogStage(preview: StagePreview, mode?: OffboardingMode): DialogStage {
+  if (mode === 'emergency' && offersEmergency(preview)) return 'details';
+  if (isOpenRecord(preview)) return 'open_record';
   if (!preview.can_offboard) return 'not_allowed';
+  if (alreadyOff(preview)) return hasBlockers(preview.blockers) ? 'handover' : 'already_off';
   return hasBlockers(preview.blockers) ? 'handover' : 'details';
 }
 
@@ -220,22 +236,24 @@ export function recordActions(record: OffboardingRecord, viewerId: number | null
     confirm: record.status === 'awaiting_confirmation' && viewerId != null && record.requested_by?.lms_user_id !== viewerId,
     reactivate: record.status === 'completed',
     tick_checklist: true,
+    retry_steps: [],
   };
 }
 
 /**
- * A checklist line in the reader's language: the catalog's sentence for its kind, filled from
- * `params`, or the server's English text when the kind is new or a blank is missing.
+ * A checklist line in the reader's language: the catalog's sentence for its id (sat_native,
+ * crm_tasks_error, …) or else its kind, filled from `params`; the server's English text when
+ * neither is known or a blank would stay empty.
  */
 export function checklistText(
-  item: Pick<ChecklistItem, 'kind' | 'text' | 'params'>,
+  item: Pick<ChecklistItem, 'kind' | 'text' | 'params'> & Partial<Pick<ChecklistItem, 'id'>>,
   translate: (key: string, params: Record<string, string | number>) => string | null,
 ): string {
   const params: Record<string, string | number> = {};
   for (const [k, v] of Object.entries(item.params ?? {})) {
     if (typeof v === 'string' || typeof v === 'number') params[k] = v;
   }
-  const text = translate(`offboarding.checklist.${item.kind}`, params);
+  const text = (item.id && translate(`offboarding.checklist.${item.id}`, params)) || translate(`offboarding.checklist.${item.kind}`, params);
   return text && !/\{\w+\}/.test(text) ? text : item.text;
 }
 

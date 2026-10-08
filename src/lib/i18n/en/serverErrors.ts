@@ -56,6 +56,8 @@ export const serverErrors = {
   'serverErrors.offboarding_item_scope': 'This is outside what you manage',
   'serverErrors.offboarding_item_not_found': 'Not found',
   'serverErrors.offboarding_item_failed': 'Something went wrong with this item; nothing was changed',
+  'serverErrors.offboarding_emergency_admins_only': 'Only an admin can switch someone off in an emergency',
+  'serverErrors.offboarding_step_not_retryable': 'This step cannot be run again',
   'serverErrors.staff_leaving': '{name} is leaving on {last_day}',
   'serverErrors.use_offboarding': 'Staff are switched off through offboarding: use Offboard',
   'serverErrors.use_reactivate': 'Bring them back with Reactivate on their offboarding record',

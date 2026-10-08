@@ -4,6 +4,8 @@ export const offboarding = {
   // ── Offboard dialog (components/offboarding) ─────────────────────────────
   'offboarding.action.offboard': 'Offboard',
   'offboarding.userForm.hint': 'Staff accounts are switched off through offboarding, which hands over their groups first.',
+  'offboarding.left.teacher': 'Teacher left — reassign',
+  'offboarding.left.curator': 'Curator left — reassign',
   'offboarding.bulk.staffSkipped': {
     one: '{count} staff member left out: staff are switched off and on through Offboarding, one at a time.',
     other: '{count} staff members left out: staff are switched off and on through Offboarding, one at a time.',
@@ -18,9 +20,11 @@ export const offboarding = {
   'offboarding.dialog.close': 'Close',
   'offboarding.dialog.back': 'Back',
   'offboarding.dialog.retry': 'Try again',
+  'offboarding.dialog.alreadyOff': '{name} is already switched off and owns nothing more. Their record is under Offboarding.',
 
   'offboarding.handover.title': 'Hand over first',
   'offboarding.handover.intro': '{name} still owns the items below. Choose who takes over each one, then reassign. Offboarding is available once nothing is left.',
+  'offboarding.handover.introAlreadyOff': '{name} is already switched off, but these are still theirs. Choose who takes over each one, then reassign.',
   'offboarding.handover.group_teacher': 'Group (teacher)',
   'offboarding.handover.group_curator': 'Group (curator)',
   'offboarding.handover.lesson': 'Lesson',
@@ -147,6 +151,7 @@ export const offboarding = {
   'offboarding.page.view': 'Open',
   'offboarding.page.cancel': 'Cancel',
   'offboarding.page.confirm': 'Confirm',
+  'offboarding.page.reassign': 'Reassign',
   'offboarding.page.more': 'Show more',
 
   'offboarding.record.back': 'All offboarding',
@@ -183,8 +188,14 @@ export const offboarding = {
   'offboarding.record.handedTo': '{item} → {name}',
   'offboarding.record.tickedBy': '{name}, {date}',
   'offboarding.record.openItems': 'Still to reassign',
-  'offboarding.record.openItemsIntro': 'The emergency switch-off left these assigned. Reassign them in the group or course; this list clears itself.',
+  'offboarding.record.openItemsIntro': 'The emergency switch-off left these assigned to them. Hand them over here, or in the group or course; the list clears itself.',
   'offboarding.record.openItemsDone': 'Everything has been reassigned.',
+  'offboarding.record.openItemTo': 'now with {name}',
+  'offboarding.record.openItemEnded': 'ended',
+  'offboarding.record.openItemDone': 'done',
+  'offboarding.record.handOverLeft': 'Hand over what is left',
+  'offboarding.record.retry': 'Try again',
+  'offboarding.record.retried': 'Running it again.',
 
   'offboarding.checklist.workspace': 'Suspend the Google Workspace account {email}',
   'offboarding.checklist.amocrm': 'Deactivate their amoCRM user, if any, after moving their leads',
@@ -193,6 +204,9 @@ export const offboarding = {
   'offboarding.checklist.support': 'Support did not switch them off: do it in Support',
   'offboarding.checklist.crm': 'The CRM did not switch them off: do it in the CRM',
   'offboarding.checklist.zitadel_ielts': 'Sign-in and IELTS were not switched off: deactivate them in Zitadel and IELTS',
+  'offboarding.checklist.sat_native': 'Their SAT-platform groups are still theirs: reassign them in SAT admin',
+  'offboarding.checklist.crm_tasks_error': 'The CRM could not move their curator tasks ({tasks_error}): move them in the CRM',
+  'offboarding.checklist.crm_pay_profile_error': 'The CRM could not close their pay profile ({pay_profile_error}): close it in the CRM',
 
   // ── Settings (pages/admin/OffboardingSettingsPage) ───────────────────────
   'offboarding.settings.title': 'Offboarding settings',

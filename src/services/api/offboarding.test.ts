@@ -12,6 +12,7 @@ import {
   listOffboardings,
   previewOffboarding,
   reassignOwned,
+  retryStep,
   saveOffboardingSettings,
   setChecklistItem,
 } from './offboarding';
@@ -31,8 +32,8 @@ beforeEach(() => {
 
 describe('the feature switch', () => {
   it('is on only when the server says so, with its lists', async () => {
-    get.mockResolvedValue({ data: { enabled: true, reasons: ['resigned'], modes: ['scheduled', 'immediate'], programmes: ['sat'] } });
-    expect(await getOffboardingConfig()).toEqual({ enabled: true, reasons: ['resigned'], modes: ['scheduled', 'immediate'], programmes: ['sat'] });
+    get.mockResolvedValue({ data: { enabled: true, reasons: ['resigned'], modes: ['scheduled', 'immediate', 'emergency'], programmes: ['sat'], can_emergency: true } });
+    expect(await getOffboardingConfig()).toEqual({ enabled: true, reasons: ['resigned'], modes: ['scheduled', 'immediate', 'emergency'], programmes: ['sat'], can_emergency: true });
     expect(get.mock.calls[0][0]).toBe('/admin/offboarding/config');
   });
 
@@ -49,7 +50,8 @@ describe('the feature switch', () => {
     get.mockResolvedValue({ data: { enabled: true } });
     const config = await getOffboardingConfig();
     expect(config.reasons).toEqual(['resigned', 'dismissed', 'contract_ended', 'test_or_duplicate', 'other']);
-    expect(config.modes).toEqual(['scheduled', 'immediate']);
+    expect(config.modes).toEqual(['scheduled', 'immediate', 'emergency']);
+    expect(config.can_emergency).toBe(false);
   });
 });
 
@@ -106,12 +108,22 @@ describe('requests and refusals', () => {
 });
 
 describe('lists and settings', () => {
-  it('asks for «Leaving soon» as status=open and history as a comma list', async () => {
+  it('sends statuses and tokens as one comma list, with the person and page filters', async () => {
     get.mockResolvedValue({ data: { items: [{ id: 1 }], total: 1 } });
-    expect(await listOffboardings('open')).toEqual({ items: [{ id: 1 }], total: 1 });
+    expect(await listOffboardings({ status: ['open'] })).toEqual({ items: [{ id: 1 }], total: 1 });
     expect(get.mock.calls[0][1].params).toEqual({ status: 'open' });
-    await listOffboardings(['completed', 'cancelled'], { limit: 100, offset: 100 });
-    expect(get.mock.calls[1][1].params).toEqual({ status: 'completed,cancelled', limit: 100, offset: 100 });
+    await listOffboardings({ status: ['open', 'needs_reassignment'], limit: 100, offset: 100 });
+    expect(get.mock.calls[1][1].params).toEqual({ status: 'open,needs_reassignment', limit: 100, offset: 100 });
+    await listOffboardings({ status: ['completed'], lms_user_id: 123 });
+    expect(get.mock.calls[2][1].params).toEqual({ status: 'completed', lms_user_id: 123 });
+    await listOffboardings();
+    expect(get.mock.calls[3][1].params).toEqual({});
+  });
+
+  it('re-runs a step by name', async () => {
+    post.mockResolvedValue({ data: { id: 7 } });
+    await retryStep(7, 'support');
+    expect(post.mock.calls[0][0]).toBe('/admin/offboarding/7/steps/support/retry');
   });
 
   it('saves only the keys sent', async () => {

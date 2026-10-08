@@ -5,6 +5,7 @@ import { PersonSelect } from './parts';
 import { toast } from '../Toast';
 import {
   allToOptions,
+  alreadyOff,
   handoverItems,
   initialAssignments,
   mergeAssignments,
@@ -86,8 +87,10 @@ export default function HandoverStep({ preview, onRecheck }: HandoverStepProps) 
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="font-semibold text-foreground">{t('offboarding.handover.title')}</h3>
-        <p className="text-sm text-muted-foreground">{t('offboarding.handover.intro', { name: target.name })}</p>
+        <h3 className="font-semibold text-foreground">{t(alreadyOff(preview) ? 'offboarding.record.handOverLeft' : 'offboarding.handover.title')}</h3>
+        <p className="text-sm text-muted-foreground">
+          {t(alreadyOff(preview) ? 'offboarding.handover.introAlreadyOff' : 'offboarding.handover.intro', { name: target.name })}
+        </p>
       </div>
 
       {items.length > 0 && lmsUserId != null && (
