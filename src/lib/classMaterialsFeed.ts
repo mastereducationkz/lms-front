@@ -24,9 +24,11 @@ export function mergeFeedLessons(existing: FeedLessonEntry[], incoming: FeedLess
   return merged;
 }
 
-/** `getClassMaterials(id)`'s richer payload, cut down to the three fields a feed card needs. */
-export function toFeedEntry(data: Pick<LessonMaterials, 'lesson' | 'items' | 'pending_after_end'>): FeedLessonEntry {
-  return { lesson: data.lesson, items: data.items, pending_after_end: data.pending_after_end };
+/** `getClassMaterials(id)`'s richer payload, cut down to the fields a feed card needs. */
+export function toFeedEntry(
+  data: Pick<LessonMaterials, 'lesson' | 'items' | 'pending_after_end'> & Partial<Pick<LessonMaterials, 'can_manage'>>,
+): FeedLessonEntry {
+  return { lesson: data.lesson, items: data.items, pending_after_end: data.pending_after_end, can_manage: data.can_manage };
 }
 
 /**

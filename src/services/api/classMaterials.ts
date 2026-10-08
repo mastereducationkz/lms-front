@@ -87,6 +87,9 @@ export interface FeedLessonEntry {
   lesson: LessonBrief;
   items: MaterialItem[];
   pending_after_end: number;
+  /** The viewer may attach materials to this lesson (the server's `can_manage`). A lesson with no
+   *  items reaches a manager's feed too, so the card can offer the first "Add". */
+  can_manage?: boolean;
 }
 
 export interface FeedPage {
@@ -182,6 +185,21 @@ export async function listMyMaterialLessons(
   if (excludeEventId !== undefined) params.exclude_event_id = excludeEventId;
   const response = await api.get('/class-materials/my-lessons', { params, cache: false } as never);
   return response.data as { lessons: { lesson: LessonBrief; item_count: number }[] };
+}
+
+export interface ManageableLesson {
+  lesson: LessonBrief;
+  item_count: number;
+}
+
+/** The lessons of one group the viewer may attach materials to, nearest to today first. */
+export async function listManageableLessons(groupId: number, limit?: number): Promise<ManageableLesson[]> {
+  const params: Record<string, number> = { group_id: groupId };
+  if (limit !== undefined) params.limit = limit;
+  const response = await api.get('/class-materials/manageable-lessons', { params, cache: false } as never);
+  const lessons = (response?.data as { lessons?: unknown } | undefined)?.lessons;
+  if (!Array.isArray(lessons)) throw new Error('Unexpected class-materials response');
+  return lessons as ManageableLesson[];
 }
 
 export async function updateClassMaterialItem(

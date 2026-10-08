@@ -50,6 +50,12 @@ describe('toFeedEntry', () => {
     };
     expect(toFeedEntry(data)).toEqual({ lesson: lesson(5), items: [], pending_after_end: 2 });
   });
+
+  it('carries can_manage, so a deep-linked card pinned into the feed offers "Add" too', () => {
+    const data = { lesson: lesson(5), items: [], pending_after_end: 0, can_manage: true };
+    expect(toFeedEntry(data).can_manage).toBe(true);
+    expect(toFeedEntry({ ...data, can_manage: false }).can_manage).toBe(false);
+  });
 });
 
 describe('buildVisibleLessons', () => {
