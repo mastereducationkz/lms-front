@@ -26,6 +26,7 @@ import UserAvatar from '@/components/mascot/UserAvatar';
 import { formatDate } from '@/lib/i18n';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/curatorPages';
+import OffboardButton from '../components/offboarding/OffboardButton';
 
 interface Student {
     id: number;
@@ -112,7 +113,7 @@ export default function HeadCuratorCuratorPage() {
                 >
                     <ChevronLeft className="mr-2 h-4 w-4" /> {t('curatorPages.curatorDetail.backToDashboard')}
                 </Button>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-4">
                         <Avatar className="h-14 w-14">
                             <AvatarFallback className="bg-brand-subtle text-brand-subtle-foreground font-bold text-xl">
@@ -124,6 +125,7 @@ export default function HeadCuratorCuratorPage() {
                             <p className="text-muted-foreground">{curator.email}</p>
                         </div>
                     </div>
+                    <OffboardButton userId={curator.id} name={curator.name} role="curator" />
                 </div>
             </div>
 

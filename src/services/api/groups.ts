@@ -76,22 +76,16 @@ export async function revokeCourseAccessFromGroup(courseId: string, groupId: num
   }
 }
 
+// Create, update and assign-teacher let the axios error through: a refusal such as 409
+// staff_leaving («Aida is leaving on …», SPEC §3) carries the reason the screen must show.
 export async function createGroup(groupData: CreateGroupRequest): Promise<Group> {
-  try {
-    const response = await api.post('/admin/groups', groupData);
-    return response.data;
-  } catch (error) {
-    throw new Error('Failed to create group');
-  }
+  const response = await api.post('/admin/groups', groupData);
+  return response.data;
 }
 
 export async function updateGroup(groupId: number, groupData: UpdateGroupRequest): Promise<Group> {
-  try {
-    const response = await api.put(`/admin/groups/${groupId}`, groupData);
-    return response.data;
-  } catch (error) {
-    throw new Error('Failed to update group');
-  }
+  const response = await api.put(`/admin/groups/${groupId}`, groupData);
+  return response.data;
 }
 
 export async function deleteGroup(groupId: number): Promise<void> {
@@ -103,11 +97,7 @@ export async function deleteGroup(groupId: number): Promise<void> {
 }
 
 export async function assignTeacherToGroup(groupId: number, teacherId: number): Promise<void> {
-  try {
-    await api.post(`/admin/groups/${groupId}/assign-teacher`, { teacher_id: teacherId });
-  } catch (error) {
-    throw new Error('Failed to assign teacher to group');
-  }
+  await api.post(`/admin/groups/${groupId}/assign-teacher`, { teacher_id: teacherId });
 }
 
 export async function getGroupStudents(groupId: number): Promise<User[]> {
