@@ -41,6 +41,7 @@ import type { Event, CreateEventRequest, UpdateEventRequest, EventType, Group, C
 import { useAuth } from '../contexts/AuthContext';
 import { toDatetimeLocal, fromDatetimeLocalKZ } from '../lib/datetime';
 import { roleLabel } from '@/lib/roleLabel';
+import { loadEventHosts } from '@/lib/eventHosts';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/adminTools';
 import '@/lib/i18n/catalogs/adminPages';
@@ -113,19 +114,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
       setCourses(Array.isArray(coursesResponse) ? coursesResponse : (coursesResponse.data || []));
 
       // Load teachers
-      const usersData = await getUsers({ role: 'teacher' });
-      const adminsData = await getUsers({ role: 'admin' });
-      const curatorsData = await getUsers({ role: 'curator' });
-      
-      const allTeachers = [
-        ...(Array.isArray(usersData) ? usersData : []),
-        ...(Array.isArray(adminsData) ? adminsData : []),
-        ...(Array.isArray(curatorsData) ? curatorsData : [])
-      ];
-      
-      // Filter unique by ID
-      const uniqueTeachers = Array.from(new Map(allTeachers.map(item => [item.id, item])).values());
-      setTeachers(uniqueTeachers);
+      setTeachers(await loadEventHosts(getUsers));
     } catch (error) {
       console.error('Failed to load data:', error);
     }
