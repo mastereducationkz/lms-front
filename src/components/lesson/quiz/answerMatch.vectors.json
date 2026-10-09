@@ -73,7 +73,7 @@
  },
  {
   "key": "-5",
-  "answer": "−5",
+  "answer": "\u22125",
   "accepted": true,
   "note": "unicode minus"
  },
@@ -271,7 +271,7 @@
  },
  {
   "key": "45",
-  "answer": "45°",
+  "answer": "45\u00b0",
   "accepted": true,
   "note": "degree sign"
  },
@@ -355,7 +355,7 @@
  },
  {
   "key": "1000",
-  "answer": "1 000",
+  "answer": "1\u00a0000",
   "accepted": true,
   "note": "non-breaking space thousands"
  },
@@ -403,7 +403,7 @@
  },
  {
   "key": "17",
-  "answer": "≈17",
+  "answer": "\u224817",
   "accepted": false,
   "note": "approximately sign is not accepted"
  },
@@ -448,5 +448,41 @@
   "answer": "",
   "accepted": false,
   "note": "empty alternatives never match an empty answer"
+ },
+ {
+  "key": "NO CHANGE \ufeff",
+  "answer": "no change",
+  "accepted": true,
+  "note": "a key pasted with an invisible BOM at its end (production keys have it)"
+ },
+ {
+  "key": "5\ufeff",
+  "answer": "5",
+  "accepted": true,
+  "note": "BOM after a number in the key"
+ },
+ {
+  "key": "5",
+  "answer": "\ufeff5",
+  "accepted": true,
+  "note": "BOM before a typed number"
+ },
+ {
+  "key": "5",
+  "answer": "5\u00a0",
+  "accepted": true,
+  "note": "non-breaking space around a typed number"
+ },
+ {
+  "key": "a|b\ufeff",
+  "answer": "B",
+  "accepted": true,
+  "note": "BOM inside an alternative"
+ },
+ {
+  "key": "12\u200b",
+  "answer": "12",
+  "accepted": false,
+  "note": "a zero-width space is not trimmed, in the browser either"
  }
 ]
