@@ -1,0 +1,121 @@
+name: Staging PR
+
+# A pull request labelled `staging` is deployed to staging (deploy-staging.yml), again on every
+# push to it, and the PR gets one comment saying what staging runs. When the PR is merged or
+# closed, or the label comes off, staging goes back to the default branch, if it still runs this
+# PR's branch. The QA gate (qa-gate.yml) then waits for `/qa-ok`. lms-backend
+# deploy/staging/README.md, «Staging from a pull request».
+on:
+  pull_request:
+    types: [labeled, unlabeled, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+  packages: write
+  deployments: write
+  pull-requests: write
+
+concurrency:
+  group: staging-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    # Branches of this repository only: a fork's PR never gets the deploy key.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (contains(github.event.pull_request.labels.*.name, 'staging') ||
+       (github.event.action == 'unlabeled' && github.event.label.name == 'staging'))
+    runs-on: ubuntu-latest
+    outputs:
+      action: ${{ steps.plan.outputs.action }}
+      previous: ${{ steps.plan.outputs.previous }}
+    steps:
+      - id: plan
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT: ${{ github.event.action }}
+          LABEL: ${{ github.event.label.name }}
+          BRANCH: ${{ github.head_ref }}
+          DEFAULT: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          # What staging runs now: the newest successful staging deployment of this repo.
+          current=""
+          for id in $(gh api "repos/$GITHUB_REPOSITORY/deployments?environment=staging&per_page=20" --jq '.[].id'); do
+            state="$(gh api "repos/$GITHUB_REPOSITORY/deployments/$id/statuses?per_page=1" --jq '.[0].state // ""')"
+            if [ "$state" = success ]; then
+              current="$(gh api "repos/$GITHUB_REPOSITORY/deployments/$id" --jq '.payload.branch // .description // ""')"
+              break
+            fi
+          done
+          case "$EVENT" in
+            labeled)   [ "$LABEL" = staging ] && action=deploy || action=none ;;
+            synchronize|reopened) action=deploy ;;
+            closed|unlabeled)
+              [ "$EVENT" = closed ] || [ "$LABEL" = staging ] || { echo "action=none" >> "$GITHUB_OUTPUT"; exit 0; }
+              [ "$current" = "$BRANCH" ] && action=restore || action=none ;;
+            *) action=none ;;
+          esac
+          previous=""
+          if [ "$action" = deploy ] && [ -n "$current" ] && [ "$current" != "$BRANCH" ] && [ "$current" != "$DEFAULT" ]; then
+            previous="$current"
+          fi
+          echo "staging runs '$current'; this PR's branch '$BRANCH'; action $action"
+          { echo "action=$action"; echo "previous=$previous"; } >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: plan
+    if: needs.plan.outputs.action == 'deploy'
+    uses: ./.github/workflows/deploy-staging.yml
+    with:
+      branch: ${{ github.head_ref }}
+    secrets: inherit
+
+  restore:
+    needs: plan
+    if: needs.plan.outputs.action == 'restore'
+    uses: ./.github/workflows/deploy-staging.yml
+    with:
+      branch: ${{ github.event.repository.default_branch }}
+    secrets: inherit
+
+  report:
+    needs: [plan, deploy]
+    if: always() && needs.plan.outputs.action == 'deploy'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          BRANCH: ${{ github.head_ref }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+          RESULT: ${{ needs.deploy.result }}
+          PREVIOUS: ${{ needs.plan.outputs.previous }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          URL: https://stage-lms.mastereducation.kz
+        run: |
+          set -euo pipefail
+          marker="<!-- staging-bot -->"
+          if [ "$RESULT" = success ]; then
+            body="$marker
+          **На staging:** \`$BRANCH\` @ \`${SHA:0:7}\` → $URL
+
+          Проверьте и напишите \`/qa-ok\` отдельным комментарием: проверка «QA approved» станет зелёной. Новый push выкатится сам и снова попросит \`/qa-ok\`."
+          else
+            body="$marker
+          **Не удалось выкатить на staging** \`$BRANCH\` @ \`${SHA:0:7}\`: $RUN"
+          fi
+          if [ -n "$PREVIOUS" ]; then
+            body="$body
+
+          ⚠️ До этого на staging была ветка \`$PREVIOUS\`: её проверка прервана."
+          fi
+          body="$(printf '%s\n' "$body" | sed 's/^          //')"
+          id="$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments?per_page=100" \
+                 --jq "[.[] | select(.body | startswith(\"$marker\"))][0].id // empty")"
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -f body="$body" >/dev/null
+          else
+            gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -f body="$body" >/dev/null
+          fi

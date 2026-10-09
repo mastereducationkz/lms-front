@@ -12,10 +12,13 @@ on:
         description: "Branch to deploy"
         required: true
         default: main
+  # staging-pr.yml: a PR labelled `staging`, and the return to the default branch afterwards.
+  workflow_call:
+    inputs:
+      branch:
+        type: string
+        required: true
 
-concurrency:
-  group: deploy-staging
-  cancel-in-progress: false
 
 jobs:
   build:
@@ -59,9 +62,13 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
     # A job of its own so the token that goes to the host can only read packages.
     permissions:
       packages: read
+      deployments: write
     env:
       NETCUP_HOST: 159.195.6.160
       HAS_KEY: ${{ secrets.STAGING_DEPLOY_KEY != '' && secrets.STAGING_KNOWN_HOSTS != '' }}
@@ -71,6 +78,20 @@ jobs:
       - name: Not configured yet
         if: env.HAS_KEY != 'true'
         run: 'echo "::warning::STAGING_DEPLOY_KEY / STAGING_KNOWN_HOSTS are not set: image pushed, nothing deployed"'
+
+      - name: Record the deployment
+        id: deployment
+        if: env.HAS_KEY == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          id="$(jq -n --arg ref "$SHA" --arg branch "$BRANCH" \
+              '{ref: $ref, environment: "staging", description: $branch, auto_merge: false,
+                required_contexts: [], payload: {branch: $branch}}' \
+            | gh api "repos/$GITHUB_REPOSITORY/deployments" --input - --jq .id)"
+          gh api "repos/$GITHUB_REPOSITORY/deployments/$id/statuses" -f state=in_progress >/dev/null
+          echo "id=$id" >> "$GITHUB_OUTPUT"
 
       - name: Deploy
         # The key can run only `/root/bin/staging-deploy lms-front` on the host (forced command,
@@ -97,3 +118,13 @@ jobs:
           set -euo pipefail
           curl -fsS --retry 10 --retry-delay 3 --retry-all-errors -o /dev/null https://stage-lms.mastereducation.kz/
           echo "### $BRANCH @ \`${SHA:0:7}\` is on https://stage-lms.mastereducation.kz" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Mark the deployment
+        if: always() && steps.deployment.outputs.id != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ID: ${{ steps.deployment.outputs.id }}
+          STATE: ${{ job.status == 'success' && 'success' || 'failure' }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/deployments/$ID/statuses" \
+            -f state="$STATE" -f environment_url="https://stage-lms.mastereducation.kz" >/dev/null
