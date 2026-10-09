@@ -62,6 +62,7 @@ export interface ExamResultDetail {
 }
 
 import type { BluebookFinalExam } from '../../lib/bluebookFinalExam';
+import type { GroupState } from '../../lib/groupState';
 import type { InitialScore } from '../../lib/examInitial';
 
 export interface ExamResultRow {
@@ -75,6 +76,8 @@ export interface ExamResultRow {
   };
   group_id: number | null;
   group_name: string | null;
+  /** The group shown is over or archived: the student has no running group in this view. */
+  group_is_finished?: boolean;
   planned_test_date: string | null;
   ask_result_on: string | null;
   triage_status: 'pending' | 'due' | 'overdue' | 'completed' | 'unscheduled' | 'declined' | null;
@@ -120,6 +123,8 @@ export interface ExamResultRow {
 export interface ExamResultFilters {
   examType?: 'sat' | 'ielts' | 'nuet';
   groupId?: number;
+  /** Which of the caller's groups to list; left out, the server applies the role's default. */
+  groupState?: GroupState;
   /** Which date the range applies to: the planned administration or the date actually sat. */
   dateField?: 'planned' | 'actual';
   dateFrom?: string;
@@ -136,6 +141,7 @@ export interface ExamResultFilters {
 const toQuery = (f: ExamResultFilters) => ({
   exam_type: f.examType ?? 'sat',
   ...(f.groupId != null ? { group_id: f.groupId } : {}),
+  ...(f.groupState ? { group_state: f.groupState } : {}),
   date_field: f.dateField ?? 'planned',
   ...(f.dateFrom ? { date_from: f.dateFrom } : {}),
   ...(f.dateTo ? { date_to: f.dateTo } : {}),
@@ -245,17 +251,21 @@ export interface ExamGroupOption {
   program_type: string;
   teacher_id: number | null;
   teacher_name: string | null;
+  /** Over or archived. */
+  is_finished?: boolean;
 }
 
 /** Groups the caller may filter exam results by, across all programs. Scope-aware. */
 export async function getExamGroups(params?: {
   program?: 'sat' | 'ielts' | 'nuet';
   search?: string;
+  groupState?: GroupState;
 }): Promise<ExamGroupOption[]> {
   const response = await api.get('/exams/groups', {
     params: {
       ...(params?.program ? { program: params.program } : {}),
       ...(params?.search ? { search: params.search } : {}),
+      ...(params?.groupState ? { group_state: params.groupState } : {}),
     },
   });
   return response.data;
@@ -267,6 +277,8 @@ export interface BluebookGroupOption {
   program_type: string;
   teacher_id: number | null;
   teacher_name: string | null;
+  /** Over or archived. */
+  is_finished?: boolean;
 }
 
 /**
@@ -277,9 +289,12 @@ export interface BluebookGroupOption {
  * head_curator, which made this page look empty for exactly those roles. This endpoint
  * derives scope from the shared row-scope service instead.
  */
-export async function getBluebookGroups(search?: string): Promise<BluebookGroupOption[]> {
+export async function getBluebookGroups(search?: string, groupState?: GroupState): Promise<BluebookGroupOption[]> {
   const response = await api.get('/exams/bluebook/groups', {
-    params: search ? { search } : {},
+    params: {
+      ...(search ? { search } : {}),
+      ...(groupState ? { group_state: groupState } : {}),
+    },
   });
   return response.data;
 }
