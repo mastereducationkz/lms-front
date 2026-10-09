@@ -32,7 +32,14 @@ describe('ExamSectionCell', () => {
   it('puts correct / total first and the score out of 120 under it', async () => {
     await show({ correct: 17, total: 22, scaled: 84 });
     const lines = Array.from(host.querySelectorAll('[data-line]')).map((n) => n.textContent);
-    expect(lines).toEqual(['17/22', '84/120']);
+    expect(lines).toEqual(['17/22', 'est. 84/120']);
+  });
+
+  it('labels the score out of 120 as an estimate, with the explanation as a tooltip', async () => {
+    await show({ correct: 17, total: 22, scaled: 84 });
+    const second = host.querySelectorAll('[data-line]')[1] as HTMLElement;
+    expect(second.textContent).toContain('est.');
+    expect(second.title).toMatch(/not an official result/i);
   });
 
   it('shows one line for SAT and for a NUET result without counts', async () => {
