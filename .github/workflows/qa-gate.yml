@@ -1,0 +1,81 @@
+name: QA gate
+
+# The commit status «QA approved» on a pull request's head commit (lms-backend
+# deploy/staging/README.md, «Staging from a pull request»):
+#   - no `staging` label: success, nothing to check;
+#   - labelled: pending until someone with write access comments `/qa-ok` AFTER that exact
+#     commit was deployed to staging; a new push needs a new deploy and a new `/qa-ok`.
+# Made required on the default branch, it is what keeps a labelled PR from being merged before
+# QA has looked at it on staging.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  issue_comment:
+    types: [created]
+  workflow_run:
+    workflows: ["Staging PR"]
+    types: [completed]
+
+permissions:
+  statuses: write
+  pull-requests: read
+  issues: read
+  deployments: read
+
+jobs:
+  gate:
+    if: >-
+      github.event_name != 'issue_comment' ||
+      (github.event.issue.pull_request && startsWith(github.event.comment.body, '/qa-ok'))
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRS: >-
+            ${{ github.event.pull_request.number || github.event.issue.number ||
+                join(github.event.workflow_run.pull_requests.*.number, ' ') }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+          prs="$PRS"
+          # A workflow_run of a PR from this repo sometimes lists no PR; find it by its branch.
+          if [ -z "${prs// /}" ] && [ -n "$HEAD_BRANCH" ]; then
+            prs="$(gh pr list -R "$GITHUB_REPOSITORY" --head "$HEAD_BRANCH" --state open --json number --jq '.[].number')"
+          fi
+          for pr in $prs; do
+            python3 - "$pr" <<'PY'
+          import json, os, subprocess, sys
+          repo, pr = os.environ["GITHUB_REPOSITORY"], sys.argv[1]
+          def api(path, *args):
+              out = subprocess.run(["gh", "api", path, *args], check=True, capture_output=True, text=True).stdout
+              return json.loads(out) if out.strip() else None
+          p = api(f"repos/{repo}/pulls/{pr}")
+          sha, url = p["head"]["sha"], p["html_url"]
+          labels = {l["name"] for l in p["labels"]}
+          if p["state"] != "open":
+              sys.exit(0)
+          if "staging" not in labels:
+              state, desc = "success", "Не требуется: нет метки staging"
+          else:
+              deployed_at = None  # when this exact commit went live on staging
+              for d in api(f"repos/{repo}/deployments?environment=staging&sha={sha}&per_page=20") or []:
+                  for st in api(f"repos/{repo}/deployments/{d['id']}/statuses?per_page=20") or []:
+                      if st["state"] == "success":
+                          deployed_at = max(deployed_at or "", st["created_at"])
+              if not deployed_at:
+                  state, desc = "pending", f"Ждёт выкатки {sha[:7]} на staging"
+              else:
+                  oks = [c for c in api(f"repos/{repo}/issues/{pr}/comments?per_page=100", "--paginate") or []
+                         if c["body"].strip().lower().startswith("/qa-ok")
+                         and c["author_association"] in ("OWNER", "MEMBER", "COLLABORATOR")
+                         and c["created_at"] > deployed_at]
+                  if oks:
+                      state, desc = "success", f"QA ok: @{oks[-1]['user']['login']} ({sha[:7]})"
+                  else:
+                      state, desc = "pending", f"{sha[:7]} на staging, ждёт /qa-ok"
+          subprocess.run(["gh", "api", f"repos/{repo}/statuses/{sha}", "-f", f"state={state}",
+                          "-f", "context=QA approved", "-f", f"description={desc[:140]}",
+                          "-f", f"target_url={url}"], check=True, capture_output=True)
+          print(f"PR #{pr} {sha[:7]}: {state} — {desc}")
+          PY
+          done
