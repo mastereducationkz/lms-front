@@ -14,7 +14,11 @@ import {
 } from '../services/api/exams';
 import type { MessageKey } from '../lib/i18n';
 import { useT } from '../lib/i18n/react';
+import { useAuth } from '../contexts/AuthContext';
+import { GroupStateFilter } from '../components/exams/GroupStateFilter';
+import { defaultGroupState, groupOptionLabel, type GroupState } from '../lib/groupState';
 import '@/lib/i18n/catalogs/teacherInsights';
+import '@/lib/i18n/catalogs/exams';
 
 /**
  * Staff view: students as rows, Bluebook tests 4-11 as columns, each split into
@@ -66,6 +70,8 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
 
 export default function BluebookGroupGridPage() {
   const t = useT();
+  const { user } = useAuth();
+  const [groupState, setGroupState] = useState<GroupState>(() => defaultGroupState(user?.role));
   const [groups, setGroups] = useState<BluebookGroupOption[]>([]);
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -82,7 +88,7 @@ export default function BluebookGroupGridPage() {
     let cancelled = false;
     const handle = setTimeout(async () => {
       try {
-        const rows = await getBluebookGroups(search.trim() || undefined);
+        const rows = await getBluebookGroups(search.trim() || undefined, groupState);
         if (cancelled) return;
         setGroups(rows);
         // Only auto-select on the very first load; re-selecting on every search would
@@ -99,7 +105,7 @@ export default function BluebookGroupGridPage() {
     }, firstLoad.current ? 0 : 300);
 
     return () => { cancelled = true; clearTimeout(handle); };
-  }, [search]);
+  }, [search, groupState]);
 
   const load = useCallback(async (id: number) => {
     setLoading(true);
@@ -158,6 +164,10 @@ export default function BluebookGroupGridPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* The grid on screen belongs to the old list: start over so the first group of the new one opens. */}
+          <GroupStateFilter value={groupState} onChange={(next) => {
+            setGroupState(next); setGroupId(null); setGrid(null); setGroupsLoading(true); firstLoad.current = true;
+          }} />
           <div className="relative">
             <Search
               className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
@@ -184,7 +194,7 @@ export default function BluebookGroupGridPage() {
             {groups.length === 0 && <option value="">{t('teacherInsights.bluebook.noMatchingGroups')}</option>}
             {groups.map((g) => (
               <option key={g.id} value={g.id}>
-                {g.teacher_name ? `${g.name} — ${g.teacher_name}` : g.name}
+                {groupOptionLabel(g, t('exams.groupState.tag'))}
               </option>
             ))}
           </select>

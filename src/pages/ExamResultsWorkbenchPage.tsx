@@ -6,6 +6,8 @@ import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { useAuth } from '../contexts/AuthContext';
+import { FinishedTag, GroupStateFilter } from '../components/exams/GroupStateFilter';
+import { defaultGroupState, groupOptionLabel, type GroupState } from '../lib/groupState';
 import { useT } from '../lib/i18n/react';
 import { RecordResultDialog } from '../components/exams/RecordResultDialog';
 import { TestimonialDialog } from '../components/exams/TestimonialDialog';
@@ -124,6 +126,7 @@ export default function ExamResultsWorkbenchPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [groupId, setGroupId] = useState<number | ''>('');
+  const [groupState, setGroupState] = useState<GroupState>(() => defaultGroupState(user?.role));
   const [search, setSearch] = useState('');
 
   const [officialDates, setOfficialDates] = useState<SatOfficialDate[]>([]);
@@ -155,17 +158,18 @@ export default function ExamResultsWorkbenchPage() {
     let cancelled = false;
     (async () => {
       try {
-        const list = await getExamGroups({ program: examType });
+        const list = await getExamGroups({ program: examType, groupState });
         if (!cancelled) setGroups(list);
       } catch { /* group filter stays empty */ }
     })();
     return () => { cancelled = true; };
-  }, [examType]);
+  }, [examType, groupState]);
 
   const filters: ExamResultFilters = useMemo(() => ({
     examType,
     dateField,
     ...(groupId !== '' ? { groupId } : {}),
+    groupState,
     ...(exactDate ? { exactDate } : {}),
     ...(dateFrom ? { dateFrom } : {}),
     ...(dateTo ? { dateTo } : {}),
@@ -174,7 +178,7 @@ export default function ExamResultsWorkbenchPage() {
     // filters, so an XLSX of marketing-ready rows matches the screen exactly.
     ...(marketingOnly ? { marketingOnly: true } : {}),
     limit: 500,
-  }), [examType, dateField, groupId, exactDate, dateFrom, dateTo, search, marketingOnly]);
+  }), [examType, dateField, groupId, groupState, exactDate, dateFrom, dateTo, search, marketingOnly]);
 
   const load = useCallback(async (f: ExamResultFilters) => {
     setLoading(true);
@@ -364,6 +368,9 @@ export default function ExamResultsWorkbenchPage() {
             </span>
           </div>
 
+          {/* The picked group may not exist in the new list, so the choice starts over with the state. */}
+          <GroupStateFilter value={groupState} onChange={(next) => { setGroupState(next); setGroupId(''); }} />
+
           <div className="grid grid-cols-1 @lg:grid-cols-2 @3xl:grid-cols-4 gap-2">
             {isSat && (
               <div>
@@ -399,7 +406,7 @@ export default function ExamResultsWorkbenchPage() {
                 <option value="">{t('exams.filters.allMyGroups')}</option>
                 {groups.map((g) => (
                   <option key={g.id} value={g.id}>
-                    {g.teacher_name ? `${g.name} — ${g.teacher_name}` : g.name}
+                    {groupOptionLabel(g, t('exams.groupState.tag'))}
                   </option>
                 ))}
               </select>
@@ -415,7 +422,7 @@ export default function ExamResultsWorkbenchPage() {
                      aria-label={t('exams.filters.searchLabel')} className="pl-8" />
             </div>
             <Button size="sm" variant="ghost" onClick={() => {
-              setExactDate(''); setDateFrom(''); setDateTo(''); setGroupId(''); setSearch(''); setPreset('all');
+              setExactDate(''); setDateFrom(''); setDateTo(''); setGroupId(''); setGroupState(defaultGroupState(user?.role)); setSearch(''); setPreset('all');
             }}>{t('exams.filters.reset')}</Button>
             <span className="text-xs text-muted-foreground">
               {loading ? t('common.loading') : `${visible.length} / ${rows.length}`}
@@ -493,7 +500,7 @@ export default function ExamResultsWorkbenchPage() {
                               </span>
                             )}
                           </TableCell>
-                          <TableCell className="text-muted-foreground">{dash(row.group_name)}</TableCell>
+                          <TableCell className="text-muted-foreground">{dash(row.group_name)}<FinishedTag finished={row.group_is_finished} /></TableCell>
                           <TableCell>{dash(row.student.student_phone)}</TableCell>
                           <TableCell>{dash(row.student.telegram_tag)}</TableCell>
                           <TableCell>{dash(row.student.parent_full_name)}</TableCell>

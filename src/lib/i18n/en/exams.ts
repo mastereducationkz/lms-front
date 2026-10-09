@@ -47,6 +47,12 @@ export const exams = {
   'exams.empty': 'No students match these filters.',
 
   'exams.columns.student': 'Student',
+  'exams.groupState.label': 'Groups',
+  'exams.groupState.running': 'Running',
+  'exams.groupState.finished': 'Finished',
+  'exams.groupState.all': 'All',
+  'exams.groupState.tag': 'finished',
+  'exams.groupState.hint': 'Finished means the group is over or archived. You see your own groups only.',
   'exams.columns.initial': 'Initial (Assignment Zero)',
   'exams.initial.nuetNone': 'Assignment Zero does not ask for a NUET score',
   'exams.initial.changeTitle': 'Change from the initial score to the current attempt',

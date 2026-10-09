@@ -47,6 +47,12 @@ export const exams: RuTable<typeof en> = {
   'exams.empty': 'Нет учеников по этим фильтрам.',
 
   'exams.columns.student': 'Ученик',
+  'exams.groupState.label': 'Группы',
+  'exams.groupState.running': 'Идут',
+  'exams.groupState.finished': 'Завершённые',
+  'exams.groupState.all': 'Все',
+  'exams.groupState.tag': 'завершена',
+  'exams.groupState.hint': 'Завершённая — группа окончена или в архиве. Вы видите только свои группы.',
   'exams.columns.initial': 'Начальный (Assignment Zero)',
   'exams.initial.nuetNone': 'В Assignment Zero балл NUET не спрашивают',
   'exams.initial.changeTitle': 'Изменение от начального балла до текущей попытки',
