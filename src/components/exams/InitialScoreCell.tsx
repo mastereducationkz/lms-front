@@ -25,7 +25,7 @@ export function InitialScoreCell({ initial, examType }: { initial?: InitialScore
 }
 
 /** The move from the initial total to the current attempt, as a small signed chip. */
-export function ScoreChange({ change, examType }: { change?: string | null; examType: string }) {
+export function ScoreChange({ change, examType, title }: { change?: string | null; examType: string; title?: string }) {
   const t = useT();
   const parts = changeParts(change, examType);
   if (!parts) return null;
@@ -35,7 +35,7 @@ export function ScoreChange({ change, examType }: { change?: string | null; exam
       ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
       : 'bg-muted text-muted-foreground';
   return (
-    <span title={t('exams.initial.changeTitle')} className={`ml-1.5 inline-block rounded px-1 py-0.5 text-[10px] font-semibold tabular-nums ${tone}`}>
+    <span title={title ?? t('exams.initial.changeTitle')} className={`ml-1.5 inline-block rounded px-1 py-0.5 text-[10px] font-semibold tabular-nums ${tone}`}>
       {parts.text}
     </span>
   );

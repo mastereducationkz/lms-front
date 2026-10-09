@@ -3,6 +3,7 @@ import { ArrowDown, ArrowRight, ArrowUp, Download, Search } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { FinalExamScore, FinalExamWhen } from '../components/exams/FinalExamCell';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import {
   exportBluebookGrid,
@@ -280,8 +281,10 @@ export default function BluebookGroupGridPage() {
                       <div className="font-semibold">{t('teacherInsights.bluebook.studentSummary')}</div>
                     </TableHead>
                     <TableHead colSpan={2} scope="colgroup"
-                               className="p-1 text-center border-l min-w-[120px] align-top bg-muted/30">
-                      <div className="font-semibold">{t('teacherInsights.bluebook.officialResult')}</div>
+                               className="p-1 text-center border-l min-w-[170px] align-top bg-muted/30">
+                      <div className="font-semibold" title={t('teacherInsights.bluebook.finalExamHint')}>
+                        {t('teacherInsights.bluebook.finalExam')}
+                      </div>
                     </TableHead>
                   </TableRow>
                   <TableRow>
@@ -369,11 +372,11 @@ export default function BluebookGroupGridPage() {
                         )}
                       </TableCell>
 
-                      <TableCell className="text-center font-semibold border-l">
-                        {row.official_result ? Number(row.official_result.total_score) : '–'}
+                      <TableCell className="text-center border-l">
+                        <FinalExamScore final={row.final_exam} />
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground">
-                        {row.official_result?.test_date ?? '–'}
+                        <FinalExamWhen final={row.final_exam} />
                       </TableCell>
                     </TableRow>
                   ))}

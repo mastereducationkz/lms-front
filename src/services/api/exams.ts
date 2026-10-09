@@ -61,6 +61,7 @@ export interface ExamResultDetail {
   notes: string | null;
 }
 
+import type { BluebookFinalExam } from '../../lib/bluebookFinalExam';
 import type { InitialScore } from '../../lib/examInitial';
 
 export interface ExamResultRow {
@@ -208,7 +209,7 @@ export interface BluebookGrid {
     average_total: number | null;
     baseline_total: number | null;
     improvement_from_baseline: number | null;
-    official_result: { total_score: string; test_date: string; source: string } | null;
+    final_exam: BluebookFinalExam | null;
   }>;
   column_stats: Record<string, {
     submitted_count: number;
