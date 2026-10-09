@@ -61,6 +61,8 @@ export interface ExamResultDetail {
   notes: string | null;
 }
 
+import type { InitialScore } from '../../lib/examInitial';
+
 export interface ExamResultRow {
   student: {
     student_id: number;
@@ -94,6 +96,8 @@ export interface ExamResultRow {
    */
   marketing_score: string | null;
   marketing_test_date: string | null;
+  /** Where the student started (Assignment Zero) and the change to the current attempt; null when unknown. */
+  initial?: InitialScore | null;
   attempts: ExamResultDetail[];
   result: {
     id: number;
