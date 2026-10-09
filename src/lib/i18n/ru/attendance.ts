@@ -123,6 +123,7 @@ export const attendance: RuTable<typeof en> = {
   'attendance.hw.missing': 'Не сдано',
   'attendance.exam.notTaken': 'Не сдано',
   'attendance.exam.scaledScore': 'Шкальный балл',
+  'attendance.exam.scaledOutOf': 'Шкальный балл {score} / {max}',
   'attendance.exam.mathTitle': 'Нажмите, чтобы увидеть фидбэк по Math',
   'attendance.exam.verbalTitle': 'Нажмите, чтобы увидеть фидбэк по Verbal',
   'attendance.exam.ieltsTitle': 'Нажмите, чтобы увидеть результаты и фидбэк IELTS',
