@@ -57,7 +57,7 @@ jobs:
             VITE_STAGING_COMMIT=${{ steps.sha.outputs.sha }}
           tags: ghcr.io/mastereducationkz/lms-front/lms-frontend:staging-${{ steps.sha.outputs.sha }}
           cache-from: type=gha,scope=staging-frontend
-          cache-to: type=gha,mode=max,scope=staging-frontend
+          cache-to: type=gha,mode=max,scope=staging-frontend,ignore-error=true
 
   deploy:
     needs: build
