@@ -45,6 +45,8 @@ import { StarOfWeekButton } from '@/components/achievements/StarOfWeekDialog';
 import GroupAchievementsPanel from '@/components/achievements/analytics/GroupAchievementsPanel';
 import { formatDate, formatDateTime, formatTime, type Locale } from '../lib/i18n';
 import { useLocale, useT } from '../lib/i18n/react';
+import ExamSectionCell from '../components/curator/ExamSectionCell';
+import { NUET_SECTION_MAX } from '../lib/examSection';
 import '@/lib/i18n/catalogs/attendance';
 
 interface HomeworkMeta {
@@ -138,6 +140,8 @@ interface StudentRow {
     mock_exam: number;
     sat_math_correct_count?: number | null;
     sat_math_total_count?: number | null;
+    sat_math_scaled_score?: number | null;
+    sat_verbal_scaled_score?: number | null;
     sat_verbal_correct_count?: number | null;
     sat_verbal_total_count?: number | null;
     sat_math_feedback?: string | null;
@@ -740,6 +744,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     feedbackRu: string | null;
     correct: number | null;
     total: number | null;
+    scaled: number | null;
     completedAt: string | null;
   }
 
@@ -747,7 +752,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     open: false, studentName: '', lessonTitle: '', score: null, feedback: null, submittedAt: null, gradedAt: null
   })
   const [satModal, setSatModal] = useState<SatFeedbackModal>({
-    open: false, studentName: '', section: 'math', testName: null, feedback: null, feedbackRu: null, correct: null, total: null, completedAt: null
+    open: false, studentName: '', section: 'math', testName: null, feedback: null, feedbackRu: null, correct: null, total: null, scaled: null, completedAt: null
   })
   const hasModalTotal = satModal.total != null && satModal.total > 0;
   // Language shown in the SAT feedback modal; the viewer's own language wins when available
@@ -1389,15 +1394,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       return { date, dayTime: `${dayCap} ${time}` };
   };
 
-  const renderSectionFraction = (correct?: number | null, total?: number | null) => {
-    if (correct == null) return t('attendance.exam.notTaken');
-    if (total != null && total > 0) return `${correct}/${total}`;
-    return `${correct}`;
-  };
-
-  // A section cell: the raw correct/total fraction.
-  const renderExamSectionContent = (correct?: number | null, total?: number | null) => (
-    <span className="text-foreground dark:text-foreground">{renderSectionFraction(correct, total)}</span>
+  // Correct / total leads; the NUET score out of 120 is the second figure.
+  const renderExamSectionContent = (correct?: number | null, total?: number | null, scaled?: number | null) => (
+    <ExamSectionCell correct={correct} total={total} scaled={scaled} />
   );
 
   // IELTS bands are conventionally rendered with one decimal: 7.0, 7.5
@@ -2272,12 +2271,13 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                             feedbackRu: student.sat_math_feedback_ru ?? null,
                                                             correct: student.sat_math_correct_count ?? null,
                                                             total: student.sat_math_total_count ?? null,
+                                                            scaled: student.sat_math_scaled_score ?? null,
                                                             completedAt: student.sat_math_completed_at ?? null,
                                                         })
                                                     }}
                                                     title={mathHasData ? t('attendance.exam.mathTitle') : undefined}
                                                 >
-                                                    {renderExamSectionContent(student.sat_math_correct_count, student.sat_math_total_count)}
+                                                    {renderExamSectionContent(student.sat_math_correct_count, student.sat_math_total_count, student.sat_math_scaled_score)}
                                                 </div>
                                             </TableCell>
                                             <TableCell className="p-0 border-r border-border h-16">
@@ -2298,12 +2298,13 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                             feedbackRu: student.sat_verbal_feedback_ru ?? null,
                                                             correct: student.sat_verbal_correct_count ?? null,
                                                             total: student.sat_verbal_total_count ?? null,
+                                                            scaled: student.sat_verbal_scaled_score ?? null,
                                                             completedAt: student.sat_verbal_completed_at ?? null,
                                                         })
                                                     }}
                                                     title={verbalHasData ? t('attendance.exam.verbalTitle') : undefined}
                                                 >
-                                                    {renderExamSectionContent(student.sat_verbal_correct_count, student.sat_verbal_total_count)}
+                                                    {renderExamSectionContent(student.sat_verbal_correct_count, student.sat_verbal_total_count, student.sat_verbal_scaled_score)}
                                                 </div>
                                             </TableCell>
                                         </>
@@ -2496,6 +2497,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             </span>
           ) : null}
         </div>
+
+        {hasModalTotal && satModal.scaled != null && (
+          <p className="px-5 pb-3 pt-1 text-xs text-muted-foreground tabular-nums shrink-0">
+            {t('attendance.exam.scaledOutOf', { score: satModal.scaled, max: NUET_SECTION_MAX })}
+          </p>
+        )}
 
         {/* Feedback body (a score-only result has nothing to say here) */}
         {(hasModalTotal || satModal.feedback || satModal.feedbackRu) && (
