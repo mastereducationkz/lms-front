@@ -47,6 +47,9 @@ export const exams: RuTable<typeof en> = {
   'exams.empty': 'Нет учеников по этим фильтрам.',
 
   'exams.columns.student': 'Ученик',
+  'exams.columns.initial': 'Начальный (Assignment Zero)',
+  'exams.initial.nuetNone': 'В Assignment Zero балл NUET не спрашивают',
+  'exams.initial.changeTitle': 'Изменение от начального балла до текущей попытки',
   'exams.columns.group': 'Группа',
   'exams.columns.phone': 'Телефон',
   'exams.columns.parent': 'Родитель',

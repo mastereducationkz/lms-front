@@ -24,6 +24,7 @@ import {
   type Testimonial,
 } from '../services/api/exams';
 import '@/lib/i18n/catalogs/exams';
+import { InitialScoreCell, ScoreChange } from '../components/exams/InitialScoreCell';
 
 /**
  * The single exam-results screen: triage, reporting, recording and evidence in one
@@ -455,6 +456,7 @@ export default function ExamResultsWorkbenchPage() {
                     <TableHead>{t('exams.columns.planned')}</TableHead>
                     <TableHead>{t('exams.columns.askOn')}</TableHead>
                     <TableHead>{t('exams.columns.testDate')}</TableHead>
+                    <TableHead className="text-center">{t('exams.columns.initial')}</TableHead>
                     {isSat && <><TableHead className="text-center">Verbal</TableHead><TableHead className="text-center">Math</TableHead></>}
                     <TableHead className="text-center">{isIelts ? 'Overall' : t('exams.columns.total')}</TableHead>
                     <TableHead className="text-center whitespace-nowrap">{t('exams.columns.marketing')}</TableHead>
@@ -499,12 +501,16 @@ export default function ExamResultsWorkbenchPage() {
                           <TableCell>{dash(row.planned_test_date)}</TableCell>
                           <TableCell>{dash(row.ask_result_on)}</TableCell>
                           <TableCell>{dash(r?.test_date)}</TableCell>
+                          <TableCell className="text-center">
+                            <InitialScoreCell initial={row.initial} examType={examType} />
+                          </TableCell>
                           {isSat && <>
                             <TableCell className="text-center">{r?.verbal_score ?? '—'}</TableCell>
                             <TableCell className="text-center">{r?.math_score ?? '—'}</TableCell>
                           </>}
                           <TableCell className="text-center font-semibold">
                             {r ? Number(r.total_score) : '—'}
+                            {r && <ScoreChange change={row.initial?.change} examType={examType} />}
                           </TableCell>
                           <TableCell className="text-center">
                             <MarketingChips row={row} />

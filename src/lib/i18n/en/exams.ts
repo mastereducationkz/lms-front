@@ -47,6 +47,9 @@ export const exams = {
   'exams.empty': 'No students match these filters.',
 
   'exams.columns.student': 'Student',
+  'exams.columns.initial': 'Initial (Assignment Zero)',
+  'exams.initial.nuetNone': 'Assignment Zero does not ask for a NUET score',
+  'exams.initial.changeTitle': 'Change from the initial score to the current attempt',
   'exams.columns.group': 'Group',
   'exams.columns.phone': 'Phone',
   'exams.columns.parent': 'Parent',
