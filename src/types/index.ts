@@ -1182,6 +1182,8 @@ export interface Event {
   is_recurring: boolean;
   recurrence_pattern?: string;
   recurrence_end_date?: string;
+  /** The occurrences of one recurring webinar share it; absent for any other event. */
+  series_id?: string | null;
   max_participants?: number;
   participant_count: number;
   is_substitution?: boolean;

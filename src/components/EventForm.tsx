@@ -41,6 +41,8 @@ import type { Event, CreateEventRequest, UpdateEventRequest, EventType, Group, C
 import { useAuth } from '../contexts/AuthContext';
 import { toDatetimeLocal, fromDatetimeLocalKZ } from '../lib/datetime';
 import { roleLabel } from '@/lib/roleLabel';
+import { followingPayload } from '../lib/eventSeries';
+import { HostTitleSuggestion, SeriesEditSection, useEventSeries } from './events/SeriesEditSection';
 import { loadEventHosts } from '@/lib/eventHosts';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/adminTools';
@@ -65,6 +67,8 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
   const [selectedCourseForLesson, setSelectedCourseForLesson] = useState<string>('');
   const [selectedModuleForLesson, setSelectedModuleForLesson] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  // An occurrence of a recurring series can carry its edit to the later weeks.
+  const series = useEventSeries(event);
 
   // Form state (display in KZ, send UTC)
   const [formData, setFormData] = useState({
@@ -264,7 +268,19 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
       };
 
       let savedEvent: Event;
-      if (event) {
+      if (event && series.wholeSeries) {
+        // This and all following: only what changed and what a whole series can take (the rest is per event).
+        savedEvent = await updateEvent(event.id, followingPayload(event, {
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          teacher_id: formData.teacher_id,
+          location: formData.location.trim(),
+          is_online: formData.is_online,
+          max_participants: formData.event_type === 'webinar' ? formData.max_participants : event.max_participants,
+          start_datetime: fromDatetimeLocalKZ(formData.start_datetime),
+          end_datetime: fromDatetimeLocalKZ(formData.end_datetime),
+        }), 'following');
+      } else if (event) {
         savedEvent = await updateEvent(event.id, eventData);
       } else {
         // Use curator-specific endpoint for curators, admin endpoint for admins
@@ -696,6 +712,17 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
 
           </CardContent>
         </Card>
+
+        {event && series.summary && (
+          <SeriesEditSection summary={series.summary} scope={series.scope} onScopeChange={series.setScope}>
+            <HostTitleSuggestion
+              title={formData.title}
+              oldHost={event.teacher_name ?? ''}
+              newHost={teachers.find((teacher) => teacher.id === formData.teacher_id)?.name ?? ''}
+              onUse={(title) => handleInputChange('title', title)}
+            />
+          </SeriesEditSection>
+        )}
 
         {/* Actions */}
         <div className="flex justify-end gap-4">

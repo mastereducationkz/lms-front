@@ -29,7 +29,9 @@ import {
 } from '../components/ui/dropdown-menu';
 import { Badge } from '../components/ui/badge';
 import Loader from '../components/Loader';
-import { getAllEvents, deleteEvent, bulkDeleteEvents, getAllGroups } from '../services/api';
+import { getAllEvents, deleteEvent, bulkDeleteEvents, getAllGroups, getEventSeries } from '../services/api';
+import { SeriesDeleteDialog, SeriesRow, type SeriesScope } from '../components/events/SeriesScope';
+import { groupSeries, type EventListItem } from '../lib/eventSeries';
 import type { Event, EventType, Group } from '../types';
 import { formatDate, formatDateTime as formatAppDateTime, type MessageKey } from '../lib/i18n';
 import { useT } from '@/lib/i18n/react';
@@ -55,6 +57,8 @@ export default function EventManagement() {
   const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showLessons, setShowLessons] = useState(false);
+  const [groupWeekly, setGroupWeekly] = useState(true);
+  const [seriesCancel, setSeriesCancel] = useState<{ event: Event; following: number; initialScope: SeriesScope } | null>(null);
 
   const isVirtualEvent = (id: number) => id >= 1000000000;
   const isScheduledLesson = (id: number) => id >= 2000000000;
@@ -81,7 +85,37 @@ export default function EventManagement() {
     loadData();
   }, [showLessons]);
 
+  // An occurrence of a recurring series asks what to cancel: only it, or it and every later week.
+  const askSeriesCancel = async (event: Event, initialScope: SeriesScope): Promise<boolean> => {
+    if (!event.series_id) return false;
+    try {
+      const info = await getEventSeries(event.id);
+      setSeriesCancel({ event, following: info.following, initialScope });
+      return true;
+    } catch (error) {
+      console.error('Failed to load the series:', error);
+      return false;                                   // fall back to cancelling just this event
+    }
+  };
+
+  const confirmSeriesCancel = async (scope: SeriesScope) => {
+    if (!seriesCancel) return;
+    try {
+      await deleteEvent(seriesCancel.event.id, scope);
+      setSeriesCancel(null);
+      setSelectedEventIds([]);
+      await loadData();
+    } catch (error) {
+      console.error('Failed to cancel events:', error);
+      alert(t('adminPages.events.series.cancelFailed'));
+    }
+  };
+
   const handleDeleteEvent = async (eventId: number) => {
+    const target = events.find(event => event.id === eventId);
+    if (target && await askSeriesCancel(target, 'this')) {
+      return;
+    }
     if (!confirm(t('adminPages.events.list.confirmDelete'))) {
       return;
     }
@@ -195,147 +229,11 @@ export default function EventManagement() {
     return withDark[eventType] || 'bg-muted text-foreground border-border';
   };
 
-  if (loading) {
-    return <Loader size="xl" animation="spin" color="hsl(var(--brand))" />;
-  }
+  const listItems: EventListItem[] = groupWeekly
+    ? groupSeries(filteredEvents)
+    : filteredEvents.map((event): EventListItem => ({ kind: 'event', event }));
 
-  return (
-    <div className="p-4 sm:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground dark:text-foreground">{t('adminPages.events.list.title')}</h1>
-          <p className="text-muted-foreground">{t('adminPages.events.list.subtitle')}</p>
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          {selectedEventIds.length > 0 && (
-            <Button 
-              variant="destructive"
-              onClick={handleBulkDelete}
-              disabled={isDeleting}
-              className="flex items-center gap-2 flex-1 sm:flex-initial"
-            >
-              <Trash2 className="w-4 h-4" />
-              {t('adminPages.events.list.deleteSelected', { count: selectedEventIds.length })}
-            </Button>
-          )}
-          <Button 
-            onClick={() => navigate('/admin/events/create')}
-            className="flex items-center gap-2 flex-1 sm:flex-initial"
-          >
-            <Plus className="w-4 h-4" />
-            {t('adminPages.events.createEvent')}
-          </Button>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-card dark:bg-card rounded-lg border dark:border-border p-4">
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder={t('adminPages.events.list.searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          {/* Event Type Filter */}
-          <Select value={selectedEventType} onValueChange={(value) => setSelectedEventType(value as EventType | 'all')}>
-            <SelectTrigger className="w-full lg:w-48">
-              <SelectValue placeholder={t('adminPages.events.list.typePlaceholder')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('adminPages.events.list.allTypes')}</SelectItem>
-              <SelectItem value="class">{t('adminPages.events.list.classes')}</SelectItem>
-              <SelectItem value="weekly_test">{t('adminPages.events.list.weeklyTests')}</SelectItem>
-              <SelectItem value="webinar">{t('adminPages.events.list.webinars')}</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Date Filter */}
-          <Select value={dateFilter} onValueChange={(value) => setDateFilter(value as any)}>
-            <SelectTrigger className="w-full lg:w-48">
-              <SelectValue placeholder={t('adminPages.events.list.period')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('adminPages.events.list.allEvents')}</SelectItem>
-              <SelectItem value="upcoming">{t('adminPages.events.list.upcoming')}</SelectItem>
-              <SelectItem value="today">{t('adminPages.events.list.today')}</SelectItem>
-              <SelectItem value="this_week">{t('adminPages.events.list.thisWeek')}</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Group Filter */}
-          <Select value={selectedGroupId.toString()} onValueChange={(value) => setSelectedGroupId(value === 'all' ? 'all' : parseInt(value))}>
-            <SelectTrigger className="w-full lg:w-48">
-              <SelectValue placeholder={t('adminPages.events.list.group')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('adminPages.events.list.allGroups')}</SelectItem>
-              {groups.map(group => (
-                <SelectItem key={group.id} value={group.id.toString()}>
-                  {group.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Lessons Toggle */}
-          <div className="flex items-center gap-2 px-2 border dark:border-border rounded-md bg-muted dark:bg-secondary h-10">
-            <input
-              type="checkbox"
-              id="show-lessons"
-              checked={showLessons}
-              onChange={(e) => setShowLessons(e.target.checked)}
-              className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
-            />
-            <label htmlFor="show-lessons" className="text-sm font-medium text-foreground/80 cursor-pointer whitespace-nowrap">
-              {t('adminPages.events.list.showLessons')}
-            </label>
-          </div>
-        </div>
-      </div>
-
-      {/* Events List */}
-      <div className="bg-card dark:bg-card rounded-lg border dark:border-border">
-        {filteredEvents.length === 0 ? (
-          <div className="p-8 text-center">
-            <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-foreground dark:text-foreground mb-2">{t('adminPages.events.list.emptyTitle')}</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchTerm || selectedEventType !== 'all' || dateFilter !== 'all' 
-                ? t('adminPages.events.list.emptyFiltered')
-                : t('adminPages.events.list.emptyFirst')
-              }
-            </p>
-            {!searchTerm && selectedEventType === 'all' && dateFilter === 'all' && (
-              <Button onClick={() => navigate('/admin/events/create')}>
-                <Plus className="w-4 h-4 mr-2" />
-                {t('adminPages.events.createEvent')}
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="divide-y divide-border dark:divide-border">
-            {/* Table Header with Select All */}
-            <div className="p-4 bg-muted dark:bg-secondary border-b dark:border-border flex items-center gap-4">
-              <input
-                type="checkbox"
-                checked={selectedEventIds.length === filteredEvents.length && filteredEvents.length > 0}
-                onChange={toggleSelectAll}
-                className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
-              />
-              <span className="text-sm font-medium text-muted-foreground">
-                {selectedEventIds.length > 0 
-                  ? t('adminPages.events.list.selectedCount', { count: selectedEventIds.length })
-                  : t('adminPages.events.list.selectAll', { count: filteredEvents.length })}
-              </span>
-            </div>
-            {filteredEvents.map(event => (
+  const renderEventRow = (event: Event) => (
               <div key={event.id} className="p-6 hover:bg-muted dark:hover:bg-secondary transition-colors flex items-start gap-4">
                 <div className="pt-1">
                   <input
@@ -465,6 +363,174 @@ export default function EventManagement() {
                   </div>
                 </div>
               </div>
+  );
+
+  if (loading) {
+    return <Loader size="xl" animation="spin" color="hsl(var(--brand))" />;
+  }
+
+  return (
+    <div className="p-4 sm:p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground dark:text-foreground">{t('adminPages.events.list.title')}</h1>
+          <p className="text-muted-foreground">{t('adminPages.events.list.subtitle')}</p>
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+          {selectedEventIds.length > 0 && (
+            <Button 
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+              className="flex items-center gap-2 flex-1 sm:flex-initial"
+            >
+              <Trash2 className="w-4 h-4" />
+              {t('adminPages.events.list.deleteSelected', { count: selectedEventIds.length })}
+            </Button>
+          )}
+          <Button 
+            onClick={() => navigate('/admin/events/create')}
+            className="flex items-center gap-2 flex-1 sm:flex-initial"
+          >
+            <Plus className="w-4 h-4" />
+            {t('adminPages.events.createEvent')}
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-card dark:bg-card rounded-lg border dark:border-border p-4">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder={t('adminPages.events.list.searchPlaceholder')}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Event Type Filter */}
+          <Select value={selectedEventType} onValueChange={(value) => setSelectedEventType(value as EventType | 'all')}>
+            <SelectTrigger className="w-full lg:w-48">
+              <SelectValue placeholder={t('adminPages.events.list.typePlaceholder')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('adminPages.events.list.allTypes')}</SelectItem>
+              <SelectItem value="class">{t('adminPages.events.list.classes')}</SelectItem>
+              <SelectItem value="weekly_test">{t('adminPages.events.list.weeklyTests')}</SelectItem>
+              <SelectItem value="webinar">{t('adminPages.events.list.webinars')}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Date Filter */}
+          <Select value={dateFilter} onValueChange={(value) => setDateFilter(value as any)}>
+            <SelectTrigger className="w-full lg:w-48">
+              <SelectValue placeholder={t('adminPages.events.list.period')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('adminPages.events.list.allEvents')}</SelectItem>
+              <SelectItem value="upcoming">{t('adminPages.events.list.upcoming')}</SelectItem>
+              <SelectItem value="today">{t('adminPages.events.list.today')}</SelectItem>
+              <SelectItem value="this_week">{t('adminPages.events.list.thisWeek')}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Group Filter */}
+          <Select value={selectedGroupId.toString()} onValueChange={(value) => setSelectedGroupId(value === 'all' ? 'all' : parseInt(value))}>
+            <SelectTrigger className="w-full lg:w-48">
+              <SelectValue placeholder={t('adminPages.events.list.group')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('adminPages.events.list.allGroups')}</SelectItem>
+              {groups.map(group => (
+                <SelectItem key={group.id} value={group.id.toString()}>
+                  {group.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Lessons Toggle */}
+          <div className="flex items-center gap-2 px-2 border dark:border-border rounded-md bg-muted dark:bg-secondary h-10">
+            <input
+              type="checkbox"
+              id="show-lessons"
+              checked={showLessons}
+              onChange={(e) => setShowLessons(e.target.checked)}
+              className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
+            />
+            <label htmlFor="show-lessons" className="text-sm font-medium text-foreground/80 cursor-pointer whitespace-nowrap">
+              {t('adminPages.events.list.showLessons')}
+            </label>
+          </div>
+
+          {/* Weekly series: one line each, or every week on its own */}
+          <div className="flex items-center gap-2 px-2 border dark:border-border rounded-md bg-muted dark:bg-secondary h-10">
+            <input
+              type="checkbox"
+              id="group-series"
+              checked={groupWeekly}
+              onChange={(e) => setGroupWeekly(e.target.checked)}
+              className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
+            />
+            <label htmlFor="group-series" className="text-sm font-medium text-foreground/80 cursor-pointer whitespace-nowrap">
+              {t('adminPages.events.series.group')}
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Events List */}
+      <div className="bg-card dark:bg-card rounded-lg border dark:border-border">
+        {filteredEvents.length === 0 ? (
+          <div className="p-8 text-center">
+            <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground dark:text-foreground mb-2">{t('adminPages.events.list.emptyTitle')}</h3>
+            <p className="text-muted-foreground mb-4">
+              {searchTerm || selectedEventType !== 'all' || dateFilter !== 'all' 
+                ? t('adminPages.events.list.emptyFiltered')
+                : t('adminPages.events.list.emptyFirst')
+              }
+            </p>
+            {!searchTerm && selectedEventType === 'all' && dateFilter === 'all' && (
+              <Button onClick={() => navigate('/admin/events/create')}>
+                <Plus className="w-4 h-4 mr-2" />
+                {t('adminPages.events.createEvent')}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="divide-y divide-border dark:divide-border">
+            {/* Table Header with Select All */}
+            <div className="p-4 bg-muted dark:bg-secondary border-b dark:border-border flex items-center gap-4">
+              <input
+                type="checkbox"
+                checked={selectedEventIds.length === filteredEvents.length && filteredEvents.length > 0}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
+              />
+              <span className="text-sm font-medium text-muted-foreground">
+                {selectedEventIds.length > 0 
+                  ? t('adminPages.events.list.selectedCount', { count: selectedEventIds.length })
+                  : t('adminPages.events.list.selectAll', { count: filteredEvents.length })}
+              </span>
+            </div>
+            {listItems.map((item) => item.kind === 'event' ? renderEventRow(item.event) : (
+              <SeriesRow
+                key={item.seriesId}
+                title={item.title}
+                total={item.total}
+                upcoming={item.upcoming}
+                next={item.next}
+                onEditNext={() => navigate(`/admin/events/${item.next.id}/edit`)}
+                onCancelUpcoming={() => { void askSeriesCancel(item.next, 'following'); }}
+              >
+                {item.events.map(renderEventRow)}
+              </SeriesRow>
             ))}
           </div>
         )}
@@ -524,6 +590,16 @@ export default function EventManagement() {
           </div>
         </div>
       </div>
+
+      {seriesCancel && (
+        <SeriesDeleteDialog
+          title={seriesCancel.event.title}
+          following={seriesCancel.following}
+          initialScope={seriesCancel.initialScope}
+          onConfirm={confirmSeriesCancel}
+          onClose={() => setSeriesCancel(null)}
+        />
+      )}
     </div>
   );
 }
