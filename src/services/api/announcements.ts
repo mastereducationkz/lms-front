@@ -337,3 +337,56 @@ export async function setWeeklyTestNotice(on: boolean): Promise<GroupBotSettings
     rethrow(error, 'Failed to save the switch');
   }
 }
+
+/** One of the bot's automatic Telegram messages, as the record shows it (lms-backend `src/announcements/automatic.py`). */
+export interface AutomaticMessage {
+  id: number;
+  /** weekly_test | digest | homework | lesson_invite | lesson_change | no_show | class_materials | webinar | pinned_timetable | greeting | fines | other */
+  kind: string;
+  key: string;
+  chat_id: number | null;
+  chat_title: string | null;
+  chat_type: string | null;
+  /** Plain text, links kept. */
+  text: string;
+  status: string;
+  error: string | null;
+  telegram_message_id: number | null;
+  attempts: number | null;
+  acting_user: string | null;
+  sent_at: string | null;
+  created_at: string;
+}
+
+export interface AutomaticMessagesPage {
+  total: number;
+  items: AutomaticMessage[];
+}
+
+/** What the bot has posted unprompted, newest first - filtered by period, kind, outcome, chat and a word. */
+export async function getAutomaticMessages(options: {
+  days?: number;
+  kind?: string;
+  status?: string;
+  q?: string;
+  chatId?: number;
+  limit?: number;
+  offset?: number;
+}): Promise<AutomaticMessagesPage> {
+  const q = (options.q ?? '').trim();
+  const params: Record<string, string | number> = {
+    days: options.days ?? 7,
+    ...(options.kind ? { kind: options.kind } : {}),
+    ...(options.status ? { status: options.status } : {}),
+    ...(q ? { q } : {}),
+    ...(options.chatId != null ? { chat_id: options.chatId } : {}),
+    limit: options.limit ?? 50,
+    offset: options.offset ?? 0,
+  };
+  try {
+    const response = await api.get('/announcements/automatic', { ...NO_CACHE, params });
+    return response.data;
+  } catch (error) {
+    rethrow(error, 'Failed to load the automatic messages');
+  }
+}
