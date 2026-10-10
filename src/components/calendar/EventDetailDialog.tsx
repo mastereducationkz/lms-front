@@ -68,6 +68,15 @@ export default function EventDetailDialog({ event, open, onOpenChange, user }: P
               </span>
             </div>
 
+            {/* A webinar's host has its own line: the title does not carry it, and a title is plain text that would
+                not follow a change of teacher. (A class lesson's card is short; its lesson page names the teacher.) */}
+            {event.event_type === 'webinar' && event.teacher_name && (
+              <div className="flex items-center gap-2.5" data-host>
+                <Users className="h-4 w-4 flex-none text-muted-foreground/70" />
+                <span>{t('calendar.event.host', { name: event.teacher_name })}</span>
+              </div>
+            )}
+
             {event.location && (
               <div className="flex items-center gap-2.5">
                 {event.is_online ? (

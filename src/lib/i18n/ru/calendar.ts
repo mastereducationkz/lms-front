@@ -39,6 +39,7 @@ export const calendar: RuTable<typeof en> = {
   'calendar.event.enterClass': 'Войти в класс',
   'calendar.event.openOnPlatform': 'Открыть на {platform}',
   'calendar.event.join': 'Войти',
+  'calendar.event.host': 'Ведущий: {name}',
   'calendar.event.copyInvitation': 'Скопировать приглашение',
   'calendar.event.copyInvitationTitle': 'Скопировать приглашение для чата группы',
   'calendar.event.invitationCopied': 'Приглашение скопировано',

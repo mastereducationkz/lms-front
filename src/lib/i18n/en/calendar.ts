@@ -39,6 +39,7 @@ export const calendar = {
   'calendar.event.enterClass': 'Enter class',
   'calendar.event.openOnPlatform': 'Open on {platform}',
   'calendar.event.join': 'Join',
+  'calendar.event.host': 'Host: {name}',
   'calendar.event.copyInvitation': 'Copy invitation',
   'calendar.event.copyInvitationTitle': 'Copy an invitation for the group chat',
   'calendar.event.invitationCopied': 'Invitation copied',
