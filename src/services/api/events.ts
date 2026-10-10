@@ -37,20 +37,44 @@ export async function createCuratorEvent(eventData: CreateEventRequest): Promise
   }
 }
 
-export async function updateEvent(eventId: number, eventData: UpdateEventRequest): Promise<Event> {
+/** `scope: 'following'` edits this event and every later occurrence of its series; the default is this event only. */
+export async function updateEvent(eventId: number, eventData: UpdateEventRequest, scope: 'this' | 'following' = 'this'): Promise<Event> {
   try {
-    const response = await api.put(`/admin/events/${eventId}`, eventData);
+    const response = await api.put(`/admin/events/${eventId}`, eventData, scope === 'following' ? { params: { scope } } : undefined);
     return response.data;
   } catch (error: any) {
     throw apiError(error, 'Failed to update event');
   }
 }
 
-export async function deleteEvent(eventId: number): Promise<void> {
+/** Cancels the event (and with `scope: 'following'` every later occurrence of its series); returns how many were cancelled. */
+export async function deleteEvent(eventId: number, scope: 'this' | 'following' = 'this'): Promise<number> {
   try {
-    await api.delete(`/admin/events/${eventId}`);
+    const response = await api.delete(`/admin/events/${eventId}`, scope === 'following' ? { params: { scope } } : undefined);
+    return response?.data?.deleted ?? 1;
   } catch (error: any) {
     throw apiError(error, 'Failed to delete event');
+  }
+}
+
+export interface EventSeriesSummary {
+  series_id: string | null;
+  total: number;
+  /** 1-based place of this event among the active occurrences; null when it is not one of them. */
+  position: number | null;
+  /** Occurrences from this one on, this one included. */
+  following: number;
+  first_start?: string | null;
+  last_start?: string | null;
+}
+
+/** Where an event stands in its recurring series - what the screen needs before it offers «this and all following». */
+export async function getEventSeries(eventId: number): Promise<EventSeriesSummary> {
+  try {
+    const response = await api.get(`/admin/events/${eventId}/series`);
+    return response.data;
+  } catch (error: any) {
+    throw apiError(error, 'Failed to load the event series');
   }
 }
 
