@@ -27,6 +27,8 @@ import { DateTimePicker } from '../../components/ui/date-time-picker';
 import MultiTaskEditor from '../../components/assignments/MultiTaskEditor';
 import { parseAsUTC } from '../../lib/datetime';
 import { prepareTeacherGroupList } from '../../lib/groupList';
+import { fetchGroupClasses, type ClassesState } from '../../lib/groupClasses';
+import { ClassPicker } from '../../components/homework/ClassPicker';
 import { taskUploadMessage } from '../../lib/uploadFailure';
 import { createUploadCache } from '../../lib/uploadOnce';
 import { formatDateTime, formatNumber } from '../../lib/i18n';
@@ -85,6 +87,9 @@ export default function AssignmentBuilderPage() {
   const [previewMode, setPreviewMode] = useState(false);
   const [groups, setGroups] = useState<any[]>([]);
   const [eventsByGroup, setEventsByGroup] = useState<Record<number, any[]>>({}); // Cache events per group
+  // Where each selected group's class list stands (loading / in hand / failed) - what «Pick a class» shows.
+  const [classesState, setClassesState] = useState<Record<number, ClassesState>>({});
+  const requestedClasses = useRef<Set<number>>(new Set()); // loaded or in flight; a failure is taken out so Retry asks again
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -217,20 +222,21 @@ export default function AssignmentBuilderPage() {
     }
   };
 
-  const loadEventsForGroup = async (groupId: number) => {
-      if (eventsByGroup[groupId]) return; // Already loaded
+  const loadEventsForGroup = async (groupId: number, force = false) => {
+      if (!force && requestedClasses.current.has(groupId)) return; // already loaded or on its way
+      requestedClasses.current.add(groupId);
+      setClassesState(prev => ({ ...prev, [groupId]: { status: 'loading' } }));
 
-      try {
-          console.log(`Loading class events for group ${groupId}`);
-          
-          const eventsData = await apiClient.getGroupSchedules(groupId, 4, 4);
-          
-          console.log(`Class events for group ${groupId}:`, eventsData);
-          
-          setEventsByGroup(prev => ({ ...prev, [groupId]: eventsData }));
-      } catch (error) {
-          console.error(`Failed to load events for group ${groupId}:`, error);
+      // 4 weeks back so a deep link to a lesson just held still resolves; 24 ahead (the endpoint's maximum)
+      // so a break of more than four weeks does not leave the list empty. The list shows what is upcoming.
+      const result = await fetchGroupClasses(() => apiClient.getGroupSchedules(groupId, 4, 24));
+      if (result.status === 'ready') {
+          setEventsByGroup(prev => ({ ...prev, [groupId]: result.events }));
+      } else {
+          console.error(`Failed to load class events for group ${groupId}`);
+          requestedClasses.current.delete(groupId);
       }
+      setClassesState(prev => ({ ...prev, [groupId]: result }));
   };
 
   const handleInputChange = (field: keyof AssignmentFormData, value: any) => {
@@ -243,11 +249,9 @@ export default function AssignmentBuilderPage() {
       const newGroups = checked 
         ? Array.from(new Set([...currentGroups, groupId]))
         : currentGroups.filter(id => id !== groupId);
-      
-      if (checked) {
-          loadEventsForGroup(groupId);
-      }
-      
+
+      // The class list loads from the effect on group_ids, for every way a group gets selected -
+      // starting it here as well ran a request from inside a state updater and doubled it.
       return {
         ...prev,
         group_ids: newGroups,
@@ -839,7 +843,6 @@ export default function AssignmentBuilderPage() {
                       <div className="space-y-3">
                           {(formData.group_ids || []).map(groupId => {
                               const group = groups.find(g => g.id === groupId);
-                              const groupEvents = eventsByGroup[groupId] || [];
                               const selectedEventId = formData.event_mapping?.[groupId] || '';
                               const groupDueDate = formData.due_date_mapping?.[groupId];
                               const existingLessonNumber = formData.lesson_number_mapping?.[groupId];
@@ -855,35 +858,23 @@ export default function AssignmentBuilderPage() {
                                       <div className="space-y-4">
                                           {/* Class Event Selection */}
                                           <div className="space-y-1.5">
-                                            <Select
-                                                value={selectedEventId ? selectedEventId.toString() : ""}
-                                                onValueChange={(value) => {
-                                                    handleEventMappingChange(groupId, parseInt(value));
-                                                }}
-                                            >
-                                              <SelectTrigger className="w-full bg-muted dark:bg-secondary border-border h-9 text-xs">
-                                                <SelectValue placeholder={t('homeworkStaff.builder.pickClass')} />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                {groupEvents
-                                                  .filter((event: any) => !event.is_past && parseAsUTC(event.scheduled_at) >= new Date())
-                                                  .map((event: any) => (
-                                                    <SelectItem 
-                                                      key={event.id} 
-                                                      value={event.id.toString()}
-                                                    >
-                                                        {t('homeworkStaff.builder.classOption', { title: event.title, date: formatDateTime(event.scheduled_at, { 
-                                                            weekday: 'short', 
-                                                            month: 'short', 
-                                                            day: 'numeric', 
-                                                            hour: '2-digit', 
-                                                            minute: '2-digit',
-                                                            hour12: false
-                                                        }) })}
-                                                    </SelectItem>
-                                                  ))}
-                                              </SelectContent>
-                                            </Select>
+                                            <ClassPicker
+                                                state={classesState[groupId] ?? { status: 'loading' }}
+                                                value={selectedEventId ? selectedEventId.toString() : ''}
+                                                onChange={(eventId) => handleEventMappingChange(groupId, eventId)}
+                                                onRetry={() => loadEventsForGroup(groupId, true)}
+                                                format={(event) => t('homeworkStaff.builder.classOption', {
+                                                    title: event.title,
+                                                    date: formatDateTime(event.scheduled_at, {
+                                                        weekday: 'short',
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                        hour12: false
+                                                    })
+                                                })}
+                                            />
 
                                             {hasExistingLink && (
                                               <p className="text-[11px] text-muted-foreground pl-0.5">
