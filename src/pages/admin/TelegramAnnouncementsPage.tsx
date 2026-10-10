@@ -7,6 +7,7 @@ import { GroupsTab } from '../../components/announcements/GroupsTab';
 import { HistoryTab } from '../../components/announcements/HistoryTab';
 import { LessonInvitationsTab } from '../../components/announcements/LessonInvitationsTab';
 import { BotQuestionsTab } from '../../components/announcements/BotQuestionsTab';
+import { AutomaticMessagesTab } from '../../components/announcements/AutomaticMessagesTab';
 import { WeeklyTestNoticeCard } from '../../components/announcements/WeeklyTestNoticeCard';
 import { errorMessage } from '../../components/announcements/shared';
 import { recipientSelectionFromAnnouncement } from '../../components/announcements/resend';
@@ -27,7 +28,7 @@ import '@/lib/i18n/catalogs/announcements';
  * Support platform, which owns the bot.
  */
 
-type Tab = 'compose' | 'history' | 'groups' | 'invitations' | 'bot';
+type Tab = 'compose' | 'history' | 'groups' | 'invitations' | 'bot' | 'automatic';
 
 const TABS: { key: Tab; label: MessageKey }[] = [
   { key: 'compose', label: 'announcements.tabs.compose' },
@@ -35,6 +36,7 @@ const TABS: { key: Tab; label: MessageKey }[] = [
   { key: 'groups', label: 'announcements.tabs.groups' },
   { key: 'invitations', label: 'announcements.tabs.invitations' },
   { key: 'bot', label: 'announcements.tabs.bot' },
+  { key: 'automatic', label: 'announcements.tabs.automatic' },
 ];
 
 export default function TelegramAnnouncementsPage() {
@@ -159,6 +161,7 @@ export default function TelegramAnnouncementsPage() {
         </div>
       )}
       {tab === 'bot' && <BotQuestionsTab />}
+      {tab === 'automatic' && <AutomaticMessagesTab />}
     </div>
   );
 }
