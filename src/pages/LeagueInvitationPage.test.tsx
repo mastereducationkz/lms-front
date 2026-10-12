@@ -6,9 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The page for a student's Master League invitation: what a tap does, what a double tap does, and what
 // the page says when the server refuses or the network fails.
+// The student the page is rendered for: English by choice unless a test says they never chose.
+let student: Record<string, unknown> = { id: 7, role: 'student', ui_language: 'en' };
 vi.mock('@/contexts/AuthContext', async () => {
   const { createContext } = await vi.importActual<typeof import('react')>('react');
-  return { default: createContext(undefined), useAuth: () => ({ user: { id: 7, role: 'student', ui_language: 'en' } }) };
+  return { default: createContext(undefined), useAuth: () => ({ user: student }) };
 });
 vi.mock('@/services/api/client', () => ({ api: { get: vi.fn(), post: vi.fn(), put: vi.fn() } }));
 vi.mock('@/services/api/masterLeague', () => ({ getMyLeague: vi.fn(async () => null) }));
@@ -19,6 +21,7 @@ vi.mock('@/services/api/leagueInvitation', async () => ({
 }));
 
 import { answerInvitation, getMyInvitation, InvitationAnswerError, type LeagueInvitation } from '@/services/api/leagueInvitation';
+import AuthContext from '@/contexts/AuthContext';
 import LeagueInvitationPage from './LeagueInvitationPage';
 
 const get = vi.mocked(getMyInvitation);
@@ -46,6 +49,7 @@ let host: HTMLDivElement;
 let root: Root;
 
 beforeEach(() => {
+  student = { id: 7, role: 'student', ui_language: 'en' };
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   host = document.createElement('div');
   document.body.appendChild(host);
@@ -59,7 +63,9 @@ afterEach(() => {
 });
 
 const render = async () => {
-  await act(async () => root.render(<MemoryRouter><LeagueInvitationPage /></MemoryRouter>));
+  await act(async () => root.render(
+    <AuthContext.Provider value={{ user: student } as never}><MemoryRouter><LeagueInvitationPage /></MemoryRouter></AuthContext.Provider>,
+  ));
 };
 const button = (name: string) => [...host.querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === name || b.textContent?.trim() === name) as HTMLButtonElement | undefined;
 const click = async (name: string) => {
@@ -128,6 +134,14 @@ describe('the invitation page', () => {
     expect(text()).not.toContain('No invitation right now');
     await click('Try again');
     expect(text()).toContain('You’ve been picked.');
+  });
+
+  it('speaks Russian to a student who never chose a language, and English to one who chose it', async () => {
+    student = { id: 7, role: 'student', ui_language: null };
+    get.mockResolvedValueOnce(open());
+    await render();
+    expect(text()).toContain('Вас выбрали.');
+    expect(button('Я в деле: KOD')).toBeTruthy();
   });
 
   it('says plainly when there is no invitation', async () => {

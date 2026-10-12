@@ -10,7 +10,7 @@ import Orca from '@/components/mascot/Orca';
 import { leagueKitConfig } from '@/components/mascot/leagueKit';
 import { useAuth } from '@/contexts/AuthContext';
 import { cardKind, deadlineCountdown, LEAGUE_INVITATION_PATH, msLeft, tickEvery } from '@/lib/leagueInvitation';
-import { useLocale, useT } from '@/lib/i18n/react';
+import { useLeagueLocale, useLeagueT } from './useLeagueLocale';
 import type { Locale } from '@/lib/i18n';
 import type { LeagueInvitation } from '@/services/api/leagueInvitation';
 import { useMyInvitation } from './invitation/useMyInvitation';
@@ -27,7 +27,7 @@ interface ViewProps {
 
 /** The card's picture (data and clock in); `LeagueInvitationCard` adds the fetch and the clock. */
 export function LeagueInvitationCardView({ kind, invitation, now, offset, locale }: ViewProps) {
-  const t = useT();
+  const t = useLeagueT();
   const open = kind === 'open';
   return (
     <section
@@ -64,7 +64,7 @@ export function LeagueInvitationCardView({ kind, invitation, now, offset, locale
 
 export default function LeagueInvitationCard() {
   const { user } = useAuth();
-  const locale = useLocale();
+  const locale = useLeagueLocale();
   const { state } = useMyInvitation(user?.role === 'student');
   const invitation = state.status === 'ready' ? state.invitation : null;
   const offset = state.status === 'ready' ? state.offset : 0;

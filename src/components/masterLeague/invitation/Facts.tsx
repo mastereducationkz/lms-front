@@ -2,7 +2,7 @@
 import type { ReactNode } from 'react';
 import { CalendarClock, Flag, Gift, Users } from 'lucide-react';
 import { deadlineLabel, examLabel } from '@/lib/leagueInvitation';
-import { useT } from '@/lib/i18n/react';
+import { useLeagueT } from '../useLeagueLocale';
 import type { Locale } from '@/lib/i18n';
 import type { LeagueInvitation } from '@/services/api/leagueInvitation';
 import '@/lib/i18n/catalogs/studentHome';
@@ -30,7 +30,7 @@ function Fact({ icon, label, value, note }: { icon: ReactNode; label: string; va
 }
 
 export default function Facts({ invitation, locale }: { invitation: LeagueInvitation; locale: Locale }) {
-  const t = useT();
+  const t = useLeagueT();
   return (
     <section aria-label={t('studentHome.leagueInvite.what.heading')} className="rounded-3xl border bg-card p-5 text-card-foreground">
       <ul className="space-y-3">

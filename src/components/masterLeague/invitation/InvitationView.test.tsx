@@ -13,6 +13,7 @@ vi.mock('react-router-dom', () => ({
 }));
 vi.mock('@/services/api/client', () => ({ api: { get: vi.fn(), post: vi.fn(), put: vi.fn() } }));
 
+import AuthContext from '@/contexts/AuthContext';
 import { setActiveLocale } from '@/lib/i18n';
 import type { LeagueInvitation } from '@/services/api/leagueInvitation';
 import InvitationView, { type InvitationViewProps } from './InvitationView';
@@ -40,10 +41,12 @@ const invitation = (over: Partial<LeagueInvitation> = {}): LeagueInvitation => (
   ...over,
 });
 
-const render = (props: Partial<InvitationViewProps> & Pick<InvitationViewProps, 'scene'>, locale: 'en' | 'ru' = 'en') => {
-  setActiveLocale(locale);
-  return renderToStaticMarkup(createElement(InvitationView, { invitation: invitation(), now: NOW, offset: 0, locale, ...props }));
-};
+/** A signed-in student; `chose` is their saved language, undefined for a student who never chose one. */
+const asStudent = (chose: 'en' | 'ru' | undefined, child: ReturnType<typeof createElement>) =>
+  createElement(AuthContext.Provider, { value: { user: { id: 7, role: 'student', ui_language: chose ?? null } } as never }, child);
+
+const render = (props: Partial<InvitationViewProps> & Pick<InvitationViewProps, 'scene'>, locale: 'en' | 'ru' = 'en', chose: 'en' | 'ru' | undefined = locale) =>
+  renderToStaticMarkup(asStudent(chose, createElement(InvitationView, { invitation: invitation(), now: NOW, offset: 0, locale, ...props })));
 
 afterEach(() => setActiveLocale('en'));
 
@@ -127,6 +130,20 @@ describe('the offer', () => {
   });
 });
 
+describe('the League\'s language', () => {
+  it('is Russian for a student who never chose one, with the Russian schedule as the CRM wrote it', () => {
+    const html = render({ scene: 'open', locale: 'ru' }, 'ru', undefined);
+    expect(html).toContain('Вас выбрали.');
+    expect(html).toContain('Я в деле');
+    expect(html).not.toContain('You’ve been picked');
+  });
+
+  it('stays English for a student who chose English, and the scenes follow the same rule', () => {
+    expect(render({ scene: 'open' }, 'en', 'en')).toContain('You’ve been picked.');
+    expect(render({ scene: 'declined', invitation: invitation({ state: 'declined' }), locale: 'ru' }, 'ru', undefined)).toContain('Спасибо, что дали знать');
+  });
+});
+
 describe('the other scenes', () => {
   const accepted = invitation({ state: 'accepted', chosen_group_id: 376 });
 
@@ -176,10 +193,8 @@ describe('the other scenes', () => {
 });
 
 describe('the dashboard card', () => {
-  const card = (kind: 'open' | 'pending', locale: 'en' | 'ru' = 'en') => {
-    setActiveLocale(locale);
-    return renderToStaticMarkup(createElement(LeagueInvitationCardView, { kind, invitation: invitation(), now: NOW, offset: 0, locale }));
-  };
+  const card = (kind: 'open' | 'pending', locale: 'en' | 'ru' = 'en') =>
+    renderToStaticMarkup(asStudent(locale, createElement(LeagueInvitationCardView, { kind, invitation: invitation(), now: NOW, offset: 0, locale })));
 
   it('nudges, with the time left and a way in', () => {
     const html = card('open');

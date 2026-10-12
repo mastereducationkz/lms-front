@@ -9,7 +9,7 @@ import Orca from '@/components/mascot/Orca';
 import { LeagueCrestSvg } from '@/components/mascot/art/LeagueCrest';
 import { leagueKitConfig } from '@/components/mascot/leagueKit';
 import { chosenOption, deadlineLabel, localizeSchedule, squadName, type InvitationScene } from '@/lib/leagueInvitation';
-import { useT } from '@/lib/i18n/react';
+import { useLeagueT } from '../useLeagueLocale';
 import type { Locale } from '@/lib/i18n';
 import type { LeagueInvitation } from '@/services/api/leagueInvitation';
 import '@/lib/i18n/catalogs/studentHome';
@@ -33,7 +33,7 @@ interface SceneProps {
 const button = 'inline-flex min-h-12 items-center justify-center rounded-2xl bg-amber-300 px-6 text-base font-extrabold text-blue-950 transition-colors hover:bg-amber-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
 
 export default function Scene({ scene, invitation, locale, dashboardTo = '/dashboard', onRetry }: SceneProps) {
-  const t = useT();
+  const t = useLeagueT();
   const titleId = `${useId()}scene`;
   const heading = useRef<HTMLHeadingElement>(null);
   // The page just changed under the student (their answer went through, a reload came back): move a screen reader to the new headline.

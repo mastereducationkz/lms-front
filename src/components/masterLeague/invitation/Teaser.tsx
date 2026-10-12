@@ -6,14 +6,14 @@ import { useId } from 'react';
 import { Lock } from 'lucide-react';
 import Orca from '@/components/mascot/Orca';
 import { LEAGUE_GOAL_KEYS } from '@/lib/leagueSeason';
-import { useT } from '@/lib/i18n/react';
+import { useLeagueT } from '../useLeagueLocale';
 import type { MessageKey } from '@/lib/i18n';
 import { teaserLooks } from './teaserKit';
 import '@/lib/i18n/catalogs/studentHome';
 
 /** `idPrefix` fixes the SVG ids for a static render of several pages into one document; the page leaves it to React. */
 export default function Teaser({ idPrefix }: { idPrefix?: string }) {
-  const t = useT();
+  const t = useLeagueT();
   const prefix = idPrefix ?? `mlt${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const looks = teaserLooks();
   return (

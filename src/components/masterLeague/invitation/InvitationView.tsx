@@ -5,7 +5,7 @@
  * is one honest scene (./Scene).
  */
 import type { Locale } from '@/lib/i18n';
-import { useT } from '@/lib/i18n/react';
+import { useLeagueT } from '../useLeagueLocale';
 import type { InvitationScene } from '@/lib/leagueInvitation';
 import type { LeagueInvitation } from '@/services/api/leagueInvitation';
 import Decline from './Decline';
@@ -38,7 +38,7 @@ export interface InvitationViewProps {
 }
 
 export default function InvitationView(props: InvitationViewProps) {
-  const t = useT();
+  const t = useLeagueT();
   const { scene, invitation, now, offset, locale, saving = null, notice = null, declining = false } = props;
   const none = () => undefined;
   let body;

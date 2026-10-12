@@ -7,7 +7,7 @@ import { useId } from 'react';
 import { Loader2 } from 'lucide-react';
 import { LeagueCrestSvg } from '@/components/mascot/art/LeagueCrest';
 import { scheduleChips, squadName } from '@/lib/leagueInvitation';
-import { useT } from '@/lib/i18n/react';
+import { useLeagueT } from '../useLeagueLocale';
 import type { Locale } from '@/lib/i18n';
 import type { InvitationOption } from '@/services/api/leagueInvitation';
 import '@/lib/i18n/catalogs/studentHome';
@@ -23,7 +23,7 @@ interface SlotProps {
 }
 
 function Slot({ option, locale, saving, disabled, onChoose }: SlotProps) {
-  const t = useT();
+  const t = useLeagueT();
   const name = squadName(option);
   return (
     <li className="min-w-0">
@@ -75,7 +75,7 @@ interface SlotsProps {
 }
 
 export default function SlotCards({ options, locale, savingGroup, busy, onChoose }: SlotsProps) {
-  const t = useT();
+  const t = useLeagueT();
   const one = options.length === 1;
   const headingId = `${useId()}slots`;
   return (

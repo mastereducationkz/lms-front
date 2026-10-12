@@ -10,15 +10,15 @@ import InvitationView, { type Saving } from '@/components/masterLeague/invitatio
 import { useMyInvitation } from '@/components/masterLeague/invitation/useMyInvitation';
 import { useMyLeague, useNow } from '@/components/masterLeague/useMyLeague';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLocale, useT } from '@/lib/i18n/react';
+import { useLeagueLocale, useLeagueT } from '@/components/masterLeague/useLeagueLocale';
 import { msLeft, sceneOf, tickEvery } from '@/lib/leagueInvitation';
 import { answerInvitation, InvitationAnswerError } from '@/services/api/leagueInvitation';
 import '@/lib/i18n/catalogs/studentHome';
 
 export default function LeagueInvitationPage() {
   const { user } = useAuth();
-  const t = useT();
-  const locale = useLocale();
+  const t = useLeagueT();
+  const locale = useLeagueLocale();
   const { state, reload, adopt } = useMyInvitation(user?.role === 'student');
   const league = useMyLeague(user?.role === 'student');
   const [saving, setSaving] = useState<Saving>(null);

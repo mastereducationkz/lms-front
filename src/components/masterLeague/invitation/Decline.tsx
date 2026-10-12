@@ -5,7 +5,7 @@
  */
 import { useEffect, useId, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useT } from '@/lib/i18n/react';
+import { useLeagueT } from '../useLeagueLocale';
 import '@/lib/i18n/catalogs/studentHome';
 
 interface DeclineProps {
@@ -19,7 +19,7 @@ interface DeclineProps {
 }
 
 export default function Decline({ confirming, saving, disabled, onAsk, onKeep, onConfirm }: DeclineProps) {
-  const t = useT();
+  const t = useLeagueT();
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
   const ask = useRef<HTMLButtonElement>(null);

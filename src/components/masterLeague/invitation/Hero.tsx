@@ -9,14 +9,14 @@ import Orca from '@/components/mascot/Orca';
 import { LeagueCrestSvg } from '@/components/mascot/art/LeagueCrest';
 import { leagueKitConfig } from '@/components/mascot/leagueKit';
 import { deadlineCountdown, examMonth, msLeft } from '@/lib/leagueInvitation';
-import { useT } from '@/lib/i18n/react';
+import { useLeagueT } from '../useLeagueLocale';
 import type { Locale } from '@/lib/i18n';
 import type { LeagueInvitation } from '@/services/api/leagueInvitation';
 import '@/lib/i18n/catalogs/studentHome';
 
 /** The countdown, as a pill. `role="timer"` is silent to screen readers until asked; the deadline itself is written out below it. */
 export function CountdownPill({ left, locale }: { left: number; locale: Locale }) {
-  const t = useT();
+  const t = useLeagueT();
   const hurry = left > 0 && left < 6 * 3_600_000;
   return (
     <div
@@ -41,7 +41,7 @@ interface HeroProps {
 }
 
 export default function Hero({ invitation, now, offset, locale }: HeroProps) {
-  const t = useT();
+  const t = useLeagueT();
   const titleId = `${useId()}hero`;
   return (
     <header

@@ -9,6 +9,7 @@ import {
   isAnswerable, LEAGUE_INVITATION_NOTIFICATION_TYPES, LEAGUE_INVITATION_PATH, localizeSchedule, msLeft, sceneOf, scheduleChips,
   shouldPollEnrolment, squadName, tickEvery, ENROL_POLL_LIMIT_MS,
 } from './leagueInvitation';
+import { LEAGUE_DEFAULT_LOCALE, leagueLocale } from './leagueLocale';
 import { BELL_NOTIFICATION_TYPES } from '../services/api/notifications';
 import type { LeagueInvitation } from '../services/api/leagueInvitation';
 
@@ -195,5 +196,17 @@ describe('the copy', () => {
       'none.title', 'failed.title', 'card.title', 'card.sub', 'card.cta', 'card.pendingTitle',
     ];
     for (const key of keys) expect(hasMessage(`studentHome.leagueInvite.${key}`), key).toBe(true);
+  });
+});
+
+describe('the League\'s language', () => {
+  it('is Russian unless the student chose English (the same rule as the backend)', () => {
+    expect(LEAGUE_DEFAULT_LOCALE).toBe('ru');
+    expect(leagueLocale(null)).toBe('ru');
+    expect(leagueLocale(undefined)).toBe('ru');
+    expect(leagueLocale({ ui_language: null })).toBe('ru');
+    expect(leagueLocale({ ui_language: 'de' })).toBe('ru');
+    expect(leagueLocale({ ui_language: 'en' })).toBe('en');
+    expect(leagueLocale({ ui_language: 'ru' })).toBe('ru');
   });
 });
