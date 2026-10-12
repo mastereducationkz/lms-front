@@ -9,6 +9,7 @@ export const studentCard = {
 
   // Journal
   'studentCard.journal.title': 'Students',
+  'studentCard.journal.inMasterLeague': 'in ML until {date}',
   'studentCard.journal.total': { one: '{count} student', other: '{count} students' },
   'studentCard.journal.searchPlaceholder': 'Search by name or email…',
   'studentCard.journal.allGroups': 'All groups',

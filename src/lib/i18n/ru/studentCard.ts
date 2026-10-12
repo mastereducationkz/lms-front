@@ -8,6 +8,7 @@ export const studentCard: RuTable<typeof en> = {
   'studentCard.az.notStarted': 'Не начато',
 
   'studentCard.journal.title': 'Журнал студентов',
+  'studentCard.journal.inMasterLeague': 'в ML до {date}',
   'studentCard.journal.total': { one: '{count} студент', few: '{count} студента', many: '{count} студентов', other: '{count} студента' },
   'studentCard.journal.searchPlaceholder': 'Поиск по имени или email...',
   'studentCard.journal.allGroups': 'Все группы',

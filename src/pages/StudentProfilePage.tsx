@@ -1,3 +1,4 @@
+import { masterLeagueUntilShort, type MasterLeagueMembership } from '@/lib/masterLeagueLabel';
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
@@ -76,7 +77,8 @@ interface StudentProfile {
     daily_streak: number;
     assignment_zero_completed: boolean;
   };
-  groups: Array<{ id: number; name: string }>;
+  groups: Array<{ id: number; name: string; is_master_league?: boolean }>;
+  master_league?: MasterLeagueMembership | null;
   assignment_zero: Record<string, any> | null;
   attendance: {
     total: number;
@@ -218,6 +220,11 @@ export default function StudentProfilePage() {
             {groups.map(g => (
               <Badge key={g.id} className="bg-muted text-muted-foreground border-border text-xs font-normal">{g.name}</Badge>
             ))}
+            {profile.master_league && (
+              <Badge className="border-violet-200 bg-violet-50 text-xs font-normal text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/15 dark:text-violet-300">
+                {t('studentCard.journal.inMasterLeague', { date: masterLeagueUntilShort(profile.master_league.until) })}
+              </Badge>
+            )}
           </div>
         </div>
         <div className="flex flex-col items-end gap-1 text-right text-xs text-muted-foreground">
