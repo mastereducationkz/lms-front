@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { bellPollDelayMs, relativeTime, t } from '../lib/classMaterials';
 import { useLocale } from '../lib/i18n/react';
 import { lessonPath } from '../lib/lessonLinks';
+import { invitationNotificationPath } from '../lib/leagueInvitationPaths';
 import { libraryNotificationPath } from '../lib/library';
 import { isMlProgressNotice } from '../lib/leagueNotifications';
 import { ACHIEVEMENT_NOTIFICATION_TYPE, ACHIEVEMENTS_CHECK_EVENT, achievementNotificationPath } from '../lib/achievements';
@@ -23,8 +24,8 @@ const LIST_LIMIT = 20;
 
 /**
  * The Topbar's notifications bell (Task 15): unread count for class-materials notices
- * (`class_materials`, `class_material_removed`) and the library's (`library`,
- * `library_item_removed`), and a popover listing them. Hidden for a
+ * (`class_materials`, `class_material_removed`), the library's (`library`,
+ * `library_item_removed`) and the Master League invitation's, and a popover listing them. Hidden for a
  * parent (D7: "parents see nothing") and while logged out.
  *
  * The unread count polls every 120 s ± 15 s (`bellPollDelayMs`, Ruling 21), but only while the
@@ -125,6 +126,12 @@ export default function NotificationsBell() {
     // The Master League digest was read in the popover; the dashboard has the season banner.
     if (isMlProgressNotice(n.notification_type)) {
       navigate('/dashboard');
+      return;
+    }
+    // The Master League invitation (and its reminder) opens its page (2026-10-13).
+    const invitationPath = invitationNotificationPath(n.notification_type);
+    if (invitationPath) {
+      navigate(invitationPath);
       return;
     }
     // The library's notices open its tab; a lesson's materials live on its page (2026-09-28).

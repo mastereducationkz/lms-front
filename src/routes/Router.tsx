@@ -81,6 +81,7 @@ const LandingPage = lazyRoute(() => import('../pages/LandingPage.tsx'));
 const AnalyticsPage = lazyRoute(() => import('../pages/analytics/AnalyticsPage.tsx'));
 const FavoriteFlashcardsPage = lazyRoute(() => import('../pages/FavoriteFlashcardsPage.tsx'));
 const AchievementsPage = lazyRoute(() => import('../pages/AchievementsPage.tsx'));
+const LeagueInvitationPage = lazyRoute(() => import('../pages/LeagueInvitationPage.tsx'));
 const CuratorHomeworksPage = lazyRoute(() => import('../pages/CuratorHomeworksPage.tsx'));
 const CuratorLeaderboardPage = lazyRoute(() => import('../pages/CuratorLeaderboardPage.tsx'));
 const CuratorGroupsPage = lazyRoute(() => import('../pages/CuratorGroupsPage.tsx'));
@@ -260,6 +261,15 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['student']}>
               <AppLayout>
                 <AchievementsPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* The Master League invitation (2026-10-13): the bell, a push and Telegram open it. */}
+          <Route path="/league-invitation" element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <AppLayout>
+                <LeagueInvitationPage />
               </AppLayout>
             </ProtectedRoute>
           } />
