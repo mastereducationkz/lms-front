@@ -2,6 +2,7 @@
 import type { ReactNode } from 'react';
 import { book, calculator, coffee, laptop, pencil, pillow, quill } from './propsStudy';
 import { controller, cupcake, decks, guitar, magnifier, rocket, trophy, wave } from './propsFun';
+import { LEAGUE_PROPS } from './leagueProps';
 import { REWARD_PROPS } from './rewardProps';
 
 export interface PropPiece {
@@ -30,4 +31,6 @@ export const PROP_ART: PropPiece[] = [
   cupcake,
   // rewards, appended in contract order (swim ring … lightning badge)
   ...REWARD_PROPS,
+  // Master League rewards (p27 Silver Whistle … p29 Gold Clipboard)
+  ...LEAGUE_PROPS,
 ];

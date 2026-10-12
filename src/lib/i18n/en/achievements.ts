@@ -67,6 +67,7 @@ export const achievements = {
   'achievements.tier.legendary': 'Legendary',
   'achievements.tier.social': 'Social',
   'achievements.tier.seasonal': 'Seasonal',
+  'achievements.tier.league': 'League',
 
   'achievements.role.teacher': 'Teacher',
   'achievements.role.curator': 'Curator',

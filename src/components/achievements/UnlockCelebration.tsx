@@ -10,6 +10,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useTourActive } from '@/components/guide/tourStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { parseMascot, rewardLabel } from '@/components/mascot/config';
+import { leagueKitCode } from '@/components/mascot/leagueKit';
+import LeagueWelcome from '@/components/masterLeague/LeagueWelcome';
 import { onboardingPending } from '@/components/mascot/spotlight';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -21,6 +23,7 @@ import {
   byExcitement,
   celebrationReward,
   celebrationTitle,
+  isBigMoment,
   tierLabel,
   withReward,
 } from '@/lib/achievements';
@@ -99,7 +102,7 @@ export default function UnlockCelebration() {
     const list = data.achievements.filter((a) => fresh.includes(a.key));
     const mode = celebrationMode({
       count: fresh.length,
-      legendary: list.some((a) => a.tier === 'legendary'),
+      legendary: list.some(isBigMoment),
       atVisitStart,
       visit: attention.visitState(),
       holder: attention.holderNow(),
@@ -139,21 +142,34 @@ export default function UnlockCelebration() {
   // look unreadable here and fall back to the automatic orca.
   const wearable = pick !== null && parseMascot(withReward(user.mascot, user.id, pick.reward)) !== null;
 
+  // «Signed to the League» opens the league's own welcome scene instead of the generic one.
+  const welcome = items.some((a) => a.key === 'ml_signed');
+
+  const saveLook = (code: string, message: string) => {
+    setSaving(true);
+    updateMyMascot(code)
+      .then((updated) => {
+        updateUser({ ...user, mascot: updated.mascot ?? null });
+        toast(message, 'success');
+      })
+      .catch((e: Error) => toast(e.message || t('studentHome.mascot.saveFailed'), 'error'))
+      .finally(() => setSaving(false));
+  };
+
   const close = (wear: boolean) => {
     setModalKeys(null);
     attention.release('celebration');
     attention.declare('celebration', 'none');
-    if (wear && pick && wearable) {
-      setSaving(true);
-      updateMyMascot(withReward(user.mascot, user.id, pick.reward))
-        .then((updated) => {
-          updateUser({ ...user, mascot: updated.mascot ?? null });
-          toast(t('studentHome.achievements.celebration.wearing', { part: rewardLabel(pick.reward, locale) }), 'success');
-        })
-        .catch((e: Error) => toast(e.message || t('studentHome.mascot.saveFailed'), 'error'))
-        .finally(() => setSaving(false));
+    if (!wear) return;
+    if (welcome) {
+      const kit = leagueKitCode(user.mascot, user.id);
+      if (parseMascot(kit) !== null) saveLook(kit, t('studentHome.league.welcome.wearing'));
+    } else if (pick && wearable) {
+      saveLook(withReward(user.mascot, user.id, pick.reward), t('studentHome.achievements.celebration.wearing', { part: rewardLabel(pick.reward, locale) }));
     }
   };
+
+  if (welcome) return <LeagueWelcome items={items} saving={saving} onClose={close} />;
 
   return (
     <>

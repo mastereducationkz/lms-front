@@ -11,10 +11,12 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import AchievementCard, { formatUnlockDate } from '@/components/achievements/AchievementCard';
 import RewardPreview from '@/components/achievements/RewardPreview';
+import LeagueSectionHeader from '@/components/masterLeague/LeagueSectionHeader';
 import {
   achievementField,
   almostThere,
   groupByCategory,
+  LEAGUE_CATEGORY,
   recentlyUnlocked,
   resolveHighlight,
   starFromLabel,
@@ -56,7 +58,11 @@ export default function AchievementsPage() {
 
   useEffect(load, [load]);
 
-  const list = useMemo(() => data?.achievements ?? [], [data]);
+  // The league's achievements belong to league students only (the server already leaves them out for anyone else).
+  const list = useMemo(
+    () => (data?.achievements ?? []).filter((a) => data?.league_access === true || a.category !== LEAGUE_CATEGORY),
+    [data],
+  );
   const highlight = useMemo(() => resolveHighlight(list, hash), [list, hash]);
 
   useEffect(() => {
@@ -92,7 +98,9 @@ export default function AchievementsPage() {
 
   const near = almostThere(list, 3);
   const recent = recentlyUnlocked(list, 4);
-  const groups = groupByCategory(list, locale);
+  const allGroups = groupByCategory(list, locale);
+  const leagueGroup = allGroups.find((g) => g.key === LEAGUE_CATEGORY);
+  const groups = allGroups.filter((g) => g.key !== LEAGUE_CATEGORY);
   const stars = data.star_awards ?? [];
   const starCount = list.find((a) => a.key === 'star_of_week')?.count ?? 0;
 
@@ -128,6 +136,29 @@ export default function AchievementsPage() {
           </div>
         </div>
       </div>
+
+      {leagueGroup && (
+        <section
+          aria-labelledby="ml-section"
+          className="space-y-4 rounded-3xl border border-amber-300/30 bg-[linear-gradient(135deg,#07122E_0%,#0B1B4D_45%,#14307A_100%)] p-4 shadow-[0_18px_40px_-26px_rgba(11,27,77,0.9)] sm:p-5"
+        >
+          <LeagueSectionHeader id="ml-section" unlocked={leagueGroup.items.filter((a) => a.unlocked).length} total={leagueGroup.items.length} />
+          <div className="grid gap-4 @lg:grid-cols-2">
+            {leagueGroup.items.map((a) => (
+              <AchievementCard
+                key={a.key}
+                ref={(el) => {
+                  cardRefs.current[a.key] = el;
+                }}
+                achievement={a}
+                code={code}
+                userId={user.id}
+                highlighted={highlight === a.key}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {near.length > 0 && (
         <Section title={t('studentHome.achievements.almostThere')} icon={<Sparkles className="h-4 w-4 text-brand" aria-hidden />}>

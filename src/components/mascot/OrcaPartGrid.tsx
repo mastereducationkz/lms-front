@@ -7,6 +7,7 @@ import { Lock, Sparkles } from 'lucide-react';
 import Orca from './Orca';
 import {
   CATEGORY_PARTS,
+  isLeaguePart,
   isLockedPart,
   isRewardPart,
   partLabel,
@@ -21,6 +22,8 @@ interface PartGridProps {
   tab: MascotCategory;
   config: MascotConfig;
   locked: LockedParts | null;
+  /** Master League parts show only to students with league access (owner, 2026-10-13). */
+  leagueAccess?: boolean;
   onPick: (config: MascotConfig) => void;
 }
 
@@ -57,12 +60,12 @@ function Tile({ label, option, active, isLocked, isReward, onClick }: {
   );
 }
 
-export default function OrcaPartGrid({ tab, config, locked, onPick }: PartGridProps) {
+export default function OrcaPartGrid({ tab, config, locked, leagueAccess = false, onPick }: PartGridProps) {
   const t = useT();
   const locale = useLocale();
   const parts = CATEGORY_PARTS[tab].map((part, index) => ({ part, index }));
   const free = parts.filter(({ index }) => !isRewardPart(tab, index));
-  const rewards = parts.filter(({ index }) => isRewardPart(tab, index));
+  const rewards = parts.filter(({ index }) => isRewardPart(tab, index) && (leagueAccess || !isLeaguePart(tab, index)));
 
   const tile = ({ part, index }: (typeof parts)[number]) => {
     const option = { ...config, [tab]: index };

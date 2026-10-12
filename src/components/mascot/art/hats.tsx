@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { BRAND_BLUE, MasterMark, MERCH_GOLD } from './MasterMark';
 import { BODY_PATH } from './base';
 import { goldMasterHoodie, masterHoodie } from './hoodie';
+import { LEAGUE_HATS } from './leagueHats';
 import { REWARD_HATS } from './rewardHats';
 
 export interface Piece {
@@ -290,4 +291,6 @@ export const HAT_ART: Piece[] = [
   // rewards (achievements), in contract order: h17 Gold Master hoodie, then h18–h25
   goldMasterHoodie,
   ...REWARD_HATS,
+  // Master League rewards: h26 League Jersey, h27 Hat-trick Topper
+  ...LEAGUE_HATS,
 ];

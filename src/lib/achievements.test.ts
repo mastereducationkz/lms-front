@@ -9,6 +9,8 @@ import {
   celebrationReward,
   celebrationTitle,
   groupByCategory,
+  isBigMoment,
+  LEAGUE_CATEGORY,
   nextAchievement,
   recentlyUnlocked,
   resolveHighlight,
@@ -86,6 +88,15 @@ describe('recent unlocks and categories', () => {
     expect(groups.map((g) => g.key)).toEqual(['getting_started', 'seasonal', 'other']);
     expect(groups.map((g) => g.label)).toEqual(['Getting started', 'Seasonal', 'More']);
     expect(groupByCategory([ach({ key: 'g', category: 'getting_started' })], 'ru')[0].label).toBe('Первые шаги');
+  });
+
+  it('puts Master League first when a student has it', () => {
+    const groups = groupByCategory([
+      ach({ key: 'g', category: 'getting_started' }),
+      ach({ key: 'ml_signed', category: LEAGUE_CATEGORY, tier: 'league' }),
+    ]);
+    expect(groups.map((g) => g.key)).toEqual(['master_league', 'getting_started']);
+    expect(groups[0].label).toBe('Master League');
   });
 });
 
@@ -232,5 +243,40 @@ describe('an achievement in the reader’s language', () => {
   it('names the tier', () => {
     expect(tierLabel('legendary', 'en')).toBe('Legendary');
     expect(tierLabel('rare', 'ru')).toBe('Редкое');
+    expect(tierLabel('league', 'en')).toBe('League');
+    expect(tierLabel('league', 'ru')).toBe('Лига');
+  });
+
+  it('shows the league achievements’ catalog words in Russian', () => {
+    const signed = ach({ key: 'ml_signed', title: 'Signed to the League', description: 'x', how_to: 'y', tier: 'league' });
+    expect(achievementField(signed, 'title', 'ru')).toBe('В Лиге');
+    expect(achievementField(ach({ key: 'ml_ever_present', title: 'Ever-Present' }), 'title', 'ru')).toBe('Весь месяц');
+    expect(achievementField(ach({ key: 'ml_no_loose_ends', title: 'No Loose Ends' }), 'title', 'ru')).toBe('Без хвостов');
+  });
+});
+
+describe('the league moment', () => {
+  it('counts a league unlock as big as a legendary one, and nothing else', () => {
+    expect(isBigMoment({ tier: 'league' })).toBe(true);
+    expect(isBigMoment({ tier: 'legendary' })).toBe(true);
+    expect(isBigMoment({ tier: 'rare' })).toBe(false);
+    expect(isBigMoment({ tier: 'seasonal' })).toBe(false);
+  });
+
+  it('ranks a league unlock beside the legendary ones, ahead of the rest, keeping the given order inside the tier', () => {
+    const list = [
+      ach({ key: 'on_time_5', tier: 'rare' }),
+      ach({ key: 'ml_signed', tier: 'league' }),
+      ach({ key: 'graduate_gold', tier: 'legendary' }),
+    ];
+    expect(byExcitement(list).map((a) => a.key)).toEqual(['ml_signed', 'graduate_gold', 'on_time_5']);
+  });
+
+  it('dresses the orca in the league reward first', () => {
+    const list = [
+      ach({ key: 'on_time_5', tier: 'rare', rewards: [{ layer: 'p', index: 19, name: 'Clock pin' }] }),
+      ach({ key: 'ml_signed', tier: 'league', rewards: [{ layer: 'h', index: 26, name: 'League Jersey' }, { layer: 'f', index: 5, name: 'League Crest frame' }] }),
+    ];
+    expect(celebrationReward(list, ['on_time_5', 'ml_signed'])?.reward).toMatchObject({ layer: 'h', index: 26 });
   });
 });

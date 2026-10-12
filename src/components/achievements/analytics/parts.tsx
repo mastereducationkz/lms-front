@@ -14,6 +14,7 @@ const TIER_LABEL: Record<AchievementTier, MessageKey> = {
   legendary: 'achievements.tier.legendary',
   social: 'achievements.tier.social',
   seasonal: 'achievements.tier.seasonal',
+  league: 'achievements.tier.league',
 };
 
 export function TierBadge({ tier }: { tier: AchievementTier }) {

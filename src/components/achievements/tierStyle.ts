@@ -34,6 +34,13 @@ export const TIER_STYLE: Record<AchievementTier, TierStyle> = {
     bar: 'bg-violet-500',
     ring: 'ring-violet-300 dark:ring-violet-700',
   },
+  league: {
+    card:
+      'border-blue-900/40 dark:border-amber-400/50 bg-gradient-to-br from-blue-50 via-white to-amber-50/60 dark:from-blue-950/50 dark:via-card dark:to-card shadow-[0_0_0_1px_rgba(30,58,138,0.16),0_10px_30px_-14px_rgba(30,58,138,0.5)]',
+    badge: 'bg-gradient-to-r from-blue-950 to-blue-800 text-amber-300 dark:from-blue-900 dark:to-blue-800',
+    bar: 'bg-gradient-to-r from-blue-700 to-amber-400',
+    ring: 'ring-amber-400',
+  },
   seasonal: {
     card: 'border-emerald-200 dark:border-emerald-900',
     badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',

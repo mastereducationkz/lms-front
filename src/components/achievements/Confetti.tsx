@@ -14,7 +14,7 @@ export function prefersReducedMotion(): boolean {
   }
 }
 
-export default function Confetti({ pieces = 140, durationMs = 2600 }: { pieces?: number; durationMs?: number }) {
+export default function Confetti({ pieces = 140, durationMs = 2600, colors = COLORS }: { pieces?: number; durationMs?: number; colors?: readonly string[] }) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export default function Confetti({ pieces = 140, durationMs = 2600 }: { pieces?:
       size: (5 + Math.random() * 6) * dpr,
       rot: Math.random() * Math.PI,
       vr: (Math.random() - 0.5) * 0.3,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      color: colors[Math.floor(Math.random() * colors.length)],
       round: Math.random() < 0.3,
     }));
     const start = performance.now();
@@ -75,7 +75,7 @@ export default function Confetti({ pieces = 140, durationMs = 2600 }: { pieces?:
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', resize);
     };
-  }, [pieces, durationMs]);
+  }, [pieces, durationMs, colors]);
 
   return <canvas ref={ref} aria-hidden className="pointer-events-none fixed inset-0 z-[60] h-full w-full" />;
 }

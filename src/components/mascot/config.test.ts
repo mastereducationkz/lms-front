@@ -42,7 +42,7 @@ describe('mascot codes', () => {
       p: CATEGORY_PARTS.prop.length,
       b: CATEGORY_PARTS.background.length,
       f: CATEGORY_PARTS.frame.length,
-    }).toEqual({ h: 26, g: 9, e: 8, p: 27, b: 14, f: 5 });
+    }).toEqual({ h: 28, g: 9, e: 8, p: 30, b: 15, f: 6 });
   });
 
   it('writes v2 and still reads v1 codes as frame 0', () => {
@@ -54,7 +54,7 @@ describe('mascot codes', () => {
   it('refuses anything that is not a valid v1 or v2 code', () => {
     for (const bad of [
       '', 'v1.h1.g0.e0.p0', 'v1.h1.g0.e0.p0.b0.f0', 'v2.h1.g0.e0.p0.b0', 'v3.h1.g0.e0.p0.b0.f0',
-      'v1.h26.g0.e0.p0.b0', 'v2.h0.g0.e0.p0.b14.f0', 'v2.h0.g0.e0.p0.b0.f5', 'v2.h0.g9.e0.p0.b0.f0',
+      'v1.h28.g0.e0.p0.b0', 'v2.h0.g0.e0.p30.b0.f0', 'v2.h0.g0.e0.p0.b15.f0', 'v2.h0.g0.e0.p0.b0.f6', 'v2.h0.g9.e0.p0.b0.f0',
       'v1.g0.h1.e0.p0.b0', 'v2.h1.g0.e0.p0.b0.f0.x', 'nonsense',
     ]) {
       expect(parseMascot(bad)).toBeNull();
@@ -225,16 +225,20 @@ describe('achievement rewards', () => {
     ['h', 19, 'golden_kalpak', 'nauryz'], ['h', 20, 'explorer_hat', 'checkpoint_pro'],
     ['h', 21, 'warrior_headband', 'weekly_warrior'], ['h', 22, 'quiz_cap', 'live_ace'],
     ['h', 23, 'garland_scarf', 'winter_lights'], ['h', 24, 'team_scarf', 'team_spirit'],
-    ['h', 25, 'star_cape', 'star_of_week'], ['g', 8, 'gold_star_glasses', 'full_marks_3'],
+    ['h', 25, 'star_cape', 'star_of_week'], ['h', 26, 'league_jersey', 'ml_signed'],
+    ['h', 27, 'hat_trick_topper', 'ml_hat_trick'], ['g', 8, 'gold_star_glasses', 'full_marks_3'],
     ['p', 16, 'swim_ring', 'first_splash'], ['p', 17, 'fin_pencil', 'hand_in_hero'],
     ['p', 18, 'compass', 'first_checkpoint'], ['p', 19, 'clock_pin', 'on_time_5'],
     ['p', 20, 'golden_clock', 'on_time_20'], ['p', 21, 'bronze_medal', 'perfect_month'],
     ['p', 22, 'jetpack', 'score_climber'], ['p', 23, 'boomerang', 'comeback'],
     ['p', 24, 'diploma', 'verified_score'], ['p', 25, 'lucky_charm', 'test_day_ready'],
-    ['p', 26, 'lightning_badge', 'live_wire'], ['b', 11, 'sparkle', 'hello_kasatik'],
-    ['b', 12, 'sunrise', 'early_bird'], ['b', 13, 'aurora', 'streak_100'],
+    ['p', 26, 'lightning_badge', 'live_wire'], ['p', 27, 'silver_whistle', 'ml_first_whistle'],
+    ['p', 28, 'squad_pennant', 'ml_full_squad'], ['p', 29, 'gold_clipboard', 'ml_no_loose_ends'],
+    ['b', 11, 'sparkle', 'hello_kasatik'], ['b', 12, 'sunrise', 'early_bird'], ['b', 13, 'aurora', 'streak_100'],
+    ['b', 14, 'stadium_lights', 'ml_ever_present'],
     ['f', 1, 'flame', 'streak_7'], ['f', 2, 'blue_flame', 'streak_30'],
     ['f', 3, 'gold_laurel', 'graduate_gold'], ['f', 4, 'star_ring', 'star_of_week_3'],
+    ['f', 5, 'league_crest', 'ml_signed'],
   ];
 
   it('match the contract table exactly', () => {

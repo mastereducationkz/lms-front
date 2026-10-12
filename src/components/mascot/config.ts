@@ -60,6 +60,9 @@ export const HATS: MascotPart[] = [
   { key: 'garland_scarf', labelKey: 'studentHome.wardrobe.hat.garlandScarf' },
   { key: 'team_scarf', labelKey: 'studentHome.wardrobe.hat.teamScarf' },
   { key: 'star_cape', labelKey: 'studentHome.wardrobe.hat.starCape' },
+  // ── Master League rewards ──
+  { key: 'league_jersey', labelKey: 'studentHome.wardrobe.hat.leagueJersey' },
+  { key: 'hat_trick_topper', labelKey: 'studentHome.wardrobe.hat.hatTrickTopper' },
 ];
 
 export const EYEWEAR: MascotPart[] = [
@@ -115,6 +118,10 @@ export const PROPS: MascotPart[] = [
   { key: 'diploma', labelKey: 'studentHome.wardrobe.prop.diploma' },
   { key: 'lucky_charm', labelKey: 'studentHome.wardrobe.prop.luckyCharm' },
   { key: 'lightning_badge', labelKey: 'studentHome.wardrobe.prop.lightningBadge' },
+  // ── Master League rewards ──
+  { key: 'silver_whistle', labelKey: 'studentHome.wardrobe.prop.silverWhistle' },
+  { key: 'squad_pennant', labelKey: 'studentHome.wardrobe.prop.squadPennant' },
+  { key: 'gold_clipboard', labelKey: 'studentHome.wardrobe.prop.goldClipboard' },
 ];
 
 export const BACKGROUNDS: MascotPart[] = [
@@ -133,6 +140,8 @@ export const BACKGROUNDS: MascotPart[] = [
   { key: 'sparkle', labelKey: 'studentHome.wardrobe.background.sparkle' },
   { key: 'sunrise', labelKey: 'studentHome.wardrobe.background.sunrise' },
   { key: 'aurora', labelKey: 'studentHome.wardrobe.background.aurora' },
+  // ── Master League rewards ──
+  { key: 'stadium_lights', labelKey: 'studentHome.wardrobe.background.stadiumLights' },
 ];
 
 export const FRAMES: MascotPart[] = [
@@ -142,6 +151,8 @@ export const FRAMES: MascotPart[] = [
   { key: 'blue_flame', labelKey: 'studentHome.wardrobe.frame.blueFlame' },
   { key: 'gold_laurel', labelKey: 'studentHome.wardrobe.frame.goldLaurel' },
   { key: 'star_ring', labelKey: 'studentHome.wardrobe.frame.starRing' },
+  // ── Master League rewards ──
+  { key: 'league_crest', labelKey: 'studentHome.wardrobe.frame.leagueCrest' },
 ];
 
 export const CATEGORY_PARTS: Record<MascotCategory, MascotPart[]> = {
@@ -278,6 +289,10 @@ const REWARD_ACHIEVEMENT: Record<string, string> = {
   lucky_charm: 'test_day_ready', lightning_badge: 'live_wire',
   sparkle: 'hello_kasatik', sunrise: 'early_bird', aurora: 'streak_100',
   flame: 'streak_7', blue_flame: 'streak_30', gold_laurel: 'graduate_gold', star_ring: 'star_of_week_3',
+  // Master League (owner, 2026-10-13)
+  league_jersey: 'ml_signed', league_crest: 'ml_signed', silver_whistle: 'ml_first_whistle',
+  hat_trick_topper: 'ml_hat_trick', squad_pennant: 'ml_full_squad', stadium_lights: 'ml_ever_present',
+  gold_clipboard: 'ml_no_loose_ends',
 };
 
 /** Every reward part, in layer order: (layer, index) → the achievement that unlocks it. */
@@ -289,6 +304,17 @@ export const REWARD_PARTS: RewardPart[] = SEGMENTS.flatMap(([category, layer]) =
       layer, category, index, key: part.key, labelKey: part.labelKey, achievement: REWARD_ACHIEVEMENT[part.key],
     })),
 );
+
+/** The achievements that belong to Master League: their parts are hidden from students outside it. */
+export const LEAGUE_ACHIEVEMENTS: ReadonlySet<string> = new Set([
+  'ml_signed', 'ml_first_whistle', 'ml_hat_trick', 'ml_full_squad', 'ml_ever_present', 'ml_no_loose_ends',
+]);
+
+/** Is this reward part a Master League one (it only shows to students with league access)? */
+export function isLeaguePart(category: MascotCategory, index: number): boolean {
+  const part = REWARD_PARTS.find((r) => r.category === category && r.index === index);
+  return !!part && LEAGUE_ACHIEVEMENTS.has(part.achievement);
+}
 
 /** A part's name in the reader's language ('Crown' / «Корона»); '' for an index this build doesn't know. */
 export function partLabel(category: MascotCategory, index: number, locale: Locale = activeLocale()): string {
