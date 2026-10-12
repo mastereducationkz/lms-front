@@ -99,6 +99,8 @@ export interface PhaseCopy {
   sub: string;
   /** The key the coach's notes hang off (studentHome.league.note.<key>.1…3). */
   noteKey: string;
+  /** The next kick-off, as its own line, in the phases whose sentence does not already carry it. */
+  kickoff: string | null;
 }
 
 /** The headline and the line under it for the season's phase, in the reader's language. */
@@ -110,18 +112,20 @@ export function phaseCopy(league: MyLeague, now: number, locale: Locale = active
     const days = league.days_to_exam;
     const left = days != null && days >= 0 ? tr('daysToFinal', { count: days }) : null;
     const sub = [left, kickoffLine(league, now, locale)].filter(Boolean).join(' · ');
-    return { title: tr('phase.season.title', { n: currentMatchday(league), total: league.lessons.total }), sub, noteKey: key };
+    return { title: tr('phase.season.title', { n: currentMatchday(league), total: league.lessons.total }), sub, noteKey: key, kickoff: null };
   }
   if (phase === 'final_week') {
     const days = Math.max(0, league.days_to_exam ?? 0);
-    return { title: tr('phase.finalWeek.title'), sub: tr('phase.finalWeek.sub', { count: days }), noteKey: key };
+    const kickoff = league.next_lesson ? kickoffLine(league, now, locale) : null;
+    return { title: tr('phase.finalWeek.title'), sub: tr('phase.finalWeek.sub', { count: days }), noteKey: key, kickoff };
   }
   if (phase === 'after') {
     const left = daysUntil(league.result_due, now);
     const sub = left == null || left <= 0 ? tr('phase.after.subToday') : tr('phase.after.sub', { count: left });
-    return { title: tr('phase.after.title'), sub, noteKey: key };
+    return { title: tr('phase.after.title'), sub, noteKey: key, kickoff: null };
   }
-  return { title: tr(`phase.${key}.title`), sub: tr(`phase.${key}.sub`), noteKey: key };
+  const kickoff = phase === 'warmup' && league.next_lesson ? kickoffLine(league, now, locale) : null;
+  return { title: tr(`phase.${key}.title`), sub: tr(`phase.${key}.sub`), noteKey: key, kickoff };
 }
 
 /** A small stable hash of the day, so the coach's note changes daily and is the same for the whole day. */

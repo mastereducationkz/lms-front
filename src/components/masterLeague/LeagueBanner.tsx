@@ -71,6 +71,7 @@ export function LeagueBannerView({ league, userId, now, locale, defaultOpen = fa
           </p>
           <h2 id={headingId} className="mt-0.5 text-xl font-extrabold leading-tight @lg:text-2xl">{copy.title}</h2>
           <p className="mt-1 text-sm text-blue-100">{copy.sub}</p>
+          {copy.kickoff && <p className="mt-0.5 text-xs font-semibold text-amber-200">{copy.kickoff}</p>}
         </div>
         <div className="col-span-2 min-w-0 @lg:col-span-1 @lg:col-start-2">
           <LeagueTrack items={league.lessons.items} phase={league.phase} examDate={league.exam_date} />

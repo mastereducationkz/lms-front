@@ -137,6 +137,14 @@ describe('the words of each phase', () => {
     expect(phaseCopy(league({ phase: 'exam_day' }), NOW, 'ru')).toMatchObject({ title: 'Сегодня Финал', noteKey: 'examDay' });
   });
 
+  it('adds the next kick-off as its own line in the warm-up and the final week, where the sentence has no room for it', () => {
+    expect(phaseCopy(league({ phase: 'warmup' }), NOW, 'en').kickoff).toMatch(/^Next kick-off .*14 Oct, 18:00$/);
+    expect(phaseCopy(league({ phase: 'final_week', days_to_exam: 5 }), NOW, 'ru').kickoff).toMatch(/^Следующий тур: /);
+    expect(phaseCopy(league({ phase: 'warmup', next_lesson: null }), NOW, 'en').kickoff).toBeNull();
+    expect(phaseCopy(league(), NOW, 'en').kickoff).toBeNull(); // the season sentence already carries it
+    for (const phase of ['eve', 'exam_day', 'after'] as const) expect(phaseCopy(league({ phase }), NOW, 'en').kickoff, phase).toBeNull();
+  });
+
   it('asks for the score report after the exam, counting the days left, or today', () => {
     const after = (result_due: string | null) => league({ phase: 'after', result_due });
     expect(phaseCopy(after('2026-10-20'), NOW, 'en')).toMatchObject({
