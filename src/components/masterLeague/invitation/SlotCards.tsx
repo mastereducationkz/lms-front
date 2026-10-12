@@ -1,12 +1,12 @@
 /**
- * The squads on offer: one navy card each with its name, its weekly schedule and, when it is about
- * to fill, how many seats are left. The gold button is the answer: «I'm in» for that squad. While an
+ * The squads on offer: one navy card each with its name and its weekly schedule (groups have no
+ * capacity limit, so no seat counts are shown or computed). The gold button is the answer: «I'm in» for that squad. While an
  * answer is on its way every button waits, so a double tap cannot send two.
  */
 import { useId } from 'react';
 import { Loader2 } from 'lucide-react';
 import { LeagueCrestSvg } from '@/components/mascot/art/LeagueCrest';
-import { scheduleChips, seatsNote, squadName } from '@/lib/leagueInvitation';
+import { scheduleChips, squadName } from '@/lib/leagueInvitation';
 import { useT } from '@/lib/i18n/react';
 import type { Locale } from '@/lib/i18n';
 import type { InvitationOption } from '@/services/api/leagueInvitation';
@@ -25,7 +25,6 @@ interface SlotProps {
 function Slot({ option, locale, saving, disabled, onChoose }: SlotProps) {
   const t = useT();
   const name = squadName(option);
-  const seats = seatsNote(option.seats_left, locale);
   return (
     <li className="min-w-0">
       <article
@@ -43,7 +42,6 @@ function Slot({ option, locale, saving, disabled, onChoose }: SlotProps) {
             </li>
           ))}
         </ul>
-        {seats && <p className="text-sm font-semibold text-amber-300">{seats}</p>}
         <button
           type="button"
           disabled={disabled}

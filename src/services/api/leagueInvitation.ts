@@ -18,6 +18,7 @@ export interface InvitationOption {
   label: string;
   /** The CRM writes it in Russian: «Пн, Ср 18:00; Сб 11:00». */
   schedule_text: string;
+  /** The CRM no longer sends a capacity (groups have no limit): null. Tolerated if a number ever appears, never shown. */
   seats_left: number | null;
 }
 

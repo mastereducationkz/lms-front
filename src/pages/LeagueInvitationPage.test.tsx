@@ -34,8 +34,8 @@ const open = (over: Partial<LeagueInvitation> = {}): LeagueInvitation => ({
   responded_at: null,
   server_now: new Date().toISOString(),
   options: [
-    { group_id: 376, label: 'Master League Dreamville', schedule_text: 'Пн, Ср 18:00; Сб 11:00', seats_left: 3 },
-    { group_id: 377, label: 'Master League KOD', schedule_text: 'Ср, Пт 20:00; Сб 12:00', seats_left: 8 },
+    { group_id: 376, label: 'Master League Dreamville', schedule_text: 'Пн, Ср 18:00; Сб 11:00', seats_left: null },
+    { group_id: 377, label: 'Master League KOD', schedule_text: 'Ср, Пт 20:00; Сб 12:00', seats_left: null },
   ],
   chosen_group_id: null,
   member_status: null,
@@ -90,7 +90,7 @@ describe('the invitation page', () => {
     await click('Not this time');
     expect(answer).not.toHaveBeenCalled();
     expect(text()).toContain('Pass on this invitation?');
-    await click('Keep my seat'); // changing one's mind costs nothing
+    await click('Keep my place'); // changing one's mind costs nothing
     expect(text()).not.toContain('Pass on this invitation?');
     await click('Not this time');
     await click('Yes, not this time');

@@ -32,8 +32,8 @@ const invitation = (over: Partial<LeagueInvitation> = {}): LeagueInvitation => (
   responded_at: null,
   server_now: '2026-10-14T12:00:00Z',
   options: [
-    { group_id: 376, label: 'Master League Dreamville', schedule_text: 'Пн, Ср 18:00; Сб 11:00', seats_left: 3 },
-    { group_id: 377, label: 'Master League KOD', schedule_text: 'Ср, Пт 20:00; Сб 12:00', seats_left: 8 },
+    { group_id: 376, label: 'Master League Dreamville', schedule_text: 'Пн, Ср 18:00; Сб 11:00', seats_left: null },
+    { group_id: 377, label: 'Master League KOD', schedule_text: 'Ср, Пт 20:00; Сб 12:00', seats_left: null },
   ],
   chosen_group_id: null,
   member_status: null,
@@ -76,10 +76,11 @@ describe('the offer', () => {
     expect(plain(html)).toContain('1 d 23 h left');
   });
 
-  it('warns about seats only when they are about to run out', () => {
-    const html = render({ scene: 'open' });
-    expect(html).toContain('Only 3 seats left');
-    expect(html).not.toContain('8 seats');
+  it('shows no seat counts: groups have no capacity limit, even if a number arrives', () => {
+    const counted = invitation({ options: invitation().options.map((o) => ({ ...o, seats_left: 2 })) });
+    for (const html of [render({ scene: 'open' }), render({ scene: 'open', invitation: counted }), render({ scene: 'open', invitation: counted }, 'ru')]) {
+      expect(html.toLowerCase()).not.toMatch(/seats? left|last seat|осталось \d+ мест|последнее место/);
+    }
   });
 
   it('keeps the six goals locked and says so', () => {
@@ -114,7 +115,7 @@ describe('the offer', () => {
     const html = render({ scene: 'open', declining: true });
     expect(html).toContain('Pass on this invitation?');
     expect(html).toContain('That’s completely fine');
-    expect(html).toContain('Keep my seat');
+    expect(html).toContain('Keep my place');
     expect(html).toContain('Yes, not this time');
   });
 

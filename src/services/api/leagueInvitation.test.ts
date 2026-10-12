@@ -18,7 +18,7 @@ const raw = (over: Record<string, unknown> = {}) => ({
   expires_at: '2026-10-16T11:00:00Z',
   responded_at: null,
   seconds_left: 169200,
-  options: [{ group_id: 376, label: 'Master League Dreamville', schedule_text: 'Пн, Ср 18:00; Сб 11:00', seats_left: 3 }],
+  options: [{ group_id: 376, label: 'Master League Dreamville', schedule_text: 'Пн, Ср 18:00; Сб 11:00', seats_left: null }],
   chosen_group_id: null,
   member_status: null,
   server_now: '2026-10-14T12:00:00Z',
@@ -32,7 +32,7 @@ describe('asInvitation', () => {
     expect(asInvitation(raw())).toEqual({
       id: 5, state: 'open', cohort_name: 'Ноябрь 2026', exam_date: '2026-11-07', expires_at: '2026-10-16T11:00:00Z',
       responded_at: null, server_now: '2026-10-14T12:00:00Z', chosen_group_id: null, member_status: null,
-      options: [{ group_id: 376, label: 'Master League Dreamville', schedule_text: 'Пн, Ср 18:00; Сб 11:00', seats_left: 3 }],
+      options: [{ group_id: 376, label: 'Master League Dreamville', schedule_text: 'Пн, Ср 18:00; Сб 11:00', seats_left: null }],
     });
   });
 
@@ -53,7 +53,7 @@ describe('asInvitation', () => {
     expect(asInvitation(data)).toBeNull();
   });
 
-  it('drops options without a squad, blanks the rest, and tolerates unknown seats', () => {
+  it('drops options without a squad, blanks the rest, and tolerates a missing or odd seat count', () => {
     const inv = asInvitation(raw({ options: [{ label: 'x' }, { group_id: 1, seats_left: 'many' }, null] }));
     expect(inv?.options).toEqual([{ group_id: 1, label: '', schedule_text: '', seats_left: null }]);
     expect(asInvitation(raw({ options: 'nope' }))?.options).toEqual([]);

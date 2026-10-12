@@ -7,7 +7,7 @@ import { hasMessage } from './i18n';
 import {
   cardKind, chosenOption, clockOffset, deadlineCountdown, deadlineLabel, examLabel, examMonth, invitationNotificationPath,
   isAnswerable, LEAGUE_INVITATION_NOTIFICATION_TYPES, LEAGUE_INVITATION_PATH, localizeSchedule, msLeft, sceneOf, scheduleChips,
-  seatsNote, shouldPollEnrolment, squadName, tickEvery, ENROL_POLL_LIMIT_MS,
+  shouldPollEnrolment, squadName, tickEvery, ENROL_POLL_LIMIT_MS,
 } from './leagueInvitation';
 import { BELL_NOTIFICATION_TYPES } from '../services/api/notifications';
 import type { LeagueInvitation } from '../services/api/leagueInvitation';
@@ -27,8 +27,8 @@ const invitation = (over: Partial<LeagueInvitation> = {}): LeagueInvitation => (
   responded_at: null,
   server_now: '2026-10-14T12:00:00Z',
   options: [
-    { group_id: 376, label: 'Master League Dreamville', schedule_text: 'Пн, Ср 18:00; Сб 11:00', seats_left: 3 },
-    { group_id: 377, label: 'Master League KOD', schedule_text: 'Ср, Пт 20:00; Сб 12:00', seats_left: 8 },
+    { group_id: 376, label: 'Master League Dreamville', schedule_text: 'Пн, Ср 18:00; Сб 11:00', seats_left: null },
+    { group_id: 377, label: 'Master League KOD', schedule_text: 'Ср, Пт 20:00; Сб 12:00', seats_left: null },
   ],
   chosen_group_id: null,
   member_status: null,
@@ -111,17 +111,6 @@ describe('the squad cards', () => {
   it('names the squad without the programme', () => {
     expect(squadName({ label: 'Master League Dreamville' })).toBe('Dreamville');
     expect(squadName({ label: 'Master League KOD' })).toBe('KOD');
-  });
-
-  it('mentions seats only when they are about to run out', () => {
-    expect(seatsNote(8, 'en')).toBeNull();
-    expect(seatsNote(4, 'en')).toBeNull();
-    expect(seatsNote(null, 'en')).toBeNull();
-    expect(seatsNote(0, 'en')).toBeNull();
-    expect(seatsNote(3, 'en')).toBe('Only 3 seats left');
-    expect(seatsNote(1, 'en')).toBe('Last seat');
-    expect(seatsNote(1, 'ru')).toBe('Последнее место');
-    expect(seatsNote(2, 'ru')).toBe('Осталось 2 места');
   });
 
   it('finds the squad the student chose', () => {

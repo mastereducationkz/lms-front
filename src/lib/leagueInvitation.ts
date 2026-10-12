@@ -1,6 +1,6 @@
 /**
  * The Master League invitation page's pure rules (owner, 2026-10-13): which scene a state gets, how
- * long is left, how a squad's schedule and seats read in the student's language. No React, no
+ * long is left, how a squad's schedule reads in the student's language. No React, no
  * requests: tested in leagueInvitation.test.ts. The server decides every state
  * (lms-backend src/master_league/invitations.py); this file only words them.
  */
@@ -15,8 +15,6 @@ export { localizeSchedule, scheduleChips };
 export { invitationNotificationPath, LEAGUE_INVITATION_NOTIFICATION_TYPES, LEAGUE_INVITATION_PATH } from './leagueInvitationPaths';
 
 const MIN_MS = 60 * 1000;
-/** Seats are worth a word only when they are about to run out. */
-const FEW_SEATS = 3;
 /** A student who accepted is re-checked this often until the CRM has enrolled them. */
 export const ENROL_POLL_MS = 15_000;
 export const ENROL_POLL_LIMIT_MS = 10 * MIN_MS;
@@ -78,12 +76,6 @@ export function examMonth(examDate: string, locale: Locale = activeLocale()): st
 
 /** «Dreamville» out of «Master League Dreamville». */
 export const squadName = (option: Pick<InvitationOption, 'label'>): string => groupTail(option.label);
-
-/** «Only 2 seats left» / «Last seat», or null while there are plenty (or the count is unknown). */
-export function seatsNote(seatsLeft: number | null, locale: Locale = activeLocale()): string | null {
-  if (seatsLeft == null || seatsLeft < 1 || seatsLeft > FEW_SEATS) return null;
-  return t('studentHome.leagueInvite.fewSeats', { count: seatsLeft }, locale);
-}
 
 /** The squad the student chose, if it is still among the options. */
 export function chosenOption(invitation: Pick<LeagueInvitation, 'options' | 'chosen_group_id'>): InvitationOption | null {
