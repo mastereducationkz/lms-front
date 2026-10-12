@@ -37,7 +37,7 @@ function when(iso: string | null): string {
  * lesson card's "Скопировать приглашение" text) to the group's chat. The server suggests a
  * chat for each group by name; a person confirms it, one by one or all at once.
  */
-export function LessonInvitationsTab() {
+export function LessonInvitationsTab({ onLinksChanged }: { onLinksChanged?: () => void }) {
   const t = useT();
   const [data, setData] = useState<InvitationLinks | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,6 +98,7 @@ export function LessonInvitationsTab() {
       await setInvitationLink(groupId, chatId);
       toast(t(chatId === null ? 'announcements.invitations.unlinked' : 'announcements.invitations.linked', { name: groupName }), 'success');
       await load();
+      onLinksChanged?.();
     } catch (error) {
       toast(errorMessage(error, t('announcements.invitations.saveFailed')), 'error');
     } finally {
@@ -120,6 +121,7 @@ export function LessonInvitationsTab() {
       const n = await confirmInvitationLinks(pairs);
       toast(t('announcements.invitations.linkedCount', { count: n }), 'success');
       await load();
+      onLinksChanged?.();
     } catch (error) {
       toast(errorMessage(error, t('announcements.invitations.confirmFailed')), 'error');
     } finally {
