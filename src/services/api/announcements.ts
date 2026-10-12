@@ -44,6 +44,7 @@ export type AnnouncementStatus =
   | 'sent'
   | 'partially_failed'
   | 'canceled'
+  | 'recalling'
   | 'recalled';
 
 export type TargetStatus = 'pending' | 'sent' | 'failed' | 'skipped';
@@ -235,7 +236,11 @@ export async function cancelAnnouncement(id: number): Promise<AnnouncementDetail
   }
 }
 
-/** Deletes the delivered messages wherever Telegram still allows it (~48 hours). */
+/**
+ * Asks for the delivered messages to be deleted wherever Telegram still allows it (~48 hours).
+ * Support answers at once with status `recalling` and deletes in the background (a big broadcast
+ * takes minutes); the answer is `recalled` already only from a Support that still deletes in the request.
+ */
 export async function recallAnnouncement(id: number): Promise<AnnouncementDetail> {
   try {
     const response = await api.post(`/announcements/${id}/recall`);

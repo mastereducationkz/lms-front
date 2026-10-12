@@ -28,6 +28,7 @@ export const STATUS_STYLES: Record<AnnouncementStatus, string> = {
   sent: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300',
   partially_failed: 'bg-orange-100 text-orange-800 dark:bg-orange-950/50 dark:text-orange-300',
   canceled: 'bg-muted text-muted-foreground',
+  recalling: 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300',
   recalled: 'bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-300',
 };
 
@@ -39,6 +40,7 @@ export const STATUS_LABELS: Record<AnnouncementStatus, MessageKey> = {
   sent: 'announcements.status.sent',
   partially_failed: 'announcements.status.partiallyFailed',
   canceled: 'announcements.status.canceled',
+  recalling: 'announcements.status.recalling',
   recalled: 'announcements.status.recalled',
 };
 
@@ -86,4 +88,14 @@ export function canRecall(row: Announcement, now: number = Date.now()): boolean 
   if (!RECALLABLE.includes(row.status)) return false;
   const deliveredAt = row.finished_at ?? row.started_at ?? row.created_at;
   return now - new Date(deliveredAt).getTime() < RECALL_WINDOW_MS;
+}
+
+/** Whether the screen still has something to wait for: a broadcast going out or a recall under way. */
+export function isInFlight(status: AnnouncementStatus): boolean {
+  return status === 'sending' || status === 'scheduled' || status === 'recalling';
+}
+
+/** Chats a recall could not clear: Telegram refuses to delete a message after about 48 hours. */
+export function chatsNotCleared(detail: { targets: Array<{ error?: string | null }> }): number {
+  return detail.targets.filter((target) => target.error?.startsWith('recall:')).length;
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Copy, Repeat2, Trash2, Undo2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -6,7 +6,15 @@ import { Card, CardContent } from '../ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { toast } from '../Toast';
 import { DeliveryReportDialog } from './DeliveryReportDialog';
-import { STATUS_LABELS, STATUS_STYLES, canRecall, errorMessage, formatDateTime } from './shared';
+import {
+  STATUS_LABELS,
+  STATUS_STYLES,
+  canRecall,
+  chatsNotCleared,
+  errorMessage,
+  formatDateTime,
+  isInFlight,
+} from './shared';
 import { visibleText } from './telegramText';
 import { copyAnnouncementHtml } from './announcementClipboard';
 import {
@@ -49,13 +57,48 @@ export function HistoryTab({ onSendAgain }: HistoryTabProps) {
   }, [load]);
 
   // While anything is still in flight the rollup changes underneath us, so poll
-  // rather than leave the sender staring at a stale "12/40 delivered".
-  const inFlight = rows.some((row) => row.status === 'sending' || row.status === 'scheduled');
+  // rather than leave the sender staring at a stale "12/40 delivered". A recall counts too: Support
+  // deletes the messages in the background, a few a second.
+  const inFlight = rows.some((row) => isInFlight(row.status));
   useEffect(() => {
     if (!inFlight) return undefined;
     const timer = setInterval(load, POLL_MS);
     return () => clearInterval(timer);
   }, [inFlight, load]);
+
+  // The open delivery report follows its recall too, not only the list behind it.
+  const recallingId = selected?.status === 'recalling' ? selected.id : null;
+  useEffect(() => {
+    if (recallingId === null) return undefined;
+    const timer = setInterval(async () => {
+      try {
+        setSelected(await getAnnouncement(recallingId));
+      } catch {
+        // The list poll above reports a failing connection; one missed refresh here is harmless.
+      }
+    }, POLL_MS);
+    return () => clearInterval(timer);
+  }, [recallingId]);
+
+  // Recalls this screen started and has not yet seen finish: tell the sender once, with the result.
+  const watchedRecalls = useRef(new Set<number>());
+  useEffect(() => {
+    for (const id of [...watchedRecalls.current]) {
+      const row = rows.find((candidate) => candidate.id === id);
+      if (!row || row.status === 'recalling') continue;
+      watchedRecalls.current.delete(id);
+      getAnnouncement(id)
+        .then((detail) => {
+          setSelected((current) => (current?.id === id ? detail : current));
+          const stuck = chatsNotCleared(detail);
+          toast(
+            stuck > 0 ? t('announcements.history.recalledPartly', { count: stuck }) : t('announcements.history.recalled'),
+            stuck > 0 ? 'info' : 'success',
+          );
+        })
+        .catch(() => toast(t('announcements.history.recalled'), 'success'));
+    }
+  }, [rows, t]);
 
   const openDetail = async (id: number) => {
     try {
@@ -87,13 +130,19 @@ export function HistoryTab({ onSendAgain }: HistoryTabProps) {
     try {
       const updated = await recallAnnouncement(id);
       setSelected(updated);
-      const stuck = updated.targets.filter((target) => target.error?.startsWith('recall:')).length;
-      toast(
-        stuck > 0
-          ? t('announcements.history.recalledPartly', { count: stuck })
-          : t('announcements.history.recalled'),
-        stuck > 0 ? 'info' : 'success',
-      );
+      if (updated.status === 'recalling') {
+        // Support deletes in the background; the polls above show it finishing.
+        watchedRecalls.current.add(id);
+        toast(t('announcements.history.recalling'), 'info');
+      } else {
+        const stuck = chatsNotCleared(updated);
+        toast(
+          stuck > 0
+            ? t('announcements.history.recalledPartly', { count: stuck })
+            : t('announcements.history.recalled'),
+          stuck > 0 ? 'info' : 'success',
+        );
+      }
       load();
     } catch (error) {
       toast(errorMessage(error, t('announcements.history.recallFailed')), 'error');
