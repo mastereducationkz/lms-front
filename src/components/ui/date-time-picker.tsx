@@ -12,6 +12,7 @@ import {
 } from "./popover"
 import { Input } from "./input"
 import { useT } from "../../lib/i18n/react"
+import { isValidDate, withTime } from "../../lib/timeInput"
 import "@/lib/i18n/catalogs/chatLive"
 
 interface DateTimePickerProps {
@@ -20,8 +21,10 @@ interface DateTimePickerProps {
   placeholder?: string
 }
 
-export function DateTimePicker({ date, setDate, placeholder }: DateTimePickerProps) {
+export function DateTimePicker({ date: dateProp, setDate, placeholder }: DateTimePickerProps) {
   const t = useT()
+  // An Invalid Date from a caller's bad string reads as «no date» instead of crashing `format`.
+  const date = isValidDate(dateProp) ? dateProp : undefined
   const [time, setTime] = React.useState<string>(
     date ? format(date, "HH:mm") : "00:00"
   )
@@ -36,9 +39,8 @@ export function DateTimePicker({ date, setDate, placeholder }: DateTimePickerPro
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (selectedDate) {
-      const [hours, minutes] = time.split(":")
-      selectedDate.setHours(parseInt(hours), parseInt(minutes))
-      setDate(selectedDate)
+      // The time box can be empty mid-edit: then the day is picked at its own time, never at NaN.
+      setDate(withTime(selectedDate, time) ?? selectedDate)
     } else {
       setDate(undefined)
     }
@@ -48,12 +50,10 @@ export function DateTimePicker({ date, setDate, placeholder }: DateTimePickerPro
     const newTime = e.target.value
     setTime(newTime)
     
-    if (date) {
-      const [hours, minutes] = newTime.split(":")
-      const newDate = new Date(date)
-      newDate.setHours(parseInt(hours), parseInt(minutes))
-      setDate(newDate)
-    }
+    // A cleared or half-typed box ("" while editing) is not a time yet: show it, change nothing.
+    // It used to become NaN, an Invalid Date, and a RangeError in the page (LMS-FRONT-E).
+    const next = date ? withTime(date, newTime) : null
+    if (next) setDate(next)
   }
 
   return (

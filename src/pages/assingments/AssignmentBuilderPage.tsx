@@ -26,6 +26,7 @@ import { Checkbox } from '../../components/ui/checkbox';
 import { DateTimePicker } from '../../components/ui/date-time-picker';
 import MultiTaskEditor from '../../components/assignments/MultiTaskEditor';
 import { parseAsUTC } from '../../lib/datetime';
+import { isValidDate } from '../../lib/timeInput';
 import { prepareTeacherGroupList } from '../../lib/groupList';
 import { fetchGroupClasses, type ClassesState } from '../../lib/groupClasses';
 import { ClassPicker } from '../../components/homework/ClassPicker';
@@ -895,7 +896,7 @@ export default function AssignmentBuilderPage() {
                                                 <Label className="text-[10px] text-brand  uppercase font-bold tracking-tight">{t('homeworkStaff.builder.groupDeadline')}</Label>
                                                 <DateTimePicker
                                                     date={groupDueDate ? parseAsUTC(groupDueDate) : undefined}
-                                                    setDate={(date) => handleGroupDueDateChange(groupId, date ? date.toISOString() : '')}
+                                                    setDate={(date) => { if (!date || isValidDate(date)) handleGroupDueDateChange(groupId, date ? date.toISOString() : ''); }}
                                                     placeholder={t('homeworkStaff.builder.groupDeadlinePlaceholder')}
                                                 />
                                               </div>
