@@ -6,6 +6,7 @@ import { ComposeTab } from '../../components/announcements/ComposeTab';
 import { GroupsTab } from '../../components/announcements/GroupsTab';
 import { HistoryTab } from '../../components/announcements/HistoryTab';
 import { LessonInvitationsTab } from '../../components/announcements/LessonInvitationsTab';
+import { MasterLeagueChecklistCard } from '../../components/announcements/MasterLeagueChecklistCard';
 import { BotQuestionsTab } from '../../components/announcements/BotQuestionsTab';
 import { AutomaticMessagesTab } from '../../components/announcements/AutomaticMessagesTab';
 import { WeeklyTestNoticeCard } from '../../components/announcements/WeeklyTestNoticeCard';
@@ -52,6 +53,8 @@ export default function TelegramAnnouncementsPage() {
   // A copied selection must initialise a fresh composer rather than overwrite
   // an announcement the staff member is already writing.
   const [composeVersion, setComposeVersion] = useState(0);
+  // Linking a chat below changes a step of the Master League checklist above it.
+  const [linksVersion, setLinksVersion] = useState(0);
 
   const loadGroups = useCallback(async () => {
     try {
@@ -157,7 +160,8 @@ export default function TelegramAnnouncementsPage() {
       {tab === 'invitations' && (
         <div className="space-y-4">
           <WeeklyTestNoticeCard />
-          <LessonInvitationsTab />
+          <MasterLeagueChecklistCard refreshKey={linksVersion} onOpenGroups={() => setTab('groups')} />
+          <LessonInvitationsTab onLinksChanged={() => setLinksVersion((version) => version + 1)} />
         </div>
       )}
       {tab === 'bot' && <BotQuestionsTab />}
