@@ -7,6 +7,7 @@ import { bellPollDelayMs, relativeTime, t } from '../lib/classMaterials';
 import { useLocale } from '../lib/i18n/react';
 import { lessonPath } from '../lib/lessonLinks';
 import { libraryNotificationPath } from '../lib/library';
+import { isMlProgressNotice } from '../lib/leagueNotifications';
 import { ACHIEVEMENT_NOTIFICATION_TYPE, ACHIEVEMENTS_CHECK_EVENT, achievementNotificationPath } from '../lib/achievements';
 import { getMyAchievements } from '../services/api/achievementsUi';
 import {
@@ -121,6 +122,11 @@ export default function NotificationsBell() {
         .catch(() => navigate('/achievements'));
       return;
     }
+    // The Master League digest was read in the popover; the dashboard has the season banner.
+    if (isMlProgressNotice(n.notification_type)) {
+      navigate('/dashboard');
+      return;
+    }
     // The library's notices open its tab; a lesson's materials live on its page (2026-09-28).
     const libraryPath = libraryNotificationPath(n.notification_type);
     if (libraryPath) navigate(libraryPath);
@@ -186,7 +192,13 @@ export default function NotificationsBell() {
                         {relativeTime(n.created_at, now, locale)}
                       </span>
                     </div>
-                    <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.content}</p>
+                    <p
+                      className={`mt-0.5 text-xs text-muted-foreground ${
+                        isMlProgressNotice(n.notification_type) ? 'whitespace-pre-line' : 'line-clamp-2'
+                      }`}
+                    >
+                      {n.content}
+                    </p>
                   </button>
                 </li>
               ))}

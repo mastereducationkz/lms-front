@@ -1,4 +1,5 @@
 import { LIBRARY_NOTIFICATION_TYPES } from '../../lib/library';
+import { ML_PROGRESS_NOTIFICATION_TYPES } from '../../lib/leagueNotifications';
 import { api } from './client';
 
 /**
@@ -25,12 +26,13 @@ export const ACHIEVEMENT_NOTIFICATION_TYPES = ['achievement_unlocked'];
 /** «Kasatik of the lesson» (live lesson, 2026-10-04). */
 export const LIVE_NOTIFICATION_TYPES = ['live_crown'];
 
-/** Everything the bell shows: lesson materials, the library's (new items, an item removed by a moderator), achievements. */
+/** Everything the bell shows: lesson materials, the library's (new items, an item removed by a moderator), achievements, the Master League digest. */
 export const BELL_NOTIFICATION_TYPES = [
   ...CLASS_MATERIAL_NOTIFICATION_TYPES,
   ...LIBRARY_NOTIFICATION_TYPES,
   ...ACHIEVEMENT_NOTIFICATION_TYPES,
   ...LIVE_NOTIFICATION_TYPES,
+  ...ML_PROGRESS_NOTIFICATION_TYPES,
 ];
 
 function typesParams(types: string[]): Record<string, string> {
