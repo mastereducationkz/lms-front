@@ -1,3 +1,4 @@
+import { masterLeagueUntilShort, type MasterLeagueMembership } from '@/lib/masterLeagueLabel';
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
@@ -41,6 +42,7 @@ interface StudentRow {
   hw_avg_score: number | null;
   az_status: 'not_started' | 'draft' | 'submitted';
   last_activity: string | null;
+  master_league?: MasterLeagueMembership | null;
 }
 
 interface Group {
@@ -236,6 +238,14 @@ export default function StudentsJournalPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-sm text-foreground">{s.group_name}</span>
+                    {s.master_league && (
+                      <span
+                        className="mt-0.5 block w-fit rounded border border-violet-200 bg-violet-50 px-1.5 py-px text-[10px] text-violet-700 dark:border-violet-500/30 dark:bg-violet-500/15 dark:text-violet-300"
+                        title={s.master_league.group_name}
+                      >
+                        {t('studentCard.journal.inMasterLeague', { date: masterLeagueUntilShort(s.master_league.until) })}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {attendanceBadge(s.attendance_rate, s.attendance_attended, s.attendance_total)}
