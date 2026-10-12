@@ -5,7 +5,7 @@
  */
 import { api } from './client';
 
-export type AchievementTier = 'earned' | 'rare' | 'legendary' | 'social' | 'seasonal';
+export type AchievementTier = 'earned' | 'rare' | 'legendary' | 'social' | 'seasonal' | 'league';
 export type RewardLayer = 'h' | 'g' | 'p' | 'b' | 'f';
 
 export interface AchievementReward {
@@ -58,6 +58,8 @@ export interface MyAchievements {
   streak: AchievementStreak;
   /** The student's own Stars of the Week, newest first (contract amendment 1); absent on an older backend. */
   star_awards?: StarAward[];
+  /** Master League: true when the student may see the league achievements and kit parts (absent on an older backend). */
+  league_access?: boolean;
 }
 
 export type StudentAchievements = Omit<MyAchievements, 'locked_parts' | 'unseen'>;
@@ -81,6 +83,7 @@ function asMyAchievements(data: unknown): MyAchievements {
       longest: Number(d.streak?.longest) || 0,
     },
     star_awards: Array.isArray(d.star_awards) ? d.star_awards : undefined,
+    league_access: d.league_access === true,
   };
 }
 

@@ -35,6 +35,7 @@ export const TIER_PILL: Record<AchievementTier, MessageKey> = {
   legendary: 'sharedUi.shareCard.pill.legendary',
   social: 'sharedUi.shareCard.pill.achievement',
   seasonal: 'sharedUi.shareCard.pill.seasonal',
+  league: 'sharedUi.shareCard.pill.league',
 };
 
 const CHOSEN_BY: Record<string, MessageKey> = {
@@ -61,7 +62,7 @@ export function achievementText(
     lead: t('sharedUi.shareCard.unlockedLead', undefined, locale),
     title: achievementField(a, 'title', locale),
     line: proudLine(a.key, locale) ?? achievementField(a, 'description', locale) ?? null,
-    accent: a.tier === 'legendary' ? 'gold' : a.tier === 'seasonal' ? 'emerald' : 'blue',
+    accent: a.tier === 'legendary' || a.tier === 'league' ? 'gold' : a.tier === 'seasonal' ? 'emerald' : 'blue',
   };
 }
 

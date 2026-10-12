@@ -4,6 +4,7 @@
  * signal, so its colour reads even at 32 px; the ornaments add character at full size.
  */
 import type { ReactNode } from 'react';
+import { leagueCrestFrame } from './leagueFrame';
 
 /** Extra viewBox margin on every side when a frame is worn. */
 export const FRAME_PAD = 18;
@@ -127,4 +128,6 @@ export const FRAME_ART: ((uid: string) => ReactNode)[] = [
       </g>
     );
   },
+  // League Crest (Master League: Signed to the League)
+  leagueCrestFrame,
 ];

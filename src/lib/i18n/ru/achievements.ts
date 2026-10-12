@@ -69,6 +69,7 @@ export const achievements: RuTable<typeof en> = {
   'achievements.tier.legendary': 'Легендарное',
   'achievements.tier.social': 'Социальное',
   'achievements.tier.seasonal': 'Сезонное',
+  'achievements.tier.league': 'Лига',
 
   'achievements.role.teacher': 'Преподаватель',
   'achievements.role.curator': 'Куратор',

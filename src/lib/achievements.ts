@@ -9,10 +9,14 @@ import type { Achievement, AchievementReward, AchievementTier, GroupStars, StarA
 import '@/lib/i18n/catalogs/achievements';
 import '@/lib/i18n/catalogs/studentHome';
 
+/** The category of the Master League achievements (owner, 2026-10-13): shown only to students with league access. */
+export const LEAGUE_CATEGORY = 'master_league';
+
 export const TOTAL_LABEL = (list: Achievement[]) => `${list.filter((a) => a.unlocked).length} / ${list.length}`;
 
 /** Categories in page order, with their student-facing names. Unknown categories go last. */
 export const CATEGORY_ORDER: { key: string; label: MessageKey }[] = [
+  { key: LEAGUE_CATEGORY, label: 'studentHome.achievements.category.masterLeague' },
   { key: 'getting_started', label: 'studentHome.achievements.category.gettingStarted' },
   { key: 'consistency', label: 'studentHome.achievements.category.consistency' },
   { key: 'weekly_tests', label: 'studentHome.achievements.category.weeklyTests' },
@@ -29,6 +33,7 @@ const TIER_LABEL: Record<AchievementTier, MessageKey> = {
   legendary: 'achievements.tier.legendary',
   social: 'achievements.tier.social',
   seasonal: 'achievements.tier.seasonal',
+  league: 'achievements.tier.league',
 };
 
 /** A tier's name for the badge on a card ('Rare' / «Редкое»); an unknown tier shows as sent. */
@@ -56,7 +61,10 @@ export function achievementField(a: AchievementCopySource, field: CopyField, loc
 }
 
 /** How exciting a tier is — the celebration dresses the orca in the most exciting reward first. */
-const TIER_RANK: Record<AchievementTier, number> = { legendary: 0, rare: 1, social: 2, seasonal: 3, earned: 4 };
+const TIER_RANK: Record<AchievementTier, number> = { league: 0, legendary: 0, rare: 1, social: 2, seasonal: 3, earned: 4 };
+
+/** A moment big enough for the full celebration modal: a legendary unlock, or a league one. */
+export const isBigMoment = (a: Pick<Achievement, 'tier'>) => a.tier === 'legendary' || a.tier === 'league';
 
 const ratio = (a: Achievement) => (a.progress && a.progress.target > 0 ? a.progress.current / a.progress.target : 0);
 const remaining = (a: Achievement) => (a.progress ? Math.max(0, a.progress.target - a.progress.current) : Infinity);

@@ -57,6 +57,7 @@ export default function OrcaBuilder() {
   const [saving, setSaving] = useState(false);
   const [locked, setLocked] = useState<LockedParts | null>(null);
   const [locksKnown, setLocksKnown] = useState(false);
+  const [leagueAccess, setLeagueAccess] = useState(false);
   const [achievements, setAchievements] = useState<Achievement[] | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const isStudent = user?.role === 'student';
@@ -69,6 +70,7 @@ export default function OrcaBuilder() {
       .then((data) => {
         if (!alive) return;
         setLocked(data.locked_parts ?? {});
+        setLeagueAccess(data.league_access === true);
         setAchievements(data.achievements ?? []);
         setLocksKnown(true);
       })
@@ -229,7 +231,7 @@ export default function OrcaBuilder() {
               </button>
             ))}
           </div>
-          <OrcaPartGrid tab={tab} config={config} locked={locked} onPick={pick} />
+          <OrcaPartGrid tab={tab} config={config} locked={locked} leagueAccess={leagueAccess} onPick={pick} />
         </div>
       </div>
 

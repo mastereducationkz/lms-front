@@ -30,6 +30,7 @@ import { lessonPath } from '../lib/lessonLinks';
 import LiveNowTile from '../components/dashboard/LiveNowTile';
 import InstallAppCard from '../components/pwa/InstallAppCard';
 import { AchievementsTile } from '@/components/achievements/AchievementsTile';
+import LeagueBanner from '@/components/masterLeague/LeagueBanner';
 import { formatDate as fmtDate, formatDateTime as fmtDateTime, formatTime, hasMessage } from '@/lib/i18n';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/studentHome';
@@ -727,6 +728,9 @@ export default function StudentDashboard({
         onGoToAllCourses={onGoToAllCourses}
         onOpenDailyQuestions={() => setShowDailyQuestions(true)}
       />
+
+      {/* Master League: the season banner of a student in a live league squad (hides itself for everyone else). */}
+      <LeagueBanner />
 
       {/* Links to the dedicated SAT / NUET / IELTS platforms, driven by the student's
           live group memberships. Renders nothing when no track applies. */}
