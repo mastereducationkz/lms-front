@@ -1,75 +1,29 @@
-import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, ExternalLink, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/settings';
-import { POLL_MS, atUsername, isTelegramLink, telegramPhase } from '../../lib/telegramLink';
-import { createTelegramLink, getTelegramStatus, unlinkTelegram, type TelegramStatus } from '../../services/api/notificationCenter';
+import { atUsername } from '../../lib/telegramLink';
+import { useTelegramLink } from '../../lib/useTelegramLink';
 import { SOLID, SettingsRow, SettingsSection } from './SettingsSection';
 
 /**
  * The personal Telegram link (owner Q12–Q14): «Connect» asks the server for a t.me deep link, the
  * person opens it and taps Start, and this row polls until Telegram confirms (also on returning to
  * the tab). The link is a real anchor, not a script-opened window, so no popup blocker eats it.
+ * The status/connect/poll machinery is `useTelegramLink`, shared with the Master League banner.
  */
 export default function TelegramSection() {
   const t = useT();
-  const [status, setStatus] = useState<TelegramStatus | null>(null);
-  const [link, setLink] = useState<{ url: string; at: number } | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
-  const phase = telegramPhase(status, link?.at ?? null, now);
-
-  const check = useCallback(() => {
-    getTelegramStatus()
-      .then((s) => {
-        setStatus(s);
-        setNow(Date.now());
-        if (s.linked) setLink(null);
-      })
-      .catch(() => setNow(Date.now()));
-  }, []);
-  useEffect(check, [check]);
-
-  // While waiting for Start: ask every few seconds, and at once when the person comes back.
-  useEffect(() => {
-    if (phase !== 'waiting') return undefined;
-    const timer = window.setInterval(check, POLL_MS);
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') check();
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => {
-      window.clearInterval(timer);
-      document.removeEventListener('visibilitychange', onVisible);
-    };
-  }, [phase, check]);
+  const { status, phase, link, busy, connect: makeLink, disconnect: unlink } = useTelegramLink();
 
   const connect = async () => {
-    setBusy(true);
-    try {
-      const { deep_link } = await createTelegramLink();
-      if (!isTelegramLink(deep_link)) throw new Error('not a Telegram link');
-      setLink({ url: deep_link, at: Date.now() });
-      setNow(Date.now());
-    } catch {
-      toast.error(t('settings.telegram.failed'));
-    } finally {
-      setBusy(false);
-    }
+    if (!(await makeLink())) toast.error(t('settings.telegram.failed'));
   };
 
   const disconnect = async () => {
-    setBusy(true);
-    try {
-      setStatus(await unlinkTelegram());
-      toast.success(t('settings.telegram.disconnected'));
-    } catch {
-      toast.error(t('settings.notifications.saveFailed'));
-    } finally {
-      setBusy(false);
-    }
+    if (await unlink()) toast.success(t('settings.telegram.disconnected'));
+    else toast.error(t('settings.notifications.saveFailed'));
   };
 
   const name = atUsername(status?.telegram_username);

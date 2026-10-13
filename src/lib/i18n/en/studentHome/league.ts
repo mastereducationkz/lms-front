@@ -124,4 +124,31 @@ export const league = {
   'studentHome.league.welcome.wear': 'Put on the kit',
   'studentHome.league.welcome.go': 'Let’s go',
   'studentHome.league.welcome.wearing': 'The League kit is on!',
+
+  // ── connect Telegram, from the banner (quiet, never a popup) ──
+  'studentHome.league.telegram.region': 'Telegram',
+  'studentHome.league.telegram.offer':
+    'Personal progress notes and reminders about lessons and homework, right in Telegram, if that suits you better.',
+  'studentHome.league.telegram.connect': 'Connect Telegram',
+  'studentHome.league.telegram.later': 'Not now',
+  'studentHome.league.telegram.waiting': 'Open Telegram and tap Start. We’ll wait.',
+  'studentHome.league.telegram.open': 'Open Telegram',
+  'studentHome.league.telegram.timedOut': 'We didn’t catch it. You can try again.',
+  'studentHome.league.telegram.failed': 'That didn’t work. Please try again in a moment.',
+  'studentHome.league.telegram.thanks': 'Done, Telegram is connected. Thank you 💛',
+
+  // ── your result: may the group chat congratulate you ──
+  'studentHome.league.consent.region': 'Your result and the group chat',
+  'studentHome.league.consent.title': 'Your result is recorded: {total}',
+  'studentHome.league.consent.question':
+    'Shall we congratulate you in the Master League group chat? We would post only your first name and your score, and only if you agree.',
+  'studentHome.league.consent.yes': 'Yes, congratulate me',
+  'studentHome.league.consent.no': 'No, thanks',
+  'studentHome.league.consent.hint': 'If you don’t answer, nothing is posted.',
+  'studentHome.league.consent.yesDone': 'Agreed: we’ll congratulate you in the group chat soon.',
+  'studentHome.league.consent.takeBack': 'Changed your mind? Don’t post',
+  'studentHome.league.consent.noDone': 'All right, nothing will be posted in the group chat.',
+  'studentHome.league.consent.changeYes': 'Congratulate me after all',
+  'studentHome.league.consent.posted': 'The congratulation is already in the group chat 💛',
+  'studentHome.league.consent.failed': 'Couldn’t save your answer. Please try again.',
 } as const satisfies MessageTable;

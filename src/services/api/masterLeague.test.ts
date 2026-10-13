@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('./client', () => ({ api: { get: vi.fn() } }));
 
-import { asMyLeague } from './masterLeague';
+import { asMyLeague, asResultConsent } from './masterLeague';
 
 const live = {
   launched: true,
@@ -69,5 +69,33 @@ describe('the season answer', () => {
     })!;
     expect(league.lessons.items.map((i) => i.number)).toEqual([2]);
     expect(league.achievements.map((a) => a.key)).toEqual(['ml_signed']);
+  });
+});
+
+describe('the result consent answer', () => {
+  const ask = { state: 'ask', result_total: 1520, decision: null, decided_at: null, can_answer: true };
+
+  it('reads each state a card can show', () => {
+    expect(asResultConsent(ask)).toEqual({ state: 'ask', result_total: 1520, decision: null, can_answer: true });
+    expect(asResultConsent({ ...ask, state: 'yes', decision: 'yes' })?.decision).toBe('yes');
+    expect(asResultConsent({ ...ask, state: 'no', decision: 'no', can_answer: false })?.can_answer).toBe(false);
+    expect(asResultConsent({ ...ask, state: 'posted' })?.state).toBe('posted');
+  });
+
+  it('is nothing when there is nothing to decide, or the answer is not one', () => {
+    expect(asResultConsent({ state: 'none' })).toBeNull();
+    expect(asResultConsent({ ...ask, state: 'maybe' })).toBeNull();
+    expect(asResultConsent({ ...ask, result_total: 0 })).toBeNull();
+    expect(asResultConsent({ ...ask, result_total: null })).toBeNull();
+    expect(asResultConsent(null)).toBeNull();
+    expect(asResultConsent('nope')).toBeNull();
+  });
+
+  it('only a literal can_answer true lets the buttons work', () => {
+    expect(asResultConsent({ ...ask, can_answer: 'true' })?.can_answer).toBe(false);
+  });
+
+  it('keeps an unknown decision out', () => {
+    expect(asResultConsent({ ...ask, decision: 'да' })?.decision).toBeNull();
   });
 });

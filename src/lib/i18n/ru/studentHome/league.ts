@@ -135,4 +135,31 @@ export const league: RuTable<typeof en> = {
   'studentHome.league.welcome.wear': 'Надеть форму',
   'studentHome.league.welcome.go': 'Поехали',
   'studentHome.league.welcome.wearing': 'Форма Лиги надета!',
+
+  // ── подключить Telegram с баннера (тихо, не всплывающим окном) ──
+  'studentHome.league.telegram.region': 'Telegram',
+  'studentHome.league.telegram.offer':
+    'Личные заметки о прогрессе и напоминания об уроках и заданиях — прямо в Telegram, если вам так удобнее.',
+  'studentHome.league.telegram.connect': 'Подключить Telegram',
+  'studentHome.league.telegram.later': 'Не сейчас',
+  'studentHome.league.telegram.waiting': 'Откройте Telegram и нажмите Start. Мы подождём.',
+  'studentHome.league.telegram.open': 'Открыть Telegram',
+  'studentHome.league.telegram.timedOut': 'Не дождались. Можно попробовать ещё раз.',
+  'studentHome.league.telegram.failed': 'Не получилось. Попробуйте ещё раз чуть позже.',
+  'studentHome.league.telegram.thanks': 'Готово, Telegram подключён. Спасибо 💛',
+
+  // ── ваш результат: можно ли поздравить вас в чате группы ──
+  'studentHome.league.consent.region': 'Ваш результат и чат группы',
+  'studentHome.league.consent.title': 'Ваш результат записан: {total}',
+  'studentHome.league.consent.question':
+    'Поздравить вас в группе Master League? Мы напишем только ваше имя и балл, и только если вы согласитесь.',
+  'studentHome.league.consent.yes': 'Да, поздравьте',
+  'studentHome.league.consent.no': 'Нет, спасибо',
+  'studentHome.league.consent.hint': 'Если не ответите, в группе не появится ничего.',
+  'studentHome.league.consent.yesDone': 'Договорились: скоро поздравим вас в чате группы.',
+  'studentHome.league.consent.takeBack': 'Передумали? Не публиковать',
+  'studentHome.league.consent.noDone': 'Хорошо, в чате группы ничего не появится.',
+  'studentHome.league.consent.changeYes': 'Всё-таки поздравьте меня',
+  'studentHome.league.consent.posted': 'Поздравление уже в чате группы 💛',
+  'studentHome.league.consent.failed': 'Не получилось сохранить ответ. Попробуйте ещё раз.',
 };

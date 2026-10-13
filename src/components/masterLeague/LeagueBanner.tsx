@@ -7,7 +7,7 @@
  * `LeagueBannerView` is the pure picture (data and clock in, markup out) so it can be rendered
  * statically for review; `LeagueBanner` adds the fetch and the clock.
  */
-import { useId, useState } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import Orca from '@/components/mascot/Orca';
 import { MasterMark } from '@/components/mascot/art/MasterMark';
@@ -20,6 +20,8 @@ import { useLocale, useT } from '@/lib/i18n/react';
 import type { Locale } from '@/lib/i18n';
 import type { MyLeague } from '@/services/api/masterLeague';
 import LeagueGoals from './LeagueGoals';
+import LeagueResultConsent from './LeagueResultConsent';
+import LeagueTelegramLine from './LeagueTelegramLine';
 import LeagueTrack from './LeagueTrack';
 import { useMyLeague, useNow } from './useMyLeague';
 import '@/lib/i18n/catalogs/studentHome';
@@ -40,9 +42,11 @@ interface ViewProps {
   locale: Locale;
   /** The goals drawer starts open (the static review render); the live banner starts closed. */
   defaultOpen?: boolean;
+  /** Quiet rows between the figures and the coach's line (the result question, the Telegram offer); each renders nothing when it has nothing to say. */
+  children?: ReactNode;
 }
 
-export function LeagueBannerView({ league, userId, now, locale, defaultOpen = false }: ViewProps) {
+export function LeagueBannerView({ league, userId, now, locale, defaultOpen = false, children }: ViewProps) {
   const t = useT();
   const uid = useId();
   const [open, setOpen] = useState(defaultOpen);
@@ -85,6 +89,8 @@ export function LeagueBannerView({ league, userId, now, locale, defaultOpen = fa
         </div>
       </div>
 
+      {children}
+
       <div className="relative flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-white/10 px-4 py-3 @lg:px-6">
         <p className="min-w-0 flex-1 text-xs italic text-blue-100/90">
           <span className="font-semibold not-italic text-amber-300">{t('studentHome.league.coach')}: </span>
@@ -113,5 +119,10 @@ export default function LeagueBanner() {
   const ticking = league !== null && needsTicker(league, Date.now());
   const now = useNow(ticking);
   if (!user || !league) return null;
-  return <LeagueBannerView league={league} userId={user.id} now={now} locale={locale} />;
+  return (
+    <LeagueBannerView league={league} userId={user.id} now={now} locale={locale}>
+      <LeagueResultConsent enabled={league.phase === 'after'} />
+      <LeagueTelegramLine userId={user.id} />
+    </LeagueBannerView>
+  );
 }

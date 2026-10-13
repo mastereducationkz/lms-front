@@ -127,6 +127,16 @@ describe('the season banner', () => {
     expect(render(today)).toContain('motion-reduce:animate-none');
   });
 
+  it('has a quiet slot between the figures and the coach for the result question and the Telegram offer', () => {
+    setActiveLocale('en');
+    const html = renderToStaticMarkup(
+      createElement(LeagueBannerView, { league: league(), userId: 7, now: NOW, locale: 'en' }, createElement('p', { id: 'slot' }, 'notice')),
+    );
+    expect(html.indexOf('id="slot"')).toBeGreaterThan(html.indexOf('8 players in your squad'));
+    expect(html.indexOf('id="slot"')).toBeLessThan(html.indexOf('Coach’s note'));
+    expect(render(league())).not.toContain('id="slot"');
+  });
+
   it('asks the student to send the score report after the exam', () => {
     const html = render(league({ phase: 'after', result_due: '2026-10-20' }));
     expect(html).toContain('Final whistle');
