@@ -25,7 +25,8 @@ const league = (over: Partial<MyLeague> = {}): MyLeague => ({
   exam_date: '2026-11-07',
   days_to_exam: 25,
   phase: 'season',
-  result_due: '2026-11-21',
+  score_release: '2026-11-20',
+  result_due: '2026-12-04',
   lessons: {
     total: 3,
     played: 2,
@@ -137,9 +138,25 @@ describe('the season banner', () => {
     expect(render(league())).not.toContain('id="slot"');
   });
 
-  it('asks the student to send the score report after the exam', () => {
-    const html = render(league({ phase: 'after', result_due: '2026-10-20' }));
+  it('tells the student when the scores come out, then asks for the score report', () => {
+    const waiting = render(league({ phase: 'after', score_release: '2026-10-16', result_due: '2026-10-30' }));
+    expect(waiting).toContain('Final whistle');
+    expect(waiting).toContain('College Board publishes the scores on 16 October');
+    expect(waiting).toContain('within 14 days');
+    const out = render(league({ phase: 'after', score_release: '2026-10-13', result_due: '2026-10-27' }));
+    expect(out).not.toContain('publishes the scores');
+    expect(out).toContain('within 14 days');
+    expect(render(league({ phase: 'after', score_release: '2026-10-13', result_due: '2026-10-20' }))).toContain('within 7 days');
+  });
+
+  it('still renders after an older backend: no release date, the days are counted to the due day', () => {
+    const html = render(league({ phase: 'after', score_release: null, result_due: '2026-10-20' }));
     expect(html).toContain('Final whistle');
     expect(html).toContain('within 7 days');
+  });
+
+  it('speaks Russian before the release too', () => {
+    const html = render(league({ phase: 'after', score_release: '2026-10-16', result_due: '2026-10-30' }), false, 'ru');
+    expect(html).toContain('Баллы College Board выйдут 16 октября. Потом пришлите отчёт куратору в течение 14 дней.');
   });
 });

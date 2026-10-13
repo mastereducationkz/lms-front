@@ -29,7 +29,9 @@ export interface MyLeague {
   exam_date: string | null;
   days_to_exam: number | null;
   phase: LeaguePhase;
-  /** YYYY-MM-DD: the exam date + 14 days, when the official score report is due. */
+  /** YYYY-MM-DD: the day College Board releases the scores; null from a backend that does not send it yet. */
+  score_release: string | null;
+  /** YYYY-MM-DD: the last day for the official score report, 14 days after the score release. */
   result_due: string | null;
   lessons: { total: number; played: number; items: LeagueLesson[] };
   next_lesson: { id: number; number: number; starts_at: string; title: string } | null;
@@ -64,6 +66,7 @@ export function asMyLeague(data: unknown): MyLeague | null {
     exam_date: typeof d.exam_date === 'string' ? d.exam_date : null,
     days_to_exam: d.days_to_exam == null ? null : num(d.days_to_exam),
     phase: d.phase,
+    score_release: typeof d.score_release === 'string' ? d.score_release : null,
     result_due: typeof d.result_due === 'string' ? d.result_due : null,
     lessons: { total: num(d.lessons?.total, items.length), played: num(d.lessons?.played), items },
     next_lesson: next,

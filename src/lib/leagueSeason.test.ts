@@ -17,7 +17,8 @@ const league = (over: Partial<MyLeague> = {}): MyLeague => ({
   exam_date: '2026-11-07',
   days_to_exam: 25,
   phase: 'season',
-  result_due: '2026-11-21',
+  score_release: '2026-11-20',
+  result_due: '2026-12-04',
   lessons: {
     total: 11,
     played: 1,
@@ -145,15 +146,50 @@ describe('the words of each phase', () => {
     for (const phase of ['eve', 'exam_day', 'after'] as const) expect(phaseCopy(league({ phase }), NOW, 'en').kickoff, phase).toBeNull();
   });
 
-  it('asks for the score report after the exam, counting the days left, or today', () => {
-    const after = (result_due: string | null) => league({ phase: 'after', result_due });
-    expect(phaseCopy(after('2026-10-20'), NOW, 'en')).toMatchObject({
-      title: 'Final whistle', sub: 'Send your official score report to your curator within 7 days. It completes your season.', noteKey: 'after',
+  it('asks for the score report once the scores are out, counting the days left to the due day, or today', () => {
+    // NOW is Tue 13 Oct; the scores of an exam on 3 Oct came out on 16 Oct (not yet), so these pin the counting only.
+    const after = (score_release: string | null, result_due: string | null) => league({ phase: 'after', score_release, result_due });
+    expect(phaseCopy(after('2026-10-13', '2026-10-27'), NOW, 'en')).toMatchObject({
+      title: 'Final whistle', sub: 'Send your official score report to your curator within 14 days. It completes your season.', noteKey: 'after',
     });
-    expect(phaseCopy(after('2026-10-14'), NOW, 'en').sub).toMatch(/within 1 day\./);
-    expect(phaseCopy(after('2026-10-13'), NOW, 'en').sub).toBe('Send your official score report to your curator today. It completes your season.');
-    expect(phaseCopy(after(null), NOW, 'ru').sub).toBe('Отправьте куратору официальный отчёт о баллах сегодня. Он завершает ваш сезон.');
-    expect(phaseCopy(after('2026-10-18'), NOW, 'ru').sub).toBe('Отправьте куратору официальный отчёт о баллах в течение 5 дней. Он завершает ваш сезон.');
+    expect(phaseCopy(after('2026-10-06', '2026-10-20'), NOW, 'en').sub).toMatch(/within 7 days\./);
+    expect(phaseCopy(after('2026-09-30', '2026-10-14'), NOW, 'en').sub).toMatch(/within 1 day\./);
+    expect(phaseCopy(after('2026-09-29', '2026-10-13'), NOW, 'en').sub).toBe('Send your official score report to your curator today. It completes your season.');
+    expect(phaseCopy(after('2026-09-20', null), NOW, 'ru').sub).toBe('Отправьте куратору официальный отчёт о баллах сегодня. Он завершает ваш сезон.');
+    expect(phaseCopy(after('2026-10-04', '2026-10-18'), NOW, 'ru').sub).toBe('Отправьте куратору официальный отчёт о баллах в течение 5 дней. Он завершает ваш сезон.');
+  });
+
+  it('says when the scores come out, and how long the report may take after that, until the release day', () => {
+    const waiting = (score_release: string | null, result_due: string | null) => league({ phase: 'after', score_release, result_due });
+    expect(phaseCopy(waiting('2026-10-16', '2026-10-30'), NOW, 'en')).toMatchObject({
+      title: 'Final whistle',
+      sub: 'College Board publishes the scores on 16 October. Then send your official score report to your curator within 14 days.',
+      noteKey: 'after',
+    });
+    expect(phaseCopy(waiting('2026-10-16', '2026-10-30'), NOW, 'ru').sub).toBe(
+      'Баллы College Board выйдут 16 октября. Потом пришлите отчёт куратору в течение 14 дней.',
+    );
+    // the June sitting is released 16 days out, but the window after the release is still 14 days
+    expect(phaseCopy(waiting('2026-10-29', '2026-11-12'), NOW, 'en').sub).toMatch(/publishes the scores on 29 October\..*within 14 days\.$/);
+  });
+
+  it('switches to the report wording on the release day itself, with fourteen days left (the due day counts)', () => {
+    const release = Date.UTC(2026, 9, 16, 12, 0, 0);   // Fri 16 Oct, 17:00 in Almaty
+    const l = league({ phase: 'after', score_release: '2026-10-16', result_due: '2026-10-30' });
+    expect(phaseCopy(l, release, 'en').sub).toBe('Send your official score report to your curator within 14 days. It completes your season.');
+    const dueDay = Date.UTC(2026, 9, 30, 12, 0, 0);
+    expect(phaseCopy(l, dueDay, 'en').sub).toMatch(/to your curator today\./);
+    // the school's clock, not the viewer's: 23:00 on the 15th in Almaty still waits, 01:00 on the 16th is the release day
+    expect(phaseCopy(l, Date.UTC(2026, 9, 15, 18, 0, 0), 'en').sub).toMatch(/publishes the scores on 16 October/);
+    expect(phaseCopy(l, Date.UTC(2026, 9, 15, 20, 0, 0), 'en').sub).toMatch(/within 14 days\./);
+  });
+
+  it('falls back to counting to the due day when an older backend sends no release date', () => {
+    const old = league({ phase: 'after', score_release: null, result_due: '2026-10-20' });
+    expect(phaseCopy(old, NOW, 'en').sub).toBe('Send your official score report to your curator within 7 days. It completes your season.');
+    expect(phaseCopy(league({ phase: 'after', score_release: null, result_due: null }), NOW, 'en').sub).toMatch(/today\./);
+    // a release without a due day cannot say how long the report may take: no waiting line, no crash
+    expect(phaseCopy(league({ phase: 'after', score_release: '2026-10-16', result_due: null }), NOW, 'en').sub).toMatch(/today\./);
   });
 
   it('has a coach’s note for every phase and every variant, in both languages', () => {

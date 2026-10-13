@@ -80,6 +80,11 @@ export const league = {
     one: 'Send your official score report to your curator within {count} day. It completes your season.',
     other: 'Send your official score report to your curator within {count} days. It completes your season.',
   },
+  // before the scores are out: when they come, then how long the report may take (the 14 days start on the release day)
+  'studentHome.league.phase.after.subWaiting': {
+    one: 'College Board publishes the scores on {date}. Then send your official score report to your curator within {count} day.',
+    other: 'College Board publishes the scores on {date}. Then send your official score report to your curator within {count} days.',
+  },
   'studentHome.league.phase.after.subToday': 'Send your official score report to your curator today. It completes your season.',
   'studentHome.league.daysToFinal': { one: '{count} day to The Final', other: '{count} days to The Final' },
   'studentHome.league.nextKickoff': 'Next kick-off {when}',
