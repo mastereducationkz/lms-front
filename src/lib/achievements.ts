@@ -66,6 +66,11 @@ const TIER_RANK: Record<AchievementTier, number> = { league: 0, legendary: 0, ra
 /** A moment big enough for the full celebration modal: a legendary unlock, or a league one. */
 export const isBigMoment = (a: Pick<Achievement, 'tier'>) => a.tier === 'legendary' || a.tier === 'league';
 
+/** The two rarest league unlocks (an official 1500+, a perfect 1600), rarest first: their celebration is a golden one. */
+const GOLDEN_RANK: Record<string, number> = { ml_perfect: 0, ml_1500: 1 };
+export const isGoldenMoment = (a: Pick<Achievement, 'key'>) => a.key in GOLDEN_RANK;
+const goldenRank = (a: Pick<Achievement, 'key'>) => GOLDEN_RANK[a.key] ?? 2;
+
 const ratio = (a: Achievement) => (a.progress && a.progress.target > 0 ? a.progress.current / a.progress.target : 0);
 const remaining = (a: Achievement) => (a.progress ? Math.max(0, a.progress.target - a.progress.current) : Infinity);
 
@@ -106,11 +111,11 @@ export function withReward(code: string | null | undefined, userId: number | str
   return applyPart(code, userId, reward.layer, reward.index);
 }
 
-/** Most exciting first (legendary → earned), keeping the given order within a tier. */
+/** Most exciting first (legendary → earned), keeping the given order within a tier (the golden pair first within the league). */
 export function byExcitement(list: Achievement[]): Achievement[] {
   return list
     .map((a, i) => ({ a, i }))
-    .sort((x, y) => TIER_RANK[x.a.tier] - TIER_RANK[y.a.tier] || x.i - y.i)
+    .sort((x, y) => TIER_RANK[x.a.tier] - TIER_RANK[y.a.tier] || goldenRank(x.a) - goldenRank(y.a) || x.i - y.i)
     .map(({ a }) => a);
 }
 
@@ -118,7 +123,7 @@ export function byExcitement(list: Achievement[]): Achievement[] {
 export function celebrationReward(list: Achievement[], unseen: string[]): { achievement: Achievement; reward: AchievementReward } | null {
   const fresh = list
     .filter((a) => unseen.includes(a.key) && a.rewards.length > 0)
-    .sort((a, b) => TIER_RANK[a.tier] - TIER_RANK[b.tier] || unseen.indexOf(a.key) - unseen.indexOf(b.key));
+    .sort((a, b) => TIER_RANK[a.tier] - TIER_RANK[b.tier] || goldenRank(a) - goldenRank(b) || unseen.indexOf(a.key) - unseen.indexOf(b.key));
   return fresh[0] ? { achievement: fresh[0], reward: fresh[0].rewards[0] } : null;
 }
 

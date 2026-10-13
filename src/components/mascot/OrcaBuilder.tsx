@@ -24,6 +24,7 @@ import {
   type LockedParts,
   type MascotCategory,
   type MascotConfig,
+  withUnlistedRewardsLocked,
 } from './config';
 import OrcaPartGrid from './OrcaPartGrid';
 import { getMyAchievements, type Achievement } from '../../services/api/achievements';
@@ -69,7 +70,7 @@ export default function OrcaBuilder() {
     getMyAchievements()
       .then((data) => {
         if (!alive) return;
-        setLocked(data.locked_parts ?? {});
+        setLocked(withUnlistedRewardsLocked(data.locked_parts ?? {}, (data.achievements ?? []).map((a) => a.key)));
         setLeagueAccess(data.league_access === true);
         setAchievements(data.achievements ?? []);
         setLocksKnown(true);

@@ -1,7 +1,8 @@
 /**
  * Master League hats & outfits (owner, 2026-10-13), appended after the gold-star cape:
- * h26 League Jersey (the kit, for joining the squad), h27 Hat-trick Topper (three lessons in a row).
- * Navy, gold and white — a notch richer than the free parts, like every reward.
+ * h26 League Jersey (the kit, for joining the squad), h27 Hat-trick Topper (three lessons in a row),
+ * and from phase 2 h28 Golden Laurel (a perfect 1600). Navy, gold and white — a notch richer than
+ * the free parts, like every reward.
  */
 import { BODY_PATH } from './base';
 import type { Piece } from './hats';
@@ -82,5 +83,101 @@ const hatTrickTopper: Piece = {
   ),
 };
 
-/** Appended after the gold-star cape (h26, h27). */
-export const LEAGUE_HATS: Piece[] = [leagueJersey, hatTrickTopper];
+const LAUREL_RX = 59;
+const LAUREL_RY = 48.5;
+
+/** A point on the wreath's centre line: `a` degrees round the head from the top, to the left (−) or right (+). */
+function wreathAt(a: number, rx = LAUREL_RX, ry = LAUREL_RY) {
+  const r = (a * Math.PI) / 180;
+  return { x: 100 + rx * Math.sin(r), y: 100 - ry * Math.cos(r) };
+}
+
+/** A pointed leaf on the branch at `a`, growing towards the top; `out` leans it away from the head, otherwise over it. */
+function WreathLeaf({ a, out, size, fill }: { a: number; out: boolean; size: number; fill: string }) {
+  const r = (a * Math.PI) / 180;
+  const grow = a < 0 ? 1 : -1; // towards the top: the left branch grows with increasing angle, the right with decreasing
+  const bend = (out ? 1 : -1) * (a < 0 ? -1 : 1) * 34;
+  const heading = (Math.atan2(grow * LAUREL_RX * Math.cos(r), -grow * LAUREL_RY * Math.sin(r)) * 180) / Math.PI;
+  const p = wreathAt(a, LAUREL_RX + (out ? 2 : -2), LAUREL_RY + (out ? 2 : -2));
+  const k = size / 8;
+  return (
+    <path
+      d="M0 -8 C 4.6 -4.4 4.6 4.2 0 8 C -4.6 4.2 -4.6 -4.4 0 -8 Z"
+      transform={`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${(heading + bend).toFixed(1)}) scale(${k})`}
+      fill={fill}
+      stroke={LEAGUE.goldDark}
+      strokeWidth={0.9 / k}
+      strokeLinejoin="round"
+    />
+  );
+}
+
+/** A gold laurel wreath worn as a crown, a tiny sunburst where the two branches meet: the perfect score. */
+const goldenLaurel: Piece = {
+  front: (uid) => {
+    const angles = [66, 55, 44, 33, 22, 11];
+    const burst: string[] = [];
+    for (let i = 0; i < 16; i++) {
+      const rr = i % 2 === 0 ? 11.6 : 5.2;
+      const ang = (Math.PI / 8) * i - Math.PI / 2;
+      burst.push(`${(100 + rr * Math.cos(ang)).toFixed(1)},${(46 + rr * Math.sin(ang)).toFixed(1)}`);
+    }
+    return (
+      <g>
+        <linearGradient id={`${uid}lau`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={LEAGUE.goldHi} />
+          <stop offset="0.55" stopColor={LEAGUE.gold} />
+          <stop offset="1" stopColor="#E2A300" />
+        </linearGradient>
+        <radialGradient id={`${uid}sun`} cx="0.5" cy="0.45" r="0.6">
+          <stop offset="0" stopColor="#FFFFFF" />
+          <stop offset="0.6" stopColor={LEAGUE.goldHi} />
+          <stop offset="1" stopColor={LEAGUE.gold} />
+        </radialGradient>
+        {/* the branches, left and right of the top */}
+        {[-1, 1].map((side) => {
+          const from = wreathAt(side * 70);
+          const to = wreathAt(side * 4);
+          return (
+            <path
+              key={side}
+              d={`M${from.x.toFixed(1)} ${from.y.toFixed(1)} A ${LAUREL_RX} ${LAUREL_RY} 0 0 ${side < 0 ? 1 : 0} ${to.x.toFixed(1)} ${to.y.toFixed(1)}`}
+              stroke={LEAGUE.goldDark}
+              strokeWidth="3"
+              strokeLinecap="round"
+              fill="none"
+            />
+          );
+        })}
+        {/* leaves, in pairs along each branch, growing towards the sun */}
+        {angles.map((a, i) => {
+          const big = i < 2 ? 10.5 : 9.2;
+          return [-1, 1].map((side) => (
+            <g key={`${a}${side}`}>
+              <WreathLeaf a={side * a} out size={big} fill={`url(#${uid}lau)`} />
+              <WreathLeaf a={side * (a - 5.5)} out={false} size={7.4} fill={`url(#${uid}lau)`} />
+            </g>
+          ));
+        })}
+        {/* berries where the branches begin */}
+        {[-1, 1].map((side) => {
+          const p = wreathAt(side * 72);
+          return (
+            <g key={`b${side}`} fill={LEAGUE.gold} stroke={LEAGUE.goldDark} strokeWidth="0.9">
+              <circle cx={p.x} cy={p.y + 1} r="2.8" />
+              <circle cx={p.x - side * 3.6} cy={p.y + 4.6} r="2.2" />
+            </g>
+          );
+        })}
+        {/* the sunburst */}
+        <polygon points={burst.join(' ')} fill={LEAGUE.gold} stroke={LEAGUE.goldDark} strokeWidth="1" strokeLinejoin="round" />
+        <circle cx="100" cy="46" r="5.4" fill={`url(#${uid}sun)`} stroke={LEAGUE.goldDark} strokeWidth="0.9" />
+        <Glint x={128} y={40} r={4.5} />
+        <Glint x={68} y={50} r={3} />
+      </g>
+    );
+  },
+};
+
+/** Appended after the gold-star cape (h26, h27, h28). */
+export const LEAGUE_HATS: Piece[] = [leagueJersey, hatTrickTopper, goldenLaurel];

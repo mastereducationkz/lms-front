@@ -1,10 +1,11 @@
 import type { MessageTable } from '../../types';
 
 /**
- * Master League (owner, 2026-10-13): the six league achievements' own words, the seven kit parts,
- * the season banner (every phase, plus coach's notes) and the welcome scene. A season is a month of
- * matchdays (lessons), the squad is the group, the exam is The Final. The server mirrors the
- * achievement English (lms-backend src/achievements/catalog.py); Russian is looked up by key.
+ * Master League (owner, 2026-10-13): the ten league achievements' own words (six for playing the
+ * season, four for the mock climb and the official result), the eleven kit parts, the season banner
+ * (every phase, plus coach's notes) and the welcome scene. A season is a month of matchdays
+ * (lessons), the squad is the group, the exam is The Final. The server mirrors the achievement
+ * English (lms-backend src/achievements/catalog.py); Russian is looked up by key.
  */
 export const league = {
   // ── achievements ──
@@ -26,6 +27,19 @@ export const league = {
   'studentHome.achievement.ml_no_loose_ends.title': 'No Loose Ends',
   'studentHome.achievement.ml_no_loose_ends.description': 'Every Master League homework in on time. Nothing left hanging.',
   'studentHome.achievement.ml_no_loose_ends.howTo': 'Hand in every Master League homework before its deadline (at least 3). Awarded when the season ends.',
+  // phase 2: the climb and The Final itself
+  'studentHome.achievement.ml_mock_climb.title': 'The Climb',
+  'studentHome.achievement.ml_mock_climb.description': 'A full mock, 50+ points above your starting score. The summit is in sight.',
+  'studentHome.achievement.ml_mock_climb.howTo': 'Score at least 50 points above your starting score on a full Bluebook mock during the season.',
+  'studentHome.achievement.ml_breakthrough.title': 'Breakthrough',
+  'studentHome.achievement.ml_breakthrough.description': '100+ points above your starting score on The Final. You didn’t just play, you broke through.',
+  'studentHome.achievement.ml_breakthrough.howTo': 'Score at least 100 points above your starting score on the official exam. Awarded when your official score report is verified.',
+  'studentHome.achievement.ml_1500.title': '1500 Club',
+  'studentHome.achievement.ml_1500.description': '1500 or higher on The Final. Welcome to a very small club.',
+  'studentHome.achievement.ml_1500.howTo': 'Score 1500 or higher on the official exam. Awarded when your official score report is verified.',
+  'studentHome.achievement.ml_perfect.title': 'Perfect',
+  'studentHome.achievement.ml_perfect.description': 'A perfect 1600 on The Final. Full marks, full stop.',
+  'studentHome.achievement.ml_perfect.howTo': 'Score a perfect 1600 on the official exam. Awarded when your official score report is verified.',
 
   // ── the kit (wardrobe names) ──
   'studentHome.wardrobe.hat.leagueJersey': 'League Jersey',
@@ -35,11 +49,15 @@ export const league = {
   'studentHome.wardrobe.prop.goldClipboard': 'Gold Clipboard',
   'studentHome.wardrobe.background.stadiumLights': 'Stadium Lights',
   'studentHome.wardrobe.frame.leagueCrest': 'League Crest frame',
+  'studentHome.wardrobe.hat.goldenLaurel': 'Golden Laurel',
+  'studentHome.wardrobe.prop.summitFlag': 'Summit Flag',
+  'studentHome.wardrobe.background.breakthroughDawn': 'Breakthrough Dawn',
+  'studentHome.wardrobe.frame.club1500': '1500 Club frame',
 
   // ── the achievements page ──
   'studentHome.achievements.category.masterLeague': 'Master League',
   'studentHome.league.section.title': 'Master League',
-  'studentHome.league.section.subtitle': 'Earned only by playing the season. The kit grows with every matchday.',
+  'studentHome.league.section.subtitle': 'Earned on the pitch and in The Final. The kit grows with every matchday.',
 
   // ── the season banner ──
   'studentHome.league.region': 'Your Master League season',
@@ -124,6 +142,9 @@ export const league = {
   'studentHome.league.welcome.wear': 'Put on the kit',
   'studentHome.league.welcome.go': 'Let’s go',
   'studentHome.league.welcome.wearing': 'The League kit is on!',
+
+  // ── the rarest unlocks (1500 Club, Perfect): a golden moment in the celebration ──
+  'studentHome.league.milestone.eyebrow': 'Master League · One of the rarest',
 
   // ── connect Telegram, from the banner (quiet, never a popup) ──
   'studentHome.league.telegram.region': 'Telegram',

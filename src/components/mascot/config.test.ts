@@ -42,19 +42,20 @@ describe('mascot codes', () => {
       p: CATEGORY_PARTS.prop.length,
       b: CATEGORY_PARTS.background.length,
       f: CATEGORY_PARTS.frame.length,
-    }).toEqual({ h: 28, g: 9, e: 8, p: 30, b: 15, f: 6 });
+    }).toEqual({ h: 29, g: 9, e: 8, p: 31, b: 16, f: 7 });
   });
 
   it('writes v2 and still reads v1 codes as frame 0', () => {
     expect(serializeMascot({ hat: 3, eyewear: 0, expression: 2, prop: 5, background: 4, frame: 1 })).toBe('v2.h3.g0.e2.p5.b4.f1');
     expect(parseMascot('v1.h16.g7.e7.p15.b10')).toEqual({ hat: 16, eyewear: 7, expression: 7, prop: 15, background: 10, frame: 0 });
     expect(parseMascot('v2.h25.g8.e7.p26.b13.f4')).toEqual({ hat: 25, eyewear: 8, expression: 7, prop: 26, background: 13, frame: 4 });
+    expect(parseMascot('v2.h28.g0.e4.p30.b15.f6')).toEqual({ hat: 28, eyewear: 0, expression: 4, prop: 30, background: 15, frame: 6 });
   });
 
   it('refuses anything that is not a valid v1 or v2 code', () => {
     for (const bad of [
       '', 'v1.h1.g0.e0.p0', 'v1.h1.g0.e0.p0.b0.f0', 'v2.h1.g0.e0.p0.b0', 'v3.h1.g0.e0.p0.b0.f0',
-      'v1.h28.g0.e0.p0.b0', 'v2.h0.g0.e0.p30.b0.f0', 'v2.h0.g0.e0.p0.b15.f0', 'v2.h0.g0.e0.p0.b0.f6', 'v2.h0.g9.e0.p0.b0.f0',
+      'v1.h29.g0.e0.p0.b0', 'v2.h0.g0.e0.p31.b0.f0', 'v2.h0.g0.e0.p0.b16.f0', 'v2.h0.g0.e0.p0.b0.f7', 'v2.h0.g9.e0.p0.b0.f0',
       'v1.g0.h1.e0.p0.b0', 'v2.h1.g0.e0.p0.b0.f0.x', 'nonsense',
     ]) {
       expect(parseMascot(bad)).toBeNull();
@@ -226,19 +227,19 @@ describe('achievement rewards', () => {
     ['h', 21, 'warrior_headband', 'weekly_warrior'], ['h', 22, 'quiz_cap', 'live_ace'],
     ['h', 23, 'garland_scarf', 'winter_lights'], ['h', 24, 'team_scarf', 'team_spirit'],
     ['h', 25, 'star_cape', 'star_of_week'], ['h', 26, 'league_jersey', 'ml_signed'],
-    ['h', 27, 'hat_trick_topper', 'ml_hat_trick'], ['g', 8, 'gold_star_glasses', 'full_marks_3'],
+    ['h', 27, 'hat_trick_topper', 'ml_hat_trick'], ['h', 28, 'golden_laurel', 'ml_perfect'], ['g', 8, 'gold_star_glasses', 'full_marks_3'],
     ['p', 16, 'swim_ring', 'first_splash'], ['p', 17, 'fin_pencil', 'hand_in_hero'],
     ['p', 18, 'compass', 'first_checkpoint'], ['p', 19, 'clock_pin', 'on_time_5'],
     ['p', 20, 'golden_clock', 'on_time_20'], ['p', 21, 'bronze_medal', 'perfect_month'],
     ['p', 22, 'jetpack', 'score_climber'], ['p', 23, 'boomerang', 'comeback'],
     ['p', 24, 'diploma', 'verified_score'], ['p', 25, 'lucky_charm', 'test_day_ready'],
     ['p', 26, 'lightning_badge', 'live_wire'], ['p', 27, 'silver_whistle', 'ml_first_whistle'],
-    ['p', 28, 'squad_pennant', 'ml_full_squad'], ['p', 29, 'gold_clipboard', 'ml_no_loose_ends'],
+    ['p', 28, 'squad_pennant', 'ml_full_squad'], ['p', 29, 'gold_clipboard', 'ml_no_loose_ends'], ['p', 30, 'summit_flag', 'ml_mock_climb'],
     ['b', 11, 'sparkle', 'hello_kasatik'], ['b', 12, 'sunrise', 'early_bird'], ['b', 13, 'aurora', 'streak_100'],
-    ['b', 14, 'stadium_lights', 'ml_ever_present'],
+    ['b', 14, 'stadium_lights', 'ml_ever_present'], ['b', 15, 'breakthrough_dawn', 'ml_breakthrough'],
     ['f', 1, 'flame', 'streak_7'], ['f', 2, 'blue_flame', 'streak_30'],
     ['f', 3, 'gold_laurel', 'graduate_gold'], ['f', 4, 'star_ring', 'star_of_week_3'],
-    ['f', 5, 'league_crest', 'ml_signed'],
+    ['f', 5, 'league_crest', 'ml_signed'], ['f', 6, 'club_1500_frame', 'ml_1500'],
   ];
 
   it('match the contract table exactly', () => {

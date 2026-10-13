@@ -11,6 +11,7 @@ import { useTourActive } from '@/components/guide/tourStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { parseMascot, rewardLabel } from '@/components/mascot/config';
 import { leagueKitCode } from '@/components/mascot/leagueKit';
+import LeagueMilestoneHeader, { GOLDEN_CONFETTI } from '@/components/masterLeague/LeagueMilestone';
 import LeagueWelcome from '@/components/masterLeague/LeagueWelcome';
 import { onboardingPending } from '@/components/mascot/spotlight';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import {
   celebrationReward,
   celebrationTitle,
   isBigMoment,
+  isGoldenMoment,
   tierLabel,
   withReward,
 } from '@/lib/achievements';
@@ -171,23 +173,31 @@ export default function UnlockCelebration() {
 
   if (welcome) return <LeagueWelcome items={items} saving={saving} onClose={close} />;
 
+  // «1500 Club» and «Perfect», the rarest league unlocks, open with a golden header and more confetti.
+  const golden = items.find(isGoldenMoment) ?? null;
+  const goldenReward = golden && (pick?.achievement.key === golden.key ? pick.reward : golden.rewards[0] ?? null);
+
   return (
     <>
-      <Confetti />
+      {golden ? <Confetti pieces={240} durationMs={3800} colors={GOLDEN_CONFETTI} /> : <Confetti />}
       <Dialog open onOpenChange={(o) => { if (!o) close(false); }}>
         <DialogContent className="max-w-md overflow-hidden rounded-3xl border-0 p-0">
-          <div className="relative bg-gradient-to-br from-brand-solid via-brand-solid-hover to-blue-900 px-6 pb-6 pt-8 text-center text-white dark:from-brand-subtle dark:via-brand-surface dark:to-brand-surface dark:text-brand-surface-foreground">
-            <div aria-hidden className="pointer-events-none absolute -left-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
-            <div className="relative mx-auto w-fit rounded-full bg-white/15 p-2 ring-4 ring-white/25">
-              <RewardPreview code={user.mascot} userId={user.id} reward={pick?.reward} size={128} />
+          {golden ? (
+            <LeagueMilestoneHeader code={user.mascot} userId={user.id} achievement={golden} reward={goldenReward} />
+          ) : (
+            <div className="relative bg-gradient-to-br from-brand-solid via-brand-solid-hover to-blue-900 px-6 pb-6 pt-8 text-center text-white dark:from-brand-subtle dark:via-brand-surface dark:to-brand-surface dark:text-brand-surface-foreground">
+              <div aria-hidden className="pointer-events-none absolute -left-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
+              <div className="relative mx-auto w-fit rounded-full bg-white/15 p-2 ring-4 ring-white/25">
+                <RewardPreview code={user.mascot} userId={user.id} reward={pick?.reward} size={128} />
+              </div>
+              <DialogTitle className="relative mt-4 text-2xl font-bold text-white dark:text-brand-surface-foreground">{celebrationTitle(items.length, locale)}</DialogTitle>
+              <DialogDescription className="relative mt-1 text-sm text-blue-100 dark:text-brand-subtle-foreground">
+                {pick
+                  ? t('studentHome.achievements.celebration.newToWear', { part: rewardLabel(pick.reward, locale) })
+                  : t('studentHome.achievements.celebration.earned')}
+              </DialogDescription>
             </div>
-            <DialogTitle className="relative mt-4 text-2xl font-bold text-white dark:text-brand-surface-foreground">{celebrationTitle(items.length, locale)}</DialogTitle>
-            <DialogDescription className="relative mt-1 text-sm text-blue-100 dark:text-brand-subtle-foreground">
-              {pick
-                ? t('studentHome.achievements.celebration.newToWear', { part: rewardLabel(pick.reward, locale) })
-                : t('studentHome.achievements.celebration.earned')}
-            </DialogDescription>
-          </div>
+          )}
           <ul className="max-h-64 divide-y divide-border overflow-y-auto px-6">
             {items.map((a) => (
               <li key={a.key} className="flex items-center gap-3 py-3">
