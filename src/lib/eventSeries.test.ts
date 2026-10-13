@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { followingPayload, groupSeries, hostSuggestion, retitleForHost, shortName } from './eventSeries';
+import { canRestore, followingPayload, groupSeries, hostSuggestion, isCancelled, retitleForHost, shortName } from './eventSeries';
 import type { Event } from '../types';
 
 const now = new Date('2026-10-10T10:00:00Z');
@@ -39,6 +39,45 @@ describe('groupSeries', () => {
     const events = [0, 1].map((n) => ev(n + 1, week(n - 6), { series_id: 'old' }));
     const item = groupSeries(events, now)[0];
     expect(item.kind === 'series' && [item.upcoming, item.next.id]).toEqual([0, 2]);
+  });
+});
+
+describe('groupSeries with cancelled weeks', () => {
+  const cancelled = { is_active: false };
+
+  it('does not count a cancelled week, and never makes it the next one', () => {
+    const events = [0, 1, 2, 3, 4].map((n) => ev(n + 1, week(n), { series_id: 'abc', ...(n >= 3 ? cancelled : {}) }));
+    const item = groupSeries(events, now)[0];
+    expect(item.kind).toBe('series');
+    if (item.kind === 'series') {
+      expect([item.total, item.upcoming, item.next.id]).toEqual([3, 1, 3]);   // weeks 3, 10 and 17 Oct are live
+      expect(item.events).toHaveLength(5);                                    // the cancelled ones still open under the line
+      expect([item.cancelled, item.restorable, item.restoreFrom?.id]).toEqual([2, 2, 4]);
+    }
+  });
+
+  it('keeps a series whose every week is cancelled as one line, ready to be restored', () => {
+    const events = [2, 3, 4].map((n) => ev(n, week(n), { series_id: 'gone', ...cancelled }));
+    const item = groupSeries(events, now)[0];
+    expect(item.kind).toBe('series');
+    if (item.kind === 'series') {
+      expect([item.total, item.upcoming, item.cancelled]).toEqual([0, 0, 3]);
+      expect(item.restoreFrom?.id).toBe(2);
+    }
+  });
+
+  it('does not offer to restore a cancelled week that has already ended', () => {
+    const events = [ev(1, week(-2), { series_id: 's', ...cancelled }), ev(2, week(2), { series_id: 's' }), ev(3, week(3), { series_id: 's', ...cancelled })];
+    const item = groupSeries(events, now)[0];
+    expect(item.kind === 'series' && [item.cancelled, item.restorable, item.restoreFrom?.id]).toEqual([2, 1, 3]);
+  });
+
+  it('knows a cancelled event from a live one, and which cancelled ones can come back', () => {
+    expect(isCancelled(ev(1, week(2)))).toBe(false);
+    expect(isCancelled(ev(1, week(2), cancelled))).toBe(true);
+    expect(canRestore(ev(1, week(2), cancelled), now)).toBe(true);
+    expect(canRestore(ev(1, week(-2), cancelled), now)).toBe(false);
+    expect(canRestore(ev(1, week(2)), now)).toBe(false);              // not cancelled: nothing to restore
   });
 });
 

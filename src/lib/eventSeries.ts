@@ -3,14 +3,31 @@ import type { Event, UpdateEventRequest } from '../types';
 /** A row of the admin events list: one event, or a recurring series collapsed into one item. */
 export type EventListItem =
   | { kind: 'event'; event: Event }
-  | { kind: 'series'; seriesId: string; title: string; events: Event[]; total: number; upcoming: number; next: Event };
+  | {
+      kind: 'series'; seriesId: string; title: string; events: Event[];
+      /** Active weeks only: a cancelled week is neither «upcoming» nor «in all». */
+      total: number; upcoming: number; next: Event;
+      /** Cancelled weeks in `events` (listed only when the screen asks for cancelled events). */
+      cancelled: number;
+      /** The cancelled weeks that have not ended, i.e. what «restore» brings back; the earliest is where it starts. */
+      restorable: number;
+      restoreFrom: Event | null;
+    };
 
 const startOf = (event: Event): number => Date.parse(event.start_datetime);
+const endOf = (event: Event): number => Date.parse(event.end_datetime);
+
+/** A cancelled event is a soft-deleted one: the server lists it only on request and marks it `is_active: false`. */
+export const isCancelled = (event: Event): boolean => event.is_active === false;
+
+/** A cancelled event can come back only while it has not ended (the server refuses a finished one). */
+export const canRestore = (event: Event, now: Date = new Date()): boolean => isCancelled(event) && endOf(event) > now.getTime();
 
 /**
  * Collapse the occurrences of each recurring series into one item (the weekly office hours are 50 rows each). The
  * server ties them with `series_id`; an event with none, or the only one of its series in the list, stays a row of its
- * own. Items are in date order by the series' next occurrence (its last one when all have passed).
+ * own. Items are in date order by the series' next occurrence (its last one when all have passed). Cancelled weeks sit
+ * inside the series but are not counted and never become its «next».
  */
 export function groupSeries(events: Event[], now: Date = new Date()): EventListItem[] {
   const bySeries = new Map<string, Event[]>();
@@ -28,9 +45,19 @@ export function groupSeries(events: Event[], now: Date = new Date()): EventListI
     if (placed.has(event.series_id!)) continue;
     placed.add(event.series_id!);
     const ordered = [...members].sort((a, b) => startOf(a) - startOf(b));
-    const upcoming = ordered.filter((e) => startOf(e) > now.getTime());
-    const next = upcoming[0] ?? ordered[ordered.length - 1];
-    items.push({ at: startOf(next), item: { kind: 'series', seriesId: event.series_id!, title: next.title, events: ordered, total: ordered.length, upcoming: upcoming.length, next } });
+    const active = ordered.filter((e) => !isCancelled(e));
+    const upcoming = active.filter((e) => startOf(e) > now.getTime());
+    // A series with every week cancelled is still one line, so it can be restored from there.
+    const next = upcoming[0] ?? active[active.length - 1] ?? ordered.find((e) => startOf(e) > now.getTime()) ?? ordered[ordered.length - 1];
+    const cancelled = ordered.filter(isCancelled);
+    items.push({
+      at: startOf(next),
+      item: {
+        kind: 'series', seriesId: event.series_id!, title: next.title, events: ordered, total: active.length, upcoming: upcoming.length, next,
+        cancelled: cancelled.length, restorable: cancelled.filter((e) => canRestore(e, now)).length,
+        restoreFrom: cancelled.find((e) => canRestore(e, now)) ?? null,
+      },
+    });
   }
   return items.sort((a, b) => a.at - b.at).map((entry) => entry.item);
 }

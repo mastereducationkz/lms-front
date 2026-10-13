@@ -10,7 +10,8 @@ import {
   Clock, 
   MapPin,
   Video,
-  MoreHorizontal
+  MoreHorizontal,
+  RotateCcw
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -29,9 +30,9 @@ import {
 } from '../components/ui/dropdown-menu';
 import { Badge } from '../components/ui/badge';
 import Loader from '../components/Loader';
-import { getAllEvents, deleteEvent, bulkDeleteEvents, getAllGroups, getEventSeries } from '../services/api';
+import { getAllEvents, deleteEvent, restoreEvent, bulkDeleteEvents, getAllGroups, getEventSeries } from '../services/api';
 import { SeriesDeleteDialog, SeriesRow, type SeriesScope } from '../components/events/SeriesScope';
-import { groupSeries, type EventListItem } from '../lib/eventSeries';
+import { groupSeries, canRestore, isCancelled, type EventListItem } from '../lib/eventSeries';
 import type { Event, EventType, Group } from '../types';
 import { formatDate, formatDateTime as formatAppDateTime, type MessageKey } from '../lib/i18n';
 import { useT } from '@/lib/i18n/react';
@@ -43,6 +44,9 @@ const EVENT_TYPE_KEYS = {
   webinar: 'adminPages.events.type.webinar',
   assignment: 'adminPages.events.type.assignment',
 } as const satisfies Record<EventType, MessageKey>;
+
+// The list is oldest-first and the server cuts it at `limit` (100 by default): ask for all of them, or the weeks furthest ahead never reach the screen.
+const EVENTS_LIMIT = 2000;
 
 export default function EventManagement() {
   const navigate = useNavigate();
@@ -57,6 +61,8 @@ export default function EventManagement() {
   const [selectedEventIds, setSelectedEventIds] = useState<number[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showLessons, setShowLessons] = useState(false);
+  const [showFinished, setShowFinished] = useState(false);
+  const [showCancelled, setShowCancelled] = useState(false);
   const [groupWeekly, setGroupWeekly] = useState(true);
   const [seriesCancel, setSeriesCancel] = useState<{ event: Event; following: number; initialScope: SeriesScope } | null>(null);
 
@@ -69,7 +75,12 @@ export default function EventManagement() {
     try {
       setLoading(true);
       const [eventsData, groupsData] = await Promise.all([
-        getAllEvents({ exclude_type: showLessons ? undefined : 'class' }),
+        getAllEvents({
+          exclude_type: showLessons ? undefined : 'class',
+          include_finished: showFinished,
+          include_cancelled: showCancelled,
+          limit: EVENTS_LIMIT,
+        }),
         getAllGroups()
       ]);
       setEvents(eventsData);
@@ -83,7 +94,7 @@ export default function EventManagement() {
 
   useEffect(() => {
     loadData();
-  }, [showLessons]);
+  }, [showLessons, showFinished, showCancelled]);
 
   // An occurrence of a recurring series asks what to cancel: only it, or it and every later week.
   const askSeriesCancel = async (event: Event, initialScope: SeriesScope): Promise<boolean> => {
@@ -108,6 +119,19 @@ export default function EventManagement() {
     } catch (error) {
       console.error('Failed to cancel events:', error);
       alert(t('adminPages.events.series.cancelFailed'));
+    }
+  };
+
+  const handleRestore = async (eventId: number, scope: SeriesScope, count = 1) => {
+    if (count > 1 && !confirm(t('adminPages.events.series.restoreConfirm', { count }))) {
+      return;
+    }
+    try {
+      await restoreEvent(eventId, scope);
+      await loadData();
+    } catch (error) {
+      console.error('Failed to restore events:', error);
+      alert(t('adminPages.events.list.restoreFailed'));
     }
   };
 
@@ -156,10 +180,10 @@ export default function EventManagement() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedEventIds.length === filteredEvents.length) {
+    if (selectedEventIds.length === selectableEvents.length) {
       setSelectedEventIds([]);
     } else {
-      setSelectedEventIds(filteredEvents.map(event => event.id));
+      setSelectedEventIds(selectableEvents.map(event => event.id));
     }
   };
 
@@ -209,6 +233,9 @@ export default function EventManagement() {
     }
   });
 
+  const selectableEvents = filteredEvents.filter(event => !isCancelled(event));
+  const liveEvents = events.filter(event => !isCancelled(event));
+
   const formatDateTime = (dateTimeString: string) => {
     return formatAppDateTime(dateTimeString, {
       day: '2-digit',
@@ -234,14 +261,16 @@ export default function EventManagement() {
     : filteredEvents.map((event): EventListItem => ({ kind: 'event', event }));
 
   const renderEventRow = (event: Event) => (
-              <div key={event.id} className="p-6 hover:bg-muted dark:hover:bg-secondary transition-colors flex items-start gap-4">
-                <div className="pt-1">
-                  <input
-                    type="checkbox"
-                    checked={selectedEventIds.includes(event.id)}
-                    onChange={() => toggleSelectEvent(event.id)}
-                    className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
-                  />
+              <div key={event.id} className={`p-6 hover:bg-muted dark:hover:bg-secondary transition-colors flex items-start gap-4 ${isCancelled(event) ? 'opacity-60' : ''}`}>
+                <div className="pt-1 w-4">
+                  {!isCancelled(event) && (
+                    <input
+                      type="checkbox"
+                      checked={selectedEventIds.includes(event.id)}
+                      onChange={() => toggleSelectEvent(event.id)}
+                      className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
+                    />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0 flex items-start justify-between">
                   <div className="flex-1 min-w-0">
@@ -253,6 +282,11 @@ export default function EventManagement() {
                       <Badge className={`${getEventTypeColor(event.event_type)} border`}>
                         {t(EVENT_TYPE_KEYS[event.event_type])}
                       </Badge>
+                      {isCancelled(event) && (
+                        <Badge variant="outline" className="text-muted-foreground border-border">
+                          {t('adminPages.events.list.cancelledBadge')}
+                        </Badge>
+                      )}
                       {event.is_recurring && (
                         <Badge variant="outline" className="text-brand border-brand-border">
                           {t('adminPages.events.list.recurring')}
@@ -322,6 +356,16 @@ export default function EventManagement() {
                   </div>
 
                   {/* Actions */}
+                  {isCancelled(event) ? (
+                    <div className="flex items-center gap-2 ml-4">
+                      {canRestore(event) && (
+                        <Button variant="outline" size="sm" onClick={() => handleRestore(event.id, 'this')}>
+                          <RotateCcw className="w-4 h-4 mr-1.5" />
+                          {t('adminPages.events.list.restore')}
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
                   <div className="flex items-center gap-2 ml-4">
                     <Button
                       variant="outline"
@@ -361,6 +405,7 @@ export default function EventManagement() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
+                  )}
                 </div>
               </div>
   );
@@ -468,6 +513,33 @@ export default function EventManagement() {
             </label>
           </div>
 
+          {/* What the list hides by default: what has ended, and what was cancelled */}
+          <div className="flex items-center gap-2 px-2 border dark:border-border rounded-md bg-muted dark:bg-secondary h-10">
+            <input
+              type="checkbox"
+              id="show-finished"
+              checked={showFinished}
+              onChange={(e) => setShowFinished(e.target.checked)}
+              className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
+            />
+            <label htmlFor="show-finished" className="text-sm font-medium text-foreground/80 cursor-pointer whitespace-nowrap">
+              {t('adminPages.events.list.showFinished')}
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2 px-2 border dark:border-border rounded-md bg-muted dark:bg-secondary h-10">
+            <input
+              type="checkbox"
+              id="show-cancelled"
+              checked={showCancelled}
+              onChange={(e) => setShowCancelled(e.target.checked)}
+              className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
+            />
+            <label htmlFor="show-cancelled" className="text-sm font-medium text-foreground/80 cursor-pointer whitespace-nowrap">
+              {t('adminPages.events.list.showCancelled')}
+            </label>
+          </div>
+
           {/* Weekly series: one line each, or every week on its own */}
           <div className="flex items-center gap-2 px-2 border dark:border-border rounded-md bg-muted dark:bg-secondary h-10">
             <input
@@ -509,14 +581,14 @@ export default function EventManagement() {
             <div className="p-4 bg-muted dark:bg-secondary border-b dark:border-border flex items-center gap-4">
               <input
                 type="checkbox"
-                checked={selectedEventIds.length === filteredEvents.length && filteredEvents.length > 0}
+                checked={selectedEventIds.length === selectableEvents.length && selectableEvents.length > 0}
                 onChange={toggleSelectAll}
                 className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
               />
               <span className="text-sm font-medium text-muted-foreground">
                 {selectedEventIds.length > 0 
                   ? t('adminPages.events.list.selectedCount', { count: selectedEventIds.length })
-                  : t('adminPages.events.list.selectAll', { count: filteredEvents.length })}
+                  : t('adminPages.events.list.selectAll', { count: selectableEvents.length })}
               </span>
             </div>
             {listItems.map((item) => item.kind === 'event' ? renderEventRow(item.event) : (
@@ -526,8 +598,11 @@ export default function EventManagement() {
                 total={item.total}
                 upcoming={item.upcoming}
                 next={item.next}
+                cancelled={item.cancelled}
+                restorable={item.restorable}
                 onEditNext={() => navigate(`/admin/events/${item.next.id}/edit`)}
                 onCancelUpcoming={() => { void askSeriesCancel(item.next, 'following'); }}
+                onRestoreCancelled={item.restoreFrom ? () => { void handleRestore(item.restoreFrom!.id, 'following', item.restorable); } : undefined}
               >
                 {item.events.map(renderEventRow)}
               </SeriesRow>
@@ -542,7 +617,7 @@ export default function EventManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">{t('adminPages.events.list.totalEvents')}</p>
-              <p className="text-2xl font-bold text-foreground dark:text-foreground">{events.length}</p>
+              <p className="text-2xl font-bold text-foreground dark:text-foreground">{liveEvents.length}</p>
             </div>
             <Calendar className="w-8 h-8 text-brand" />
           </div>
@@ -553,7 +628,7 @@ export default function EventManagement() {
             <div>
               <p className="text-sm font-medium text-muted-foreground">{t('adminPages.events.list.classes')}</p>
               <p className="text-2xl font-bold text-brand">
-                {events.filter(e => e.event_type === 'class').length}
+                {liveEvents.filter(e => e.event_type === 'class').length}
               </p>
             </div>
             <div className="w-8 h-8 rounded bg-brand-subtle flex items-center justify-center">
@@ -567,7 +642,7 @@ export default function EventManagement() {
             <div>
               <p className="text-sm font-medium text-muted-foreground">{t('adminPages.events.list.tests')}</p>
               <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                {events.filter(e => e.event_type === 'weekly_test').length}
+                {liveEvents.filter(e => e.event_type === 'weekly_test').length}
               </p>
             </div>
             <div className="w-8 h-8 rounded bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
@@ -581,7 +656,7 @@ export default function EventManagement() {
             <div>
               <p className="text-sm font-medium text-muted-foreground">{t('adminPages.events.list.webinars')}</p>
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                {events.filter(e => e.event_type === 'webinar').length}
+                {liveEvents.filter(e => e.event_type === 'webinar').length}
               </p>
             </div>
             <div className="w-8 h-8 rounded bg-red-100 dark:bg-red-900/30 flex items-center justify-center">

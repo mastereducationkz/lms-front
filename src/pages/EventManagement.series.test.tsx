@@ -13,12 +13,14 @@ vi.mock('../contexts/AuthContext', async () => {
 const getAllEvents = vi.fn();
 const deleteEvent = vi.fn();
 const getEventSeries = vi.fn();
+const restoreEvent = vi.fn();
 vi.mock('../services/api', () => ({
   getAllEvents: (...a: unknown[]) => getAllEvents(...a),
   getAllGroups: vi.fn().mockResolvedValue([]),
   deleteEvent: (...a: unknown[]) => deleteEvent(...a),
   bulkDeleteEvents: vi.fn(),
   getEventSeries: (...a: unknown[]) => getEventSeries(...a),
+  restoreEvent: (...a: unknown[]) => restoreEvent(...a),
 }));
 
 import EventManagement from './EventManagement';
@@ -46,9 +48,10 @@ async function show() {
   await settle();
 }
 beforeEach(() => {
-  getAllEvents.mockReset(); deleteEvent.mockReset(); getEventSeries.mockReset();
+  getAllEvents.mockReset(); deleteEvent.mockReset(); getEventSeries.mockReset(); restoreEvent.mockReset();
   getAllEvents.mockResolvedValue(events);
   deleteEvent.mockResolvedValue(3);
+  restoreEvent.mockResolvedValue(2);
   getEventSeries.mockResolvedValue({ series_id: 's1', total: 3, position: 1, following: 3 });
 });
 afterEach(async () => {
@@ -96,5 +99,70 @@ describe('events list: weekly series', () => {
     await settle();
     expect(deleteEvent).toHaveBeenCalledWith(11, 'following');
     expect(getAllEvents.mock.calls.length).toBeGreaterThan(calls);
+  });
+});
+
+describe('events list: finished and cancelled events', () => {
+  const cancelledWeeks = [ev(11, 0), ev(12, 1, { is_active: false }), ev(13, 2, { is_active: false }), ev(20, 3, { title: 'One-off webinar', series_id: null, is_active: false })];
+  const exactButton = (name: string) => Array.from(document.body.querySelectorAll('button')).filter((b) => b.textContent?.trim() === name);
+
+  it('asks for the upcoming ones first, and for all of them', async () => {
+    await show();
+    expect(getAllEvents).toHaveBeenLastCalledWith(expect.objectContaining({ include_finished: false, include_cancelled: false, limit: 2000 }));
+  });
+
+  it('shows finished events when asked, and reloads', async () => {
+    await show();
+    await act(async () => { (host.querySelector('#show-finished') as HTMLInputElement).click(); });
+    await settle();
+    expect(getAllEvents).toHaveBeenLastCalledWith(expect.objectContaining({ include_finished: true, include_cancelled: false }));
+  });
+
+  it('lists cancelled events only when asked', async () => {
+    await show();
+    await act(async () => { (host.querySelector('#show-cancelled') as HTMLInputElement).click(); });
+    await settle();
+    expect(getAllEvents).toHaveBeenLastCalledWith(expect.objectContaining({ include_cancelled: true }));
+  });
+
+  it('counts only the live weeks of a series, names the cancelled ones and restores them in one go', async () => {
+    getAllEvents.mockResolvedValue(cancelledWeeks);
+    const confirmed = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    await show();
+    expect(host.textContent).toContain('1 upcoming · 1 in all · 2 cancelled');
+    await act(async () => { button('Restore cancelled (2)')!.click(); });
+    await settle();
+    expect(confirmed).toHaveBeenCalled();
+    expect(restoreEvent).toHaveBeenCalledWith(12, 'following');
+    confirmed.mockRestore();
+  });
+
+  it('leaves the cancelled weeks alone when the restore is not confirmed', async () => {
+    getAllEvents.mockResolvedValue(cancelledWeeks);
+    const confirmed = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    await show();
+    await act(async () => { button('Restore cancelled (2)')!.click(); });
+    await settle();
+    expect(restoreEvent).not.toHaveBeenCalled();
+    confirmed.mockRestore();
+  });
+
+  it('puts a Restore button, not Edit and Delete, on a cancelled event', async () => {
+    getAllEvents.mockResolvedValue(cancelledWeeks);
+    await show();
+    expect(host.textContent).toContain('Cancelled');
+    const restore = exactButton('Restore');
+    expect(restore).toHaveLength(1);                                 // the one-off; the series restores through its own line
+    await act(async () => { restore[0].click(); });
+    await settle();
+    expect(restoreEvent).toHaveBeenCalledWith(20, 'this');
+  });
+
+  it('gives a cancelled event no checkbox to select it for deletion', async () => {
+    getAllEvents.mockResolvedValue([ev(20, 3, { title: 'One-off webinar', series_id: null, is_active: false })]);
+    await show();
+    const rows = Array.from(host.querySelectorAll('h3')).filter((n) => n.textContent === 'One-off webinar');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].closest('div.p-6')!.querySelector('input[type="checkbox"]')).toBeNull();
   });
 });
