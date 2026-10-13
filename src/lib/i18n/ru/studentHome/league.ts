@@ -78,6 +78,12 @@ export const league: RuTable<typeof en> = {
     many: 'Отправьте куратору официальный отчёт о баллах в течение {count} дней. Он завершает ваш сезон.',
     other: 'Отправьте куратору официальный отчёт о баллах в течение {count} дней. Он завершает ваш сезон.',
   },
+  'studentHome.league.phase.after.subWaiting': {
+    one: 'Баллы College Board выйдут {date}. Потом пришлите отчёт куратору в течение {count} дня.',
+    few: 'Баллы College Board выйдут {date}. Потом пришлите отчёт куратору в течение {count} дней.',
+    many: 'Баллы College Board выйдут {date}. Потом пришлите отчёт куратору в течение {count} дней.',
+    other: 'Баллы College Board выйдут {date}. Потом пришлите отчёт куратору в течение {count} дней.',
+  },
   'studentHome.league.phase.after.subToday': 'Отправьте куратору официальный отчёт о баллах сегодня. Он завершает ваш сезон.',
   'studentHome.league.daysToFinal': {
     one: 'До Финала {count} день',

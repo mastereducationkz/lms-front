@@ -110,6 +110,29 @@ export interface PhaseCopy {
   kickoff: string | null;
 }
 
+/** Whole days from one YYYY-MM-DD date to another (null when either is missing or malformed). */
+function daysBetween(from: string | null, to: string | null): number | null {
+  const a = from ? Date.parse(`${from}T00:00:00Z`) : NaN;
+  const b = to ? Date.parse(`${to}T00:00:00Z`) : NaN;
+  return Number.isFinite(a) && Number.isFinite(b) ? Math.round((b - a) / DAY_MS) : null;
+}
+
+/**
+ * The line under «Final whistle». Before College Board releases the scores there is nothing to send
+ * yet: it says when they come and how long the report may take after that. From the release day the
+ * days left are counted to the due day (inclusive). An answer without `score_release` (a backend from
+ * before it existed) skips the waiting line and counts to `result_due` as it always did.
+ */
+function afterSub(league: MyLeague, now: number, locale: Locale, tr: (id: string, params?: Record<string, string | number>) => string): string {
+  const untilRelease = daysUntil(league.score_release, now);
+  const window = daysBetween(league.score_release, league.result_due);
+  if (untilRelease != null && untilRelease > 0 && window != null && window > 0) {
+    return tr('phase.after.subWaiting', { date: formatDate(league.score_release, { day: 'numeric', month: 'long' }, locale), count: window });
+  }
+  const left = daysUntil(league.result_due, now);
+  return left == null || left <= 0 ? tr('phase.after.subToday') : tr('phase.after.sub', { count: left });
+}
+
 /** The headline and the line under it for the season's phase, in the reader's language. */
 export function phaseCopy(league: MyLeague, now: number, locale: Locale = activeLocale()): PhaseCopy {
   const phase = league.phase === 'over' ? 'after' : league.phase;
@@ -127,9 +150,7 @@ export function phaseCopy(league: MyLeague, now: number, locale: Locale = active
     return { title: tr('phase.finalWeek.title'), sub: tr('phase.finalWeek.sub', { count: days }), noteKey: key, kickoff };
   }
   if (phase === 'after') {
-    const left = daysUntil(league.result_due, now);
-    const sub = left == null || left <= 0 ? tr('phase.after.subToday') : tr('phase.after.sub', { count: left });
-    return { title: tr('phase.after.title'), sub, noteKey: key, kickoff: null };
+    return { title: tr('phase.after.title'), sub: afterSub(league, now, locale, tr), noteKey: key, kickoff: null };
   }
   const kickoff = phase === 'warmup' && league.next_lesson ? kickoffLine(league, now, locale) : null;
   return { title: tr(`phase.${key}.title`), sub: tr(`phase.${key}.sub`), noteKey: key, kickoff };

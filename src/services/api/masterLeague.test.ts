@@ -11,7 +11,8 @@ const live = {
   exam_date: '2026-11-07',
   days_to_exam: 25,
   phase: 'season',
-  result_due: '2026-11-21',
+  score_release: '2026-11-20',
+  result_due: '2026-12-04',
   lessons: {
     total: 11,
     played: 2,
@@ -49,6 +50,18 @@ describe('the season answer', () => {
     expect(asMyLeague({ ...live, phase: 'over' })).toBeNull();
     expect(asMyLeague({ ...live, phase: 'mid-air' })).toBeNull();
     expect(asMyLeague({ ...live, group: null })).toBeNull();
+  });
+
+  it('reads the release day and the due day, and tolerates a backend that sends neither yet', () => {
+    const league = asMyLeague(live)!;
+    expect(league.score_release).toBe('2026-11-20');
+    expect(league.result_due).toBe('2026-12-04');
+    const { score_release, ...old } = { ...live, result_due: '2026-11-21' };
+    expect(score_release).toBe('2026-11-20');
+    const legacy = asMyLeague(old)!;
+    expect(legacy.score_release).toBeNull();
+    expect(legacy.result_due).toBe('2026-11-21');
+    expect(asMyLeague({ ...live, score_release: 5, result_due: null })!.score_release).toBeNull();
   });
 
   it('survives a thin answer: no exam date, no lessons, no goals', () => {
