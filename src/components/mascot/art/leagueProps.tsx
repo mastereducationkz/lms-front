@@ -1,7 +1,8 @@
 /**
  * Master League props (owner, 2026-10-13), appended after the lightning badge:
  * p27 Silver Whistle (first matchday), p28 Squad Pennant (a full squad), p29 Gold Clipboard
- * (no loose ends). They sit under the resting right fin so the fin reads as holding them.
+ * (no loose ends), and from phase 2 p30 Summit Flag (the mock climb). They sit under the resting
+ * right fin so the fin reads as holding them.
  */
 import type { PropPiece } from './props';
 import { MasterMark } from './MasterMark';
@@ -84,5 +85,41 @@ const goldClipboard: PropPiece = {
   ),
 };
 
-/** Appended after the lightning badge (p27, p28, p29). */
-export const LEAGUE_PROPS: PropPiece[] = [silverWhistle, squadPennant, goldClipboard];
+/** A small snowy summit with a gold pennant planted on top, the «M» on its flag: the climb made it. */
+const summitFlag: PropPiece = {
+  front: (uid) => (
+    <g>
+      <linearGradient id={`${uid}smr`} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stopColor="#5B8DFF" />
+        <stop offset="1" stopColor={LEAGUE.navy2} />
+      </linearGradient>
+      <linearGradient id={`${uid}smf`} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stopColor="#FFE07A" />
+        <stop offset="1" stopColor="#E3A008" />
+      </linearGradient>
+      {/* the mountain: a steep peak, a smaller shoulder behind it; the fin rests on its foot */}
+      <path d="M96 208 L140 134 L156 156 L170 140 L214 208 Z" fill={`url(#${uid}smr)`} stroke={LEAGUE.navy} strokeWidth="2.4" strokeLinejoin="round" />
+      <path d="M140 134 L156 156 L168 208 L128 208 Z" fill={LEAGUE.navy} opacity="0.24" />
+      <path d="M170 140 L188 168 L184 208 L156 208 L162 156 Z" fill={LEAGUE.night} opacity="0.3" />
+      <path d="M118 174 L110 190" stroke="#fff" strokeWidth="1.8" opacity="0.28" strokeLinecap="round" />
+      {/* the snow cap, with a jagged lower edge */}
+      <path d="M140 134 L123 166 L131 162 L137 174 L144 164 L151 172 L156 156 Z" fill="#fff" stroke={LEAGUE.navy} strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M140 137 L156 156 L151 172 L144 164 Z" fill="#CFE0FF" />
+      <path d="M170 140 L161 155 L166 153 L170 160 L176 152 L180 154 Z" fill="#fff" stroke={LEAGUE.navy} strokeWidth="1.4" strokeLinejoin="round" />
+      {/* the pole, silver, a gold ball on top */}
+      <rect x="138.2" y="90" width="3.6" height="48" rx="1.8" fill="#E8EEF8" stroke="#8D9BB3" strokeWidth="0.9" />
+      <circle cx="140" cy="88" r="3.8" fill={LEAGUE.gold} stroke={LEAGUE.goldDark} strokeWidth="1.1" />
+      {/* the flag, waving out to the right, with a swallow tail */}
+      <g transform="translate(141 92) scale(1.16) translate(-141 -92)">
+        <path d="M141 92 C 154 86 164 98 182 92 L176 104 L183 116 C 165 122 155 110 141 116 Z" fill={`url(#${uid}smf)`} stroke={LEAGUE.goldDark} strokeWidth="1.6" strokeLinejoin="round" />
+        <path d="M143 95 C 154 90 162 100 174 96" stroke="#fff" strokeWidth="1.8" opacity="0.5" fill="none" strokeLinecap="round" />
+        <MasterMark x={158} y={104} size={13} color={LEAGUE.navy} />
+      </g>
+      <Glint x={190} y={88} r={3.6} fill="#FFF6C8" />
+      <Glint x={122} y={118} r={2.6} />
+    </g>
+  ),
+};
+
+/** Appended after the lightning badge (p27, p28, p29, p30). */
+export const LEAGUE_PROPS: PropPiece[] = [silverWhistle, squadPennant, goldClipboard, summitFlag];

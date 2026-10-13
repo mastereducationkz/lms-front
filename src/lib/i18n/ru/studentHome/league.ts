@@ -21,6 +21,19 @@ export const league: RuTable<typeof en> = {
   'studentHome.achievement.ml_no_loose_ends.title': 'Без хвостов',
   'studentHome.achievement.ml_no_loose_ends.description': 'Все домашние задания Master League сданы вовремя. Ни одного хвоста.',
   'studentHome.achievement.ml_no_loose_ends.howTo': 'Сдайте все домашние задания Master League до дедлайна (минимум 3). Награда по окончании сезона.',
+  // этап 2: подъём и сам Финал
+  'studentHome.achievement.ml_mock_climb.title': 'Подъём',
+  'studentHome.achievement.ml_mock_climb.description': 'Полный пробный тест на 50+ баллов выше стартового результата. Вершина уже видна.',
+  'studentHome.achievement.ml_mock_climb.howTo': 'Наберите за время сезона на полном пробном Bluebook минимум на 50 баллов больше, чем на старте.',
+  'studentHome.achievement.ml_breakthrough.title': 'Рывок',
+  'studentHome.achievement.ml_breakthrough.description': 'На 100+ баллов выше стартового результата на Финале. Вы не просто сыграли, вы прорвались.',
+  'studentHome.achievement.ml_breakthrough.howTo': 'Наберите на официальном экзамене минимум на 100 баллов больше, чем на старте. Награда после проверки официального отчёта о баллах.',
+  'studentHome.achievement.ml_1500.title': 'Клуб 1500',
+  'studentHome.achievement.ml_1500.description': '1500 и выше на Финале. Добро пожаловать в очень небольшой клуб.',
+  'studentHome.achievement.ml_1500.howTo': 'Наберите на официальном экзамене 1500 баллов или больше. Награда после проверки официального отчёта о баллах.',
+  'studentHome.achievement.ml_perfect.title': 'Идеал',
+  'studentHome.achievement.ml_perfect.description': 'Идеальные 1600 на Финале. Максимум, и точка.',
+  'studentHome.achievement.ml_perfect.howTo': 'Наберите на официальном экзамене идеальные 1600 баллов. Награда после проверки официального отчёта о баллах.',
 
   // ── форма (гардероб) ──
   'studentHome.wardrobe.hat.leagueJersey': 'Форма Лиги',
@@ -30,11 +43,15 @@ export const league: RuTable<typeof en> = {
   'studentHome.wardrobe.prop.goldClipboard': 'Золотой планшет',
   'studentHome.wardrobe.background.stadiumLights': 'Огни стадиона',
   'studentHome.wardrobe.frame.leagueCrest': 'Рамка «Герб Лиги»',
+  'studentHome.wardrobe.hat.goldenLaurel': 'Золотой лавр',
+  'studentHome.wardrobe.prop.summitFlag': 'Флаг вершины',
+  'studentHome.wardrobe.background.breakthroughDawn': 'Рассвет рывка',
+  'studentHome.wardrobe.frame.club1500': 'Рамка «Клуб 1500»',
 
   // ── страница достижений ──
   'studentHome.achievements.category.masterLeague': 'Master League',
   'studentHome.league.section.title': 'Master League',
-  'studentHome.league.section.subtitle': 'Заслуживается только игрой в сезоне. Форма растёт с каждым туром.',
+  'studentHome.league.section.subtitle': 'Заслуживается на поле и на Финале. Форма растёт с каждым туром.',
 
   // ── баннер сезона ──
   'studentHome.league.region': 'Ваш сезон в Master League',
@@ -135,6 +152,9 @@ export const league: RuTable<typeof en> = {
   'studentHome.league.welcome.wear': 'Надеть форму',
   'studentHome.league.welcome.go': 'Поехали',
   'studentHome.league.welcome.wearing': 'Форма Лиги надета!',
+
+  // ── самые редкие награды (Клуб 1500, Идеал): золотой момент в поздравлении ──
+  'studentHome.league.milestone.eyebrow': 'Master League · Одна из самых редких',
 
   // ── подключить Telegram с баннера (тихо, не всплывающим окном) ──
   'studentHome.league.telegram.region': 'Telegram',

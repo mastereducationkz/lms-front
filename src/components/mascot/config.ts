@@ -63,6 +63,8 @@ export const HATS: MascotPart[] = [
   // ── Master League rewards ──
   { key: 'league_jersey', labelKey: 'studentHome.wardrobe.hat.leagueJersey' },
   { key: 'hat_trick_topper', labelKey: 'studentHome.wardrobe.hat.hatTrickTopper' },
+  // ── Master League rewards, phase 2 (score-based) ──
+  { key: 'golden_laurel', labelKey: 'studentHome.wardrobe.hat.goldenLaurel' },
 ];
 
 export const EYEWEAR: MascotPart[] = [
@@ -122,6 +124,8 @@ export const PROPS: MascotPart[] = [
   { key: 'silver_whistle', labelKey: 'studentHome.wardrobe.prop.silverWhistle' },
   { key: 'squad_pennant', labelKey: 'studentHome.wardrobe.prop.squadPennant' },
   { key: 'gold_clipboard', labelKey: 'studentHome.wardrobe.prop.goldClipboard' },
+  // ── Master League rewards, phase 2 ──
+  { key: 'summit_flag', labelKey: 'studentHome.wardrobe.prop.summitFlag' },
 ];
 
 export const BACKGROUNDS: MascotPart[] = [
@@ -142,6 +146,8 @@ export const BACKGROUNDS: MascotPart[] = [
   { key: 'aurora', labelKey: 'studentHome.wardrobe.background.aurora' },
   // ── Master League rewards ──
   { key: 'stadium_lights', labelKey: 'studentHome.wardrobe.background.stadiumLights' },
+  // ── Master League rewards, phase 2 ──
+  { key: 'breakthrough_dawn', labelKey: 'studentHome.wardrobe.background.breakthroughDawn' },
 ];
 
 export const FRAMES: MascotPart[] = [
@@ -153,6 +159,8 @@ export const FRAMES: MascotPart[] = [
   { key: 'star_ring', labelKey: 'studentHome.wardrobe.frame.starRing' },
   // ── Master League rewards ──
   { key: 'league_crest', labelKey: 'studentHome.wardrobe.frame.leagueCrest' },
+  // ── Master League rewards, phase 2 ──
+  { key: 'club_1500_frame', labelKey: 'studentHome.wardrobe.frame.club1500' },
 ];
 
 export const CATEGORY_PARTS: Record<MascotCategory, MascotPart[]> = {
@@ -293,6 +301,8 @@ const REWARD_ACHIEVEMENT: Record<string, string> = {
   league_jersey: 'ml_signed', league_crest: 'ml_signed', silver_whistle: 'ml_first_whistle',
   hat_trick_topper: 'ml_hat_trick', squad_pennant: 'ml_full_squad', stadium_lights: 'ml_ever_present',
   gold_clipboard: 'ml_no_loose_ends',
+  // Master League, phase 2 (the official result and the mock climb)
+  summit_flag: 'ml_mock_climb', breakthrough_dawn: 'ml_breakthrough', club_1500_frame: 'ml_1500', golden_laurel: 'ml_perfect',
 };
 
 /** Every reward part, in layer order: (layer, index) → the achievement that unlocks it. */
@@ -308,6 +318,7 @@ export const REWARD_PARTS: RewardPart[] = SEGMENTS.flatMap(([category, layer]) =
 /** The achievements that belong to Master League: their parts are hidden from students outside it. */
 export const LEAGUE_ACHIEVEMENTS: ReadonlySet<string> = new Set([
   'ml_signed', 'ml_first_whistle', 'ml_hat_trick', 'ml_full_squad', 'ml_ever_present', 'ml_no_loose_ends',
+  'ml_mock_climb', 'ml_breakthrough', 'ml_1500', 'ml_perfect',
 ]);
 
 /** Is this reward part a Master League one (it only shows to students with league access)? */
@@ -337,6 +348,25 @@ export function isRewardPart(category: MascotCategory, index: number): boolean {
 
 export function rewardPart(category: MascotCategory, index: number): RewardPart | undefined {
   return REWARD_PARTS.find((r) => r.category === category && r.index === index);
+}
+
+/**
+ * `locked_parts` plus every reward part whose achievement the server did not list. The front end
+ * ships before its backend: a part this build can already draw may belong to an achievement an older
+ * backend doesn't know, and a part nothing can award yet must read as locked, never as owned (saving
+ * it would be refused). A student outside the league gets the league parts locked too, which is
+ * harmless: the wardrobe hides those anyway.
+ */
+export function withUnlistedRewardsLocked(locked: LockedParts, listedKeys: Iterable<string>): LockedParts {
+  const listed = new Set(listedKeys);
+  const out: LockedParts = {};
+  for (const [layer, indices] of Object.entries(locked) as [LayerTag, number[]][]) out[layer] = [...indices];
+  for (const r of REWARD_PARTS) {
+    if (listed.has(r.achievement)) continue;
+    const list = (out[r.layer] ??= []);
+    if (!list.includes(r.index)) list.push(r.index);
+  }
+  return out;
 }
 
 /**

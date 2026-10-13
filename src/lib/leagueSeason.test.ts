@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { hasMessage } from './i18n';
 import {
   attendanceText, coachNote, currentMatchday, dayIndex, daysUntil, formatCountdown, goalViews, groupTail, homeworkText, kickoffLabel,
-  kickoffLine, LEAGUE_GOAL_KEYS, needsTicker, phaseCopy, pipLabel,
+  kickoffLine, LEAGUE_GOAL_KEYS, LEAGUE_RESULT_GOAL_KEYS, needsTicker, phaseCopy, pipLabel,
 } from './leagueSeason';
 import type { LeaguePhase, MyLeague } from '../services/api/masterLeague';
 
@@ -197,6 +197,27 @@ describe('the season goals', () => {
     expect(views[2]).toMatchObject({ title: 'Hat-trick', unlocked: false, progress: { current: 2, target: 3 } });
     expect(views[5]).toMatchObject({ title: 'No Loose Ends', unlocked: false, progress: null });
     expect(goalViews([], 'ru').map((v) => v.title)).toEqual(['В Лиге', 'Первый свисток', 'Хет-трик', 'Все в сборе', 'Весь месяц', 'Без хвостов']);
+  });
+
+  it('lists the four result goals after the six, once the server lists them, locked or earned like the rest', () => {
+    const sent = [
+      { key: 'ml_mock_climb', unlocked: true, progress: null },
+      { key: 'ml_breakthrough', unlocked: false, progress: { current: 40, target: 100 } },
+      { key: 'ml_1500', unlocked: false, progress: null },
+      { key: 'ml_perfect', unlocked: false, progress: null },
+    ];
+    const views = goalViews(sent, 'en');
+    expect(views.map((v) => v.key)).toEqual([...LEAGUE_GOAL_KEYS, ...LEAGUE_RESULT_GOAL_KEYS]);
+    expect(views).toHaveLength(10);
+    expect(views.slice(6).map((v) => v.title)).toEqual(['The Climb', 'Breakthrough', '1500 Club', 'Perfect']);
+    expect(views[6]).toMatchObject({ unlocked: true });
+    expect(views[7]).toMatchObject({ unlocked: false, progress: { current: 40, target: 100 } });
+    expect(goalViews(sent, 'ru').slice(6).map((v) => v.title)).toEqual(['Подъём', 'Рывок', 'Клуб 1500', 'Идеал']);
+  });
+
+  it('keeps to the six while the server (not yet updated) lists none of the four', () => {
+    expect(goalViews([{ key: 'ml_signed', unlocked: true, progress: null }], 'en')).toHaveLength(6);
+    expect(goalViews([{ key: 'ml_1500', unlocked: false, progress: null }], 'en').map((v) => v.key)).toEqual([...LEAGUE_GOAL_KEYS, 'ml_1500']);
   });
 
   it('shows the numbers, or a dash while nothing is marked or due', () => {

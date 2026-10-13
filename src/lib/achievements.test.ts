@@ -10,6 +10,7 @@ import {
   celebrationTitle,
   groupByCategory,
   isBigMoment,
+  isGoldenMoment,
   LEAGUE_CATEGORY,
   nextAchievement,
   recentlyUnlocked,
@@ -278,5 +279,50 @@ describe('the league moment', () => {
       ach({ key: 'ml_signed', tier: 'league', rewards: [{ layer: 'h', index: 26, name: 'League Jersey' }, { layer: 'f', index: 5, name: 'League Crest frame' }] }),
     ];
     expect(celebrationReward(list, ['on_time_5', 'ml_signed'])?.reward).toMatchObject({ layer: 'h', index: 26 });
+  });
+});
+
+describe('the four phase-2 league achievements', () => {
+  const FOUR = ['ml_mock_climb', 'ml_breakthrough', 'ml_1500', 'ml_perfect'];
+
+  it('speak English and Russian from the catalog, with a how-to that says when it is awarded', () => {
+    const titles: Record<string, [string, string]> = {
+      ml_mock_climb: ['The Climb', 'Подъём'], ml_breakthrough: ['Breakthrough', 'Рывок'], ml_1500: ['1500 Club', 'Клуб 1500'], ml_perfect: ['Perfect', 'Идеал'],
+    };
+    for (const key of FOUR) {
+      const a = ach({ key, title: 'server title', description: 'server description', how_to: 'server how-to', tier: 'league' });
+      expect(achievementField(a, 'title', 'ru')).toBe(titles[key][1]);
+      for (const field of ['description', 'how_to'] as const) {
+        const ru = achievementField(a, field, 'ru');
+        expect(ru, `${key} ${field}`).toMatch(/[а-я]/i);
+        expect(ru).not.toBe('server description');
+        expect(ru).not.toBe('server how-to');
+      }
+      expect(achievementField(a, 'title', 'en')).toBe('server title'); // English stays the server's
+    }
+    for (const key of ['ml_breakthrough', 'ml_1500', 'ml_perfect']) {
+      expect(achievementField(ach({ key, how_to: 'x' }), 'how_to', 'ru')).toContain('проверки официального отчёта');
+    }
+  });
+
+  it('marks only 1500 Club and Perfect as golden, Perfect first', () => {
+    expect(isGoldenMoment({ key: 'ml_perfect' })).toBe(true);
+    expect(isGoldenMoment({ key: 'ml_1500' })).toBe(true);
+    for (const key of ['ml_signed', 'ml_mock_climb', 'ml_breakthrough', 'graduate_gold']) expect(isGoldenMoment({ key })).toBe(false);
+    const list = [
+      ach({ key: 'ml_signed', tier: 'league' }), ach({ key: 'ml_1500', tier: 'league' }),
+      ach({ key: 'graduate_gold', tier: 'legendary' }), ach({ key: 'ml_perfect', tier: 'league' }),
+    ];
+    expect(byExcitement(list).map((a) => a.key)).toEqual(['ml_perfect', 'ml_1500', 'ml_signed', 'graduate_gold']);
+  });
+
+  it('dresses the orca in the laurel when a 1600 lands with the 1500 Club in the same batch', () => {
+    const list = [
+      ach({ key: 'ml_1500', tier: 'league', rewards: [{ layer: 'f', index: 6, name: '1500 Club frame' }] }),
+      ach({ key: 'ml_perfect', tier: 'league', rewards: [{ layer: 'h', index: 28, name: 'Golden Laurel' }] }),
+    ];
+    expect(celebrationReward(list, ['ml_1500', 'ml_perfect'])?.reward).toMatchObject({ layer: 'h', index: 28 });
+    expect(parseMascot(withReward(null, 5, { layer: 'h', index: 28, name: 'Golden Laurel' }))).toMatchObject({ hat: 28 });
+    expect(parseMascot(withReward(null, 5, { layer: 'f', index: 6, name: '1500 Club frame' }))).toMatchObject({ frame: 6 });
   });
 });

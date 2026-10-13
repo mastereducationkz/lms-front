@@ -9,10 +9,17 @@ import { activeLocale, formatDate, formatTime, t, type Locale, type MessageKey }
 import type { LeagueGoal, LeaguePhase, LeagueLesson, LessonState, MyLeague } from '../services/api/masterLeague';
 import '@/lib/i18n/catalogs/studentHome';
 
-/** The six league achievements, in the order the banner and the page show them. */
+/** The six league achievements for playing the season, in the order the banner and the page show them. */
 export const LEAGUE_GOAL_KEYS = [
   'ml_signed', 'ml_first_whistle', 'ml_hat_trick', 'ml_full_squad', 'ml_ever_present', 'ml_no_loose_ends',
 ] as const;
+
+/**
+ * The four that come with the mock climb and the official result (phase 2), listed after the six.
+ * The banner shows one only once the server lists it, so a front end that ships before its backend
+ * never promises a goal nothing can award yet.
+ */
+export const LEAGUE_RESULT_GOAL_KEYS = ['ml_mock_climb', 'ml_breakthrough', 'ml_1500', 'ml_perfect'] as const;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
@@ -148,9 +155,10 @@ export interface GoalView {
   progress: { current: number; target: number } | null;
 }
 
-/** The season goals in a fixed order; a goal the server did not send shows as not done yet. */
+/** The season goals in a fixed order; one of the six the server did not send shows as not done yet. */
 export function goalViews(goals: LeagueGoal[], locale: Locale = activeLocale()): GoalView[] {
-  return LEAGUE_GOAL_KEYS.map((key) => {
+  const listed = LEAGUE_RESULT_GOAL_KEYS.filter((key) => goals.some((g) => g.key === key));
+  return [...LEAGUE_GOAL_KEYS, ...listed].map((key) => {
     const g = goals.find((x) => x.key === key);
     return {
       key,

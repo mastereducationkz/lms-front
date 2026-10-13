@@ -1,6 +1,7 @@
 /**
- * Master League background (owner, 2026-10-13), appended after Aurora: b14 Stadium Lights, the
- * floodlit night of a final: crossing beams, two light rigs, bokeh, a faint pitch at the bottom.
+ * Master League backgrounds (owner, 2026-10-13), appended after Aurora: b14 Stadium Lights, the
+ * floodlit night of a final: crossing beams, two light rigs, bokeh, a faint pitch at the bottom;
+ * and from phase 2 b15 Breakthrough Dawn: the night sky cracks and a gold sunrise comes through.
  */
 import type { ReactNode } from 'react';
 import { LEAGUE } from './LeagueCrest';
@@ -53,6 +54,48 @@ export const LEAGUE_BACKGROUNDS: Bg[] = [
       {[[84, 12], [120, 24], [70, 52], [150, 54]].map(([x, y]) => (
         <circle key={`s${x}`} cx={x} cy={y} r="1.1" fill="#fff" opacity="0.7" />
       ))}
+    </g>
+  ),
+  // Breakthrough Dawn (Breakthrough): the night sky breaks along a jagged seam, gold light behind it
+  (uid) => (
+    <g>
+      <radialGradient id={`${uid}dw`} cx="0.5" cy="0.62" r="0.8">
+        <stop offset="0" stopColor="#FFF4BF" />
+        <stop offset="0.3" stopColor={LEAGUE.goldHi} />
+        <stop offset="0.62" stopColor={LEAGUE.gold} />
+        <stop offset="1" stopColor="#F2833B" />
+      </radialGradient>
+      <linearGradient id={`${uid}nt`} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stopColor={LEAGUE.night} />
+        <stop offset="0.6" stopColor={LEAGUE.navy} />
+        <stop offset="1" stopColor={LEAGUE.navy2} />
+      </linearGradient>
+      <linearGradient id={`${uid}ar`} x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0" stopColor="#fff" stopOpacity="0.55" />
+        <stop offset="1" stopColor="#fff" />
+      </linearGradient>
+      <rect width="200" height="200" fill={`url(#${uid}dw)`} />
+      {/* rays from a sun that is still below the horizon of the avatar */}
+      <g fill="#fff" opacity="0.2">
+        {Array.from({ length: 12 }, (_, i) => (
+          <path key={i} d="M100 118 L90 -20 L110 -20 Z" transform={`rotate(${i * 30 + 15} 100 118)`} />
+        ))}
+      </g>
+      {/* the night, still hanging in the top left, with a jagged broken edge */}
+      <path d="M-4 -4 L112 -4 L104 14 L116 24 L100 40 L110 58 L88 66 L92 84 L66 80 L52 98 L34 88 L-4 104 Z" fill={`url(#${uid}nt)`} />
+      <path d="M112 -4 L104 14 L116 24 L100 40 L110 58 L88 66 L92 84 L66 80 L52 98 L34 88 L-4 104" stroke="#FFF4BF" strokeWidth="5" opacity="0.55" fill="none" strokeLinejoin="round" />
+      <path d="M112 -4 L104 14 L116 24 L100 40 L110 58 L88 66 L92 84 L66 80 L52 98 L34 88 L-4 104" stroke="#fff" strokeWidth="1.8" fill="none" strokeLinejoin="round" />
+      {[[22, 20, 1.5], [48, 40, 1.1], [74, 14, 1.3], [30, 66, 1], [86, 44, 0.9], [60, 62, 1.1]].map(([x, y, r]) => (
+        <circle key={`${x}-${y}`} cx={x} cy={y} r={r} fill="#fff" opacity="0.85" />
+      ))}
+      {/* an arrow of light rising out of the crack */}
+      <g>
+        <path d="M152 62 L152 36 M141 47 L152 32 L163 47" stroke="#FFF4BF" strokeWidth="9" opacity="0.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <path d="M152 62 L152 36 M141 47 L152 32 L163 47" stroke={`url(#${uid}ar)`} strokeWidth="4.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        {[[145, 70, 1.8], [159, 74, 1.4], [152, 80, 1.1]].map(([x, y, r]) => (
+          <circle key={`${x}-${y}`} cx={x} cy={y} r={r} fill="#fff" opacity="0.8" />
+        ))}
+      </g>
     </g>
   ),
 ];
