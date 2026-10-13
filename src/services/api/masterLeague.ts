@@ -90,3 +90,50 @@ export async function getMyLeague(): Promise<MyLeague | null> {
     return null;
   }
 }
+
+/**
+ * Results-day consent (lms-backend `src/master_league/result_consent.py`): once staff verified the
+ * student's official result, may the group chat congratulate them? Nothing is ever posted without
+ * the student's own «yes». `null` for anything that is not a question or an answer to show (no
+ * verified result, an error, an older backend): the card then renders nothing.
+ */
+export type ConsentState = 'ask' | 'yes' | 'no' | 'posted';
+export type ConsentDecision = 'yes' | 'no';
+
+export interface ResultConsent {
+  state: ConsentState;
+  result_total: number;
+  decision: ConsentDecision | null;
+  /** The season is still open for answering (and the line is not posted yet). */
+  can_answer: boolean;
+}
+
+const CONSENT_STATES: readonly ConsentState[] = ['ask', 'yes', 'no', 'posted'];
+
+export function asResultConsent(data: unknown): ResultConsent | null {
+  const d = (data ?? {}) as Record<string, any>;
+  if (!CONSENT_STATES.includes(d.state)) return null;
+  const total = num(d.result_total, NaN);
+  if (!Number.isFinite(total) || total <= 0) return null;
+  return {
+    state: d.state,
+    result_total: total,
+    decision: d.decision === 'yes' || d.decision === 'no' ? d.decision : null,
+    can_answer: d.can_answer === true,
+  };
+}
+
+export async function getResultConsent(): Promise<ResultConsent | null> {
+  try {
+    const response = await api.get('/master-league/me/result-consent', { cache: false } as never);
+    return asResultConsent(response?.data);
+  } catch {
+    return null;
+  }
+}
+
+/** The student's own answer; rejects when it could not be saved, so the card can say so. */
+export async function answerResultConsent(decision: ConsentDecision): Promise<ResultConsent | null> {
+  const response = await api.post('/master-league/me/result-consent', { decision });
+  return asResultConsent(response?.data);
+}

@@ -5,7 +5,12 @@
  * clamped to two lines like the others) and opens the dashboard, where the season banner is.
  */
 export const ML_PROGRESS_NOTIFICATION_TYPES = ['ml_progress_score', 'ml_progress_weekly'];
+/**
+ * «Your result is recorded: may we congratulate you in the group chat?» (`result_consent_ask.py`):
+ * read in full like the digest, and it opens the dashboard, where the answer is given on the banner.
+ */
+export const ML_RESULT_NOTIFICATION_TYPES = ['ml_result_consent'];
 
 export function isMlProgressNotice(type: string): boolean {
-  return ML_PROGRESS_NOTIFICATION_TYPES.includes(type);
+  return ML_PROGRESS_NOTIFICATION_TYPES.includes(type) || ML_RESULT_NOTIFICATION_TYPES.includes(type);
 }
