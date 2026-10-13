@@ -1,0 +1,86 @@
+import type { MessageTable } from '../../types';
+
+/**
+ * The Master League invitation (owner, 2026-10-13): the page a student opens from the bell, a push,
+ * Telegram or the dashboard card, and the card itself. Warm and a little cheeky, never pushy: the
+ * answer is theirs, «no» costs nothing and says so. The exam is The Final, the group is a squad.
+ */
+export const leagueInvitation = {
+  'studentHome.leagueInvite.unit.d': 'd',
+  'studentHome.leagueInvite.unit.h': 'h',
+  'studentHome.leagueInvite.unit.min': 'min',
+  'studentHome.leagueInvite.underMinute': 'under a minute',
+  'studentHome.leagueInvite.closedShort': 'closed',
+  'studentHome.leagueInvite.left': '{time} left',
+  'studentHome.leagueInvite.scheduleTbc': 'Schedule to be confirmed',
+
+  // ── the page ──
+  'studentHome.leagueInvite.page': 'Master League invitation',
+  'studentHome.leagueInvite.eyebrow': 'Master League · {month}',
+  'studentHome.leagueInvite.kitAlt': 'Kasatik in the Master League kit',
+  'studentHome.leagueInvite.hero.title': 'You’ve been picked.',
+  'studentHome.leagueInvite.hero.sub': 'A place in the strongest SAT squad of the season is waiting for you.',
+  'studentHome.leagueInvite.what.heading': 'What it is',
+  'studentHome.leagueInvite.what.one': 'A month-long pre-exam intensive for our strongest SAT students.',
+  'studentHome.leagueInvite.what.two': 'A second squad next to your home group, which stays exactly as it is. Free of charge.',
+  'studentHome.leagueInvite.fact.final': 'The Final',
+  'studentHome.leagueInvite.fact.finalNote': 'Your SAT day',
+  'studentHome.leagueInvite.fact.answer': 'Answer by',
+  'studentHome.leagueInvite.slots.title': 'Choose your squad',
+  'studentHome.leagueInvite.slots.sub': 'Pick the schedule that fits your week.',
+  'studentHome.leagueInvite.slots.titleOne': 'Your squad',
+  'studentHome.leagueInvite.slots.subOne': 'This is the schedule held for you.',
+  'studentHome.leagueInvite.slots.empty': 'The squads for this invitation are not listed yet. Ask your curator.',
+  'studentHome.leagueInvite.in': 'I’m in',
+  'studentHome.leagueInvite.inFor': 'I’m in: {squad}',
+  'studentHome.leagueInvite.saving': 'Saving…',
+  'studentHome.leagueInvite.notNow': 'Not this time',
+  'studentHome.leagueInvite.decline.title': 'Pass on this invitation?',
+  'studentHome.leagueInvite.decline.body': 'That’s completely fine. Your regular group carries on as usual and nothing changes there.',
+  'studentHome.leagueInvite.decline.yes': 'Yes, not this time',
+  'studentHome.leagueInvite.decline.keep': 'Keep my place',
+  'studentHome.leagueInvite.teaser.title': 'This could be you',
+  'studentHome.leagueInvite.teaser.sub': 'Six goals to earn over the season, and a kit that grows with every matchday.',
+  'studentHome.leagueInvite.teaser.locked': 'Locked',
+  'studentHome.leagueInvite.help': 'Questions? Ask your curator or teacher.',
+  'studentHome.leagueInvite.timeLeftLabel': 'Time left to answer',
+
+  // ── answers that did not go through ──
+  'studentHome.leagueInvite.error.changed': 'Your answer wasn’t saved because the invitation changed. Here is how it stands now.',
+  'studentHome.leagueInvite.error.retry': 'We couldn’t save your answer. Nothing was changed, so you can try again.',
+
+  // ── the other scenes ──
+  'studentHome.leagueInvite.loading': 'Loading your invitation',
+  'studentHome.leagueInvite.failed.title': 'We couldn’t load your invitation',
+  'studentHome.leagueInvite.failed.body': 'Check your connection and try again.',
+  'studentHome.leagueInvite.failed.retry': 'Try again',
+  'studentHome.leagueInvite.requested.title': 'Seat requested',
+  'studentHome.leagueInvite.requested.body': '{squad} · {schedule}. We’ll confirm your seat within minutes, and then your Master League banner appears on your dashboard.',
+  'studentHome.leagueInvite.requested.bodyNoSquad': 'We’ll confirm your seat within minutes, and then your Master League banner appears on your dashboard.',
+  'studentHome.leagueInvite.requested.wrong': 'Tapped the wrong squad? Tell your curator right away.',
+  'studentHome.leagueInvite.enrolled.title': 'You’re in the squad',
+  'studentHome.leagueInvite.enrolled.body': 'Welcome to {squad}. Your lessons: {schedule}. Your whole season lives on your dashboard.',
+  'studentHome.leagueInvite.enrolled.bodyNoSquad': 'Welcome to the Master League. Your whole season lives on your dashboard.',
+  'studentHome.leagueInvite.ended.title': 'Your Master League place has ended',
+  'studentHome.leagueInvite.ended.body': 'If you have questions about it, ask your curator.',
+  'studentHome.leagueInvite.declined.title': 'Thanks for letting us know',
+  'studentHome.leagueInvite.declined.body': 'You’re staying with your regular group, and nothing changes there.',
+  'studentHome.leagueInvite.expired.title': 'This invitation has closed',
+  'studentHome.leagueInvite.expired.body': 'The window ended on {when}. Your regular group isn’t affected. If this is a surprise, talk to your curator.',
+  'studentHome.leagueInvite.withdrawn.title': 'This invitation is no longer open',
+  'studentHome.leagueInvite.withdrawn.body': 'The school took it back. Your regular group isn’t affected. Questions? Ask your curator.',
+  'studentHome.leagueInvite.alreadyIn.title': 'You’re already in the League',
+  'studentHome.leagueInvite.alreadyIn.body': 'Your season lives on your dashboard.',
+  'studentHome.leagueInvite.none.title': 'No invitation right now',
+  'studentHome.leagueInvite.none.body': 'Nothing is waiting for you here. Your dashboard is the place to look.',
+  'studentHome.leagueInvite.dashboard': 'Go to dashboard',
+
+  // ── the dashboard card ──
+  'studentHome.leagueInvite.card.eyebrow': 'Master League',
+  'studentHome.leagueInvite.card.title': 'You’ve been picked',
+  'studentHome.leagueInvite.card.sub': 'A Master League place is waiting for you. {time} left to answer.',
+  'studentHome.leagueInvite.card.cta': 'See your invitation',
+  'studentHome.leagueInvite.card.pendingTitle': 'Seat requested',
+  'studentHome.leagueInvite.card.pendingSub': 'We’re confirming your Master League place. It takes a few minutes.',
+  'studentHome.leagueInvite.card.pendingCta': 'Details',
+} as const satisfies MessageTable;

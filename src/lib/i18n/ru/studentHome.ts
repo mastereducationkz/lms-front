@@ -6,6 +6,7 @@ import { dashboard } from './studentHome/dashboard';
 import { extras } from './studentHome/extras';
 import { kasatik } from './studentHome/kasatik';
 import { league } from './studentHome/league';
+import { leagueInvitation } from './studentHome/leagueInvitation';
 import { wardrobe } from './studentHome/wardrobe';
 
 export const studentHome: RuTable<typeof en> = {
@@ -14,6 +15,7 @@ export const studentHome: RuTable<typeof en> = {
   ...kasatik,
   ...achievementCopy,
   ...league,
+  ...leagueInvitation,
   ...wardrobe,
   ...extras,
 };

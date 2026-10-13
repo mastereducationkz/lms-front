@@ -8,6 +8,7 @@ export const RUSSIAN_ALLOWED: Record<string, string> = {
   'src/lib/scheduleShorthand.ts': 'parses «пн пт 18:00» shorthand',
   'src/components/announcements/programs.ts': 'matches program names in Telegram chat titles',
   'src/components/announcements/curator.ts': 'matches «с куратором» in Telegram chat titles',
+  'src/lib/leagueSchedule.ts': 'parses the CRM’s Russian squad schedule («Пн, Ср 18:00») so an English reader sees weekdays in English',
 };
 
 /**

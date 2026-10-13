@@ -5,6 +5,7 @@ import { dashboard } from './studentHome/dashboard';
 import { extras } from './studentHome/extras';
 import { kasatik } from './studentHome/kasatik';
 import { league } from './studentHome/league';
+import { leagueInvitation } from './studentHome/leagueInvitation';
 import { wardrobe } from './studentHome/wardrobe';
 
 /**
@@ -18,6 +19,7 @@ export const studentHome = {
   ...kasatik,
   ...achievementCopy,
   ...league,
+  ...leagueInvitation,
   ...wardrobe,
   ...extras,
 } as const satisfies MessageTable;
