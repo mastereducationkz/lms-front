@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { ChevronDown, ChevronRight, Edit3, Repeat, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Edit3, Repeat, RotateCcw, Trash2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
@@ -70,13 +70,18 @@ export function SeriesDeleteDialog({ title, following, onConfirm, onClose, initi
 }
 
 /** One line for a whole recurring series in the events list; the weeks open underneath. */
-export function SeriesRow({ title, total, upcoming, next, onEditNext, onCancelUpcoming, children }: {
+export function SeriesRow({ title, total, upcoming, next, cancelled = 0, restorable = 0, onEditNext, onCancelUpcoming, onRestoreCancelled, children }: {
   title: string;
+  /** Active weeks. With none, the line offers only to restore. */
   total: number;
   upcoming: number;
   next: Event;
+  /** Cancelled weeks listed in this series, and how many of them can still come back. */
+  cancelled?: number;
+  restorable?: number;
   onEditNext: () => void;
   onCancelUpcoming: () => void;
+  onRestoreCancelled?: () => void;
   children: ReactNode;
 }) {
   const t = useT();
@@ -92,12 +97,19 @@ export function SeriesRow({ title, total, upcoming, next, onEditNext, onCancelUp
               <Badge variant="outline" className="text-brand border-brand-border"><Repeat className="mr-1 h-3 w-3" aria-hidden />{t('adminPages.events.series.badge')}</Badge>
             </span>
             <span className="block text-sm text-muted-foreground">
-              {t('adminPages.events.series.counts', { upcoming, total })} · {t('adminPages.events.series.next', { date: formatDateTime(next.start_datetime, { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) })}
+              {[
+                total > 0 ? t('adminPages.events.series.counts', { upcoming, total }) : null,
+                cancelled > 0 ? t('adminPages.events.series.cancelledCount', { count: cancelled }) : null,
+                total > 0 ? t('adminPages.events.series.next', { date: formatDateTime(next.start_datetime, { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) }) : null,
+              ].filter(Boolean).join(' · ')}
             </span>
           </span>
         </button>
-        <Button type="button" variant="outline" size="sm" onClick={onEditNext}><Edit3 className="mr-1.5 h-4 w-4" aria-hidden />{t('adminPages.events.series.editNext')}</Button>
-        <Button type="button" variant="outline" size="sm" onClick={onCancelUpcoming} className="text-red-600 dark:text-red-400"><Trash2 className="mr-1.5 h-4 w-4" aria-hidden />{t('adminPages.events.series.cancelUpcoming')}</Button>
+        {total > 0 && <Button type="button" variant="outline" size="sm" onClick={onEditNext}><Edit3 className="mr-1.5 h-4 w-4" aria-hidden />{t('adminPages.events.series.editNext')}</Button>}
+        {total > 0 && <Button type="button" variant="outline" size="sm" onClick={onCancelUpcoming} className="text-red-600 dark:text-red-400"><Trash2 className="mr-1.5 h-4 w-4" aria-hidden />{t('adminPages.events.series.cancelUpcoming')}</Button>}
+        {onRestoreCancelled && restorable > 0 && (
+          <Button type="button" variant="outline" size="sm" onClick={onRestoreCancelled}><RotateCcw className="mr-1.5 h-4 w-4" aria-hidden />{t('adminPages.events.series.restoreCancelled', { count: restorable })}</Button>
+        )}
       </div>
       {open && <div className="divide-y divide-border border-t bg-muted/20 pl-6">{children}</div>}
     </div>

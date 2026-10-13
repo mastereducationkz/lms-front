@@ -10,6 +10,10 @@ export async function getAllEvents(params?: {
   group_id?: number;
   start_date?: string;
   end_date?: string;
+  /** Default true. False drops what has already ended, so the oldest-first cut keeps the upcoming ones. */
+  include_finished?: boolean;
+  /** Default false. True adds the cancelled events (their `is_active` is false). */
+  include_cancelled?: boolean;
 }): Promise<Event[]> {
   try {
     const response = await api.get('/admin/events', { params });
@@ -54,6 +58,19 @@ export async function deleteEvent(eventId: number, scope: 'this' | 'following' =
     return response?.data?.deleted ?? 1;
   } catch (error: any) {
     throw apiError(error, 'Failed to delete event');
+  }
+}
+
+/**
+ * Brings a cancelled event back (and with `scope: 'following'` every later cancelled occurrence of its series);
+ * returns how many came back. An event that has already ended stays cancelled (400).
+ */
+export async function restoreEvent(eventId: number, scope: 'this' | 'following' = 'this'): Promise<number> {
+  try {
+    const response = await api.post(`/admin/events/${eventId}/restore`, null, scope === 'following' ? { params: { scope } } : undefined);
+    return response?.data?.restored ?? 1;
+  } catch (error: any) {
+    throw apiError(error, 'Failed to restore event');
   }
 }
 
