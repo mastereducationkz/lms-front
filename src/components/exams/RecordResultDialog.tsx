@@ -279,7 +279,7 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
 
         {blocks.length < MAX_ATTEMPTS && (
           <Button type="button" size="sm" variant="ghost" className="mt-2" disabled={saving}
-                  onClick={() => setBlocks((bs) => [...bs, blank(Math.max(...bs.map((x) => x.key)) + 1)])}>
+                  onClick={() => setBlocks((bs) => [...bs, blank(bs.reduce((m, x) => Math.max(m, x.key), -1) + 1)])}>
             {t('teacherInsights.recordResult.addAttempt')}
           </Button>
         )}
