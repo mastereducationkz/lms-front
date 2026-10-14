@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -184,8 +185,9 @@ export function TestimonialDialog({
 
   const consentIncomplete = consent && channels.length === 0;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+  // Portalled to <body>: rendered inside the page, the overlay sat under the app's top bar.
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
          role="dialog" aria-modal="true" aria-labelledby="tst-title"
          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="w-full max-w-lg rounded-lg bg-background p-5 shadow-lg max-h-[90vh] overflow-y-auto">
@@ -345,7 +347,7 @@ export function TestimonialDialog({
         )}
       </div>
     </div>
-  );
+  , document.body);
 }
 
 export default TestimonialDialog;
