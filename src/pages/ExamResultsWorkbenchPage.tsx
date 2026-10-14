@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarClock, ChevronDown, ChevronRight, Download, FileText, MessageSquareQuote, Plus, Search } from 'lucide-react';
+import { Download, FileText, History, MessageSquareQuote, Plus, Search } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -12,6 +12,7 @@ import { useT } from '../lib/i18n/react';
 import { RecordResultDialog } from '../components/exams/RecordResultDialog';
 import { attemptsSummary } from '../components/exams/attemptsSummary';
 import { OutcomeMenu } from '../components/exams/OutcomeMenu';
+import { AttemptsDialog } from '../components/exams/AttemptsDialog';
 import { TestimonialDialog } from '../components/exams/TestimonialDialog';
 import {
   exportExamResults,
@@ -144,7 +145,7 @@ export default function ExamResultsWorkbenchPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [historyFor, setHistoryFor] = useState<ExamResultRow | null>(null);
   const [recording, setRecording] = useState<ExamResultRow | null>(null);
   const [testimonialFor, setTestimonialFor] = useState<ExamResultRow | null>(null);
   const [testimonials, setTestimonials] = useState<Record<number, Testimonial>>({});
@@ -292,12 +293,6 @@ export default function ExamResultsWorkbenchPage() {
       setRescheduling(null);
     }
   };
-
-  const toggle = (id: number) => setExpanded((prev) => {
-    const next = new Set(prev);
-    next.has(id) ? next.delete(id) : next.add(id);
-    return next;
-  });
 
   const isSat = examType === 'sat';
   const isIelts = examType === 'ielts';
@@ -488,27 +483,26 @@ export default function ExamResultsWorkbenchPage() {
                   {visible.map((row) => {
                     const r = row.result;
                     const id = row.student.student_id;
-                    const isOpen = expanded.has(id);
                     return (
                       <Fragment key={id}>
                         <TableRow>
                           <TableCell className="p-1">
                             {row.attempts.length > 1 && (
-                              <button onClick={() => toggle(id)}
-                                      aria-expanded={isOpen}
+                              <button onClick={() => setHistoryFor(row)}
+                                      aria-haspopup="dialog"
                                       aria-label={t('exams.row.attemptHistory')}
                                       className="p-1 rounded hover:bg-accent">
-                                {isOpen ? <ChevronDown className="h-3.5 w-3.5" />
-                                        : <ChevronRight className="h-3.5 w-3.5" />}
+                                <History className="h-3.5 w-3.5" />
                               </button>
                             )}
                           </TableCell>
                           <TableCell className="sticky left-0 z-[2] bg-background border-r font-medium">
                             {row.student.full_name}
                             {row.attempts.length > 1 && (
-                              <span className="ml-1 text-[10px] text-muted-foreground">
+                              <button type="button" onClick={() => setHistoryFor(row)}
+                                      className="ml-1 text-[10px] text-muted-foreground hover:underline">
                                 ×{row.attempts.length}
-                              </span>
+                              </button>
                             )}
                           </TableCell>
                           <TableCell className="text-muted-foreground">{dash(row.group_name)}<FinishedTag finished={row.group_is_finished} /></TableCell>
@@ -530,7 +524,7 @@ export default function ExamResultsWorkbenchPage() {
                             {r ? Number(r.total_score) : '—'}
                             {r && <ScoreChange change={row.initial?.change} examType={examType} />}
                             {row.attempts.length > 1 && (
-                              <button type="button" onClick={() => toggle(id)} title={attemptsSummary(row.attempts)}
+                              <button type="button" onClick={() => setHistoryFor(row)} title={attemptsSummary(row.attempts)}
                                       className="ml-1 rounded bg-muted px-1 text-[10px] font-normal text-muted-foreground hover:underline">
                                 +{row.attempts.length - 1}
                               </button>
@@ -608,34 +602,6 @@ export default function ExamResultsWorkbenchPage() {
                           )}
                         </TableRow>
 
-                        {isOpen && row.attempts.map((a) => (
-                          <TableRow key={`${id}-${a.id}`} className="bg-muted/30">
-                            <TableCell />
-                            <TableCell className="sticky left-0 z-[2] bg-muted/30 border-r pl-6 text-muted-foreground">
-                              <CalendarClock className="inline h-3 w-3 mr-1" aria-hidden="true" />
-                              {t('exams.row.attempt', { date: a.test_date })}
-                            </TableCell>
-                            <TableCell colSpan={7} />
-                            <TableCell>{a.test_date}</TableCell>
-                            {isSat && <>
-                              <TableCell className="text-center">{a.verbal_score ?? '—'}</TableCell>
-                              <TableCell className="text-center">{a.math_score ?? '—'}</TableCell>
-                            </>}
-                            <TableCell className="text-center font-medium">{Number(a.total_score)}</TableCell>
-                            <TableCell />
-                            <TableCell><span className="text-muted-foreground">{a.status}</span></TableCell>
-                            <TableCell className="text-center">
-                              {a.has_proof ? (
-                                <button type="button"
-                                        onClick={() => openResultProof(a.id).catch(
-                                          () => setError(t('exams.errors.openFileFailed')))}
-                                        className="text-primary hover:underline">{t('exams.row.view')}</button>
-                              ) : '—'}
-                            </TableCell>
-                            {canWrite && <TableCell />}
-                            {canWrite && <TableCell />}
-                          </TableRow>
-                        ))}
                       </Fragment>
                     );
                   })}
@@ -658,6 +624,11 @@ export default function ExamResultsWorkbenchPage() {
           // testimonials map left the «Маркетинг» chips showing the previous verdict.
           onSaved={() => { loadTestimonials(); load(filters); }}
         />
+      )}
+
+      {historyFor && (
+        <AttemptsDialog row={historyFor} examType={examType}
+                        onClose={() => setHistoryFor(null)} onError={setError} />
       )}
 
       {recording && (

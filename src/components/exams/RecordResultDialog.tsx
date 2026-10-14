@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -139,9 +140,10 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
     setBlocks(failed);
   };
 
-  return (
+  // Portalled to <body>: rendered inside the page, the overlay sat under the app's top bar.
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
       role="dialog" aria-modal="true" aria-labelledby="rr-title"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
@@ -307,7 +309,7 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }
 
 export default RecordResultDialog;
