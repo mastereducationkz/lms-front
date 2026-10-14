@@ -10,6 +10,7 @@ import { FinishedTag, GroupStateFilter } from '../components/exams/GroupStateFil
 import { defaultGroupState, groupOptionLabel, type GroupState } from '../lib/groupState';
 import { useT } from '../lib/i18n/react';
 import { RecordResultDialog } from '../components/exams/RecordResultDialog';
+import { attemptsSummary } from '../components/exams/attemptsSummary';
 import { OutcomeMenu } from '../components/exams/OutcomeMenu';
 import { TestimonialDialog } from '../components/exams/TestimonialDialog';
 import {
@@ -528,6 +529,12 @@ export default function ExamResultsWorkbenchPage() {
                           <TableCell className="text-center font-semibold">
                             {r ? Number(r.total_score) : '—'}
                             {r && <ScoreChange change={row.initial?.change} examType={examType} />}
+                            {row.attempts.length > 1 && (
+                              <button type="button" onClick={() => toggle(id)} title={attemptsSummary(row.attempts)}
+                                      className="ml-1 rounded bg-muted px-1 text-[10px] font-normal text-muted-foreground hover:underline">
+                                +{row.attempts.length - 1}
+                              </button>
+                            )}
                           </TableCell>
                           <TableCell className="text-center">
                             <MarketingChips row={row} />
