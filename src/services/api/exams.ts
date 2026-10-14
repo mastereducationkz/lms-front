@@ -65,6 +65,8 @@ import type { BluebookFinalExam } from '../../lib/bluebookFinalExam';
 import type { GroupState } from '../../lib/groupState';
 import type { InitialScore } from '../../lib/examInitial';
 
+export type ExamOutcomeReason = 'declined' | 'not_taking' | 'unreachable';
+
 export interface ExamResultRow {
   student: {
     student_id: number;
@@ -80,7 +82,12 @@ export interface ExamResultRow {
   group_is_finished?: boolean;
   planned_test_date: string | null;
   ask_result_on: string | null;
-  triage_status: 'pending' | 'due' | 'overdue' | 'completed' | 'unscheduled' | 'declined' | null;
+  triage_status: 'pending' | 'due' | 'overdue' | 'completed' | 'unscheduled' | ExamOutcomeReason | null;
+  /** Why the planned sitting has no result; null when it has one or nothing was marked. */
+  outcome_reason?: ExamOutcomeReason | null;
+  outcome_note?: string | null;
+  /** The planned sitting itself has a result (a retake's older result does not count). */
+  sitting_has_result?: boolean;
   /** «Не хочет делиться»: the curator's note when the student or parent declined to share. */
   decline_note?: string | null;
   /** Whether the sales team may use this row; `marketing_basis` says on what grounds. */
@@ -335,6 +342,20 @@ export interface RecordResultPayload {
 export async function createExamResult(payload: RecordResultPayload): Promise<ExamResultDetail> {
   const response = await api.post('/exams/results', payload);
   return response.data;
+}
+
+/** «Не сдаёт / Не хочет делиться / Не удалось связаться» for the planned sitting. */
+export async function recordOutcome(payload: {
+  student_id: number; exam_type: 'sat' | 'ielts' | 'nuet'; planned_test_date: string;
+  reason: ExamOutcomeReason; note?: string;
+}): Promise<void> {
+  await api.post('/exams/outcomes', payload);
+}
+
+export async function removeOutcome(payload: {
+  student_id: number; exam_type: 'sat' | 'ielts' | 'nuet'; planned_test_date: string;
+}): Promise<void> {
+  await api.post('/exams/outcomes/remove', payload);
 }
 
 export async function updateExamResult(
