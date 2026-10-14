@@ -10,6 +10,7 @@ import {
 } from '../../services/api/exams';
 import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/teacherInsights';
+import '@/lib/i18n/catalogs/exams';
 
 /**
  * Record a new exam attempt for one student, optionally with the score report attached.
@@ -161,7 +162,7 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
                     <td className="py-0.5">{a.test_date}</td>
                     <td className="py-0.5 text-right font-medium">{Number(a.total_score)}</td>
                     {a.verbal_score != null && <td className="py-0.5 pl-2 text-muted-foreground">V {a.verbal_score} · M {a.math_score}</td>}
-                    <td className="py-0.5 pl-2 text-muted-foreground">{a.status}</td>
+                    <td className="py-0.5 pl-2 text-muted-foreground">{t(`exams.resultStatus.${a.status}`)}</td>
                   </tr>
                 ))}
               </tbody>

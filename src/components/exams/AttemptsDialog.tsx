@@ -50,7 +50,7 @@ export function AttemptsDialog({ row, examType, onClose, onError }: {
                   <td className="py-2 pr-3 whitespace-nowrap">{a.test_date}</td>
                   <td className="py-2 pr-3 text-right font-semibold">{Number(a.total_score)}</td>
                   {(isSat || isIelts) && <td className="py-2 pr-3 text-xs text-muted-foreground whitespace-nowrap">{sections(a)}</td>}
-                  <td className="py-2 pr-3 text-muted-foreground">{a.status}</td>
+                  <td className="py-2 pr-3 text-muted-foreground">{t(`exams.resultStatus.${a.status}`)}</td>
                   <td className="py-2">
                     {a.has_proof ? (
                       <button type="button"

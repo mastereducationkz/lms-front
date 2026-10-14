@@ -29,6 +29,7 @@ import {
   type Testimonial,
 } from '../services/api/exams';
 import '@/lib/i18n/catalogs/exams';
+import '@/lib/i18n/catalogs/teacherInsights';
 import { InitialScoreCell, ScoreChange } from '../components/exams/InitialScoreCell';
 
 /**
@@ -571,7 +572,7 @@ export default function ExamResultsWorkbenchPage() {
                                           {t('exams.row.testimonialReady')}
                                         </span>
                                       : tst
-                                        ? <span className="text-muted-foreground">{tst.status}</span>
+                                        ? <span className="text-muted-foreground">{t(`teacherInsights.testimonial.status.${tst.status}`)}</span>
                                         : <span className="text-muted-foreground">{t('exams.row.testimonialAdd')}</span>}
                                   </button>
                                 );
