@@ -86,6 +86,8 @@ export interface ExamResultRow {
   /** Why the planned sitting has no result; null when it has one or nothing was marked. */
   outcome_reason?: ExamOutcomeReason | null;
   outcome_note?: string | null;
+  /** The planned sitting itself has a result (a retake's older result does not count). */
+  sitting_has_result?: boolean;
   /** «Не хочет делиться»: the curator's note when the student or parent declined to share. */
   decline_note?: string | null;
   /** Whether the sales team may use this row; `marketing_basis` says on what grounds. */

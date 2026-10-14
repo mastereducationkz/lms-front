@@ -31,7 +31,8 @@ export function OutcomeMenu({ row, examType, onChanged, onError }: {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const planned = row.planned_test_date;
-  if (!planned || row.result) return null; // an outcome explains a missing result of a planned sitting
+  // The PLANNED sitting has a result (an older sitting's result does not count - retakes).
+  if (!planned || row.sitting_has_result || row.triage_status === 'completed') return null;
   const key = { student_id: row.student.student_id, exam_type: examType, planned_test_date: planned };
 
   const reset = () => { setPicked(null); setNote(''); };
