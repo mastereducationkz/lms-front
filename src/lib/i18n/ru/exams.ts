@@ -88,7 +88,6 @@ export const exams: RuTable<typeof en> = {
 
   'exams.row.attemptHistory': 'История попыток',
   'exams.row.attempt': 'Попытка {date}',
-  'exams.row.declined': 'Не хочет делиться',
   'exams.row.openProof': 'Открыть подтверждение',
   'exams.row.view': 'Открыть',
   'exams.row.testimonialAndPhoto': 'Отзыв и фото',

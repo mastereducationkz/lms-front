@@ -88,7 +88,6 @@ export const exams = {
 
   'exams.row.attemptHistory': 'Attempt history',
   'exams.row.attempt': 'Attempt {date}',
-  'exams.row.declined': 'Declined to share',
   'exams.row.openProof': 'Open proof',
   'exams.row.view': 'View',
   'exams.row.testimonialAndPhoto': 'Testimonial and photo',

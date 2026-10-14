@@ -55,7 +55,7 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
   const isIelts = examType === 'ielts';
 
   const patch = (key: number, p: Partial<AttemptForm>) =>
-    setBlocks((bs) => bs.map((b) => (b.key === key ? { ...b, ...p } : b)));
+    setBlocks((bs) => bs.map((b) => (b.key === key ? { ...b, ...p, error: null } : b)));
 
   const satTotal = (b: AttemptForm) => {
     const v = Number(b.verbal), m = Number(b.math);
@@ -110,6 +110,7 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
     setError(null);
     const failed: AttemptForm[] = [];
     let savedAny = false;
+    let proofFailed = false;
     for (const b of blocks) {
       try {
         const created = await createExamResult(payloadOf(b));
@@ -118,7 +119,7 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
         // score itself - the user can retry the attachment from the row.
         if (b.proof) {
           try { await uploadResultProof(created.id, b.proof); }
-          catch { setError(t('teacherInsights.recordResult.proofFailed')); }
+          catch { proofFailed = true; setError(t('teacherInsights.recordResult.proofFailed')); }
         }
       } catch (e: any) {
         const detail = e?.response?.data?.detail;
@@ -132,7 +133,9 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
     }
     if (savedAny) onSaved();
     setSaving(false);
-    if (failed.length === 0) { onClose(); return; }
+    // A failed proof upload keeps the dialog open so the message is seen; the form empties
+    // (everything saved) and only «Close» remains.
+    if (failed.length === 0 && !proofFailed) { onClose(); return; }
     setBlocks(failed);
   };
 
@@ -230,7 +233,7 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
                     <label htmlFor={`rr-o-${b.key}`} className="text-xs font-medium">{t('teacherInsights.recordResult.overallBand')}</label>
                     <select id={`rr-o-${b.key}`} value={b.overall} onChange={(e) => patch(b.key, { overall: e.target.value })}
                             className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                      {IELTS_BANDS.map((b) => <option key={b} value={b}>{b || t('teacherInsights.recordResult.select')}</option>)}
+                      {IELTS_BANDS.map((band) => <option key={band} value={band}>{band || t('teacherInsights.recordResult.select')}</option>)}
                     </select>
                   </div>
                   <div className="grid grid-cols-4 gap-2">
@@ -242,7 +245,7 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
                           <select value={b[field]} onChange={(e) => patch(b.key, { [field]: e.target.value })}
                                   aria-label={t('teacherInsights.recordResult.bandAria', { section: label })}
                                   className="mt-1 block w-full rounded-md border border-input bg-background px-2 py-2 text-sm">
-                            {IELTS_BANDS.map((b) => <option key={b} value={b}>{b || '—'}</option>)}
+                            {IELTS_BANDS.map((band) => <option key={band} value={band}>{band || '—'}</option>)}
                           </select>
                         </div>
                       ))}
@@ -297,10 +300,10 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
         {error && <p className="mt-3 text-xs text-red-600 dark:text-red-400" role="alert">{error}</p>}
 
         <div className="mt-5 flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>{t('common.cancel')}</Button>
-          <Button size="sm" onClick={save} disabled={!canSave}>
+          <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>{blocks.length === 0 ? t('common.close') : t('common.cancel')}</Button>
+          {blocks.length > 0 && <Button size="sm" onClick={save} disabled={!canSave}>
             {saving ? t('teacherInsights.shared.saving') : t('teacherInsights.recordResult.saveAttempt')}
-          </Button>
+          </Button>}
         </div>
       </div>
     </div>

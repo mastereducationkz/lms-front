@@ -67,12 +67,6 @@ import type { InitialScore } from '../../lib/examInitial';
 
 export type ExamOutcomeReason = 'declined' | 'not_taking' | 'unreachable';
 
-export const OUTCOME_LABELS: Record<ExamOutcomeReason, string> = {
-  not_taking: 'Не сдаёт',
-  declined: 'Не хочет делиться',
-  unreachable: 'Не удалось связаться',
-};
-
 export interface ExamResultRow {
   student: {
     student_id: number;
