@@ -10,6 +10,7 @@ import { FinishedTag, GroupStateFilter } from '../components/exams/GroupStateFil
 import { defaultGroupState, groupOptionLabel, type GroupState } from '../lib/groupState';
 import { useT } from '../lib/i18n/react';
 import { RecordResultDialog } from '../components/exams/RecordResultDialog';
+import { OutcomeMenu } from '../components/exams/OutcomeMenu';
 import { TestimonialDialog } from '../components/exams/TestimonialDialog';
 import {
   exportExamResults,
@@ -41,7 +42,7 @@ import { InitialScoreCell, ScoreChange } from '../components/exams/InitialScoreC
 
 type ExamType = 'sat' | 'ielts' | 'nuet';
 type DateField = 'planned' | 'actual';
-type Preset = 'all' | 'todo' | 'overdue' | 'done';
+type Preset = 'all' | 'todo' | 'overdue' | 'no_result' | 'done';
 
 const EXAM_TYPES: { value: ExamType; label: string }[] = [
   { value: 'sat', label: 'SAT' },
@@ -63,8 +64,14 @@ const triageTone: Record<string, string> = {
   completed: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
   unscheduled: 'bg-muted text-muted-foreground',
   // «Не хочет делиться» (owner, 2026-10-02): handled by the curator, not neglect — neutral, not red.
-  declined: 'bg-muted text-foreground',
+  declined: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  not_taking: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
+  unreachable: 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
 };
+
+const TRIAGE_KEYS = ['overdue', 'due', 'pending', 'completed', 'unscheduled'];
+const isOutcome = (s: string | null | undefined) =>
+  s === 'declined' || s === 'not_taking' || s === 'unreachable';
 
 const chipBase = 'inline-block rounded px-1.5 py-0.5 text-[10px] leading-4 whitespace-nowrap';
 const chipOk = `${chipBase} font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300`;
@@ -223,6 +230,7 @@ export default function ExamResultsWorkbenchPage() {
     if (preset === 'all') return true;
     if (preset === 'done') return r.triage_status === 'completed';
     if (preset === 'overdue') return r.triage_status === 'overdue';
+    if (preset === 'no_result') return isOutcome(r.triage_status);
     return r.triage_status === 'overdue' || r.triage_status === 'due';
   }), [rows, preset, marketingOnly]);
 
@@ -242,6 +250,7 @@ export default function ExamResultsWorkbenchPage() {
     all: rows.length,
     todo: rows.filter((r) => r.triage_status === 'overdue' || r.triage_status === 'due').length,
     overdue: rows.filter((r) => r.triage_status === 'overdue').length,
+    noResult: rows.filter((r) => isOutcome(r.triage_status)).length,
     done: rows.filter((r) => r.triage_status === 'completed').length,
   }), [rows]);
 
@@ -331,6 +340,7 @@ export default function ExamResultsWorkbenchPage() {
               {([['all', t('exams.preset.all'), counts.all],
                  ['todo', t('exams.preset.todo'), counts.todo],
                  ['overdue', t('exams.preset.overdue'), counts.overdue],
+                 ['no_result', t('exams.preset.noResult'), counts.noResult],
                  ['done', t('exams.preset.done'), counts.done]] as const).map(([key, label, n]) => (
                 <Button key={key} size="sm" variant={preset === key ? 'default' : 'outline'}
                         aria-pressed={preset === key}
@@ -524,10 +534,12 @@ export default function ExamResultsWorkbenchPage() {
                           </TableCell>
                           <TableCell>
                             <Badge variant="secondary" className={triageTone[row.triage_status ?? ''] ?? ''}
-                                   title={row.triage_status === 'declined' ? row.decline_note ?? undefined : undefined}>
-                              {row.triage_status === 'declined'
-                                ? t('exams.row.declined')
-                                : row.triage_status ?? '—'}
+                                   title={row.outcome_note ?? (row.triage_status === 'declined' ? row.decline_note ?? undefined : undefined)}>
+                              {isOutcome(row.triage_status)
+                                ? t(`exams.outcome.${row.triage_status}`)
+                                : row.triage_status && TRIAGE_KEYS.includes(row.triage_status)
+                                  ? t(`exams.triage.${row.triage_status}`)
+                                  : row.triage_status ?? '—'}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center">
@@ -577,6 +589,8 @@ export default function ExamResultsWorkbenchPage() {
                                        onChange={(e) => reschedule(row, e.target.value)}
                                        title={t('exams.row.reschedulePlanned')}
                                        className="rounded border border-input bg-background px-1.5 py-1 text-[11px]" />
+                                <OutcomeMenu row={row} examType={examType}
+                                             onChanged={() => load(filters)} onError={setError} />
                                 <Button size="sm" variant="secondary"
                                         onClick={() => setRecording(row)}>
                                   <Plus className="mr-1 h-3 w-3" aria-hidden="true" />
