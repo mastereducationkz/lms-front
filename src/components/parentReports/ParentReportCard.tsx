@@ -27,6 +27,7 @@ const TEMPLATE_LABELS: Record<ParentTemplateKey, MessageKey> = {
 
 interface Props {
   studentId: number;
+  groupId?: number;
   studentName: string;
   /** Понедельник недели, `YYYY-MM-DD`. */
   week: string;
@@ -34,7 +35,7 @@ interface Props {
   onSaved?: (response: ParentStudentResponse) => void;
 }
 
-export default function ParentReportCard({ studentId, studentName, week, initial, onSaved }: Props) {
+export default function ParentReportCard({ studentId, groupId, studentName, week, initial, onSaved }: Props) {
   const t = useT();
   const [state, setState] = useState<ParentStudentResponse | null>(initial);
   const [body, setBody] = useState(initial?.report?.body ?? '');
@@ -89,6 +90,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
     try {
       const next = await generateParentReport(studentId, {
         week,
+        group_id: groupId || undefined,
         template: template || undefined,
         note: note.trim() || undefined,
       });

@@ -80,7 +80,7 @@ export default function CuratorParentReportsPage() {
           const key = cardKey(student.id, week);
           let value: ParentStudentResponse | null = null;
           try {
-            value = await fetchParentStudentFacts(student.id, week);
+            value = await fetchParentStudentFacts(student.id, week, groupId);
           } catch {
             value = null;
           }
@@ -114,7 +114,7 @@ export default function CuratorParentReportsPage() {
         async student => {
           const key = cardKey(student.id, forWeek);
           try {
-            const result = await generateParentReport(student.id, { week: forWeek });
+            const result = await generateParentReport(student.id, { week: forWeek, group_id: groupId });
             if (token !== loadId.current) return;
             setDetails(prev => ({ ...prev, [key]: result }));
             setFailed(prev => {
@@ -303,6 +303,7 @@ export default function CuratorParentReportsPage() {
                   <ParentReportCard
                     studentId={student.id}
                     studentName={student.name}
+                    groupId={groupId}
                     week={week}
                     initial={details[key] ?? null}
                     onSaved={next => {

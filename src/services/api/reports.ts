@@ -389,18 +389,20 @@ export async function fetchParentGroupOverview(
 export async function fetchParentStudentFacts(
   studentId: number,
   week: string,
+  groupId?: number,
   config?: AxiosRequestConfig,
 ): Promise<ParentStudentResponse> {
+  // groupId — группа, из которой открыт отчёт: её программа (SAT/NUET/IELTS) — тема отчёта.
   const { data } = await api.get(`/reports/parent/students/${studentId}`, {
     ...config,
-    params: { week },
+    params: { week, group_id: groupId || undefined },
   });
   return data;
 }
 
 export async function generateParentReport(
   studentId: number,
-  payload: { week: string; template?: ParentTemplateKey; note?: string },
+  payload: { week: string; group_id?: number; template?: ParentTemplateKey; note?: string },
 ): Promise<ParentStudentResponse> {
   const { data } = await api.post(`/reports/parent/students/${studentId}`, payload);
   return data;
