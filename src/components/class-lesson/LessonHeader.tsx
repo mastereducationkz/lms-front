@@ -18,6 +18,8 @@ const STATUS: Record<LessonStatus, { label: MessageKey; tone: string }> = {
   cancelled: { label: 'classLesson.status.cancelled', tone: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200' },
 };
 
+const HELD_STATUS = { label: 'classLesson.status.held' as MessageKey, tone: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200' };
+
 interface Props {
   view: LessonView;
   group: LessonGroup | null;
@@ -41,7 +43,8 @@ function groupLabel(name: string): string {
 export default function LessonHeader({ view, group, onGroup, sections, onJump, now }: Props) {
   const t = useT();
   const locale = useLocale();
-  const status = STATUS[view.status];
+  // «Временная отмена»: the status reads `cancelled` to everything else, but the badge says «Отложен».
+  const status = view.held ? HELD_STATUS : STATUS[view.status];
   const join = joinState(view, now);
   const journal = group ? journalUrl(view.viewer.role, group.id, view.start) : null;
   const stuck = useStuck();

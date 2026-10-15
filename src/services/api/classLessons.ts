@@ -96,10 +96,12 @@ export interface LessonHomework {
 
 export interface LessonRequestRow {
   id: number;
-  type: 'substitution' | 'reschedule' | 'cancel' | string;
+  type: 'substitution' | 'reschedule' | 'cancel' | 'hold' | string;
   status: string;
   created_at: string | null;
   requester: string | null;
+  /** «Временная отмена» only: `waiting` while the lesson has no new time. */
+  hold_state?: 'waiting' | 'scheduled' | 'cancelled' | 'restored' | null;
 }
 
 export interface LessonLiveRoom {
@@ -124,6 +126,8 @@ export interface LessonView {
   regular_teacher: LessonPerson | null;
   is_substitution: boolean;
   cancelled: { replacement: LessonRef | null; reason: string | null } | null;
+  /** «Временная отмена»: postponed until a new time is agreed (the status reads `cancelled`). `undefined` on an older backend. */
+  held?: { since: string | null } | null;
   viewer: LessonViewer;
   notes: LessonNotes;
   register: LessonRegister | null;

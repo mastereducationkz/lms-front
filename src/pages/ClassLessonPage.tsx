@@ -12,7 +12,7 @@ import LessonRecordingSection from '../components/calendar/LessonRecordingSectio
 import MeetAttendanceSection from '../components/calendar/MeetAttendanceSection';
 import LiveLessonSection from '../components/live-lesson/LiveLessonSection';
 import {
-  asCalendarEvent, lessonWhen, sectionFromHash, sectionOrder, stampKz, type PageSection,
+  asCalendarEvent, heldLessonLink, lessonWhen, sectionFromHash, sectionOrder, stampKz, type PageSection,
 } from '../lib/classLessonPage';
 import { lessonPath } from '../lib/lessonLinks';
 import { useLocale, useT } from '../lib/i18n/react';
@@ -193,6 +193,8 @@ export default function ClassLessonPage() {
     }
   };
 
+  const heldLink = view.held ? heldLessonLink(view.viewer.role) : null;
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-16 sm:px-6">
       <LessonHeader view={view} group={group} onGroup={setGroupId} sections={sections} onJump={jump} now={now} />
@@ -209,6 +211,20 @@ export default function ClassLessonPage() {
                 </Link>
               ) : (
                 <p className="mt-0.5 text-rose-800/80 dark:text-rose-200/80">{t('classLesson.page.noReplacement')}</p>
+              )}
+            </div>
+          </div>
+        )}
+        {view.held && (
+          <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+            <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
+            <div>
+              <p className="font-semibold">{t('classLesson.page.held')}</p>
+              <p className="mt-0.5">{t('classLesson.page.heldBody')}</p>
+              {heldLink && (
+                <Link to={heldLink.to} className="mt-1 inline-block font-semibold underline underline-offset-2">
+                  {t(heldLink.label)}
+                </Link>
               )}
             </div>
           </div>

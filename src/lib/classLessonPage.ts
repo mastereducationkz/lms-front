@@ -184,6 +184,20 @@ export function journalUrl(role: string, groupId: number, start: string): string
   return null;
 }
 
+/**
+ * Where a postponed lesson («Временная отмена», no new time yet) is dealt with: the queue of held lessons
+ * for the staff who can set its time, the teacher's own requests for the teacher; nobody else has anything
+ * to do about it.
+ */
+export function heldLessonLink(role: string): { to: string; label: MessageKey } | null {
+  if (role === 'admin') return { to: '/admin/lesson-requests?tab=holds', label: 'classLesson.page.heldSetTime' };
+  if (role === 'head_teacher' || role === 'head_curator') {
+    return { to: '/head-teacher/lesson-requests?tab=holds', label: 'classLesson.page.heldSetTime' };
+  }
+  if (role === 'teacher') return { to: '/my-requests', label: 'classLesson.page.heldMine' };
+  return null;
+}
+
 /** The anchor a link asked for (`#materials`), if the page knows it. */
 export function sectionFromHash(hash: string): PageSection | null {
   const key = hash.replace(/^#/, '') as PageSection;

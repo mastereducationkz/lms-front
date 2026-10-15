@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  almatyDay, asCalendarEvent, clockKz, joinState, journalUrl, lessonWhen, markEditable, registerChanges, registerSummary,
+  almatyDay, asCalendarEvent, clockKz, heldLessonLink, joinState, journalUrl, lessonWhen, markEditable, registerChanges, registerSummary,
   scoreEditable, sectionFromHash, sectionOrder, stampKz, summaryLine,
 } from './classLessonPage';
 import type { LessonView, RegisterStudent } from '../services/api/classLessons';
@@ -135,5 +135,19 @@ describe('links', () => {
     } as unknown as LessonView;
     const ev = asCalendarEvent(view);
     expect([ev.id, ev.event_type, ev.meeting_url, ev.group_ids, ev.teacher_id]).toEqual([5, 'class', 'u', [1], 2]);
+  });
+});
+
+describe('heldLessonLink', () => {
+  it('sends whoever can set the time to the queue of held lessons, and the teacher to their own requests', () => {
+    expect(heldLessonLink('admin')).toEqual({ to: '/admin/lesson-requests?tab=holds', label: 'classLesson.page.heldSetTime' });
+    expect(heldLessonLink('head_teacher')?.to).toBe('/head-teacher/lesson-requests?tab=holds');
+    expect(heldLessonLink('head_curator')?.to).toBe('/head-teacher/lesson-requests?tab=holds');
+    expect(heldLessonLink('teacher')).toEqual({ to: '/my-requests', label: 'classLesson.page.heldMine' });
+  });
+
+  it('has nothing for a student or a curator, who can do nothing about it', () => {
+    expect(heldLessonLink('student')).toBeNull();
+    expect(heldLessonLink('curator')).toBeNull();
   });
 });
