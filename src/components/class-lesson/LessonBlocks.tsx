@@ -149,6 +149,12 @@ function HomeworkRow({ hw, locale, t }: { hw: LessonHomework; locale: Locale; t:
 
 const REQUEST_TYPE: Record<string, MessageKey> = {
   substitution: 'classLesson.request.substitution', reschedule: 'classLesson.request.reschedule', cancel: 'classLesson.request.cancel',
+  hold: 'classLesson.request.hold',
+};
+/** Where a «Временная отмена» is, for the row of a request that was approved: the lesson still waits. */
+const HOLD_STATE: Record<string, MessageKey> = {
+  waiting: 'classLesson.request.holdWaiting', scheduled: 'classLesson.request.holdScheduled',
+  cancelled: 'classLesson.request.holdCancelled', restored: 'classLesson.request.holdRestored',
 };
 const REQUEST_STATUS: Record<string, MessageKey> = {
   pending: 'classLesson.request.pending', pending_approval: 'classLesson.request.pendingApproval',
@@ -156,7 +162,7 @@ const REQUEST_STATUS: Record<string, MessageKey> = {
   declined: 'classLesson.request.declined', cancelled: 'classLesson.request.withdrawn',
 };
 
-/** Requests about this lesson (substitute, reschedule, cancel) and, for its teacher, new ones. */
+/** Requests about this lesson (substitute, reschedule, cancel, temporary cancel) and, for its teacher, new ones. */
 export function RequestsBlock({ view, locale }: BlockProps) {
   const t = tFor(locale);
   const label = (table: Record<string, MessageKey>, value: string) => (table[value] ? t(table[value]) : value);
@@ -170,7 +176,7 @@ export function RequestsBlock({ view, locale }: BlockProps) {
             <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
               <span className="font-medium text-foreground">{label(REQUEST_TYPE, r.type)}</span>
               <span className="text-xs text-muted-foreground">
-                {label(REQUEST_STATUS, r.status)}
+                {r.type === 'hold' && r.status === 'approved' && r.hold_state ? label(HOLD_STATE, r.hold_state) : label(REQUEST_STATUS, r.status)}
                 {r.requester ? ` · ${r.requester}` : ''}
                 {r.created_at ? ` · ${stampKz(r.created_at, locale)}` : ''}
               </span>
@@ -182,7 +188,7 @@ export function RequestsBlock({ view, locale }: BlockProps) {
       )}
       {view.request_new_url && (
         <div className="flex flex-wrap gap-2">
-          {(['substitution', 'reschedule', 'cancel'] as const).map((type) => (
+          {(['substitution', 'reschedule', 'cancel', 'hold'] as const).map((type) => (
             <button
               key={type}
               type="button"
