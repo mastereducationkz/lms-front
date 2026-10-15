@@ -182,3 +182,22 @@ export async function restoreHold(requestId: number): Promise<LessonRequest> {
   const response = await api.post(`/lesson-requests/${requestId}/hold/restore`);
   return response.data;
 }
+
+/** The teacher who asked for the hold proposes the lesson's new time (UTC ISO). Nothing moves until a head confirms. */
+export async function proposeHoldTime(requestId: number, newDatetimeIso: string): Promise<LessonRequest> {
+  const response = await api.post(`/lesson-requests/${requestId}/hold/propose`, { new_datetime: newDatetimeIso });
+  return response.data;
+}
+
+/** One click: the lesson returns at the time the teacher proposed. */
+export async function confirmHoldProposal(requestId: number): Promise<LessonRequest> {
+  const response = await api.post(`/lesson-requests/${requestId}/hold/confirm`);
+  return response.data;
+}
+
+/** The proposed time does not suit: the teacher is told and may propose another. */
+export async function declineHoldProposal(requestId: number): Promise<LessonRequest> {
+  const response = await api.post(`/lesson-requests/${requestId}/hold/decline`);
+  return response.data;
+}
+

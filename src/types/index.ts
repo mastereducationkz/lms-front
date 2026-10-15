@@ -1478,6 +1478,9 @@ export interface LessonRequest {
   hold_closed_at?: string | null;
   /** The lesson's own start right now: its original time while it waits, the new one after. */
   lesson_start_datetime?: string | null;
+  /** The time the teacher proposed while the lesson waits; a head confirms it or sets another. */
+  hold_proposed_datetime?: string | null;
+  hold_proposed_at?: string | null;
 }
 
 export interface CreateLessonRequest {

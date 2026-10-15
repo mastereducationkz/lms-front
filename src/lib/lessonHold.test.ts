@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canRestoreHold, daysWaiting, holdStateLabelKey, isOpenRequest, isWaitingHold, newTimeProblem } from './lessonHold';
+import { canRestoreHold, daysWaiting, hasProposal, holdStateLabelKey, isOpenRequest, isWaitingHold, newTimeProblem } from './lessonHold';
 
 const NOW = new Date('2026-10-15T10:00:00Z'); // 15:00 in Almaty
 
@@ -62,3 +62,12 @@ describe('the new time a head types', () => {
     expect(newTimeProblem('2026-10-19T19:00', NOW)).toBeNull();
   });
 });
+
+describe('a proposed time', () => {
+  it('is only a proposal while the lesson still waits', () => {
+    expect(hasProposal(hold({ hold_proposed_datetime: '2026-10-24T14:00:00Z' }))).toBe(true);
+    expect(hasProposal(hold({ hold_proposed_datetime: null }))).toBe(false);
+    expect(hasProposal(hold({ hold_state: 'scheduled', hold_proposed_datetime: '2026-10-24T14:00:00Z' }))).toBe(false);
+  });
+});
+

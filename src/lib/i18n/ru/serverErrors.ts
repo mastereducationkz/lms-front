@@ -69,4 +69,5 @@ export const serverErrors: RuTable<typeof en> = {
   'serverErrors.hold_time_in_past': 'Новое время должно быть в будущем.',
   'serverErrors.lesson_time_taken': 'В это время у группы уже есть урок. Выберите другое время.',
   'serverErrors.hold_original_time_passed': 'Прежнее время уже прошло. Назначьте новое время.',
+  'serverErrors.hold_no_proposal': 'Учитель не предлагал время.',
 };

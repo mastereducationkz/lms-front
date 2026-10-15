@@ -192,4 +192,5 @@ export const classLesson = {
   'classLesson.request.holdScheduled': 'new time set',
   'classLesson.request.holdCancelled': 'cancelled for good',
   'classLesson.request.holdRestored': 'back at the original time',
+  'classLesson.page.heldPropose': 'Propose a time',
 } as const satisfies MessageTable;

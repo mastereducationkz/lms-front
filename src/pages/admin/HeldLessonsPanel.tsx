@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { CancelResolution, LessonRequest } from '../../types';
-import { convertHoldToCancel, getWaitingHolds, restoreHold, setHoldTime } from '../../services/api';
+import { confirmHoldProposal, convertHoldToCancel, declineHoldProposal, getWaitingHolds, restoreHold, setHoldTime } from '../../services/api';
 import { formatDateTime, type MessageKey } from '../../lib/i18n';
 import { useT } from '../../lib/i18n/react';
 import { fromDatetimeLocalKZ } from '../../lib/datetime';
-import { canRestoreHold, daysWaiting, newTimeProblem } from '../../lib/lessonHold';
+import { canRestoreHold, daysWaiting, hasProposal, newTimeProblem } from '../../lib/lessonHold';
 import { toast } from '../../components/Toast';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -143,6 +143,11 @@ export default function HeldLessonsPanel({ onCount }: { onCount?: (waiting: numb
                     <TableCell>
                       <div className="font-medium">{req.group_name || t('lessonRequests.row.group', { id: req.group_id })}</div>
                       <div className="text-xs text-muted-foreground">{req.lesson_title || '—'}</div>
+                      {hasProposal(req) && (
+                        <div className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+                          {t('lessonRequests.holds.proposed', { when: formatExact(req.hold_proposed_datetime) })}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">{formatExact(req.lesson_start_datetime ?? req.original_datetime)}</TableCell>
                     <TableCell>{req.requester_name || '—'}</TableCell>
@@ -152,9 +157,34 @@ export default function HeldLessonsPanel({ onCount }: { onCount?: (waiting: numb
                     <TableCell className="max-w-[16rem] break-words text-sm text-muted-foreground">{req.reason || '—'}</TableCell>
                     <TableCell className="text-right align-top">
                       <div className="flex flex-wrap justify-end gap-2">
-                        <Button size="sm" className="h-8 text-xs" onClick={() => open(req.id, 'time')} disabled={working}>
-                          {t('lessonRequests.holds.setTime')}
-                        </Button>
+                        {hasProposal(req) ? (
+                          <>
+                            <Button
+                              size="sm"
+                              className="h-8 text-xs"
+                              onClick={() => run(req.id, () => confirmHoldProposal(req.id), t('lessonRequests.holds.done.scheduled'))}
+                              disabled={working}
+                            >
+                              {t('lessonRequests.holds.confirm')}
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => open(req.id, 'time')} disabled={working}>
+                              {t('lessonRequests.holds.otherTime')}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 text-xs"
+                              onClick={() => run(req.id, () => declineHoldProposal(req.id), t('lessonRequests.holds.done.declined'))}
+                              disabled={working}
+                            >
+                              {t('lessonRequests.holds.decline')}
+                            </Button>
+                          </>
+                        ) : (
+                          <Button size="sm" className="h-8 text-xs" onClick={() => open(req.id, 'time')} disabled={working}>
+                            {t('lessonRequests.holds.setTime')}
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"
