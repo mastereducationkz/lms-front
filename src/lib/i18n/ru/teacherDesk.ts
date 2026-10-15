@@ -441,4 +441,8 @@ export const teacherDesk: RuTable<typeof en> = {
   'teacherDesk.gradeDialog.enterScore': 'Введите балл',
   'teacherDesk.gradeDialog.feedback': 'Комментарий (необязательно)',
   'teacherDesk.gradeDialog.feedbackPlaceholder': 'Комментарий для студента...',
+  'teacherDesk.subRequest.tabHold': 'Временная отмена',
+  'teacherDesk.subRequest.holdHint': 'Если провести урок нельзя, а новая дата ещё не согласована. После согласования урок уйдёт из расписания и уведомлений; новое время старший преподаватель назначит позже.',
+  'teacherDesk.subRequest.appliedHold': 'Временная отмена применена сразу: урока нет в расписании, пока не назначено новое время.',
+  'teacherDesk.subRequest.sentHold': 'Заявка на временную отмену отправлена старшему преподавателю на согласование.',
 };

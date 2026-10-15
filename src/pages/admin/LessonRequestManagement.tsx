@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import apiClient from '../../services/api';
+import apiClient, { getWaitingHolds } from '../../services/api';
 import type { LessonRequest, CancelResolution } from '../../types';
 import { formatDateTime, type MessageKey, type TFunction } from '../../lib/i18n';
 import { useT } from '../../lib/i18n/react';
@@ -18,6 +18,8 @@ import {
 } from '../../components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import TeacherRescheduleStatsPanel from './TeacherRescheduleStatsPanel';
+import HeldLessonsPanel from './HeldLessonsPanel';
+import { holdStateLabelKey } from '../../lib/lessonHold';
 import '@/lib/i18n/catalogs/lessonRequests';
 
 type Props = {
@@ -37,6 +39,7 @@ const TYPE_LABELS: Record<string, MessageKey> = {
   substitution: 'lessonRequests.type.substitution',
   reschedule: 'lessonRequests.type.reschedule',
   cancel: 'lessonRequests.type.cancel',
+  hold: 'lessonRequests.type.hold',
 };
 
 const STATUS_LABELS: Record<string, MessageKey> = {
@@ -152,6 +155,21 @@ function Timeline({ req }: { req: LessonRequest }) {
     });
   }
 
+  // «Временная отмена»: after the approval, where the lesson went.
+  if (req.request_type === 'hold' && req.status === 'approved' && req.hold_state) {
+    const held: Record<string, MessageKey> = {
+      waiting: 'lessonRequests.timeline.holdWaiting',
+      scheduled: 'lessonRequests.timeline.holdScheduled',
+      cancelled: 'lessonRequests.timeline.holdCancelled',
+      restored: 'lessonRequests.timeline.holdRestored',
+    };
+    steps.push({
+      at: req.hold_closed_at ?? null,
+      title: t(held[req.hold_state] ?? 'lessonRequests.timeline.holdWaiting'),
+      detail: req.hold_state === 'scheduled' && req.new_datetime ? formatExact(req.new_datetime) : null,
+    });
+  }
+
   if (req.attendance_marked) {
     steps.push({ at: null, title: t('lessonRequests.timeline.attendanceMarked') });
   }
@@ -188,6 +206,8 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
   const [cancelChoice, setCancelChoice] = useState<Record<number, CancelResolution>>({});
   const [processing, setProcessing] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
+  // How many held lessons wait for a new time: the badge on the tab, known before it is opened.
+  const [holdCount, setHoldCount] = useState<number | null>(null);
 
   const isHeadTeacher = variant === 'head_teacher';
 
@@ -242,6 +262,10 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
   useEffect(() => {
     fetchRequests();
   }, [statusFilter, variant]);
+
+  useEffect(() => {
+    getWaitingHolds().then(rows => setHoldCount(rows.length)).catch(() => setHoldCount(null));
+  }, [variant]);
 
   /** A pending cancel needs a choice before it can be approved — the button stays disabled
    *  until one is made, and this guards the same line in case it is reached another way. */
@@ -324,13 +348,15 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
 
   const inconsistentCount = visible.filter(inconsistent).length;
 
-  const activeTab = searchParams.get('tab') === 'stats' ? 'stats' : 'requests';
+  const tabParam = searchParams.get('tab');
+  const activeTab = tabParam === 'stats' ? 'stats' : tabParam === 'holds' ? 'holds' : 'requests';
 
   return (
     <div className="space-y-6">
       <div className="flex rounded-md shadow-sm w-fit">
         {([
           ['requests', t('lessonRequests.tabs.requests')],
+          ['holds', holdCount ? `${t('lessonRequests.tabs.holds')} · ${holdCount}` : t('lessonRequests.tabs.holds')],
           ['stats', t('lessonRequests.tabs.stats')],
         ] as [string, string][]).map(([value, label], idx, arr) => {
           const isActive = activeTab === value;
@@ -355,6 +381,8 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
 
       {activeTab === 'stats' ? (
         <TeacherRescheduleStatsPanel />
+      ) : activeTab === 'holds' ? (
+        <HeldLessonsPanel onCount={setHoldCount} />
       ) : (
       <>
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -489,6 +517,14 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                       <TableCell className="text-muted-foreground tabular-nums">{req.id}</TableCell>
                       <TableCell className="font-medium">
                         {typeLabel(t, req.request_type)}
+                        {holdStateLabelKey(req) && req.status === 'approved' && (
+                          <Badge
+                            variant="secondary"
+                            className="mt-1 block w-fit bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200 px-1.5 py-0 text-[10px] font-medium dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/40"
+                          >
+                            {t(holdStateLabelKey(req)!)}
+                          </Badge>
+                        )}
                         {req.status === 'approved' && req.cancel_resolution === 'add_replacement' && (
                           <Badge
                             variant="secondary"
@@ -519,7 +555,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {formatExact(req.original_datetime)}
-                        {req.request_type === 'reschedule' && req.new_datetime && (
+                        {(req.request_type === 'reschedule' || req.request_type === 'hold') && req.new_datetime && (
                           <span className="flex items-center gap-1 text-xs text-muted-foreground">
                             <ArrowRight className="h-3 w-3 shrink-0" aria-label={t('lessonRequests.row.movedTo')} />
                             {formatExact(req.new_datetime)}
@@ -592,6 +628,11 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                                 ))}
                               </fieldset>
                             )}
+                            {req.request_type === 'hold' && (
+                              <p className="max-w-[260px] text-left text-xs text-muted-foreground">
+                                {t('lessonRequests.decision.holdHint')}
+                              </p>
+                            )}
                             <Input
                               placeholder={t('lessonRequests.decision.comment')}
                               className="h-8 w-[150px] text-xs"
@@ -653,8 +694,11 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                               <Fact label={t('lessonRequests.detail.originalTime')}>
                                 {formatExact(req.original_datetime)}
                               </Fact>
-                              {req.request_type === 'reschedule' && (
+                              {(req.request_type === 'reschedule' || (req.request_type === 'hold' && req.new_datetime)) && (
                                 <Fact label={t('lessonRequests.detail.newTime')}>{formatExact(req.new_datetime)}</Fact>
+                              )}
+                              {holdStateLabelKey(req) && (
+                                <Fact label={t('lessonRequests.detail.holdState')}>{t(holdStateLabelKey(req)!)}</Fact>
                               )}
                               {req.request_type === 'cancel' && (
                                 <Fact label={t('lessonRequests.decision.legend')}>
@@ -706,7 +750,9 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                                   ? '—'
                                   : req.lesson_is_active
                                     ? t('lessonRequests.detail.lessonActive')
-                                    : t('lessonRequests.detail.lessonCancelled')}
+                                    : req.request_type === 'hold' && req.hold_state === 'waiting'
+                                      ? t('lessonRequests.detail.lessonOnHold')
+                                      : t('lessonRequests.detail.lessonCancelled')}
                               </Fact>
                               <Fact label={t('lessonRequests.detail.resolver')}>
                                 {req.resolver_name

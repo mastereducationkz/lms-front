@@ -15,18 +15,21 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 
-type RequestType = 'substitution' | 'reschedule' | 'cancel';
+/** `hold` is «Временная отмена»: the lesson cannot take place and its new date is not agreed yet. */
+type RequestType = 'substitution' | 'reschedule' | 'cancel' | 'hold';
 
 /** What the confirmation says, per request type: applied at once, or sent for approval. */
 const APPLIED_TEXT: Record<RequestType, MessageKey> = {
   substitution: 'teacherDesk.subRequest.appliedSubstitution',
   reschedule: 'teacherDesk.subRequest.appliedReschedule',
   cancel: 'teacherDesk.subRequest.appliedCancel',
+  hold: 'teacherDesk.subRequest.appliedHold',
 };
 const SENT_TEXT: Record<RequestType, MessageKey> = {
   substitution: 'teacherDesk.subRequest.sentSubstitution',
   reschedule: 'teacherDesk.subRequest.sentReschedule',
   cancel: 'teacherDesk.subRequest.sentCancel',
+  hold: 'teacherDesk.subRequest.sentHold',
 };
 
 export default function SubstitutionRequestPage() {
@@ -179,10 +182,11 @@ export default function SubstitutionRequestPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <Tabs value={requestType} onValueChange={(v) => setRequestType(v as RequestType)} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
                 <TabsTrigger value="substitution">{t('teacherDesk.subRequest.tabSubstitution')}</TabsTrigger>
                 <TabsTrigger value="reschedule">{t('teacherDesk.subRequest.tabReschedule')}</TabsTrigger>
                 <TabsTrigger value="cancel">{t('teacherDesk.subRequest.tabCancel')}</TabsTrigger>
+                <TabsTrigger value="hold">{t('teacherDesk.subRequest.tabHold')}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="substitution" className="space-y-4 mt-4">
@@ -240,10 +244,16 @@ export default function SubstitutionRequestPage() {
                   {t('teacherDesk.subRequest.cancelHint')}
                 </p>
               </TabsContent>
+
+              <TabsContent value="hold" className="space-y-4 mt-4">
+                <p className="text-sm text-muted-foreground">
+                  {t('teacherDesk.subRequest.holdHint')}
+                </p>
+              </TabsContent>
             </Tabs>
 
             <div className="space-y-2">
-              <Label htmlFor="reason">{requestType === 'cancel' ? t('teacherDesk.subRequest.reason') : t('teacherDesk.subRequest.reasonOptional')}</Label>
+              <Label htmlFor="reason">{requestType === 'cancel' || requestType === 'hold' ? t('teacherDesk.subRequest.reason') : t('teacherDesk.subRequest.reasonOptional')}</Label>
               <Textarea
                 id="reason"
                 placeholder={t('teacherDesk.subRequest.reasonPlaceholder')}

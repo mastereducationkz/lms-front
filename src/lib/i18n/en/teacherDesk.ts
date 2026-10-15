@@ -429,4 +429,8 @@ export const teacherDesk = {
   'teacherDesk.gradeDialog.enterScore': 'Enter score',
   'teacherDesk.gradeDialog.feedback': 'Feedback (optional)',
   'teacherDesk.gradeDialog.feedbackPlaceholder': 'Provide feedback to the student...',
+  'teacherDesk.subRequest.tabHold': 'Temporary cancel',
+  'teacherDesk.subRequest.holdHint': 'Use this when the lesson cannot take place and the new date is not agreed yet. After approval the lesson leaves the schedule and the notifications; a head teacher sets its new time later.',
+  'teacherDesk.subRequest.appliedHold': 'Your temporary cancel was applied immediately: the lesson is off the schedule until a new time is set.',
+  'teacherDesk.subRequest.sentHold': 'Your temporary-cancel request has been sent to the head teacher for approval.',
 } as const satisfies MessageTable;

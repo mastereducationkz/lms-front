@@ -1412,9 +1412,13 @@ export interface DailyQuestionsStatus {
  *  курса»). */
 export type CancelResolution = 'cancel_only' | 'add_replacement';
 
+/** «Временная отмена»: where a lesson put on hold is. `waiting` = no new time yet. */
+export type HoldState = 'waiting' | 'scheduled' | 'cancelled' | 'restored';
+
 export interface LessonRequest {
   id: number;
-  request_type: 'substitution' | 'reschedule' | 'cancel';
+  /** `hold` is «Временная отмена»: the lesson is off the schedule until a new time is agreed. */
+  request_type: 'substitution' | 'reschedule' | 'cancel' | 'hold';
   status: 'pending' | 'approved' | 'rejected' | 'pending_teacher';
   requester_id: number;
   requester_name?: string;
@@ -1468,10 +1472,16 @@ export interface LessonRequest {
   replacement_event_id?: number | null;
   replacement_lesson_title?: string | null;
   replacement_datetime?: string | null;
+
+  // ── hold requests («Временная отмена») ─────────────────────────────────────────────
+  hold_state?: HoldState | null;
+  hold_closed_at?: string | null;
+  /** The lesson's own start right now: its original time while it waits, the new one after. */
+  lesson_start_datetime?: string | null;
 }
 
 export interface CreateLessonRequest {
-  request_type: 'substitution' | 'reschedule' | 'cancel';
+  request_type: 'substitution' | 'reschedule' | 'cancel' | 'hold';
   lesson_schedule_id?: number;
   event_id?: number;
   group_id: number;

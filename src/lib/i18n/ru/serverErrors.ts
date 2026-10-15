@@ -63,4 +63,10 @@ export const serverErrors: RuTable<typeof en> = {
   'serverErrors.staff_leaving': '{name} уходит {last_day}',
   'serverErrors.use_offboarding': 'Сотрудников отключают через оформление ухода: нажмите «Оформить уход»',
   'serverErrors.use_reactivate': 'Вернуть сотрудника можно кнопкой «Вернуть» в записи об уходе',
+  'serverErrors.hold_not_waiting': 'Этот урок уже не ждёт нового времени.',
+  'serverErrors.hold_lesson_not_scheduled': 'Урока нет в расписании.',
+  'serverErrors.hold_lesson_not_active': 'Урок уже снят с расписания (отменён или отложен).',
+  'serverErrors.hold_time_in_past': 'Новое время должно быть в будущем.',
+  'serverErrors.lesson_time_taken': 'В это время у группы уже есть урок. Выберите другое время.',
+  'serverErrors.hold_original_time_passed': 'Прежнее время уже прошло. Назначьте новое время.',
 };

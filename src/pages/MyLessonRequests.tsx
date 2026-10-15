@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getMyLessonRequests } from '../services/api';
 import type { LessonRequest } from '../types';
 import { formatDateTime, type MessageKey } from '../lib/i18n';
+import { isOpenRequest, isWaitingHold } from '../lib/lessonHold';
 import { useT } from '../lib/i18n/react';
 import '@/lib/i18n/catalogs/chatLive';
 import '@/lib/i18n/catalogs/lessonRequests';
@@ -12,6 +13,7 @@ const TYPE_LABELS: Record<string, MessageKey> = {
   substitution: 'lessonRequests.type.substitution',
   reschedule: 'lessonRequests.type.reschedule',
   cancel: 'lessonRequests.type.cancel',
+  hold: 'lessonRequests.type.hold',
 };
 
 const STATUS_META: Record<string, { label: MessageKey; dot: string; text: string }> = {
@@ -21,9 +23,13 @@ const STATUS_META: Record<string, { label: MessageKey; dot: string; text: string
   rejected: { label: 'lessonRequests.status.rejected', dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400' },
 };
 
-function StatusPill({ status }: { status: string }) {
+/** A hold the head teacher approved is not «resolved»: the lesson still waits for a new time. */
+const HOLD_WAITING_META = { label: 'lessonRequests.hold.state.waiting' as MessageKey, dot: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' };
+
+function StatusPill({ req }: { req: LessonRequest }) {
   const t = useT();
-  const meta = STATUS_META[status];
+  const meta = isWaitingHold(req) ? HOLD_WAITING_META : STATUS_META[req.status];
+  const status = req.status;
   return (
     <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${meta?.text ?? 'text-muted-foreground'}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${meta?.dot ?? 'bg-gray-400'}`} />
@@ -64,6 +70,20 @@ function RequestDetail({ req }: { req: LessonRequest }) {
     }
     return <span>{t('chatLive.requests.cancelledOnly')}{reason}</span>;
   }
+  // «Временная отмена»: where the lesson is now, in the teacher's words.
+  if (req.request_type === 'hold' && req.status === 'approved' && req.hold_state) {
+    const reason = req.reason ? <span> · {req.reason}</span> : null;
+    if (req.hold_state === 'scheduled' && req.new_datetime) {
+      return <span>{t('chatLive.requests.holdScheduled')} <span className="text-foreground font-medium">{formatDateTime(req.new_datetime)}</span>{reason}</span>;
+    }
+    const text: Record<string, MessageKey> = {
+      waiting: 'chatLive.requests.holdWaiting',
+      scheduled: 'chatLive.requests.holdScheduled',
+      cancelled: 'chatLive.requests.holdCancelled',
+      restored: 'chatLive.requests.holdRestored',
+    };
+    return <span>{t(text[req.hold_state] ?? 'chatLive.requests.holdWaiting')}{reason}</span>;
+  }
   if (req.reason) return <span>{req.reason}</span>;
   return <span>—</span>;
 }
@@ -88,7 +108,7 @@ function RequestRow({ req }: { req: LessonRequest }) {
         </div>
       </div>
       <div className="shrink-0 pt-1">
-        <StatusPill status={req.status} />
+        <StatusPill req={req} />
       </div>
     </div>
   );
@@ -128,8 +148,9 @@ export default function MyLessonRequests() {
     })();
   }, []);
 
-  const active = requests.filter((r) => r.status === 'pending' || r.status === 'pending_teacher');
-  const resolved = requests.filter((r) => r.status === 'approved' || r.status === 'rejected');
+  const active = requests.filter((r) => (r.status === 'pending' || r.status === 'pending_teacher'));
+  const waitingForTime = requests.filter(isWaitingHold);
+  const resolved = requests.filter((r) => !isOpenRequest(r));
 
   if (loading) {
     return (
@@ -160,6 +181,7 @@ export default function MyLessonRequests() {
       ) : (
         <div className="space-y-8">
           <Section title={t('chatLive.requests.sectionPending')} requests={active} />
+          <Section title={t('chatLive.requests.sectionHold')} requests={waitingForTime} />
           <Section title={t('chatLive.requests.sectionResolved')} requests={resolved} />
         </div>
       )}
