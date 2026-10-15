@@ -182,7 +182,7 @@ export const classLesson: RuTable<typeof en> = {
   'classLesson.page.held': 'Урок отложен',
   'classLesson.page.heldBody': 'Новое время сообщат дополнительно.',
   'classLesson.page.heldSetTime': 'Назначить новое время',
-  'classLesson.page.heldMine': 'Мои запросы',
+  'classLesson.page.heldMine': 'Мои заявки',
   'classLesson.request.hold': 'Временная отмена',
   'classLesson.request.holdWaiting': 'ждёт нового времени',
   'classLesson.request.holdScheduled': 'новое время назначено',
