@@ -363,4 +363,9 @@ export const chatLive: RuTable<typeof en> = {
   'chatLive.theme.label': 'Тема оформления',
   'chatLive.theme.current': 'Тема: {theme}',
   'chatLive.theme.currentResolved': 'Тема: {theme} ({resolved})',
+  'chatLive.requests.sectionHold': 'Ждут нового времени',
+  'chatLive.requests.holdWaiting': 'Одобрено — урока пока нет в расписании, новое время назначит старший преподаватель',
+  'chatLive.requests.holdScheduled': 'Новое время',
+  'chatLive.requests.holdCancelled': 'Отменён насовсем',
+  'chatLive.requests.holdRestored': 'Вернули на прежнее время',
 };

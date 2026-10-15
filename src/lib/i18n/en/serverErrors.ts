@@ -67,4 +67,10 @@ export const serverErrors = {
   'serverErrors.staff_leaving': '{name} is leaving on {last_day}',
   'serverErrors.use_offboarding': 'Staff are switched off through offboarding: use Offboard',
   'serverErrors.use_reactivate': 'Bring them back with Reactivate on their offboarding record',
+  'serverErrors.hold_not_waiting': 'This lesson is no longer waiting for a new time.',
+  'serverErrors.hold_lesson_not_scheduled': 'The lesson is not in the schedule.',
+  'serverErrors.hold_lesson_not_active': 'The lesson is already off the schedule (cancelled or on hold).',
+  'serverErrors.hold_time_in_past': 'The new time must be in the future.',
+  'serverErrors.lesson_time_taken': 'The group already has a lesson at that time. Choose another time.',
+  'serverErrors.hold_original_time_passed': 'The original time has already passed. Set a new time instead.',
 } as const satisfies MessageTable;

@@ -356,4 +356,9 @@ export const chatLive = {
   'chatLive.theme.label': 'Theme',
   'chatLive.theme.current': 'Theme: {theme}',
   'chatLive.theme.currentResolved': 'Theme: {theme} ({resolved})',
+  'chatLive.requests.sectionHold': 'Waiting for a new time',
+  'chatLive.requests.holdWaiting': 'Approved — the lesson is off the schedule; a head teacher will set its new time',
+  'chatLive.requests.holdScheduled': 'New time',
+  'chatLive.requests.holdCancelled': 'Cancelled for good',
+  'chatLive.requests.holdRestored': 'Back at the original time',
 } as const satisfies MessageTable;

@@ -81,18 +81,19 @@ export default function TeacherRescheduleStatsPanel() {
                 <TableHead className="text-right w-[110px]">{t('lessonRequests.type.substitution')}</TableHead>
                 <TableHead className="text-right w-[110px]">{t('lessonRequests.type.reschedule')}</TableHead>
                 <TableHead className="text-right w-[110px]">{t('lessonRequests.type.cancel')}</TableHead>
+                <TableHead className="text-right w-[110px]">{t('lessonRequests.type.hold')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                     {t('common.loading')}
                   </TableCell>
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                     {t('lessonRequests.stats.empty')}
                   </TableCell>
                 </TableRow>
@@ -104,6 +105,7 @@ export default function TeacherRescheduleStatsPanel() {
                     <TableCell className="text-right">{r.by_type.substitution}</TableCell>
                     <TableCell className="text-right">{r.by_type.reschedule}</TableCell>
                     <TableCell className="text-right">{r.by_type.cancel}</TableCell>
+                    <TableCell className="text-right">{r.by_type.hold ?? 0}</TableCell>
                   </TableRow>
                 ))
               )}

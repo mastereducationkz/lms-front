@@ -133,7 +133,7 @@ export type TeacherRequestStats = {
   teacher_id: number;
   teacher_name: string;
   total: number;
-  by_type: { substitution: number; reschedule: number; cancel: number };
+  by_type: { substitution: number; reschedule: number; cancel: number; hold?: number };
 };
 
 export async function getTeacherRequestStats(
@@ -150,4 +150,35 @@ export async function getTeacherRequestStats(
     console.error('Failed to get teacher request stats:', error);
     throw error;
   }
+}
+
+// ── «Временная отмена»: the queue of lessons waiting for a new time, and the ways out of it ──
+
+/** Lessons put on hold with no new time yet, the longest-waiting first (what the caller may manage). */
+export async function getWaitingHolds(): Promise<LessonRequest[]> {
+  try {
+    const response = await api.get('/lesson-requests/holds');
+    return response.data;
+  } catch (error) {
+    console.error('Failed to get waiting holds:', error);
+    throw error;
+  }
+}
+
+/** The lesson returns at `newDatetimeIso` (UTC ISO, from `fromDatetimeLocalKZ`). */
+export async function setHoldTime(requestId: number, newDatetimeIso: string): Promise<LessonRequest> {
+  const response = await api.post(`/lesson-requests/${requestId}/hold/schedule`, { new_datetime: newDatetimeIso });
+  return response.data;
+}
+
+/** The lesson will never be held: a real cancel, with or without a replacement lesson at the end. */
+export async function convertHoldToCancel(requestId: number, resolution: CancelResolution): Promise<LessonRequest> {
+  const response = await api.post(`/lesson-requests/${requestId}/hold/cancel`, { cancel_resolution: resolution });
+  return response.data;
+}
+
+/** Back at the original time (only while that time is still ahead). */
+export async function restoreHold(requestId: number): Promise<LessonRequest> {
+  const response = await api.post(`/lesson-requests/${requestId}/hold/restore`);
+  return response.data;
 }
