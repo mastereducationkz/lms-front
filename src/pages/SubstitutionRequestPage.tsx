@@ -119,7 +119,7 @@ export default function SubstitutionRequestPage() {
 
   if (!hasValidParams) {
     return (
-      <div className="min-h-screen bg-muted flex items-center justify-center p-4">
+      <div className="flex min-h-[60vh] items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardHeader className="text-center">
             <CardTitle>{t('teacherDesk.subRequest.invalid')}</CardTitle>
@@ -139,7 +139,7 @@ export default function SubstitutionRequestPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-muted flex items-center justify-center p-4">
+      <div className="flex min-h-[60vh] items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardHeader className="text-center">
             <CardTitle>{autoApplied ? t('teacherDesk.subRequest.applied') : t('teacherDesk.subRequest.submitted')}</CardTitle>
@@ -161,7 +161,7 @@ export default function SubstitutionRequestPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted p-4 md:p-8">
+    <div className="container mx-auto px-4 py-6 md:py-8">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
