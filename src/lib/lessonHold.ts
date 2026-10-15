@@ -19,6 +19,10 @@ export const isWaitingHold = (req: HoldLike): boolean => req.request_type === 'h
 export const isOpenRequest = (req: HoldLike & Pick<LessonRequest, 'status'>): boolean =>
   req.status === 'pending' || req.status === 'pending_teacher' || isWaitingHold(req);
 
+/** A hold whose teacher has proposed a time that a head has not answered yet. */
+export const hasProposal = (req: HoldLike & Pick<LessonRequest, 'hold_proposed_datetime'>): boolean =>
+  isWaitingHold(req) && Boolean(req.hold_proposed_datetime);
+
 const STATE_LABELS: Record<HoldState, MessageKey> = {
   waiting: 'lessonRequests.hold.state.waiting',
   scheduled: 'lessonRequests.hold.state.scheduled',

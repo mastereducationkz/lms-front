@@ -194,7 +194,7 @@ export function heldLessonLink(role: string): { to: string; label: MessageKey } 
   if (role === 'head_teacher' || role === 'head_curator') {
     return { to: '/head-teacher/lesson-requests?tab=holds', label: 'classLesson.page.heldSetTime' };
   }
-  if (role === 'teacher') return { to: '/my-requests', label: 'classLesson.page.heldMine' };
+  if (role === 'teacher') return { to: '/my-requests', label: 'classLesson.page.heldPropose' };
   return null;
 }
 

@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getMyLessonRequests } from '../services/api';
 import type { LessonRequest } from '../types';
 import { formatDateTime, type MessageKey } from '../lib/i18n';
 import { isOpenRequest, isWaitingHold } from '../lib/lessonHold';
+import ProposeHoldTime from '../components/lesson-requests/ProposeHoldTime';
 import { useT } from '../lib/i18n/react';
 import '@/lib/i18n/catalogs/chatLive';
 import '@/lib/i18n/catalogs/lessonRequests';
@@ -88,7 +89,7 @@ function RequestDetail({ req }: { req: LessonRequest }) {
   return <span>—</span>;
 }
 
-function RequestRow({ req }: { req: LessonRequest }) {
+function RequestRow({ req, onChanged }: { req: LessonRequest; onChanged: () => void }) {
   const t = useT();
   return (
     <div className="flex items-start justify-between gap-4 px-5 py-4 hover:bg-muted/40 transition-colors">
@@ -106,6 +107,7 @@ function RequestRow({ req }: { req: LessonRequest }) {
         <div className="text-sm text-muted-foreground">
           <RequestDetail req={req} />
         </div>
+        {isWaitingHold(req) && <ProposeHoldTime req={req} onChanged={onChanged} />}
       </div>
       <div className="shrink-0 pt-1">
         <StatusPill req={req} />
@@ -114,7 +116,7 @@ function RequestRow({ req }: { req: LessonRequest }) {
   );
 }
 
-function Section({ title, requests }: { title: string; requests: LessonRequest[] }) {
+function Section({ title, requests, onChanged }: { title: string; requests: LessonRequest[]; onChanged: () => void }) {
   if (requests.length === 0) return null;
   return (
     <section>
@@ -124,7 +126,7 @@ function Section({ title, requests }: { title: string; requests: LessonRequest[]
       </div>
       <div className="divide-y rounded-lg border bg-card">
         {requests.map((req) => (
-          <RequestRow key={req.id} req={req} />
+          <RequestRow key={req.id} req={req} onChanged={onChanged} />
         ))}
       </div>
     </section>
@@ -136,17 +138,19 @@ export default function MyLessonRequests() {
   const [requests, setRequests] = useState<LessonRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        setRequests(await getMyLessonRequests());
-      } catch (error) {
-        console.error('Failed to load requests:', error);
-      } finally {
-        setLoading(false);
-      }
-    })();
+  const load = useCallback(async () => {
+    try {
+      setRequests(await getMyLessonRequests());
+    } catch (error) {
+      console.error('Failed to load requests:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const active = requests.filter((r) => (r.status === 'pending' || r.status === 'pending_teacher'));
   const waitingForTime = requests.filter(isWaitingHold);
@@ -180,9 +184,9 @@ export default function MyLessonRequests() {
         </div>
       ) : (
         <div className="space-y-8">
-          <Section title={t('chatLive.requests.sectionPending')} requests={active} />
-          <Section title={t('chatLive.requests.sectionHold')} requests={waitingForTime} />
-          <Section title={t('chatLive.requests.sectionResolved')} requests={resolved} />
+          <Section title={t('chatLive.requests.sectionPending')} requests={active} onChanged={load} />
+          <Section title={t('chatLive.requests.sectionHold')} requests={waitingForTime} onChanged={load} />
+          <Section title={t('chatLive.requests.sectionResolved')} requests={resolved} onChanged={load} />
         </div>
       )}
     </div>

@@ -188,4 +188,5 @@ export const classLesson: RuTable<typeof en> = {
   'classLesson.request.holdScheduled': 'новое время назначено',
   'classLesson.request.holdCancelled': 'отменён насовсем',
   'classLesson.request.holdRestored': 'вернули на прежнее время',
+  'classLesson.page.heldPropose': 'Предложить время',
 };

@@ -143,7 +143,7 @@ describe('heldLessonLink', () => {
     expect(heldLessonLink('admin')).toEqual({ to: '/admin/lesson-requests?tab=holds', label: 'classLesson.page.heldSetTime' });
     expect(heldLessonLink('head_teacher')?.to).toBe('/head-teacher/lesson-requests?tab=holds');
     expect(heldLessonLink('head_curator')?.to).toBe('/head-teacher/lesson-requests?tab=holds');
-    expect(heldLessonLink('teacher')).toEqual({ to: '/my-requests', label: 'classLesson.page.heldMine' });
+    expect(heldLessonLink('teacher')).toEqual({ to: '/my-requests', label: 'classLesson.page.heldPropose' });
   });
 
   it('has nothing for a student or a curator, who can do nothing about it', () => {

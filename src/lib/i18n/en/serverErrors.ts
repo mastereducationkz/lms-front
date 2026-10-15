@@ -73,4 +73,5 @@ export const serverErrors = {
   'serverErrors.hold_time_in_past': 'The new time must be in the future.',
   'serverErrors.lesson_time_taken': 'The group already has a lesson at that time. Choose another time.',
   'serverErrors.hold_original_time_passed': 'The original time has already passed. Set a new time instead.',
+  'serverErrors.hold_no_proposal': 'The teacher has not proposed a time.',
 } as const satisfies MessageTable;
