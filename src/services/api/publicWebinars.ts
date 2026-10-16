@@ -99,4 +99,19 @@ export const getJoinInfo = (code: string) => call<JoinInfo>(`/public/webinars/jo
 export const requestConsultation = (webinarSlug: string, body: ContactBody) =>
   call<{ ok: boolean }>('/public/leads', post({ ...body, webinar_slug: webinarSlug }));
 
+export interface PublicRecording {
+  slug: string;
+  title: string;
+  description: string | null;
+  starts_at: string;
+  ends_at: string;
+  duration_seconds: number | null;
+  speaker: PublicSpeaker | null;
+  url: string;
+  poster_url: string | null;
+  consent: PublicWebinar['consent'];
+}
+
+export const getPublicRecording = (slug: string) => call<PublicRecording>(`/public/recordings/${encodeURIComponent(slug)}`);
+
 export const getPrivacyPolicy = () => call<{ text: string; version: string; updated_at: string | null }>('/public/policy');

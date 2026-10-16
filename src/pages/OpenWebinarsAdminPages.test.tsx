@@ -11,6 +11,7 @@ vi.mock('../contexts/AuthContext', async () => {
 const api = vi.hoisted(() => ({
   getOpenSettings: vi.fn(), saveOpenSettings: vi.fn(), listGuestSpeakers: vi.fn(), createGuestSpeaker: vi.fn(), updateGuestSpeaker: vi.fn(),
   retireGuestSpeaker: vi.fn(), getOpenAccess: vi.fn(), listRegistrations: vi.fn(), retryLead: vi.fn(),
+  getRecordingStatus: vi.fn(), publishRecording: vi.fn(), withdrawRecording: vi.fn(),
 }));
 vi.mock('../services/api/openWebinars', () => api);
 const getEventDetails = vi.hoisted(() => vi.fn());
@@ -32,8 +33,10 @@ const setTextarea = async (el: HTMLTextAreaElement, value: string) => {
   await act(async () => { setter.call(el, value); el.dispatchEvent(new Event('input', { bubbles: true })); });
 };
 
+const noRecording = { has_recording: false, recording_status: null, ready: false, duration_seconds: null, published: false, published_at: null, withdrawn_at: null, views: 0 };
 beforeEach(() => {
   Object.values(api).forEach((fn) => fn.mockReset());
+  api.getRecordingStatus.mockResolvedValue(noRecording);
   getEventDetails.mockReset();
 });
 afterEach(unmount);
@@ -128,5 +131,54 @@ describe('a webinar’s registrations', () => {
     api.listRegistrations.mockResolvedValue([]);
     await show();
     expect(text()).toContain('Nobody has registered yet.');
+  });
+});
+
+
+describe('a webinar’s recording on the admin page', () => {
+  const ready = { ...noRecording, has_recording: true, recording_status: 'ready', ready: true, duration_seconds: 3600 };
+  const published = { ...ready, published: true, published_at: '2026-10-16T10:00:00Z', views: 7 };
+  async function show() {
+    api.getOpenAccess.mockResolvedValue({ event_id: 7, open: true, access_mode: 'open', slug: 'my-webinar', speaker_id: null, lead_pipeline_id: 10520038,
+      funnel: { registered: 0, joined: 0, consultation_requests: 0, leads_sent: 0, leads_pending: 0, leads_failed: 0, existing_students: 0 } });
+    api.listRegistrations.mockResolvedValue([]);
+    getEventDetails.mockResolvedValue({ title: 'W' });
+    await mount(<MemoryRouter initialEntries={['/admin/open-webinars/7']}><Routes><Route path="/admin/open-webinars/:eventId" element={<OpenWebinarRegistrationsPage />} /></Routes></MemoryRouter>);
+  }
+  const panel = () => document.querySelector('[data-recording-panel]')?.textContent ?? '';
+
+  it('says there is no recording yet, then that a ready one is not public until published', async () => {
+    await show();
+    expect(panel()).toContain('No recording yet.');
+    expect(Array.from(document.querySelectorAll('[data-recording-panel] button')).length).toBe(0);
+    await unmount();
+    api.getRecordingStatus.mockResolvedValue(ready);
+    await show();
+    expect(panel()).toContain('The recording is ready. It is not public until you publish it.');
+    expect(panel()).toContain('Anyone with the link can watch it.');
+  });
+
+  it('publishes on a click, shows the link and the views, and withdraws on another', async () => {
+    api.getRecordingStatus.mockResolvedValue(ready);
+    api.publishRecording.mockResolvedValue(published);
+    api.withdrawRecording.mockResolvedValue({ ...published, published: false, withdrawn_at: '2026-10-17T10:00:00Z' });
+    await show();
+    await click(button('Publish'));
+    await settle();
+    expect(api.publishRecording).toHaveBeenCalledWith(7);
+    expect(panel()).toContain('7 views');
+    expect(document.querySelector('[data-recording-panel] a[href$="/r/my-webinar"]')).not.toBeNull();
+    await click(button('Withdraw'));
+    await settle();
+    expect(api.withdrawRecording).toHaveBeenCalledWith(7);
+    expect(panel()).toContain('Withdrawn');
+    expect(button('Publish again')).toBeTruthy();
+  });
+
+  it('cannot publish a recording that was removed from the library', async () => {
+    api.getRecordingStatus.mockResolvedValue({ ...ready, ready: false, recording_status: 'removed' });
+    await show();
+    expect(panel()).toContain('removed from the library');
+    expect(Array.from(document.querySelectorAll('[data-recording-panel] button')).length).toBe(0);
   });
 });
