@@ -74,4 +74,13 @@ export const serverErrors = {
   'serverErrors.lesson_time_taken': 'The group already has a lesson at that time. Choose another time.',
   'serverErrors.hold_original_time_passed': 'The original time has already passed. Set a new time instead.',
   'serverErrors.hold_no_proposal': 'The teacher has not proposed a time.',
+  'serverErrors.policy_missing': 'Publish the privacy policy before opening registration.',
+  'serverErrors.no_producer': 'Choose a staff host with a Workspace account (they make the Meet room and record), or paste a Meet link into the event.',
+  'serverErrors.slug_taken': 'This address is already used by another webinar.',
+  'serverErrors.bad_slug': 'The address may contain latin letters, digits and dashes.',
+  'serverErrors.bad_pipeline': 'Choose the pipeline the leads go to.',
+  'serverErrors.bad_access_mode': 'Choose “anyone with the link” or “anyone who registers”.',
+  'serverErrors.not_a_webinar': 'Only an active webinar can be opened to everyone.',
+  'serverErrors.speaker_not_found': 'This guest speaker does not exist.',
+  'serverErrors.registration_not_found': 'Registration not found.',
 } as const satisfies MessageTable;

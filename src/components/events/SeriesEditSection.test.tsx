@@ -30,6 +30,9 @@ vi.mock('@/lib/eventHosts', () => ({
   ]),
 }));
 
+// The public-access card has its own tests and talks to the API client, which these form tests never use.
+vi.mock('../open-webinars/OpenAccessCard', () => ({ default: () => null }));
+
 import EventForm from '../EventForm';
 import { HostTitleSuggestion } from './SeriesEditSection';
 import type { Event } from '../../types';

@@ -47,6 +47,7 @@ export const shell = {
   'shell.nav.announcements': 'Telegram Announcements',
   'shell.nav.satCheckpoints': 'SAT Checkpoints',
   'shell.nav.manageEvents': 'Manage Events',
+  'shell.nav.openWebinars': 'Open Webinars',
   'shell.nav.recordingsRollout': 'Recordings Rollout',
   'shell.nav.examResults': 'Exam Results',
   'shell.nav.bluebookResults': 'Bluebook Results',

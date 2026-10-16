@@ -44,6 +44,7 @@ import { followingPayload } from '../lib/eventSeries';
 import { HostTitleSuggestion, SeriesEditSection, useEventSeries } from './events/SeriesEditSection';
 import { loadEventHosts } from '@/lib/eventHosts';
 import EventHostField from './events/EventHostField';
+import OpenAccessCard from './open-webinars/OpenAccessCard';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/adminTools';
 import '@/lib/i18n/catalogs/adminPages';
@@ -632,6 +633,9 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
             </CardContent>
           </Card>
         )}
+
+        {/* Public access: opens a webinar to everyone. Saved on its own, so only for an event that exists. */}
+        {event && formData.event_type === 'webinar' && <OpenAccessCard eventId={event.id} />}
 
         {/* Groups */}
         <Card>

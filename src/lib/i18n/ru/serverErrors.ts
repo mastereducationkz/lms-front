@@ -70,4 +70,13 @@ export const serverErrors: RuTable<typeof en> = {
   'serverErrors.lesson_time_taken': 'В это время у группы уже есть урок. Выберите другое время.',
   'serverErrors.hold_original_time_passed': 'Прежнее время уже прошло. Назначьте новое время.',
   'serverErrors.hold_no_proposal': 'Учитель не предлагал время.',
+  'serverErrors.policy_missing': 'Сначала опубликуйте политику конфиденциальности.',
+  'serverErrors.no_producer': 'Выберите сотрудника с учётной записью Workspace (он создаёт комнату Meet и записывает), либо вставьте ссылку на Meet в событие.',
+  'serverErrors.slug_taken': 'Этот адрес уже занят другим вебинаром.',
+  'serverErrors.bad_slug': 'В адресе допустимы латинские буквы, цифры и дефисы.',
+  'serverErrors.bad_pipeline': 'Выберите воронку, в которую пойдут лиды.',
+  'serverErrors.bad_access_mode': 'Выберите «Все по ссылке» или «Все, кто зарегистрируется».',
+  'serverErrors.not_a_webinar': 'Для всех можно открыть только активный вебинар.',
+  'serverErrors.speaker_not_found': 'Такого спикера нет.',
+  'serverErrors.registration_not_found': 'Регистрация не найдена.',
 };

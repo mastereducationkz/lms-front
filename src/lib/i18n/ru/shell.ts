@@ -47,6 +47,7 @@ export const shell: RuTable<typeof en> = {
   'shell.nav.announcements': 'Объявления в Telegram',
   'shell.nav.satCheckpoints': 'Чекпоинты SAT',
   'shell.nav.manageEvents': 'Управление событиями',
+  'shell.nav.openWebinars': 'Открытые вебинары',
   'shell.nav.recordingsRollout': 'Запуск записей уроков',
   'shell.nav.examResults': 'Результаты экзаменов',
   'shell.nav.bluebookResults': 'Результаты Bluebook',
