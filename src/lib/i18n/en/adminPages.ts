@@ -4,6 +4,23 @@ import type { MessageTable } from '../types';
 export const adminPages = {
   // ── Question reports, SAT checkpoints, manual unlocks ──
   // Admin → Question reports (QuestionReportsPage).
+  'adminPages.questionReports.alerts.title': 'Telegram alerts',
+  'adminPages.questionReports.alerts.summary': '{people} people · {chats} server chats',
+  'adminPages.questionReports.alerts.waiting': '{count} not connected yet',
+  'adminPages.questionReports.alerts.help': 'A new question report is sent to {chats} chats set on the server (not editable here) and to the people below as a personal Telegram message. Each person connects their own Telegram in Settings → Notifications.',
+  'adminPages.questionReports.alerts.none': 'Nobody added yet.',
+  'adminPages.questionReports.alerts.connected': 'Telegram connected',
+  'adminPages.questionReports.alerts.notConnected': 'Telegram not connected',
+  'adminPages.questionReports.alerts.unknown': 'Could not check',
+  'adminPages.questionReports.alerts.connectHint': 'Someone who is not connected gets nothing yet: they open Settings → Notifications → Connect Telegram and press Start in the bot.',
+  'adminPages.questionReports.alerts.test': 'Send a test',
+  'adminPages.questionReports.alerts.testSent': 'Test message sent.',
+  'adminPages.questionReports.alerts.testNotSent': 'Not delivered ({status}).',
+  'adminPages.questionReports.alerts.remove': 'Remove',
+  'adminPages.questionReports.alerts.add': 'Add',
+  'adminPages.questionReports.alerts.addLabel': 'Add a person',
+  'adminPages.questionReports.alerts.addPlaceholder': 'Add a person…',
+  'adminPages.questionReports.alerts.failed': 'Something went wrong. Please try again.',
   'adminPages.questionReports.title': 'Question Error Reports',
   'adminPages.questionReports.subtitle': 'Review and manage student-reported question errors',
   'adminPages.questionReports.refresh': 'Refresh',
