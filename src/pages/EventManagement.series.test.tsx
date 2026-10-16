@@ -23,6 +23,10 @@ vi.mock('../services/api', () => ({
   restoreEvent: (...a: unknown[]) => restoreEvent(...a),
 }));
 
+// The detail card's recording section and platform links reach for the API client, which a lesson card never uses.
+vi.mock('../components/calendar/LessonRecordingSection', () => ({ default: () => null }));
+vi.mock('../lib/platformLinks', () => ({ openPlatformPage: vi.fn(), parsePlatformUrl: () => null }));
+
 import EventManagement from './EventManagement';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -164,5 +168,22 @@ describe('events list: finished and cancelled events', () => {
     const rows = Array.from(host.querySelectorAll('h3')).filter((n) => n.textContent === 'One-off webinar');
     expect(rows).toHaveLength(1);
     expect(rows[0].closest('div.p-6')!.querySelector('input[type="checkbox"]')).toBeNull();
+  });
+});
+
+describe('events list: the ⋯ menu', () => {
+  it('View Details opens the event card in place, not the dashboard', async () => {
+    getAllEvents.mockResolvedValue([ev(30, 0, { title: 'Lesson 5', event_type: 'class', series_id: null, groups: ['G1'] })]);
+    await show();
+    const trigger = Array.from(host.querySelectorAll('button')).find((b) => b.querySelector('svg.lucide-ellipsis, svg.lucide-more-horizontal'));
+    expect(trigger).toBeTruthy();
+    await act(async () => { trigger!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 })); });
+    const view = Array.from(document.body.querySelectorAll('[role="menuitem"]')).find((i) => i.textContent?.includes('View Details')) as HTMLElement;
+    await act(async () => { view.click(); });
+    await settle();
+    const dialog = document.body.querySelector('[role="dialog"]');
+    expect(dialog?.textContent).toContain('Lesson 5');
+    expect(dialog?.textContent).toContain('Open lesson');
+    expect(host.textContent).toContain('Lesson 5');                  // still on the list
   });
 });

@@ -10,7 +10,6 @@ import {
   Clock, 
   MapPin,
   Video,
-  MoreHorizontal,
   RotateCcw
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -22,16 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../components/ui/dropdown-menu';
 import { Badge } from '../components/ui/badge';
 import Loader from '../components/Loader';
 import { getAllEvents, deleteEvent, restoreEvent, bulkDeleteEvents, getAllGroups, getEventSeries } from '../services/api';
 import { SeriesDeleteDialog, SeriesRow, type SeriesScope } from '../components/events/SeriesScope';
+import EventRowMenu from '../components/events/EventRowMenu';
+import EventDetailDialog from '../components/calendar/EventDetailDialog';
+import { useAuth } from '../contexts/AuthContext';
 import { groupSeries, canRestore, isCancelled, type EventListItem } from '../lib/eventSeries';
 import type { Event, EventType, Group } from '../types';
 import { formatDate, formatDateTime as formatAppDateTime, type MessageKey } from '../lib/i18n';
@@ -51,6 +47,8 @@ const EVENTS_LIMIT = 2000;
 export default function EventManagement() {
   const navigate = useNavigate();
   const t = useT();
+  const { user } = useAuth();
+  const [detailEvent, setDetailEvent] = useState<Event | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -377,33 +375,7 @@ export default function EventManagement() {
                       <Edit3 className="w-4 h-4" />
                     </Button>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => navigate(`/admin/events/${event.id}`)}
-                        >
-                          {t('adminPages.events.list.viewDetails')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => navigate(`/admin/events/${event.id}/participants`)}
-                        >
-                          {t('adminPages.events.participants')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600 dark:text-red-400"
-                          onClick={() => handleDeleteEvent(event.id)}
-                          disabled={isVirtualEvent(event.id)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          {t('common.delete')}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <EventRowMenu event={event} virtual={isVirtualEvent(event.id)} onViewDetails={setDetailEvent} onDelete={handleDeleteEvent} />
                   </div>
                   )}
                 </div>
@@ -675,6 +647,13 @@ export default function EventManagement() {
           onClose={() => setSeriesCancel(null)}
         />
       )}
+
+      <EventDetailDialog
+        event={detailEvent}
+        open={!!detailEvent}
+        onOpenChange={(open) => { if (!open) setDetailEvent(null); }}
+        user={user}
+      />
     </div>
   );
 }

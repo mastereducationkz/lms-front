@@ -40,10 +40,10 @@ import {
 import type { Event, CreateEventRequest, UpdateEventRequest, EventType, Group, Course, CourseModule, Lesson } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { toDatetimeLocal, fromDatetimeLocalKZ } from '../lib/datetime';
-import { roleLabel } from '@/lib/roleLabel';
 import { followingPayload } from '../lib/eventSeries';
 import { HostTitleSuggestion, SeriesEditSection, useEventSeries } from './events/SeriesEditSection';
 import { loadEventHosts } from '@/lib/eventHosts';
+import EventHostField from './events/EventHostField';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/adminTools';
 import '@/lib/i18n/catalogs/adminPages';
@@ -474,25 +474,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
               </div>
 
             {/* Teacher Selection */}
-            <div>
-              <Label htmlFor="teacher_id">{t('adminPages.events.form.teacher')}</Label>
-              <Select 
-                value={formData.teacher_id?.toString() || 'none'} 
-                onValueChange={(value) => handleInputChange('teacher_id', value === 'none' ? undefined : parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('adminPages.events.form.selectTeacher')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('adminPages.events.form.noTeacher')}</SelectItem>
-                  {teachers.map(teacher => (
-                    <SelectItem key={teacher.id} value={teacher.id.toString()}>
-                      {teacher.name} ({roleLabel(teacher.role)})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <EventHostField hosts={teachers} value={formData.teacher_id} onChange={(id) => handleInputChange('teacher_id', id)} />
           </CardContent>
           </Card>
         )}
@@ -634,7 +616,8 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
               {t('adminPages.events.form.webinarSettings')}
             </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <EventHostField webinar hosts={teachers} value={formData.teacher_id} onChange={(id) => handleInputChange('teacher_id', id)} />
               <div>
                 <Label htmlFor="max_participants">{t('adminPages.events.form.maxParticipants')}</Label>
                 <Input
