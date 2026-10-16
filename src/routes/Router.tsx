@@ -77,6 +77,8 @@ const WatchRecordingPage = lazyRoute(() => import('../pages/WatchRecordingPage.t
 const PublicWebinarPage = lazyRoute(() => import('../pages/PublicWebinarPage.tsx'));
 const PublicJoinPage = lazyRoute(() => import('../pages/PublicJoinPage.tsx'));
 const PrivacyPolicyPage = lazyRoute(() => import('../pages/PrivacyPolicyPage.tsx'));
+const OpenWebinarsAdminPage = lazyRoute(() => import('../pages/OpenWebinarsAdminPage.tsx'));
+const OpenWebinarRegistrationsPage = lazyRoute(() => import('../pages/OpenWebinarRegistrationsPage.tsx'));
 const SubstitutionRequestPage = lazyRoute(() => import('../pages/SubstitutionRequestPage.tsx'));
 const MyLessonRequests = lazyRoute(() => import('../pages/MyLessonRequests.tsx'));
 const HeadTeacherLessonRequestsPage = lazyRoute(() => import('../pages/HeadTeacherLessonRequestsPage.tsx'));
@@ -610,6 +612,21 @@ export default function Router() {
             </ProtectedRoute>
           } />
 
+          {/* Webinars for everyone: the shared policy + guest speakers, and each webinar's registrations. */}
+          <Route path="/admin/open-webinars" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AppLayout>
+                <OpenWebinarsAdminPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/open-webinars/:eventId" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AppLayout>
+                <OpenWebinarRegistrationsPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
           <Route path="/admin/events/create" element={
             <ProtectedRoute allowedRoles={['admin', 'head_teacher']}>
               <CreateEvent />
