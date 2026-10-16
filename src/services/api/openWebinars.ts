@@ -62,6 +62,17 @@ export interface RegistrationRow {
   utm: Record<string, string>;
 }
 
+export interface RecordingStatus {
+  has_recording: boolean;
+  recording_status: 'ready' | 'pending' | 'failed' | 'removed' | null;
+  ready: boolean;
+  duration_seconds: number | null;
+  published: boolean;
+  published_at: string | null;
+  withdrawn_at: string | null;
+  views: number;
+}
+
 const base = '/admin/open-webinars';
 
 async function run<T>(request: Promise<{ data: T }>, fallback: string): Promise<T> {
@@ -87,3 +98,7 @@ export const saveOpenAccess = (eventId: number, body: { access_mode: 'open' | 'r
 export const closeOpenAccess = (eventId: number) => run<{ ok: boolean }>(api.delete(`${base}/${eventId}`), 'Failed to close the public access');
 export const listRegistrations = (eventId: number) => run<RegistrationRow[]>(api.get(`${base}/${eventId}/registrations`, { params: { limit: 500 } }), 'Failed to load the registrations');
 export const retryLead = (registrationId: number) => run<{ id: number; lead_state: string }>(api.post(`${base}/registrations/${registrationId}/retry`), 'Failed to retry');
+
+export const getRecordingStatus = (eventId: number) => run<RecordingStatus>(api.get(`${base}/${eventId}/recording`), 'Failed to load the recording');
+export const publishRecording = (eventId: number) => run<RecordingStatus>(api.post(`${base}/${eventId}/recording`), 'Failed to publish the recording');
+export const withdrawRecording = (eventId: number) => run<RecordingStatus>(api.delete(`${base}/${eventId}/recording`), 'Failed to withdraw the recording');

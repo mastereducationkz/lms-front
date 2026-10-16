@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
+import RecordingPanel from '../components/open-webinars/RecordingPanel';
 import { getOpenAccess, listRegistrations, retryLead, type OpenAccess, type RegistrationRow } from '../services/api/openWebinars';
 import { getEventDetails } from '../services/api/events';
 import { LMS_ORIGIN } from '../lib/lessonLinks';
@@ -67,6 +68,8 @@ export default function OpenWebinarRegistrationsPage() {
           </CardContent></Card>
         ))}
       </div>
+
+      <RecordingPanel eventId={id} slug={access.slug} />
 
       {rows.length === 0 ? <p className="text-sm text-muted-foreground">{t('openWebinars.admin.regs.empty')}</p> : (
         <div className="overflow-x-auto rounded-xl border border-border bg-card">

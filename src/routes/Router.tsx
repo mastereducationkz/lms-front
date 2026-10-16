@@ -77,6 +77,7 @@ const WatchRecordingPage = lazyRoute(() => import('../pages/WatchRecordingPage.t
 const PublicWebinarPage = lazyRoute(() => import('../pages/PublicWebinarPage.tsx'));
 const PublicJoinPage = lazyRoute(() => import('../pages/PublicJoinPage.tsx'));
 const PrivacyPolicyPage = lazyRoute(() => import('../pages/PrivacyPolicyPage.tsx'));
+const PublicRecordingPage = lazyRoute(() => import('../pages/PublicRecordingPage.tsx'));
 const OpenWebinarsAdminPage = lazyRoute(() => import('../pages/OpenWebinarsAdminPage.tsx'));
 const OpenWebinarRegistrationsPage = lazyRoute(() => import('../pages/OpenWebinarRegistrationsPage.tsx'));
 const SubstitutionRequestPage = lazyRoute(() => import('../pages/SubstitutionRequestPage.tsx'));
@@ -157,6 +158,7 @@ export default function Router() {
                 <Route path="/w/j/:code" element={<PublicJoinPage />} />
                 <Route path="/w/:slug" element={<PublicWebinarPage />} />
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                <Route path="/r/:slug" element={<PublicRecordingPage />} />
 
                 <Route path="/login" element={
                   <ProtectedRoute requireAuth={false}>
