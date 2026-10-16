@@ -25,6 +25,7 @@ import api from '../../services/api';
 import { renderTextWithLatex } from '../../utils/latex';
 import { sanitizeHtml } from '../../lib/safeHtml';
 import { TriageBar, TriageChip, TriagePanel } from '../../components/admin/questionReports/Triage';
+import AlertRecipients from '../../components/admin/questionReports/AlertRecipients';
 import { labelCounts, sortReports, type ReportTriage, type SortMode } from '../../lib/reportTriage';
 import { useAuth } from '../../contexts/AuthContext';
 import { canEditCourseContent } from '../../lib/courseAccess';
@@ -536,6 +537,8 @@ export default function QuestionReportsPage() {
           </Button>
         )}
       </div>
+
+      {(user?.role === 'admin' || user?.role === 'head_teacher') && <AlertRecipients />}
 
       <TriageBar counts={triageCounts} filter={triageFilter} onFilter={setTriageFilter} sort={sortMode}
         onSort={setSortMode} onLabelled={() => void fetchReports({ silent: true })} />

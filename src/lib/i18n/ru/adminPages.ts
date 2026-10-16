@@ -4,6 +4,23 @@ import type { RuTable } from '../types';
 export const adminPages: RuTable<typeof en> = {
   // ── Question reports, SAT checkpoints, manual unlocks ──
   // Admin → Question reports (QuestionReportsPage).
+  'adminPages.questionReports.alerts.title': 'Уведомления в Telegram',
+  'adminPages.questionReports.alerts.summary': 'людей: {people} · чатов на сервере: {chats}',
+  'adminPages.questionReports.alerts.waiting': 'не подключили Telegram: {count}',
+  'adminPages.questionReports.alerts.help': 'О новой жалобе на вопрос сообщается в {chats} чатов, заданных на сервере (здесь не меняются), и людям ниже личным сообщением в Telegram. Каждый подключает свой Telegram в Настройки → Уведомления.',
+  'adminPages.questionReports.alerts.none': 'Пока никого не добавили.',
+  'adminPages.questionReports.alerts.connected': 'Telegram подключён',
+  'adminPages.questionReports.alerts.notConnected': 'Telegram не подключён',
+  'adminPages.questionReports.alerts.unknown': 'Не удалось проверить',
+  'adminPages.questionReports.alerts.connectHint': 'Тот, кто не подключил Telegram, пока ничего не получит: нужно открыть Настройки → Уведомления → Подключить Telegram и нажать Start в боте.',
+  'adminPages.questionReports.alerts.test': 'Отправить тест',
+  'adminPages.questionReports.alerts.testSent': 'Тестовое сообщение отправлено.',
+  'adminPages.questionReports.alerts.testNotSent': 'Не доставлено ({status}).',
+  'adminPages.questionReports.alerts.remove': 'Убрать',
+  'adminPages.questionReports.alerts.add': 'Добавить',
+  'adminPages.questionReports.alerts.addLabel': 'Добавить человека',
+  'adminPages.questionReports.alerts.addPlaceholder': 'Добавить человека…',
+  'adminPages.questionReports.alerts.failed': 'Что-то пошло не так. Попробуйте ещё раз.',
   'adminPages.questionReports.title': 'Жалобы на вопросы',
   'adminPages.questionReports.subtitle': 'Проверяйте ошибки в вопросах, о которых сообщили ученики',
   'adminPages.questionReports.refresh': 'Обновить',
