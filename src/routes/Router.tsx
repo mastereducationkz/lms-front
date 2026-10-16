@@ -74,6 +74,9 @@ const MeetAddonLinkPage = lazyRoute(() => import('../pages/MeetAddonLinkPage.tsx
 const MeetAttendanceReview = lazyRoute(() => import('../pages/MeetAttendanceReview.tsx'));
 const TeacherDisciplinePage = lazyRoute(() => import('../pages/TeacherDisciplinePage.tsx'));
 const WatchRecordingPage = lazyRoute(() => import('../pages/WatchRecordingPage.tsx'));
+const PublicWebinarPage = lazyRoute(() => import('../pages/PublicWebinarPage.tsx'));
+const PublicJoinPage = lazyRoute(() => import('../pages/PublicJoinPage.tsx'));
+const PrivacyPolicyPage = lazyRoute(() => import('../pages/PrivacyPolicyPage.tsx'));
 const SubstitutionRequestPage = lazyRoute(() => import('../pages/SubstitutionRequestPage.tsx'));
 const MyLessonRequests = lazyRoute(() => import('../pages/MyLessonRequests.tsx'));
 const HeadTeacherLessonRequestsPage = lazyRoute(() => import('../pages/HeadTeacherLessonRequestsPage.tsx'));
@@ -147,6 +150,11 @@ export default function Router() {
                     ProtectedRoute: the people it is for (accountants) have no LMS account, and the
                     key in the URL is the permission. */}
                 <Route path="/watch/:token" element={<WatchRecordingPage />} />
+                {/* Webinars for everyone (owner, 2026-10-16): no login, no ProtectedRoute. The page of a
+                    webinar, a registrant's personal link, and the privacy policy the forms point to. */}
+                <Route path="/w/j/:code" element={<PublicJoinPage />} />
+                <Route path="/w/:slug" element={<PublicWebinarPage />} />
+                <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
                 <Route path="/login" element={
                   <ProtectedRoute requireAuth={false}>
