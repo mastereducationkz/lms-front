@@ -23,11 +23,13 @@ interface SearchableSelectProps {
   disabled?: boolean;
   className?: string;
   ariaLabel?: string;
+  /** Id of the trigger button, so a <label htmlFor> can name it. */
+  id?: string;
 }
 
 /** A single-choice dropdown with a search box: type part of a name to filter, Enter picks the first match. */
 export function SearchableSelect({
-  options, value, onChange, placeholder, searchPlaceholder, emptyText, disabled, className, ariaLabel,
+  options, value, onChange, placeholder, searchPlaceholder, emptyText, disabled, className, ariaLabel, id: triggerId,
 }: SearchableSelectProps) {
   const t = useT();
   const id = useId();
@@ -75,7 +77,7 @@ export function SearchableSelect({
     // sits on top of the Dialog's, so its list scrolls; the page behind stays still, as with a select.
     <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" role="combobox" aria-label={ariaLabel} aria-expanded={open} disabled={disabled}
+        <Button id={triggerId} type="button" variant="outline" role="combobox" aria-label={ariaLabel} aria-expanded={open} disabled={disabled}
                 className={`justify-between font-normal ${className ?? ''}`}>
           <span className={`truncate ${selected ? '' : 'text-muted-foreground'}`} title={selected?.label}>{selected ? selected.label : placeholder ?? t('sharedUi.select.placeholder')}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" aria-hidden="true" />

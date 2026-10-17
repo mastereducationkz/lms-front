@@ -35,14 +35,13 @@ import {
   getCuratorGroups, 
   getCourseModules, 
   getModuleLessons,
-  getUsers
+  getEventHosts
 } from '../services/api';
 import type { Event, CreateEventRequest, UpdateEventRequest, EventType, Group, Course, CourseModule, Lesson } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { toDatetimeLocal, fromDatetimeLocalKZ } from '../lib/datetime';
 import { followingPayload } from '../lib/eventSeries';
 import { HostTitleSuggestion, SeriesEditSection, useEventSeries } from './events/SeriesEditSection';
-import { loadEventHosts } from '@/lib/eventHosts';
 import EventHostField from './events/EventHostField';
 import OpenAccessCard from './open-webinars/OpenAccessCard';
 import { useT } from '@/lib/i18n/react';
@@ -62,6 +61,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
+  const [hostsFailed, setHostsFailed] = useState(false);
 
   const [modules, setModules] = useState<CourseModule[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -96,6 +96,10 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
   }, []);
 
   const loadData = async () => {
+    // On its own: a failure of the group or course lists must not blank the host list, nor the reverse.
+    getEventHosts(event?.teacher_id)
+      .then(setTeachers)
+      .catch((error) => { console.error('Failed to load hosts:', error); setHostsFailed(true); });
     try {
       let groupsData;
       let coursesData;
@@ -117,9 +121,6 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
       // Handle courses response structure
       const coursesResponse = coursesData as any;
       setCourses(Array.isArray(coursesResponse) ? coursesResponse : (coursesResponse.data || []));
-
-      // Load teachers
-      setTeachers(await loadEventHosts(getUsers));
     } catch (error) {
       console.error('Failed to load data:', error);
     }
@@ -475,7 +476,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
               </div>
 
             {/* Teacher Selection */}
-            <EventHostField hosts={teachers} value={formData.teacher_id} onChange={(id) => handleInputChange('teacher_id', id)} />
+            <EventHostField hosts={teachers} loadFailed={hostsFailed} value={formData.teacher_id} onChange={(id) => handleInputChange('teacher_id', id)} />
           </CardContent>
           </Card>
         )}
@@ -618,7 +619,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
             </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <EventHostField webinar hosts={teachers} value={formData.teacher_id} onChange={(id) => handleInputChange('teacher_id', id)} />
+              <EventHostField webinar hosts={teachers} loadFailed={hostsFailed} value={formData.teacher_id} onChange={(id) => handleInputChange('teacher_id', id)} />
               <div>
                 <Label htmlFor="max_participants">{t('adminPages.events.form.maxParticipants')}</Label>
                 <Input

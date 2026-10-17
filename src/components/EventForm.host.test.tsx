@@ -11,6 +11,12 @@ vi.mock('../contexts/AuthContext', async () => {
 
 const getEventSeries = vi.fn();
 const updateEvent = vi.fn();
+const getEventHosts = vi.fn();
+const STAFF = [
+  { id: 2478, name: 'Ислам Зинаэнур', role: 'teacher', has_workspace: true },
+  { id: 2568, name: 'Сулеймен Нуриддин', role: 'teacher', has_workspace: true },
+  { id: 986, name: 'Абдураимов Азамат', role: 'head_teacher', has_workspace: false },
+];
 vi.mock('../services/api', () => ({
   getEventSeries: (...a: unknown[]) => getEventSeries(...a),
   updateEvent: (...a: unknown[]) => updateEvent(...a),
@@ -19,15 +25,9 @@ vi.mock('../services/api', () => ({
   getCuratorGroups: vi.fn().mockResolvedValue([]),
   getCourseModules: vi.fn().mockResolvedValue([]),
   getModuleLessons: vi.fn().mockResolvedValue([]),
-  getUsers: vi.fn().mockResolvedValue([]),
+  getEventHosts: (...a: unknown[]) => getEventHosts(...a),
   createEvent: vi.fn(),
   createCuratorEvent: vi.fn(),
-}));
-vi.mock('@/lib/eventHosts', () => ({
-  loadEventHosts: vi.fn().mockResolvedValue([
-    { id: 2478, name: 'Ислам Зинаэнур', role: 'teacher' },
-    { id: 2568, name: 'Сулеймен Нуриддин', role: 'teacher' },
-  ]),
 }));
 
 // The public-access card has its own tests and talks to the API client, which these form tests never use.
@@ -60,7 +60,8 @@ async function show(ev: Event) {
   await settle();
 }
 beforeEach(() => {
-  getEventSeries.mockReset(); updateEvent.mockReset();
+  getEventSeries.mockReset(); updateEvent.mockReset(); getEventHosts.mockReset();
+  getEventHosts.mockResolvedValue(STAFF);
   getEventSeries.mockResolvedValue({ series_id: 's1', total: 49, position: 1, following: 49 });
   updateEvent.mockResolvedValue({ ...webinar });
 });
@@ -79,6 +80,44 @@ describe('event form: who runs the event', () => {
     expect(labelFor()).toBe('Host');
     expect(trigger()?.textContent).toContain('Ислам Зинаэнур');
     expect(host.textContent).toContain('Without a host no Meet room is created and no host pay is counted');
+  });
+
+  it('asks for the staff list with the current host, and offers every staff member in it', async () => {
+    await show(webinar);
+    expect(getEventHosts).toHaveBeenCalledWith(2478);
+    await act(async () => { trigger()!.click(); });
+    const shown = Array.from(document.body.querySelectorAll('[role="option"]')).map((o) => o.textContent ?? '');
+    expect(shown).toHaveLength(4); // «no host» + three people
+    expect(shown.some((text) => text.includes('Абдураимов Азамат') && text.includes('no Workspace account'))).toBe(true);
+  });
+
+  it('the list is searchable by name', async () => {
+    await show(webinar);
+    await act(async () => { trigger()!.click(); });
+    const search = document.body.querySelector('input[role="combobox"]') as HTMLInputElement;
+    await act(async () => {
+      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+      set.call(search, 'азам');
+      search.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    const shown = Array.from(document.body.querySelectorAll('[role="option"]')).map((o) => o.textContent ?? '');
+    expect(shown).toHaveLength(1);
+    expect(shown[0]).toContain('Абдураимов Азамат');
+  });
+
+  it('warns when the chosen host has no Workspace account, and not before', async () => {
+    await show(webinar);
+    expect(host.textContent).not.toContain('no Meet room will be created for this event');
+    await act(async () => { trigger()!.click(); });
+    const option = Array.from(document.body.querySelectorAll('[role="option"]')).find((o) => o.textContent?.includes('Абдураимов Азамат'));
+    await act(async () => { (option as HTMLElement).click(); });
+    expect(host.textContent).toContain('no Meet room will be created for this event');
+  });
+
+  it('says so when the staff list cannot be loaded, instead of showing an empty dropdown', async () => {
+    getEventHosts.mockRejectedValue(new Error('boom'));
+    await show(webinar);
+    expect(host.querySelector('[role="alert"]')?.textContent).toContain('The list of staff could not be loaded');
   });
 
   it('a class lesson keeps its Teacher field, without the host note', async () => {
