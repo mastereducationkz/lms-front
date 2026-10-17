@@ -3,6 +3,8 @@ import { sanitizeHtml } from '../lib/safeHtml';
 import { Link, useNavigate } from 'react-router-dom';
 import { WebinarPayCard, type WebinarPay } from '../components/teacher/WebinarPayCard';
 import { lessonPath } from '../lib/lessonLinks';
+import { AttendanceOwedCard } from '../components/dashboard/AttendanceOwedCard';
+import { useAttendanceOwed } from '../hooks/useAttendanceOwed';
 import apiClient from '../services/api';
 import type { TeacherTodayHomework } from '../services/api';
 import { toast } from '../components/Toast';
@@ -212,6 +214,9 @@ export default function TeacherDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const t = useT();
+  // What Meet left to the teacher (2026-10-17). A server without the endpoint leaves `owed` null — then the
+  // card below is the old one, fed by the dashboard stats.
+  const { owed, loaded: owedLoaded } = useAttendanceOwed();
   const [stats, setStats] = useState<TeacherStats | null>(null);
   const [pendingSubmissions, setPendingSubmissions] = useState<Submission[]>([]);
   const [recentSubmissions, setRecentSubmissions] = useState<Submission[]>([]);
@@ -1185,8 +1190,11 @@ export default function TeacherDashboard() {
         </Card>
       )}
 
-      {/* Attendance Required — table, under Today's Homework */}
-      {stats?.missing_attendance_reminders && stats.missing_attendance_reminders.length > 0 && (
+      {/* Unmarked activity (activity scores) and what Meet could not mark — under Today's Homework */}
+      {owed && <AttendanceOwedCard owed={owed} />}
+
+      {/* Attendance Required — the old card, for a server that cannot say what is owed */}
+      {owedLoaded && !owed && stats?.missing_attendance_reminders && stats.missing_attendance_reminders.length > 0 && (
         <Card className="shadow-sm border border-border">
           <CardHeader className="px-6 py-4 border-b border-border bg-card rounded-t-xl">
             <div className="flex flex-col @lg:flex-row @lg:items-center justify-between gap-2">

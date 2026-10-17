@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import { cn } from '../lib/utils';
+import { useAttendanceOwed } from '../hooks/useAttendanceOwed';
+import { registersOwed } from '../lib/attendanceOwed';
+import { AttendanceBanner } from '../components/attendance/AttendanceBanner';
+import { OwedLessonsList } from '../components/attendance/OwedLessonsList';
 import CuratorLeaderboardPage from './CuratorLeaderboardPage';
 import SubstitutionAttendancePanel from './SubstitutionAttendancePanel';
 
@@ -9,6 +13,7 @@ import SubstitutionAttendancePanel from './SubstitutionAttendancePanel';
 // so unsaved leaderboard edits survive switching tabs.
 export default function AttendancePage() {
   const [view, setView] = useState<'leaderboard' | 'substitutions'>('leaderboard');
+  const { owed } = useAttendanceOwed();
 
   const toggle = (
     <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted dark:bg-secondary">
@@ -31,6 +36,8 @@ export default function AttendancePage() {
 
   return (
     <div className="p-4 md:p-6">
+      <AttendanceBanner handedBack={registersOwed(owed)} />
+      <OwedLessonsList items={owed?.items ?? []} />
       <div className={view === 'leaderboard' ? '' : 'hidden'}>
         <div className="p-4 bg-card rounded-lg border border-border">
           <CuratorLeaderboardPage embedded titleSlot={toggle} />
