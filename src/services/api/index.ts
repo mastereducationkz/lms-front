@@ -25,6 +25,7 @@ export * from './gamification';
 export * from './head-teacher';
 export * from './lesson-requests';
 export * from './admin';
+export * from './attendanceOwed';
 export * from './lectures';
 export * from './daily-questions';
 export * from './review';
@@ -74,6 +75,7 @@ import { getGamificationStatus, getBonusAllowance, giveTeacherBonus, getGamifica
 import { getHeadTeacherManagedCourses, getHeadTeacherCourseTeachers, getHeadTeacherTeacherDetails, getHeadTeacherTeacherFeedbacks, getHeadTeacherTeacherAssignments, getHeadTeacherAttendanceGaps, getHeadTeacherHwGapsByTeacher } from './head-teacher';
 import { getLessonRequests, getPendingLessonRequests, getMyLessonRequests, getIncomingRequests, createLessonRequest, approveLessonRequest, rejectLessonRequest, confirmLessonRequest, declineLessonRequest, getAvailableTeachers, updateSubstitutionPreference } from './lesson-requests';
 import { getDashboardStats, getAttendanceDue, getRecentActivity, updateStudyTime, getTeacherSalaryBreakdown, getAdminDashboard, getAdminDashboardCharts, getAdminStats, completeStepsForUser, resetStepsForUser, getUserProgressSummary, reportQuestionError, getQuestionErrorReports, getQuestionErrorReportDetail, updateQuestionErrorReportStatus, updateQuestion, manualUnlockLesson, manualLockLesson, getManualUnlocks, getStudentsJournal, getStudentJournalGroups, getStudentProfile } from './admin';
+import { getAttendanceOwed } from './attendanceOwed';
 import { fetchModules, fetchLectures, createLecture, deleteLecture, updateLecture, fetchLecturesByModule } from './lectures';
 import { getDailyQuestionsStatus, getDailyQuestionsRecommendations, completeDailyQuestions } from './daily-questions';
 import { getReviewQuizzes, getReviewSession } from './review';
@@ -82,7 +84,7 @@ const apiClient = {
   // Auth
   login, logout, getCurrentUser, updateProfile, updateMyMascot, isAuthenticated, getCurrentUserSync, completeOnboarding, forgotPassword, resetPassword, changePassword,
   // Dashboard
-  getDashboardStats, getAttendanceDue, getRecentActivity, updateStudyTime, getTeacherSalaryBreakdown,
+  getDashboardStats, getAttendanceDue, getAttendanceOwed, getRecentActivity, updateStudyTime, getTeacherSalaryBreakdown,
   // Courses
   getCourses, getCourse, createCourse, updateCourse, publishCourse, unpublishCourse,
   setCourseThumbnailUrl, uploadCourseThumbnail, deleteCourse, enrollInCourse, unenrollFromCourse,

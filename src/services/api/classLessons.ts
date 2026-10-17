@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { StudentRegister, RegisterMode } from './meetRegister';
+import type { StudentRegister, RegisterLock, RegisterMode } from './meetRegister';
 import type { LiveSummary } from '../../lib/liveLesson/types';
 
 /**
@@ -73,6 +73,8 @@ export interface RegisterStudent {
 export interface LessonRegister {
   mode: RegisterMode;
   meet_decided: boolean;
+  /** What the register lock leaves a person to mark here. Absent from an older server. */
+  register_lock?: RegisterLock | null;
   students: RegisterStudent[];
 }
 
@@ -131,6 +133,8 @@ export interface LessonView {
   viewer: LessonViewer;
   notes: LessonNotes;
   register: LessonRegister | null;
+  /** The lock may also sit beside the register block rather than in it; either way it means the same. */
+  register_lock?: RegisterLock | null;
   me: LessonMe | null;
   homework: LessonHomework[];
   homework_new_url: string | null;

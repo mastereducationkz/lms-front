@@ -1,7 +1,7 @@
 import { api } from './client';
 import type { MeetLessonTalk } from './meetTalk';
 import type { LessonRecordingStatus } from './recordings';
-import type { RegisterMode, StudentRegister } from './meetRegister';
+import type { RegisterLock, RegisterMode, StudentRegister } from './meetRegister';
 
 /**
  * Who was in a lesson's Meet room, from when to when — read from what Meet reported.
@@ -230,6 +230,8 @@ export interface MeetRecord {
   partial?: boolean;
   /** The register switch's setting for this lesson. Absent from an older server. */
   register_mode?: RegisterMode;
+  /** What the register lock leaves a person to mark here. Absent from an older server. */
+  register_lock?: RegisterLock | null;
   calls?: { started_at: string | null; ended_at: string | null }[];
   teacher?: MeetPerson | null;
   students?: MeetPerson[];
@@ -315,6 +317,8 @@ export interface MeetLessonSummary {
   verdict_summary?: MeetVerdictSummary | null;
   /** Each student's verdict, for the attendance journal. */
   verdicts?: MeetStudentVerdict[];
+  /** What the register lock leaves a person to mark here. Absent from an older server. */
+  register_lock?: RegisterLock | null;
 }
 
 export interface MeetStudentVerdict extends Omit<MeetVerdict, 'attended'> {
