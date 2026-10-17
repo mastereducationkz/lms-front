@@ -33,12 +33,12 @@ export function lockIndex(items: Pick<MeetLessonSummary, 'event_id' | 'register_
 }
 
 /**
- * The journal's locks: the weekly lessons carry one for every lesson of the week (also one later today, which
- * the Meet list does not have yet); the Meet list is read again after each save, so where it has the
- * lesson its answer is the newer one.
+ * The journal's locks: the weekly lessons carry one for every lesson of the week, pending ones included
+ * (the Meet list only has lessons with a call or under way), so they are the source; the Meet list fills
+ * in a lesson the weekly data left without one.
  */
 export function mergeLocks(weekly: Map<number, RegisterLock>, meet: Map<number, RegisterLock>): Map<number, RegisterLock> {
-  return new Map([...weekly, ...meet]);
+  return new Map([...meet, ...weekly]);
 }
 
 /** event id → the lesson's scheduled length in whole minutes, for «52 из 60 мин». */

@@ -721,7 +721,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const [registerMode, setRegisterMode] = useState<RegisterMode>('off');
   const [meetLessonState, setMeetLessonState] = useState<Map<number, string>>(new Map());
   // The register lock per lesson (2026-10-17) and each lesson's length for «52 из 60 мин». The week's lessons
-  // carry a lock each; the Meet list adds its fresher answer. A server that sends no lock leaves every
+  // carry a lock each; the Meet list only fills in a lesson they leave without one. A server that sends no lock leaves every
   // cell open, as before.
   const [meetLocks, setMeetLocks] = useState<Map<number, RegisterLock>>(new Map());
   const [lessonLengths, setLessonLengths] = useState<Map<number, number>>(new Map());

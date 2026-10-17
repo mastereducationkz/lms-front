@@ -74,12 +74,13 @@ describe('indexes', () => {
     expect([...index.keys()]).toEqual([1]);
   });
 
-  it('merges the weekly lessons’ locks with the Meet list’s, the newer Meet answer winning', () => {
+  it('takes each lesson’s lock from the weekly lessons, and from the Meet list only where they have none', () => {
     const weekly = lockIndex([{ event_id: 1, register_lock: lock({ state: 'pending' }) }, { event_id: 2, register_lock: lock({ state: 'pending' }) }]);
-    const meet = lockIndex([{ event_id: 2, register_lock: lock() }]);
+    const meet = lockIndex([{ event_id: 2, register_lock: lock() }, { event_id: 3, register_lock: lock({ state: 'none' }) }]);
     const merged = mergeLocks(weekly, meet);
     expect(merged.get(1)?.state).toBe('pending');
-    expect(merged.get(2)?.state).toBe('decided');
+    expect(merged.get(2)?.state).toBe('pending');
+    expect(merged.get(3)?.state).toBe('none');
   });
 
   it('measures a lesson in whole minutes and skips what it cannot', () => {

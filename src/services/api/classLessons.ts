@@ -133,7 +133,7 @@ export interface LessonView {
   viewer: LessonViewer;
   notes: LessonNotes;
   register: LessonRegister | null;
-  /** The lock may also sit beside the register block rather than in it; either way it means the same. */
+  /** Fallback only: the server puts the lock inside the register block (`register.register_lock`). */
   register_lock?: RegisterLock | null;
   me: LessonMe | null;
   homework: LessonHomework[];
