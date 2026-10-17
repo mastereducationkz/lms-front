@@ -111,6 +111,7 @@ describe('catalogs', () => {
     'teacher.today.needYou', 'teacher.today.chips.scoresMissing', 'recordings.folders.videos',
     'achievements.analytics.badges', 'achievements.student.streak', 'studentReport.talk.summary',
     'studentReport.talk.summaryQuestions', 'studentReport.viewer.points', 'studentCard.profile.streakDays',
+    'shell.attendanceBadge.scores',
   ]);
 
   it('inflects every Russian plural (1 урок, 2 урока, 5 уроков)', () => {
