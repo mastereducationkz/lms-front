@@ -91,7 +91,7 @@ export const lessonRequests: RuTable<typeof en> = {
   'lessonRequests.detail.confirmedTeacher': 'Подтверждённый педагог',
   'lessonRequests.detail.currentTeacher': 'Сейчас урок ведёт',
   'lessonRequests.detail.groupTeacher': 'Ответственный за группу',
-  'lessonRequests.detail.attendanceOwner': 'Отмечает посещаемость',
+  'lessonRequests.detail.attendanceOwner': 'Ведёт журнал урока',
   'lessonRequests.detail.attendance': 'Посещаемость',
   'lessonRequests.detail.attendanceMarked': 'Отмечена',
   'lessonRequests.detail.attendanceNotMarked': 'Не отмечена',

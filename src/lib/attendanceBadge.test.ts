@@ -7,7 +7,7 @@ describe('attendanceBadge', () => {
   });
 
   it('is actionable when a register can be taken right now', () => {
-    expect(attendanceBadge({ total: 2, waiting: 0 })).toEqual({ count: 2, tone: 'action', title: '2 to mark' });
+    expect(attendanceBadge({ total: 2, waiting: 0 })).toEqual({ count: 2, tone: 'action', title: '2 Meet could not mark' });
   });
 
   it('is muted while every owed register is still waiting on Google Meet', () => {
@@ -17,7 +17,7 @@ describe('attendanceBadge', () => {
 
   it('is actionable as soon as one of several stops waiting', () => {
     // This flip is the whole feature: it is how a teacher learns Meet's data has landed.
-    expect(attendanceBadge({ total: 3, waiting: 2 })).toEqual({ count: 3, tone: 'action', title: '1 to mark · 2 waiting on Meet' });
+    expect(attendanceBadge({ total: 3, waiting: 2 })).toEqual({ count: 3, tone: 'action', title: '1 Meet could not mark · 2 waiting on Meet' });
   });
 
   it('treats a nonsensical waiting count as still waiting rather than shouting', () => {
@@ -34,6 +34,6 @@ describe('attendanceBadge', () => {
   });
 
   it('says what the number is made of in the viewer’s language', () => {
-    expect(attendanceBadge({ total: 3, waiting: 1, scores: 2 }, 'ru').title).toBe('Отметить: 2 · Ждут Meet: 1 · Нужны баллы за активность: 2');
+    expect(attendanceBadge({ total: 3, waiting: 1, scores: 2 }, 'ru').title).toBe('Meet не смог отметить: 2 · Ждут Meet: 1 · Нужны баллы за активность: 2');
   });
 });
