@@ -23,6 +23,28 @@ export async function getAllEvents(params?: {
   }
 }
 
+/** Someone the event form can offer as the host (webinar) or teacher (lesson). */
+export interface EventHost {
+  id: number;
+  name: string;
+  role: string;
+  /** False: no Workspace account is linked, so no Meet room is created for an event they run. */
+  has_workspace: boolean;
+}
+
+/**
+ * Active staff who can run an event, by name. `includeId` is the event's current host, kept in the list
+ * when they have since been switched off so an edit does not open with an empty field.
+ */
+export async function getEventHosts(includeId?: number): Promise<EventHost[]> {
+  try {
+    const response = await api.get('/event-hosts', { params: includeId ? { include_id: includeId } : undefined });
+    return response.data;
+  } catch (error: any) {
+    throw apiError(error, 'Failed to load the list of hosts');
+  }
+}
+
 export async function createEvent(eventData: CreateEventRequest): Promise<Event> {
   try {
     const response = await api.post('/admin/events', eventData);

@@ -19,15 +19,12 @@ vi.mock('../../services/api', () => ({
   getCuratorGroups: vi.fn().mockResolvedValue([]),
   getCourseModules: vi.fn().mockResolvedValue([]),
   getModuleLessons: vi.fn().mockResolvedValue([]),
-  getUsers: vi.fn().mockResolvedValue([]),
+  getEventHosts: vi.fn().mockResolvedValue([
+    { id: 1911, name: 'Орынбасар Ақжол Ерғалиұлы', role: 'teacher', has_workspace: true },
+    { id: 2294, name: 'Қайратқызы Дина', role: 'teacher', has_workspace: true },
+  ]),
   createEvent: vi.fn(),
   createCuratorEvent: vi.fn(),
-}));
-vi.mock('@/lib/eventHosts', () => ({
-  loadEventHosts: vi.fn().mockResolvedValue([
-    { id: 1911, name: 'Орынбасар Ақжол Ерғалиұлы', role: 'teacher' },
-    { id: 2294, name: 'Қайратқызы Дина', role: 'teacher' },
-  ]),
 }));
 
 // The public-access card has its own tests and talks to the API client, which these form tests never use.
