@@ -40,7 +40,6 @@ import {
   FileText,
   Calendar,
   Clock,
-  AlertTriangle,
   ClipboardCheck
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -50,16 +49,8 @@ import { formatDate } from '../lib/i18n';
 import { useT } from '../lib/i18n/react';
 import '@/lib/i18n/catalogs/teacherInsights';
 import OffboardButton from '../components/offboarding/OffboardButton';
-
-interface MissedAttendanceItem {
-  event_id: number;
-  event_title: string;
-  group_id: number;
-  group_name: string;
-  event_date: string;
-  expected_count: number;
-  recorded_count: number;
-}
+import OwedLessonCard from '../components/headTeacher/OwedLessonCard';
+import type { OwedLesson } from '../services/api/head-teacher';
 
 interface GroupItem {
   id: number;
@@ -77,8 +68,10 @@ interface TeacherDetails {
   activity_history: Array<{ date: string; submissions_graded: number }>;
   total_feedbacks: number;
   avg_score_given: number | null;
-  missed_attendance_count?: number;
-  missed_attendance_details?: MissedAttendanceItem[];
+  missed_scores_count?: number;
+  unmarked_after_meet_count?: number;
+  missed_scores_lessons?: OwedLesson[];
+  unmarked_after_meet_lessons?: OwedLesson[];
   groups?: GroupItem[];
 }
 
@@ -342,55 +335,30 @@ export default function HeadTeacherTeacherDetailsPage() {
 
         <Card>
            <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{t('teacherInsights.teacherDetails.missedAttendance')}</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('teacherInsights.teacherDetails.missedScores')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${(teacherDetails.missed_attendance_count || 0) > 0 ? 'text-red-600 dark:text-red-300' : 'text-emerald-600 dark:text-emerald-300'}`}>
-              {teacherDetails.missed_attendance_count || 0}
+            <div className={`text-2xl font-bold ${(teacherDetails.missed_scores_count || 0) > 0 ? 'text-red-600 dark:text-red-300' : 'text-emerald-600 dark:text-emerald-300'}`}>
+              {teacherDetails.missed_scores_count || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {t('teacherInsights.teacherDetails.missedAttendanceHint', { pending: teacherDetails.missed_attendance_details?.length || 0 })}
+              {t('teacherInsights.teacherDetails.missedScoresHint', { meet: teacherDetails.unmarked_after_meet_count || 0 })}
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Missed Attendance Alert */}
-      {(teacherDetails.missed_attendance_details?.length || 0) > 0 && (
-        <Card className="border-red-200 dark:border-red-500/30 bg-red-50/50 dark:bg-red-500/15">
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-              <CardTitle className="text-base text-red-900 dark:text-red-300">
-                {t('teacherInsights.teacherDetails.missingRecords', { count: teacherDetails.missed_attendance_details?.length ?? 0 })}
-              </CardTitle>
-            </div>
-            <CardDescription className="text-red-700 dark:text-red-300">
-              {t('teacherInsights.teacherDetails.missingRecordsHint')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {teacherDetails.missed_attendance_details?.map((item) => (
-                <div 
-                  key={`${item.event_id}-${item.group_id}`} 
-                  className="flex items-center justify-between bg-card rounded-md px-3 py-2 border border-red-100"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{item.event_title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.group_name} • {formatDate(new Date(item.event_date))}
-                    </p>
-                  </div>
-                  <Badge variant="secondary" className="bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30">
-                    {t('teacherInsights.teacherDetails.recordedOf', { recorded: item.recorded_count, expected: item.expected_count })}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Lessons past their deadline without scores, and registers Meet handed back that nobody marked */}
+      <OwedLessonCard
+        lessons={teacherDetails.missed_scores_lessons}
+        title={t('teacherInsights.teacherDetails.missedScoresList', { count: teacherDetails.missed_scores_lessons?.length ?? 0 })}
+        hint={t('teacherInsights.teacherDetails.missedScoresListHint')}
+      />
+      <OwedLessonCard
+        lessons={teacherDetails.unmarked_after_meet_lessons}
+        title={t('teacherInsights.teacherDetails.unmarkedAfterMeet', { count: teacherDetails.unmarked_after_meet_lessons?.length ?? 0 })}
+        hint={t('teacherInsights.teacherDetails.unmarkedAfterMeetHint')}
+      />
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

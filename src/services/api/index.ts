@@ -71,7 +71,7 @@ import { getCuratorPendingSubmissions, getCuratorRecentSubmissions, getCuratorSt
 import { addFavoriteFlashcard, getFavoriteFlashcards, removeFavoriteFlashcard, removeFavoriteByCardId, checkIsFavorite, quickCreateFlashcard, getVocabularyCards } from './flashcards';
 import { addFavoriteStep, removeFavoriteStep, getFavoriteSteps, checkStepIsFavorite } from './favoriteSteps';
 import { getGamificationStatus, getBonusAllowance, giveTeacherBonus, getGamificationLeaderboard, getPointHistory, getStudentLeaderboard } from './gamification';
-import { getHeadTeacherManagedCourses, getHeadTeacherCourseTeachers, getHeadTeacherTeacherDetails, getHeadTeacherTeacherFeedbacks, getHeadTeacherTeacherAssignments, getHeadTeacherAttendanceGaps, getHeadTeacherHwGapsByTeacher } from './head-teacher';
+import { getHeadTeacherManagedCourses, getHeadTeacherCourseTeachers, getHeadTeacherTeacherDetails, getHeadTeacherTeacherFeedbacks, getHeadTeacherTeacherAssignments, getHeadTeacherActivityGaps, getHeadTeacherHwGapsByTeacher } from './head-teacher';
 import { getLessonRequests, getPendingLessonRequests, getMyLessonRequests, getIncomingRequests, createLessonRequest, approveLessonRequest, rejectLessonRequest, confirmLessonRequest, declineLessonRequest, getAvailableTeachers, updateSubstitutionPreference } from './lesson-requests';
 import { getDashboardStats, getAttendanceDue, getRecentActivity, updateStudyTime, getTeacherSalaryBreakdown, getAdminDashboard, getAdminDashboardCharts, getAdminStats, completeStepsForUser, resetStepsForUser, getUserProgressSummary, reportQuestionError, getQuestionErrorReports, getQuestionErrorReportDetail, updateQuestionErrorReportStatus, updateQuestion, manualUnlockLesson, manualLockLesson, getManualUnlocks, getStudentsJournal, getStudentJournalGroups, getStudentProfile } from './admin';
 import { fetchModules, fetchLectures, createLecture, deleteLecture, updateLecture, fetchLecturesByModule } from './lectures';
@@ -171,7 +171,7 @@ const apiClient = {
   getGamificationStatus, getBonusAllowance, giveTeacherBonus,
   getGamificationLeaderboard, getPointHistory, getStudentLeaderboard,
   // Head Teacher
-  getHeadTeacherManagedCourses, getHeadTeacherCourseTeachers, getHeadTeacherAttendanceGaps, getHeadTeacherHwGapsByTeacher,
+  getHeadTeacherManagedCourses, getHeadTeacherCourseTeachers, getHeadTeacherActivityGaps, getHeadTeacherHwGapsByTeacher,
   getHeadTeacherTeacherDetails, getHeadTeacherTeacherFeedbacks, getHeadTeacherTeacherAssignments,
   // Lesson Requests
   getLessonRequests, getPendingLessonRequests, getMyLessonRequests, getIncomingRequests, createLessonRequest,

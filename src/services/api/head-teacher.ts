@@ -1,5 +1,22 @@
 import { api } from './client';
 
+/**
+ * One lesson somebody still owes work on (attendance-lock contract B, `<item>`): `scores` = a
+ * present student has no activity score; `register` = Meet handed the register back and it is
+ * still unmarked. `missing` counts the students concerned. Every field but the id may be absent
+ * from an older server.
+ */
+export interface OwedLesson {
+  event_id: number;
+  title?: string | null;
+  group_id?: number | null;
+  group_name?: string | null;
+  /** UTC instant, ISO with a `Z`. */
+  start?: string | null;
+  kind?: 'register' | 'scores';
+  missing?: number;
+}
+
 export async function getHeadTeacherManagedCourses(): Promise<Array<{
   id: number;
   title: string;
@@ -42,6 +59,10 @@ export async function getHeadTeacherCourseTeachers(
     quizzes_graded_count: number;
     homeworks_checked_last_7_days: number;
     homeworks_checked_last_30_days: number;
+    /** Lessons past their 23:59 deadline with a missing activity score (counted from 2026-10-17). */
+    missed_scores_count?: number;
+    /** Meet handed the register back and it was still unmarked 24 h after the lesson. */
+    unmarked_after_meet_count?: number;
   }>;
   daily_activity: Array<{ date: string; submissions_graded: number }>;
 }> {
@@ -71,6 +92,10 @@ export async function getHeadTeacherTeacherDetails(courseId: number, teacherId: 
   activity_history: Array<{ date: string; submissions_graded: number }>;
   total_feedbacks: number;
   avg_score_given: number | null;
+  missed_scores_count?: number;
+  unmarked_after_meet_count?: number;
+  missed_scores_lessons?: OwedLesson[];
+  unmarked_after_meet_lessons?: OwedLesson[];
 }> {
   try {
     const response = await api.get(`/head-teacher/course/${courseId}/teacher/${teacherId}/details`, {
@@ -159,17 +184,26 @@ export interface AttendanceGapTeacher {
   groups: AttendanceGapGroup[];
 }
 
-// Head-teacher attendance oversight grouped by teacher -> group (active groups only).
-// startDate/endDate are inclusive Almaty calendar dates (YYYY-MM-DD); omit for all-time.
-export async function getHeadTeacherAttendanceGaps(startDate?: string, endDate?: string): Promise<{ teachers: AttendanceGapTeacher[] }> {
+/** One teacher's row on the Activity tab: lessons they owe scores on, and registers Meet handed back. */
+export interface ActivityGapTeacher {
+  teacher_id: number;
+  teacher_name: string;
+  scores_lessons?: number;
+  register_lessons?: number;
+  items?: OwedLesson[];
+}
+
+// Head-teacher oversight of owed work, grouped by the lesson's actual teacher (attendance-lock
+// contract B). startDate/endDate are inclusive Almaty calendar dates (YYYY-MM-DD); omit for all-time.
+export async function getHeadTeacherActivityGaps(startDate?: string, endDate?: string): Promise<{ teachers: ActivityGapTeacher[] }> {
   try {
     const params: Record<string, string> = {};
     if (startDate) params.start_date = startDate;
     if (endDate) params.end_date = endDate;
-    const response = await api.get('/dashboard/head-teacher/attendance-gaps', { params });
+    const response = await api.get('/dashboard/head-teacher/activity-gaps', { params });
     return response.data;
   } catch (error) {
-    console.warn('Failed to load attendance gaps:', error);
+    console.warn('Failed to load activity gaps:', error);
     return { teachers: [] };
   }
 }

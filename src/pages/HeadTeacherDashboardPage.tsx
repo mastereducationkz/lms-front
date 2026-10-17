@@ -42,6 +42,8 @@ import {
 } from 'recharts';
 import Skeleton from '../components/Skeleton';
 import InstallAppCard from '../components/pwa/InstallAppCard';
+import ActivityGapRows from '../components/headTeacher/ActivityGapRows';
+import { activityRows, activityTotals, type ActivityRow } from '../lib/activityGaps';
 import { formatDate } from '../lib/i18n';
 import { useT } from '../lib/i18n/react';
 import '@/lib/i18n/catalogs/teacherInsights';
@@ -70,7 +72,8 @@ interface TeacherStats {
   quizzes_graded_count: number;
   homeworks_checked_last_7_days: number;
   homeworks_checked_last_30_days: number;
-  missed_attendance_count?: number;
+  missed_scores_count?: number;
+  unmarked_after_meet_count?: number;
 }
 
 interface ActivityHistoryItem {
@@ -78,18 +81,18 @@ interface ActivityHistoryItem {
   submissions_graded: number;
 }
 
-interface AttendanceGapGroup {
+interface HwGapGroup {
   group_id: number;
   group_name: string;
   lessons_missing: number;
   oldest: string;
 }
-interface AttendanceGapTeacher {
+interface HwGapTeacher {
   teacher_id: number;
   teacher_name: string;
   total_lessons: number;
   groups_count: number;
-  groups: AttendanceGapGroup[];
+  groups: HwGapGroup[];
 }
 
 interface CourseTeachersData {
@@ -107,10 +110,10 @@ export default function HeadTeacherDashboardPage() {
   const [courses, setCourses] = useState<ManagedCourse[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [teachersData, setTeachersData] = useState<CourseTeachersData | null>(null);
-  const [attendanceGaps, setAttendanceGaps] = useState<AttendanceGapTeacher[]>([]);
-  const [hwTeachers, setHwTeachers] = useState<AttendanceGapTeacher[]>([]);
+  const [activityGaps, setActivityGaps] = useState<ActivityRow[]>([]);
+  const [hwTeachers, setHwTeachers] = useState<HwGapTeacher[]>([]);
   const [expandedTeacher, setExpandedTeacher] = useState<number | null>(null);
-  const [oversightTab, setOversightTab] = useState<'attendance' | 'homework'>('attendance');
+  const [oversightTab, setOversightTab] = useState<'activity' | 'homework'>('activity');
 
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
@@ -122,7 +125,7 @@ export default function HeadTeacherDashboardPage() {
   });
 
   // Sort State
-  type SortField = 'teacher_name' | 'groups_count' | 'students_count' | 'checked_homeworks_count' | 'feedbacks_given_count' | 'missed_attendance_count';
+  type SortField = 'teacher_name' | 'groups_count' | 'students_count' | 'checked_homeworks_count' | 'feedbacks_given_count' | 'missed_scores_count' | 'unmarked_after_meet_count';
   type SortDirection = 'asc' | 'desc' | null;
   const [sortField, setSortField] = useState<SortField>('checked_homeworks_count');
   const [teacherSearch, setTeacherSearch] = useState('');
@@ -170,16 +173,16 @@ export default function HeadTeacherDashboardPage() {
     if (!dateRange?.from) return;
     const start = format(dateRange.from, 'yyyy-MM-dd');
     const end = format(dateRange.to ?? dateRange.from, 'yyyy-MM-dd');
-    loadAttendanceGaps(start, end);
+    loadActivityGaps(start, end);
     loadHwTeachers(start, end);
   }, [dateRange]);
 
-  const loadAttendanceGaps = async (start?: string, end?: string) => {
+  const loadActivityGaps = async (start?: string, end?: string) => {
     try {
-      const res = await apiClient.getHeadTeacherAttendanceGaps(start, end);
-      setAttendanceGaps(res.teachers || []);
+      const res = await apiClient.getHeadTeacherActivityGaps(start, end);
+      setActivityGaps(activityRows(res.teachers));
     } catch (error) {
-      console.error('Failed to load attendance gaps:', error);
+      console.error('Failed to load activity gaps:', error);
     }
   };
 
@@ -192,7 +195,7 @@ export default function HeadTeacherDashboardPage() {
     }
   };
 
-  const switchOversightTab = (tab: 'attendance' | 'homework') => {
+  const switchOversightTab = (tab: 'activity' | 'homework') => {
     setOversightTab(tab);
     setExpandedTeacher(null);
   };
@@ -387,22 +390,27 @@ export default function HeadTeacherDashboardPage() {
       {/* Inside the installed app: «turn on notifications on this device» (components/pwa). */}
       <InstallAppCard variant="teacher" only="push" />
 
-      {/* Oversight — attendance / homework gaps, grouped by teacher (tabbed) */}
-      {(attendanceGaps.length > 0 || hwTeachers.length > 0) && (() => {
+      {/* Oversight — activity-score / homework gaps, grouped by teacher (tabbed) */}
+      {(activityGaps.length > 0 || hwTeachers.length > 0) && (() => {
         const isHw = oversightTab === 'homework';
-        const teachers = isHw ? hwTeachers : attendanceGaps;
-        const metricLabel = isHw ? tr('teacherInsights.headDashboard.oversight.groupsMissingHw') : tr('teacherInsights.headDashboard.oversight.lessonsMissing');
-        const totalMetric = teachers.reduce((s, t) => s + t.total_lessons, 0);
-        const summary = teachers.length === 0
-          ? (isHw ? tr('teacherInsights.headDashboard.oversight.allGotHomework') : tr('teacherInsights.headDashboard.oversight.noUnmarked'))
+        const activity = activityTotals(activityGaps);
+        const teacherCount = isHw ? hwTeachers.length : activityGaps.length;
+        const totalHw = hwTeachers.reduce((s, t) => s + t.total_lessons, 0);
+        const summary = teacherCount === 0
+          ? (isHw ? tr('teacherInsights.headDashboard.oversight.allGotHomework') : tr('teacherInsights.headDashboard.oversight.noUnmarkedActivity'))
           : [
-              tr('teacherInsights.headDashboard.oversight.teachersCount', { count: teachers.length }),
+              tr('teacherInsights.headDashboard.oversight.teachersCount', { count: teacherCount }),
               isHw
-                ? tr('teacherInsights.headDashboard.oversight.groupsWithoutHw', { count: totalMetric })
-                : tr('teacherInsights.headDashboard.oversight.lessonsUnmarked', { count: totalMetric }),
-              tr('teacherInsights.headDashboard.oversight.clickTeacher'),
-            ].join(' · ');
-        const TabBtn = ({ id, label, count }: { id: 'attendance' | 'homework'; label: string; count: number }) => (
+                ? tr('teacherInsights.headDashboard.oversight.groupsWithoutHw', { count: totalHw })
+                : (activity.scores > 0 || activity.register === 0)
+                  ? tr('teacherInsights.headDashboard.oversight.lessonsWithoutScores', { count: activity.scores })
+                  : null,
+              !isHw && activity.register > 0
+                ? tr('teacherInsights.headDashboard.oversight.meetCouldNotMark', { count: activity.register })
+                : null,
+              isHw ? tr('teacherInsights.headDashboard.oversight.clickTeacher') : tr('teacherInsights.headDashboard.oversight.clickTeacherLessons'),
+            ].filter(Boolean).join(' · ');
+        const TabBtn = ({ id, label, count }: { id: 'activity' | 'homework'; label: string; count: number }) => (
           <button
             onClick={() => switchOversightTab(id)}
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
@@ -429,7 +437,7 @@ export default function HeadTeacherDashboardPage() {
                   <CardDescription>{summary}</CardDescription>
                 </div>
                 <div className="flex items-center gap-1 bg-muted/60 rounded-lg p-1 self-start">
-                  <TabBtn id="attendance" label={tr('teacherInsights.headDashboard.oversight.tabAttendance')} count={attendanceGaps.length} />
+                  <TabBtn id="activity" label={tr('teacherInsights.headDashboard.oversight.tabActivity')} count={activityGaps.length} />
                   <TabBtn id="homework" label={tr('teacherInsights.headDashboard.oversight.tabHomework')} count={hwTeachers.length} />
                 </div>
               </div>
@@ -440,19 +448,35 @@ export default function HeadTeacherDashboardPage() {
                   <thead className="bg-gray-50/80 dark:bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
                       <th className="text-left font-medium px-4 py-2.5">{tr('teacherInsights.headDashboard.col.teacher')}</th>
-                      <th className="text-right font-medium px-4 py-2.5 w-24">{tr('teacherInsights.headDashboard.col.groups')}</th>
-                      <th className="text-right font-medium px-4 py-2.5 w-40">{metricLabel}</th>
+                      {isHw ? (
+                        <>
+                          <th className="text-right font-medium px-4 py-2.5 w-24">{tr('teacherInsights.headDashboard.col.groups')}</th>
+                          <th className="text-right font-medium px-4 py-2.5 w-40">{tr('teacherInsights.headDashboard.oversight.groupsMissingHw')}</th>
+                        </>
+                      ) : (
+                        <>
+                          <th className="text-right font-medium px-4 py-2.5 w-48">{tr('teacherInsights.headDashboard.oversight.scoresMissing')}</th>
+                          <th className="w-32" />
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {teachers.length === 0 && (
+                    {teacherCount === 0 && (
                       <tr>
                         <td colSpan={3} className="px-4 py-8 text-center text-sm text-muted-foreground">
                           {summary}
                         </td>
                       </tr>
                     )}
-                    {teachers.map((t) => {
+                    {!isHw && (
+                      <ActivityGapRows
+                        rows={activityGaps}
+                        openId={expandedTeacher}
+                        onToggle={(id) => setExpandedTeacher(expandedTeacher === id ? null : id)}
+                      />
+                    )}
+                    {isHw && hwTeachers.map((t) => {
                       const isOpen = expandedTeacher === t.teacher_id;
                       return (
                         <React.Fragment key={t.teacher_id}>
@@ -480,34 +504,21 @@ export default function HeadTeacherDashboardPage() {
                               <td className="pl-10 pr-4 py-2">
                                 <div className="min-w-0">
                                   <p className="truncate font-medium">{g.group_name}</p>
-                                  {!isHw && g.oldest && (
-                                    <p className="text-xs text-muted-foreground">
-                                      {tr('teacherInsights.headDashboard.oversight.oldest', { date: formatDate(new Date(g.oldest)) })}
-                                    </p>
-                                  )}
-                                  {isHw && (
-                                    <p className="text-xs text-muted-foreground">{tr('teacherInsights.headDashboard.oversight.noHomeworkToday')}</p>
-                                  )}
+                                  <p className="text-xs text-muted-foreground">{tr('teacherInsights.headDashboard.oversight.noHomeworkToday')}</p>
                                 </div>
                               </td>
-                              <td className="px-4 py-2 text-right text-muted-foreground">
-                                {isHw
-                                  ? '—'
-                                  : tr('common.lessons', { count: g.lessons_missing })}
-                              </td>
+                              <td className="px-4 py-2 text-right text-muted-foreground">—</td>
                               <td className="px-4 py-2 text-right">
                                 <Button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate(isHw
-                                      ? `/homework/new/group/${g.group_id}`
-                                      : `/attendance?group=${g.group_id}${g.oldest ? `&date=${g.oldest.slice(0, 10)}` : ''}`);
+                                    navigate(`/homework/new/group/${g.group_id}`);
                                   }}
                                   size="sm"
                                   variant="ghost"
                                   className="text-xs h-7"
                                 >
-                                  {isHw ? tr('teacherInsights.headDashboard.oversight.assign') : tr('teacherInsights.headDashboard.oversight.mark')}
+                                  {tr('teacherInsights.headDashboard.oversight.assign')}
                                 </Button>
                               </td>
                             </tr>
@@ -741,10 +752,18 @@ export default function HeadTeacherDashboardPage() {
                     </TableHead>
                     <TableHead className="text-center font-bold text-foreground dark:text-foreground">
                       <button 
-                        onClick={() => handleSort('missed_attendance_count')} 
+                        onClick={() => handleSort('missed_scores_count')} 
                         className="flex items-center gap-1 mx-auto hover:text-brand transition-colors"
                       >
-                        {tr('teacherInsights.headDashboard.col.missedAttendance')} {getSortIcon('missed_attendance_count')}
+                        {tr('teacherInsights.headDashboard.col.missedScores')} {getSortIcon('missed_scores_count')}
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-center font-bold text-foreground dark:text-foreground">
+                      <button 
+                        onClick={() => handleSort('unmarked_after_meet_count')} 
+                        className="flex items-center gap-1 mx-auto hover:text-brand transition-colors"
+                      >
+                        {tr('teacherInsights.headDashboard.col.unmarkedAfterMeet')} {getSortIcon('unmarked_after_meet_count')}
                       </button>
                     </TableHead>
                     <TableHead className="text-center font-bold text-foreground dark:text-foreground">{tr('teacherInsights.headDashboard.col.activityTrend')}</TableHead>
@@ -795,17 +814,19 @@ export default function HeadTeacherDashboardPage() {
                            {teacher.feedbacks_given_count}
                          </Badge>
                       </TableCell>
-                      <TableCell className="text-center">
-                        {(teacher.missed_attendance_count ?? 0) > 0 ? (
-                          <Badge variant="secondary" className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 border-red-200 dark:border-red-800">
-                            {teacher.missed_attendance_count}
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="bg-slate-50 dark:bg-muted text-muted-foreground hover:bg-muted border-border">
-                            0
-                          </Badge>
-                        )}
-                      </TableCell>
+                      {([teacher.missed_scores_count, teacher.unmarked_after_meet_count] as const).map((count, i) => (
+                        <TableCell key={i} className="text-center">
+                          {(count ?? 0) > 0 ? (
+                            <Badge variant="secondary" className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 border-red-200 dark:border-red-800">
+                              {count}
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-slate-50 dark:bg-muted text-muted-foreground hover:bg-muted border-border">
+                              0
+                            </Badge>
+                          )}
+                        </TableCell>
+                      ))}
                       <TableCell className="text-center">
                          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                            <span className={teacher.homeworks_checked_last_7_days > 0 ? "text-emerald-600 dark:text-emerald-300 font-medium" : ""}>
