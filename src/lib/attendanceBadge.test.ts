@@ -29,8 +29,8 @@ describe('attendanceBadge', () => {
   });
 
   it('asks for activity scores once Meet takes the register', () => {
-    expect(attendanceBadge({ total: 0, waiting: 0, scores: 2 })).toEqual({ count: 2, tone: 'action', title: '2 need activity scores' });
-    expect(attendanceBadge({ total: 1, waiting: 1, scores: 1 })).toEqual({ count: 2, tone: 'action', title: '1 waiting on Meet · 1 need activity scores' });
+    expect(attendanceBadge({ total: 0, waiting: 0, scores: 2 })).toEqual({ count: 2, tone: 'action', title: '2 lessons need activity scores' });
+    expect(attendanceBadge({ total: 1, waiting: 1, scores: 1 })).toEqual({ count: 2, tone: 'action', title: '1 waiting on Meet · 1 lesson needs activity scores' });
   });
 
   it('says what the number is made of in the viewer’s language', () => {

@@ -124,5 +124,5 @@ export const shell = {
   'shell.loadingPage': 'Loading page…',
   'shell.attendanceBadge.toMark': '{count} Meet could not mark',
   'shell.attendanceBadge.waiting': '{count} waiting on Meet',
-  'shell.attendanceBadge.scores': '{count} need activity scores',
+  'shell.attendanceBadge.scores': { one: '{count} lesson needs activity scores', other: '{count} lessons need activity scores' },
 } as const satisfies MessageTable;
