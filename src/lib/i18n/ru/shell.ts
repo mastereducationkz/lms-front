@@ -124,5 +124,5 @@ export const shell: RuTable<typeof en> = {
   'shell.loadingPage': 'Загрузка страницы…',
   'shell.attendanceBadge.toMark': 'Meet не смог отметить: {count}',
   'shell.attendanceBadge.waiting': 'Ждут Meet: {count}',
-  'shell.attendanceBadge.scores': 'Нужны баллы за активность: {count}',
+  'shell.attendanceBadge.scores': { one: 'Нужны баллы за активность: {count}', few: 'Нужны баллы за активность: {count}', many: 'Нужны баллы за активность: {count}', other: 'Нужны баллы за активность: {count}' },
 };
