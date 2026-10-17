@@ -31,7 +31,7 @@ export const shell = {
   'shell.nav.favorites': 'My Favorites',
   'shell.nav.achievements': 'Achievements',
   'shell.nav.myClass': 'My Class',
-  'shell.nav.attendance': 'Attendance',
+  'shell.nav.attendance': 'Attendance & activity',
   'shell.nav.analytics': 'Analytics',
   'shell.nav.quizReview': 'Quiz Review',
   'shell.nav.leaderboard': 'Leaderboard',
@@ -122,7 +122,7 @@ export const shell = {
   'shell.accessDenied.back': 'Go Back',
   'shell.signingIn': 'Signing you in…',
   'shell.loadingPage': 'Loading page…',
-  'shell.attendanceBadge.toMark': '{count} to mark',
+  'shell.attendanceBadge.toMark': '{count} Meet could not mark',
   'shell.attendanceBadge.waiting': '{count} waiting on Meet',
-  'shell.attendanceBadge.scores': '{count} need activity scores',
+  'shell.attendanceBadge.scores': { one: '{count} lesson needs activity scores', other: '{count} lessons need activity scores' },
 } as const satisfies MessageTable;

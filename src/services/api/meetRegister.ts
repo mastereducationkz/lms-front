@@ -35,6 +35,20 @@ export interface StudentRegister {
   written?: boolean;
 }
 
+/**
+ * What a person may do with a covered lesson's marks (owner, 2026-10-17). `pending`: Meet has not decided
+ * and still will — every cell is locked but for an advance excuse; `decided`: the students Meet decided
+ * (`written` / `kept` / `override` in their own register view) are locked behind a reason, everyone else
+ * is the teacher's; `none`: nothing is locked. Absent from an older server — then nothing is locked.
+ */
+export interface RegisterLock {
+  state: 'none' | 'pending' | 'decided';
+  /** End of the teacher's window to change a mark Meet decided (7 days after the lesson). */
+  override_closes_at: string | null;
+  /** False for a teacher once the window has closed: a locked cell is then a head teacher's to change. */
+  may_override: boolean;
+}
+
 export interface RegisterSettings {
   mode: RegisterMode;
   shadow_since: string | null;

@@ -11,10 +11,6 @@ export const curatorDashboard: RuTable<typeof en> = {
   'curatorDashboard.period.presets': 'Периоды',
   'curatorDashboard.period.allTime': 'Весь период',
 
-  'curatorDashboard.attendance.missing': 'Посещаемость не заполнена ({count})',
-  'curatorDashboard.attendance.open': 'Перейти к посещаемости',
-  'curatorDashboard.attendance.fill': 'Заполнить',
-
   'curatorDashboard.kpi.totalCurators': 'Всего кураторов',
   'curatorDashboard.kpi.totalGroups': 'Всего групп',
   'curatorDashboard.kpi.activeOnPlatform': 'Активных на платформе',

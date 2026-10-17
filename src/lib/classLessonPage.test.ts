@@ -92,6 +92,52 @@ describe('register editing', () => {
   });
 });
 
+describe('register editing: excused absences', () => {
+  const draft = (excuse: Map<number, { excused: boolean; note: string | null }>) => ({ status: new Map(), score: new Map(), excuse });
+
+  it('turns an unmarked student into an excused absence — the advance excuse', () => {
+    const students = [row({ user_id: 1, status: 'registered', marked: false })];
+    expect(registerChanges(students, draft(new Map([[1, { excused: true, note: '  болеет ' }]])))).toEqual({
+      marks: [{ student_id: 1, status: 'missed', excused: true, excuse_note: 'болеет' }],
+      scores: [],
+    });
+  });
+
+  it('sends an excuse alone when the absence stays, and nothing when the excuse stays too', () => {
+    const students = [
+      row({ user_id: 1, status: 'missed', excused: false }),
+      row({ user_id: 2, status: 'missed', excused: true, excuse_note: 'болеет' }),
+      row({ user_id: 3, status: 'missed', excused: true, excuse_note: 'болеет' }),
+    ];
+    const excuse = new Map([
+      [1, { excused: true, note: 'олимпиада' }],
+      [2, { excused: false, note: null }],
+      [3, { excused: true, note: 'болеет' }],
+    ]);
+    expect(registerChanges(students, draft(excuse)).marks).toEqual([
+      { student_id: 1, status: 'missed', excused: true, excuse_note: 'олимпиада' },
+      { student_id: 2, status: 'missed', excused: false, excuse_note: null },
+    ]);
+  });
+
+  it('never scores an excused absence, and leaves untouched rows without excuse fields', () => {
+    const students = [row({ user_id: 1, status: 'attended' }), row({ user_id: 2, status: 'registered', marked: false })];
+    const changes = registerChanges(students, {
+      status: new Map(), score: new Map([[2, 7]]), excuse: new Map([[2, { excused: true, note: 'болеет' }]]),
+    });
+    expect(changes.scores).toEqual([]);
+    expect(changes.marks).toEqual([{ student_id: 2, status: 'missed', excused: true, excuse_note: 'болеет' }]);
+  });
+
+  it('corrects a Meet mark to an excused absence in one row', () => {
+    const students = [row({ user_id: 1, status: 'attended' })];
+    const changes = registerChanges(students, {
+      status: new Map([[1, 'missed' as const]]), score: new Map(), excuse: new Map([[1, { excused: true, note: 'олимпиада' }]]),
+    });
+    expect(changes.marks).toEqual([{ student_id: 1, status: 'missed', excused: true, excuse_note: 'олимпиада' }]);
+  });
+});
+
 describe('registerSummary', () => {
   it('counts marks and scores among those who came, skipping frozen rows', () => {
     const s = registerSummary([

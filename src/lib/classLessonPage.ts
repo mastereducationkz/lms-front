@@ -103,24 +103,37 @@ export function scoreEditable(student: RegisterStudent, status: UiMark, canScore
 export interface RegisterDraft {
   status: Map<number, UiMark>;
   score: Map<number, number>;
+  /** An excused absence set or taken back on this page (the advance excuse, or a correction of Meet's mark). */
+  excuse?: Map<number, { excused: boolean; note: string | null }>;
 }
 
 export interface RegisterChanges {
-  marks: { student_id: number; status: UiMark }[];
+  marks: { student_id: number; status: UiMark; excused?: boolean; excuse_note?: string | null }[];
   scores: { student_id: number; activity_score: number }[];
 }
 
 /**
  * What «Сохранить» sends: marks that differ from what was loaded, and scores that differ — minus a
  * score for a student this save marks absent (the server refuses the pair, and so would the reader).
+ * An excuse rides on an absence only: it turns an unmarked student into «missed» (the advance excuse),
+ * and an excuse alone is sent when the absence stays as it was. Rows nobody touched carry no excuse
+ * fields at all, so another teacher's reason is never wiped by a save.
  */
 export function registerChanges(students: RegisterStudent[], draft: RegisterDraft): RegisterChanges {
   const marks: RegisterChanges['marks'] = [];
   const scores: RegisterChanges['scores'] = [];
   for (const s of students) {
-    const status = draft.status.get(s.user_id) ?? s.status;
-    if (status !== s.status && (status === 'attended' || status === 'late' || status === 'missed')) {
-      marks.push({ student_id: s.user_id, status });
+    const excuse = draft.excuse?.get(s.user_id);
+    const status = excuse?.excused ? 'missed' : draft.status.get(s.user_id) ?? s.status;
+    const markChanged = status !== s.status && (status === 'attended' || status === 'late' || status === 'missed');
+    const note = excuse?.excused ? (excuse.note ?? '').trim() : null;
+    const excuseChanged = Boolean(excuse) && status === 'missed'
+      && (Boolean(excuse!.excused) !== s.excused || (excuse!.excused && note !== (s.excuse_note ?? null)));
+    if (markChanged || excuseChanged) {
+      marks.push({
+        student_id: s.user_id, status,
+        ...(excuse && status === 'missed' ? { excused: Boolean(excuse.excused), excuse_note: note } : {}),
+      });
     }
     const score = draft.score.get(s.user_id);
     if (score != null && score !== s.activity_score && status !== 'missed') {

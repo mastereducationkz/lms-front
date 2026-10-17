@@ -20,6 +20,9 @@ export type AttendanceBadgeTone = 'none' | 'waiting' | 'action';
  * takes the register (2026-09-23) the badge also counts lessons whose present students still owe an
  * activity score, which is always something to do now. `title` says what the number is made of.
  *
+ * Since 2026-10-17 a register that is owed and not waiting is one Meet handed back ("Meet could not
+ * mark"): Meet takes the register itself, so the red part of `total` is the few lessons it could not.
+ *
  * `waiting` exceeding `total` should not happen, but if the two counts are ever read a moment apart
  * the quiet answer is the safe one: never invent urgency out of a rounding race.
  */

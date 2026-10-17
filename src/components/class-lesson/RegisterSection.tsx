@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, Pencil, Save, Star } from 'lucide-react';
+import { Loader2, Lock, Pencil, Save, Star } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { toast } from '../Toast';
 import { verdictHint, verdictText } from '../../lib/meetAttendance';
@@ -8,6 +8,9 @@ import {
   markEditable, registerChanges, registerSummary, scoreEditable, summaryLine,
 } from '../../lib/classLessonPage';
 import { OverrideReasonsDialog } from '../meetAttendance/OverrideReasonsDialog';
+import { MeetMarkForm } from '../attendance/MeetMarkForm';
+import { HeldBackButton, PendingExcuseDot } from '../attendance/CellLockParts';
+import { cellLock, handedBack, heldBack, lessonLock, lessonMinutes, lockedTitle, type MarkChange } from '../../lib/registerLock';
 import { getMeetRecord, type MeetReviewOptions } from '../../services/api/meetAttendance';
 import { saveActivityScores, updateEventAttendance } from '../../services/api/events';
 import type { StudentRegister } from '../../services/api/meetRegister';
@@ -18,6 +21,7 @@ import type { MessageKey } from '../../lib/i18n';
 import { useLocale, useT } from '../../lib/i18n/react';
 import { live } from '../../services/api/liveLesson';
 import SuggestionBar from '../live-lesson/SuggestionBar';
+import '@/lib/i18n/catalogs/attendance';
 import '@/lib/i18n/catalogs/classLesson';
 
 const MARKS: { key: UiMark; tone: string }[] = [
@@ -42,9 +46,11 @@ interface Props {
 /**
  * The lesson's register on one screen (owner, 2026-09-28): Meet's marks with the reason a person gave
  * for changing one, and the баллы за активность — what a teacher does right after a lesson, on a phone,
- * without the week-wide journal. Saves through the journal's own endpoints and rules: a change that
- * contradicts Meet asks for a reason once, at «Сохранить»; scores go separately and never onto an
- * absence. Curators read.
+ * without the week-wide journal. Saves through the journal's own endpoints and rules. Under the register
+ * lock (2026-10-17) a row is Meet's — `pending` until it decides (only an advance excuse), `meet` once it
+ * has («Исправить» opens its evidence, the new mark and a reason) — and the teacher's where Meet handed
+ * the student back. Without a lock (an older server) a change that contradicts Meet asks for a reason once,
+ * at «Сохранить». Scores go separately and never onto an absence. Curators read.
  */
 export default function RegisterSection({ view, groupId, onSaved }: Props) {
   const t = useT();
@@ -57,9 +63,23 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
   const [options, setOptions] = useState<MeetReviewOptions>({});
   const [saving, setSaving] = useState(false);
   const [picking, setPicking] = useState<number | null>(null);
+  const [excuse, setExcuse] = useState<Map<number, { excused: boolean; note: string | null }>>(new Map());
+  const [correcting, setCorrecting] = useState<number | null>(null);
+  const lock = lessonLock(view);
+  const canMarkRows = view.viewer.can_mark;
 
   // A fresh payload (after a save, or the minute poll) is the new baseline.
-  useEffect(() => { setStatus(new Map()); setScore(new Map()); setReasons(new Map()); }, [register]);
+  useEffect(() => { setStatus(new Map()); setScore(new Map()); setReasons(new Map()); setExcuse(new Map()); setCorrecting(null); }, [register]);
+
+  // The presets «Исправить» offers come with Meet's record; read once a decided lesson can be corrected.
+  useEffect(() => {
+    if (!canMarkRows || lock?.state !== 'decided') return;
+    let cancelled = false;
+    getMeetRecord(view.id)
+      .then((record) => { if (!cancelled) setOptions(record?.review_options ?? {}); })
+      .catch(() => { /* the form still offers «Другое» */ });
+    return () => { cancelled = true; };
+  }, [view.id, canMarkRows, lock?.state]);
 
   // The live page's suggestions (two or more questions ran); shown faded until confirmed.
   const suggestions = useScoreSuggestions(live, view.id,
@@ -74,9 +94,10 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
   if (!register) return null;
   const canMark = view.viewer.can_mark;
   const canScore = view.viewer.can_score;
-  const current = (s: RegisterStudent): UiMark => status.get(s.user_id) ?? s.status;
+  const current = (s: RegisterStudent): UiMark => (excuse.get(s.user_id)?.excused ? 'missed' : status.get(s.user_id) ?? s.status);
   const currentScore = (s: RegisterStudent): number | null => score.get(s.user_id) ?? s.activity_score;
-  const changes = registerChanges(students, { status, score });
+  const changes = registerChanges(students, { status, score, excuse });
+  const length = lessonMinutes(view.start, view.end);
   const dirty = changes.marks.length + changes.scores.length > 0;
   const summary = registerSummary(students.map((s) => ({ status: current(s), activity_score: currentScore(s), state: s.state })));
 
@@ -92,6 +113,17 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
       return next;
     });
     setPicking(null);
+  };
+  // A correction of Meet's mark: the new mark, its excuse and the reason that goes with it.
+  const applyChange = (s: RegisterStudent, change: MarkChange) => {
+    setMark(s, change.status);
+    setExcuse((prev) => {
+      const next = new Map(prev);
+      if (change.status === 'missed') next.set(s.user_id, { excused: change.excused, note: change.note }); else next.delete(s.user_id);
+      return next;
+    });
+    setReasons((prev) => new Map(prev).set(`${s.user_id}:${view.id}`, change.reason));
+    setCorrecting(null);
   };
 
   const save = async (given?: Map<string, OverrideReason>) => {
@@ -117,7 +149,7 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
     try {
       if (changes.marks.length) {
         const attendance = changes.marks.map((m) => ({
-          student_id: m.student_id, status: m.status, ...reasonPayload(known.get(`${m.student_id}:${lessonKey}`)),
+          ...m, ...reasonPayload(known.get(`${m.student_id}:${lessonKey}`)),
         })) as AttendanceRecord[];
         await updateEventAttendance(view.id, { attendance });
       }
@@ -151,9 +183,17 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
         <SuggestionBar waiting={suggestions.waiting} busy={suggestions.busy} error={suggestions.error}
           onConfirm={() => void suggestions.confirm().then((ok) => { if (ok) onSaved(); })} />
       )}
+      {lock?.state === 'pending' && (
+        <p className="mb-3 rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">{t('classLesson.register.pendingNote')}</p>
+      )}
       {register.mode === 'live' && register.meet_decided && (
         <p className="mb-3 rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-          {t('classLesson.register.meetDecided')}
+          {t(lock ? 'classLesson.register.meetDecided' : 'classLesson.register.meetDecidedAsked')}
+        </p>
+      )}
+      {canMark && students.some((s) => markEditable(s, canMark) && !s.marked && handedBack(lock, s.meet?.register)) && (
+        <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          {t('classLesson.register.handedBackNote')}
         </p>
       )}
       {students.length === 0 ? (
@@ -163,15 +203,20 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
           {students.map((s) => {
             const mark = current(s);
             const editable = markEditable(s, canMark);
+            // The register lock: Meet's rows are Meet's; a person's stay open and, handed back, are asked for.
+            const rowLock = editable ? cellLock(lock, s.meet?.register) : 'open';
+            const handedBackRow = editable && !s.marked && handedBack(lock, s.meet?.register);
+            const excusedNow = excuse.get(s.user_id)?.excused ?? s.excused;
+            const noteNow = excuse.has(s.user_id) ? excuse.get(s.user_id)!.note : s.excuse_note;
             const scoring = scoreEditable(s, mark, canScore);
             const value = currentScore(s);
             const suggested = value == null ? suggestions.byUser.get(s.user_id) : undefined;
             const meetTitle = s.meet
               ? [verdictHint({ held_back: Boolean(s.meet.held_back) }, locale), registerNote(s.meet.register ?? undefined, locale)].filter(Boolean).join('\n')
               : '';
-            const changed = status.has(s.user_id) || score.has(s.user_id);
+            const changed = status.has(s.user_id) || score.has(s.user_id) || excuse.has(s.user_id);
             return (
-              <li key={s.user_id} className={cn('py-2.5', s.state && 'opacity-60')}>
+              <li key={s.user_id} className={cn('relative py-2.5', s.state && 'opacity-60', handedBackRow && 'rounded-lg bg-amber-50/70 px-2 dark:bg-amber-950/20')}>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                   <div className="min-w-0 flex-1 basis-40">
                     <div className="flex items-center gap-1.5 truncate text-sm font-medium text-foreground">
@@ -182,7 +227,16 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
                       {suggested?.reason && <span title={suggested.reason}>{t('classLesson.register.suggested', { score: suggested.suggested ?? '', reason: suggested.reason })}</span>}
                       {s.state === 'frozen' && <span>{t('classLesson.register.frozen')}</span>}
                       {s.state === 'no_access' && <span>{t('classLesson.register.noAccess')}</span>}
-                      {s.excused && <span className="rounded bg-sky-100 px-1 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200" title={s.excuse_note ?? undefined}>{s.excuse_note ? t('classLesson.register.excusedWithNote', { note: s.excuse_note }) : t('classLesson.register.excused')}</span>}
+                      {handedBackRow && <span className="font-semibold text-amber-700 dark:text-amber-300">{t('classLesson.register.handedBack')}</span>}
+                      {handedBackRow && heldBack(s.meet?.register) && (
+                        <HeldBackButton
+                          eventId={view.id}
+                          className="font-semibold text-amber-800 underline hover:text-amber-900 dark:text-amber-300"
+                          onByHand={() => setMark(s, 'attended')}
+                          onNamed={onSaved}
+                        />
+                      )}
+                      {excusedNow && <span className="rounded bg-sky-100 px-1 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200" title={noteNow ?? undefined}>{noteNow ? t('classLesson.register.excusedWithNote', { note: noteNow }) : t('classLesson.register.excused')}</span>}
                       {s.meet && (
                         <span title={meetTitle || undefined}>
                           Meet: {verdictText({ verdict: s.meet.verdict as never, minutes: s.meet.minutes ?? 0, required: s.meet.required ?? 0, late_minutes: s.meet.late_minutes ?? 0 }, locale)}
@@ -197,7 +251,42 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
                       )}
                     </div>
                   </div>
-                  {editable ? (
+                  {rowLock === 'meet' ? (
+                    <div className="flex flex-none items-center gap-2">
+                      <span
+                        className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground"
+                        title={lockedTitle(mark, s.meet?.register, length, lock?.may_override !== false, locale)}
+                      >
+                        <Lock className="h-3 w-3 text-muted-foreground" aria-label={t('attendance.lock.lockedAria')} />
+                        {LABEL[mark] ? t(LABEL[mark]) : mark}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setCorrecting(correcting === s.user_id ? null : s.user_id)}
+                        className="text-xs font-semibold text-brand hover:underline"
+                      >
+                        {t('classLesson.register.correct')}
+                      </button>
+                    </div>
+                  ) : rowLock === 'pending' ? (
+                    <div className="flex flex-none items-center gap-2">
+                      {mark === 'registered' ? (
+                        <span className="text-xs text-muted-foreground" title={t('attendance.lock.pendingTitle')}>{t('classLesson.register.pending')}</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground" title={t('attendance.lock.pendingTitle')}>
+                          <Lock className="h-3 w-3 text-muted-foreground" aria-label={t('attendance.lock.lockedAria')} />
+                          {LABEL[mark] ? t(LABEL[mark]) : mark}
+                        </span>
+                      )}
+                      {!excusedNow && (mark === 'registered' || mark === 'missed') && (
+                        <PendingExcuseDot
+                          label={t('classLesson.register.excuse')}
+                          className="text-xs font-semibold text-brand hover:underline"
+                          onExcuse={(excused, note) => setExcuse((prev) => new Map(prev).set(s.user_id, { excused, note }))}
+                        />
+                      )}
+                    </div>
+                  ) : editable ? (
                     <div className="flex flex-none overflow-hidden rounded-lg border border-border" role="radiogroup" aria-label={s.name}>
                       {MARKS.map((m) => (
                         <button
@@ -235,6 +324,19 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
                     {value ?? suggested?.suggested ?? '—'}
                   </button>
                 </div>
+                {correcting === s.user_id && rowLock === 'meet' && (
+                  <div className="mt-2 rounded-lg border border-border bg-muted/30 p-3">
+                    <MeetMarkForm
+                      current={{ status: mark, excused: Boolean(excusedNow), note: noteNow }}
+                      register={s.meet?.register ?? undefined}
+                      lessonMinutes={length}
+                      lock={lock}
+                      options={options}
+                      onApply={(change) => applyChange(s, change)}
+                      onCancel={() => setCorrecting(null)}
+                    />
+                  </div>
+                )}
                 {picking === s.user_id && scoring && (
                   <div className="mt-2 flex flex-wrap gap-1" role="radiogroup" aria-label={t('classLesson.activityScore')}>
                     {SCORES.map((n) => (

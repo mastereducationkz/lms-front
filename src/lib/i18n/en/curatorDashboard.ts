@@ -11,10 +11,6 @@ export const curatorDashboard = {
   'curatorDashboard.period.presets': 'Periods',
   'curatorDashboard.period.allTime': 'All time',
 
-  'curatorDashboard.attendance.missing': 'Attendance not marked ({count})',
-  'curatorDashboard.attendance.open': 'Go to attendance',
-  'curatorDashboard.attendance.fill': 'Fill in',
-
   'curatorDashboard.kpi.totalCurators': 'Total curators',
   'curatorDashboard.kpi.totalGroups': 'Total groups',
   'curatorDashboard.kpi.activeOnPlatform': 'Active on the platform',

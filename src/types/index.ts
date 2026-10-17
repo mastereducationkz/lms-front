@@ -1324,6 +1324,9 @@ export interface AttendanceRecord {
   /** Отсутствие поля = «не трогать». См. src/lib/excusedAbsence.ts. */
   excused?: boolean;
   excuse_note?: string | null;
+  /** Why a mark Meet decided is being changed (a preset key, or `other` with text). See lib/meetRegister. */
+  override_reason_code?: string;
+  override_reason_text?: string | null;
 }
 
 export interface AttendanceBulkUpdate {
@@ -1345,6 +1348,9 @@ export interface SubstitutionLesson {
   original_teacher_name?: string | null;
   // Whether attendance is already recorded for this lesson.
   marked?: boolean;
+  // What this lesson still owes: students Meet left unmarked, and present students without an activity
+  // score. Absent from an older server.
+  owed?: { register: number; scores: number };
 }
 
 // =============================================================================

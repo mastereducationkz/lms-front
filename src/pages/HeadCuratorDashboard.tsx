@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { chartColors, chartTick, chartTooltipStyle } from '../lib/chartTheme';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/api';
-import { lessonPath } from '../lib/lessonLinks';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Calendar } from '../components/ui/calendar';
@@ -231,59 +230,6 @@ export default function HeadCuratorDashboard() {
 
       {/* Inside the installed app: «turn on notifications on this device» (components/pwa). */}
       <InstallAppCard variant="teacher" only="push" />
-
-      {/* Missing Attendance Reminders */}
-      {stats?.missing_attendance_reminders && stats.missing_attendance_reminders.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800 rounded-md p-3">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-medium text-yellow-900 dark:text-yellow-300">
-              {t('curatorDashboard.attendance.missing', { count: stats.missing_attendance_reminders.length })}
-            </h3>
-            <Button
-              onClick={() => navigate('/attendance')}
-              size="sm"
-              variant="outline"
-              className="text-xs h-6 px-2 border-yellow-300 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 hover:dark:bg-yellow-500/15 dark:border-yellow-800 dark:hover:bg-yellow-900/20"
-            >
-              {t('curatorDashboard.attendance.open')}
-            </Button>
-          </div>
-          <div className="space-y-1.5">
-            {stats.missing_attendance_reminders.slice(0, 3).map((reminder: any) => (
-              <div key={reminder.event_id} className="flex items-center justify-between text-xs py-1.5 border-b border-yellow-100 dark:border-yellow-800 last:border-0">
-                <div className="flex-1 min-w-0 mr-3">
-                  {/* The lesson's own page, at its register (2026-09-28). */}
-                  <Link to={lessonPath(reminder.event_id, 'register')} className="block text-yellow-900 dark:text-yellow-300 truncate font-medium hover:underline">
-                    {reminder.title}
-                  </Link>
-                  <p className="text-[11px] text-yellow-700 dark:text-yellow-400">
-                    {reminder.group_name} • {formatDate(reminder.event_date, { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-[11px] text-yellow-700 dark:text-yellow-300">
-                    {reminder.recorded_students}/{reminder.expected_students}
-                  </span>
-                  <Button
-                    onClick={() => {
-                      if (reminder.group_id) {
-                        navigate(`/attendance?group=${reminder.group_id}`);
-                      } else {
-                        navigate('/attendance');
-                      }
-                    }}
-                    size="sm"
-                    variant="ghost"
-                    className="text-[11px] h-6 px-2 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 hover:dark:bg-yellow-500/15"
-                  >
-                    {t('curatorDashboard.attendance.fill')}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Верхние карточки KPI */}
       <div className="grid grid-cols-1 @2xl:grid-cols-2 @4xl:grid-cols-4 gap-4">

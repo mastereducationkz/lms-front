@@ -172,8 +172,13 @@ describe('reporting', () => {
     expect(issueCounts(items)).toMatchObject({ teacher_late: 2, ended_early: 1, marks_disagree: 1, students_late: 1, left_early: 1, to_confirm: 1, teacher_not_joined: 0 });
   });
 
-  it('asks for attention only where someone must act', () => {
-    expect(items.map(needsAttention)).toEqual([true, true, true, false]);
+  it('asks for attention only where someone must act — a late start or early end is not that (2026-10-17)', () => {
+    expect(items.map(needsAttention)).toEqual([false, false, true, false]);
+    // A teacher who never came still is: the discipline register cannot price an empty room.
+    expect(needsAttention(summary(5, 1, [T('teacher_not_joined')]))).toBe(true);
+    // The issue filters and the by-teacher tally keep counting the timing flags.
+    expect(items.filter((i) => hasIssue(i, 'teacher_late')).map((i) => i.event_id)).toEqual([1, 2]);
+    expect(tallyByTeacher(items)[0]).toMatchObject({ teacher_late: 2, ended_early: 1 });
   });
 
   it('tallies teachers, the one with most to discuss first', () => {
@@ -348,9 +353,11 @@ describe('reviewed flags (owner, 2026-09-11)', () => {
     const half = summary(2, 1, [answered, open], { mismatches: 1 });
     expect(needsAttention(half)).toBe(true);
     expect(clearedByReview(half)).toBe(false);
-    const teacher = summary(3, 1, [{ ...T('teacher_late', 9), review: { reason_code: 'tech', reason_label: 'Технические проблемы', text: null } }]);
+    const teacher = summary(3, 1, [{ ...T('teacher_not_joined'), review: { reason_code: 'tech', reason_label: 'Технические проблемы', text: null } }]);
     expect(needsAttention(teacher)).toBe(false);
     expect(clearedByReview(teacher)).toBe(true);
+    // A late start never needed attention, so answering one brings nothing back either.
+    expect(clearedByReview(summary(5, 1, [{ ...T('teacher_late', 9), review: { reason_code: 'tech', reason_label: 'Технические проблемы', text: null } }]))).toBe(false);
     // A late student never needed attention, so answering one brings nothing back.
     expect(clearedByReview(summary(4, 1, [{ ...S('late', 'Елдана', 7), review: excused }]))).toBe(false);
   });

@@ -337,14 +337,21 @@ export function stillLoading(item: Pick<MeetLessonSummary, 'state'>): boolean {
   return item.state === 'waiting' || item.state === 'not_started';
 }
 
+/**
+ * What can put a lesson in «Needs attention»: a mark that contradicts the room, or a teacher who
+ * never came (`teacher_not_joined` is in the mismatch set). A teacher's late start or early end is
+ * not here — the discipline register prices those (2026-10-17); the issue filters still find them.
+ */
+const asksForAttention = (f: MeetFlag) => isMismatch(f.code);
+
 /** "Needs attention": something a person has to act on — not every late student, nothing reviewed. */
 export function needsAttention(item: Reportable): boolean {
-  return item.unknown > 0 || item.flags.some((f) => !f.review && (isMismatch(f.code) || f.role === 'teacher'));
+  return item.unknown > 0 || item.flags.some((f) => !f.review && asksForAttention(f));
 }
 
 /** Out of «Needs attention» only because someone answered what put it there: what «Show reviewed» brings back. */
 export function clearedByReview(item: Reportable): boolean {
-  return !needsAttention(item) && item.flags.some((f) => f.review && (isMismatch(f.code) || f.role === 'teacher'));
+  return !needsAttention(item) && item.flags.some((f) => f.review && asksForAttention(f));
 }
 
 /** The lesson without its reviewed flags — how the list reads until «Show reviewed» is on. */
