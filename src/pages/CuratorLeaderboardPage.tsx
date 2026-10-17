@@ -1136,6 +1136,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       // don't mark the row as touched (a silent no-op shouldn't make Save think
       // there's something to save).
       if (!guarded) return;
+      // Before Meet decides, an advance excuse is the only mark a person may write; taking it back leaves
+      // the cell unmarked (the server refuses a plain absence there), so it goes back as «registered».
+      const eventId = data?.lessons.find(l => l.lesson_number.toString() === lessonNumber)?.event_id;
+      const withdrawsAdvanceExcuse = !excused && lessonLocks.get(eventId ?? -1)?.state === 'pending';
       setData(prev => {
           if (!prev) return null;
           return {
@@ -1152,6 +1156,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                               ...lesson,
                               excused,
                               excuse_note: note,
+                              ...(withdrawsAdvanceExcuse ? { attendance_status: 'registered' } : {}),
                               // Отметка уважительности — тоже отметка: урок перестаёт быть
                               // неотмеченным и входит в знаменатель процента.
                               marked: true,
