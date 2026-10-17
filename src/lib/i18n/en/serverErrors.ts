@@ -21,6 +21,10 @@ export const serverErrors = {
   'serverErrors.scores_teacher_only': 'Scores are given by the teacher who teaches this lesson',
   'serverErrors.excused_requires_note': 'An excused absence needs a reason',
   'serverErrors.excused_only_absence': 'Only an absence can be excused',
+  // The attendance lock (2026-10-17): Meet marks the register; teachers change its marks with a reason.
+  'serverErrors.register_waits_for_meet': 'Meet marks this lesson after it ends — until then you can only add an excused absence',
+  'serverErrors.register_reason_required': 'Meet marked this student — say why you are changing it',
+  'serverErrors.register_override_closed': 'A teacher can change Meet’s marks for 7 days after the lesson — ask a head teacher',
   'serverErrors.lesson_already_taught': 'The lesson on {date} has already been taught (marks given: {marks}). Moving it would carry those marks to the new date, as if the lesson happened then. To teach it again, add a new lesson; if the marks are a mistake, remove them first.',
   'serverErrors.no_free_slot': 'No free slot for an extra lesson for “{group}” in the next {weeks} weeks. Check the group’s schedule or choose “cancel only”.',
   'serverErrors.cancelled_lesson_not_scheduled': 'The lesson being cancelled isn’t in the schedule, so a lesson can’t be added at the end of the course. Choose “cancel only”.',

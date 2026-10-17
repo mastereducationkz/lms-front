@@ -91,7 +91,7 @@ export const lessonRequests = {
   'lessonRequests.detail.confirmedTeacher': 'Confirmed teacher',
   'lessonRequests.detail.currentTeacher': 'Currently taught by',
   'lessonRequests.detail.groupTeacher': 'Group teacher',
-  'lessonRequests.detail.attendanceOwner': 'Marks attendance',
+  'lessonRequests.detail.attendanceOwner': 'Keeps the lesson register',
   'lessonRequests.detail.attendance': 'Attendance',
   'lessonRequests.detail.attendanceMarked': 'Marked',
   'lessonRequests.detail.attendanceNotMarked': 'Not marked',

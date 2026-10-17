@@ -31,7 +31,7 @@ export const shell: RuTable<typeof en> = {
   'shell.nav.favorites': 'Избранное',
   'shell.nav.achievements': 'Достижения',
   'shell.nav.myClass': 'Мой класс',
-  'shell.nav.attendance': 'Посещаемость',
+  'shell.nav.attendance': 'Посещаемость и баллы',
   'shell.nav.analytics': 'Аналитика',
   'shell.nav.quizReview': 'Разбор квизов',
   'shell.nav.leaderboard': 'Лидерборд',
@@ -122,7 +122,7 @@ export const shell: RuTable<typeof en> = {
   'shell.accessDenied.back': 'Назад',
   'shell.signingIn': 'Выполняем вход…',
   'shell.loadingPage': 'Загрузка страницы…',
-  'shell.attendanceBadge.toMark': 'Отметить: {count}',
+  'shell.attendanceBadge.toMark': 'Meet не смог отметить: {count}',
   'shell.attendanceBadge.waiting': 'Ждут Meet: {count}',
   'shell.attendanceBadge.scores': 'Нужны баллы за активность: {count}',
 };
