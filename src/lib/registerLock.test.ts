@@ -3,7 +3,7 @@ import type { MeetReviewOptions } from '../services/api/meetAttendance';
 import type { RegisterLock, StudentRegister } from '../services/api/meetRegister';
 import {
   cellIsOpen, cellLock, changeReady, evidenceLine, handedBack, heldBack, lengthIndex, lessonLock, lessonMinutes,
-  lockIndex, lockedTitle, markLabel, pickMark, reasonFlag, reasonPresets, toChange,
+  lockIndex, lockedTitle, markLabel, mergeLocks, pickMark, reasonFlag, reasonPresets, toChange,
 } from './registerLock';
 
 const reg = (over: Partial<StudentRegister> = {}): StudentRegister => ({
@@ -72,6 +72,14 @@ describe('indexes', () => {
   it('keeps the lock of each lesson that has one', () => {
     const index = lockIndex([{ event_id: 1, register_lock: lock() }, { event_id: 2 }, { event_id: 3, register_lock: null }]);
     expect([...index.keys()]).toEqual([1]);
+  });
+
+  it('merges the weekly lessons’ locks with the Meet list’s, the newer Meet answer winning', () => {
+    const weekly = lockIndex([{ event_id: 1, register_lock: lock({ state: 'pending' }) }, { event_id: 2, register_lock: lock({ state: 'pending' }) }]);
+    const meet = lockIndex([{ event_id: 2, register_lock: lock() }]);
+    const merged = mergeLocks(weekly, meet);
+    expect(merged.get(1)?.state).toBe('pending');
+    expect(merged.get(2)?.state).toBe('decided');
   });
 
   it('measures a lesson in whole minutes and skips what it cannot', () => {

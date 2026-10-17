@@ -29,7 +29,7 @@ import { ExcusePopover } from '../components/attendance/ExcusePopover';
 import { MeetMarkPopover } from '../components/attendance/MeetMarkPopover';
 import { HeldBackButton, PendingExcuseDot } from '../components/attendance/CellLockParts';
 import { deepLinkedFinishedGroup } from '../lib/journalDeepLink';
-import { cellIsOpen, cellLock, handedBack, heldBack, lengthIndex, lockIndex, lockedTitle, type CellLock, type MarkChange } from '../lib/registerLock';
+import { cellIsOpen, cellLock, handedBack, heldBack, lengthIndex, lockIndex, lockedTitle, mergeLocks, type CellLock, type MarkChange } from '../lib/registerLock';
 import { listMeetRecords, type MeetLessonFlag, type MeetReviewOptions, type MeetStudentVerdict } from '../services/api/meetAttendance';
 import { flagText, mismatchIndex, reasonText, verdictIndex } from '../lib/meetAttendance';
 import { MeetVerdictBadge, verdictNote } from '../components/meetAttendance/MeetVerdictBadge';
@@ -67,6 +67,8 @@ interface LessonMeta {
     start_datetime: string;
     is_substitution?: boolean;               // lesson was covered by a substitute teacher
     substitute_teacher_name?: string | null; // that substitute's name (null when regular teacher)
+    // The register lock for this lesson (2026-10-17), also for one that has no Meet record yet.
+    register_lock?: RegisterLock | null;
     homework?: HomeworkMeta;        // legacy: first homework of the lesson
     homeworks?: HomeworkMeta[];     // all homeworks of the lesson
 }
@@ -718,10 +720,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const [meetRegister, setMeetRegister] = useState<Map<string, StudentRegister>>(new Map());
   const [registerMode, setRegisterMode] = useState<RegisterMode>('off');
   const [meetLessonState, setMeetLessonState] = useState<Map<number, string>>(new Map());
-  // The register lock per lesson (2026-10-17) and each lesson's length for «52 из 60 мин». A server that
-  // sends no lock leaves both maps empty — and every cell open, as before.
-  const [lessonLocks, setLessonLocks] = useState<Map<number, RegisterLock>>(new Map());
+  // The register lock per lesson (2026-10-17) and each lesson's length for «52 из 60 мин». The week's lessons
+  // carry a lock each; the Meet list adds its fresher answer. A server that sends no lock leaves every
+  // cell open, as before.
+  const [meetLocks, setMeetLocks] = useState<Map<number, RegisterLock>>(new Map());
   const [lessonLengths, setLessonLengths] = useState<Map<number, number>>(new Map());
+  const lessonLocks = useMemo(() => mergeLocks(lockIndex(data?.lessons ?? []), meetLocks), [data, meetLocks]);
   const [reviewOptions, setReviewOptions] = useState<MeetReviewOptions>({});
   // Lessons whose register Meet decided: every present student there owes a балл за активность (the star).
   const meetDecidedLessons = useMemo(() => decidedLessons(meetRegister), [meetRegister]);
@@ -885,7 +889,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       setMeetTalk(new Map());
       setMeetVerdicts(new Map());
       setMeetRegister(new Map()); setMeetLessonState(new Map());
-      setLessonLocks(new Map()); setLessonLengths(new Map());
+      setMeetLocks(new Map()); setLessonLengths(new Map());
       return;
     }
     const DAY = 24 * 60 * 60 * 1000;
@@ -903,11 +907,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         setMeetRegister(registerIndex(r.items));
         setRegisterMode(r.register_mode ?? 'off');
         setMeetLessonState(lessonStateIndex(r.items));
-        setLessonLocks(lockIndex(r.items));
+        setMeetLocks(lockIndex(r.items));
         setLessonLengths(lengthIndex(r.items));
         setReviewOptions(r.review_options ?? {});
       })
-      .catch(() => { if (!cancelled) { setMeetMismatches(new Map()); setMeetTalk(new Map()); setMeetVerdicts(new Map()); setMeetRegister(new Map()); setMeetLessonState(new Map()); setLessonLocks(new Map()); setLessonLengths(new Map()); } });
+      .catch(() => { if (!cancelled) { setMeetMismatches(new Map()); setMeetTalk(new Map()); setMeetVerdicts(new Map()); setMeetRegister(new Map()); setMeetLessonState(new Map()); setMeetLocks(new Map()); setLessonLengths(new Map()); } });
     return () => { cancelled = true; };
   }, [selectedGroupId, data, meetRefresh]);
 
