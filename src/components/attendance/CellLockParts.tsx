@@ -11,9 +11,14 @@ import '@/lib/i18n/catalogs/attendance';
  * stays one render of cells.
  */
 
-/** Before Meet decides, an advance excuse is all a person may write: a dot that opens the reason box. */
-export function PendingExcuseDot({ onExcuse, className }: {
+/**
+ * Before Meet decides, an advance excuse is all a person may write. In the journal's cell it is a dot
+ * that opens the reason box; given a `label` (the lesson page) it is a text button, and `className`
+ * then places it.
+ */
+export function PendingExcuseDot({ onExcuse, label, className }: {
   onExcuse: (excused: boolean, note: string | null) => void;
+  label?: string;
   className?: string;
 }) {
   const t = useT();
@@ -23,10 +28,12 @@ export function PendingExcuseDot({ onExcuse, className }: {
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(true); }}
-        className={cn('absolute left-1 top-1 h-2.5 w-2.5 rounded-full border border-muted-foreground/60 bg-transparent', className)}
+        className={cn(label ? '' : 'absolute left-1 top-1 h-2.5 w-2.5 rounded-full border border-muted-foreground/60 bg-transparent', className)}
         title={t('attendance.excuse.markTitle')}
-        aria-label={t('attendance.excuse.markAria')}
-      />
+        aria-label={label ? undefined : t('attendance.excuse.markAria')}
+      >
+        {label}
+      </button>
       {open && (
         <ExcusePopover
           excused={false}
@@ -40,11 +47,15 @@ export function PendingExcuseDot({ onExcuse, className }: {
   );
 }
 
-/** A student Meet held back for an unconfirmed account: «Кто это?» names it (Meet decides again). */
-export function HeldBackButton({ eventId, onByHand, onNamed }: {
+/**
+ * A student Meet held back for an unconfirmed account: «Кто это?» names it (Meet decides again).
+ * Sits in the corner of a journal cell unless `className` places it elsewhere.
+ */
+export function HeldBackButton({ eventId, onByHand, onNamed, className }: {
   eventId: number;
   onByHand: () => void;
   onNamed: () => void;
+  className?: string;
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -53,7 +64,7 @@ export function HeldBackButton({ eventId, onByHand, onNamed }: {
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(true); }}
-        className="absolute bottom-0 right-0 rounded-tl bg-amber-500 px-1 text-[9px] font-bold leading-3 text-white hover:bg-amber-600"
+        className={className ?? 'absolute bottom-0 right-0 rounded-tl bg-amber-500 px-1 text-[9px] font-bold leading-3 text-white hover:bg-amber-600'}
       >
         {t('attendance.who.button')}
       </button>
