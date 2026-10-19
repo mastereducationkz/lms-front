@@ -46,6 +46,18 @@ describe('a registrant’s personal link', () => {
     expect(calendar).not.toBeNull();
   });
 
+  it('says the room is being opened when the webinar is on but its link does not exist yet, instead of showing nothing', async () => {
+    await open({ body: info({ state: 'live', join_url: null }) });
+    expect(text()).toContain('the room is being opened');
+    expect(document.querySelector('a[href*="meet.google.com"]')).toBeNull();
+  });
+
+  it('says the webinar was cancelled when the personal link now answers 410', async () => {
+    await open({ status: 410, body: { detail: 'This webinar was cancelled', reason_code: 'webinar_cancelled' } });
+    expect(text()).toContain('This webinar has been cancelled.');
+    expect(text()).not.toContain('This link is not valid');
+  });
+
   it('offers the way into the room once the webinar is on', async () => {
     await open({ body: info({ state: 'live', join_url: 'https://meet.google.com/abc-defg-hij' }) });
     const join = document.querySelector('a[href="https://meet.google.com/abc-defg-hij"]') as HTMLAnchorElement;

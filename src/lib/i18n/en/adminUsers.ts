@@ -119,9 +119,9 @@ export const adminUsers = {
   'adminUsers.fields.email': 'Email',
   'adminUsers.fields.role': 'Role',
   'adminUsers.fields.rolePlaceholder': 'Select role',
-  'adminUsers.fields.workspaceEmail': 'Workspace email (recordings)',
+  'adminUsers.fields.workspaceEmail': 'Workspace email (Meet, recordings)',
   'adminUsers.fields.workspaceHelp':
-    "Connecting gives this teacher's lessons Meet rooms, recordings and Telegram invitations. The account must already exist in the Workspace users list uploaded on Admin → Recordings Rollout. Clear the field to disconnect.",
+    "Connecting gives the lessons and webinars this person runs Meet rooms and recordings (for teachers also Telegram invitations); a webinar can only be opened to everyone when its host is connected. The account must already exist in the Workspace users list uploaded on Admin → Recordings Rollout. Clear the field to disconnect.",
   'adminUsers.fields.personalEmail': 'Personal email',
   'adminUsers.fields.personalEmailHelp': 'For contact and recovery only. Not used to sign in.',
   'adminUsers.fields.groups': 'Groups',

@@ -9,7 +9,7 @@ import { formatDate, formatTime } from '../lib/i18n/format';
 import { usePublicLocale } from '../lib/publicLocale';
 import '@/lib/i18n/catalogs/openWebinars';
 
-type State = { kind: 'loading' } | { kind: 'ready'; data: JoinInfo } | { kind: 'missing' } | { kind: 'error' };
+type State = { kind: 'loading' } | { kind: 'ready'; data: JoinInfo } | { kind: 'missing' } | { kind: 'cancelled' } | { kind: 'error' };
 
 const REFRESH_MS = 15_000;
 
@@ -32,7 +32,7 @@ export default function PublicJoinPage() {
     try {
       setState({ kind: 'ready', data: await getJoinInfo(code) });
     } catch (failure) {
-      setState((now) => (now.kind === 'ready' ? now : failure instanceof PublicApiError && failure.status === 404 ? { kind: 'missing' } : { kind: 'error' }));
+      setState((now) => (now.kind === 'ready' ? now : failure instanceof PublicApiError && failure.status === 404 ? { kind: 'missing' } : failure instanceof PublicApiError && failure.status === 410 ? { kind: 'cancelled' } : { kind: 'error' }));
     }
   }, [code]);
 
@@ -53,6 +53,7 @@ export default function PublicJoinPage() {
         </div>
       )}
       {state.kind === 'missing' && <p className="rounded-2xl border border-border bg-card px-6 py-12 text-sm shadow-sm">{t('openWebinars.join.notFound')}</p>}
+      {state.kind === 'cancelled' && <p role="status" className="rounded-2xl border border-border bg-card px-6 py-12 text-sm shadow-sm">{t('openWebinars.cancelled')}</p>}
       {state.kind === 'error' && (
         <div className="space-y-3 rounded-2xl border border-border bg-card px-6 py-12 text-sm shadow-sm">
           <p>{t('openWebinars.loadFailed')}</p>
@@ -91,6 +92,9 @@ export default function PublicJoinPage() {
               </Button>
               <p className="text-xs text-muted-foreground">{t('openWebinars.join.opens')}</p>
             </div>
+          )}
+          {data.state === 'live' && !data.join_url && (
+            <p className="text-sm text-muted-foreground" role="status">{t('openWebinars.join.preparing')}</p>
           )}
           {data.state === 'ended' && (
             <div className="space-y-3">

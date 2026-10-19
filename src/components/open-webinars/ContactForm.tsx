@@ -49,7 +49,7 @@ export default function ContactForm({ t, withEmail, consentText, submitLabel, on
     setError(null);
     const { utm, referer } = captureAttribution();
     try {
-      await onSubmit({ name: name.trim(), phone: phone.trim(), email: email.trim() || undefined, consent, utm, referer, website: trap });
+      await onSubmit({ name: name.trim(), phone: phone.trim(), email: email.trim() || undefined, consent, utm, referer, ow_extra: trap });
     } catch (failure) {
       setError(errorText(failure, t));
       setBusy(false);
@@ -75,7 +75,7 @@ export default function ContactForm({ t, withEmail, consentText, submitLabel, on
       )}
       {/* A person never sees this field; a bot fills every field it finds. */}
       <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
-        <input name="website" tabIndex={-1} autoComplete="off" value={trap} onChange={(e) => setTrap(e.target.value)} />
+        <input name="ow_extra" tabIndex={-1} autoComplete="off" value={trap} onChange={(e) => setTrap(e.target.value)} />
       </div>
       <div className="flex items-start gap-2.5">
         <Checkbox id="ow-consent" checked={consent} onCheckedChange={(next) => setConsent(next === true)} className="mt-0.5" />

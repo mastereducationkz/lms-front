@@ -44,6 +44,7 @@ import { followingPayload } from '../lib/eventSeries';
 import { HostTitleSuggestion, SeriesEditSection, useEventSeries } from './events/SeriesEditSection';
 import EventHostField from './events/EventHostField';
 import OpenAccessCard from './open-webinars/OpenAccessCard';
+import '@/lib/i18n/catalogs/openWebinars';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/adminTools';
 import '@/lib/i18n/catalogs/adminPages';
@@ -636,7 +637,13 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
         )}
 
         {/* Public access: opens a webinar to everyone. Saved on its own, so only for an event that exists. */}
-        {event && formData.event_type === 'webinar' && <OpenAccessCard eventId={event.id} />}
+        {/* Admins operate it (the endpoints are admin-only): a head teacher editing the same webinar would only see an error. */}
+        {event && formData.event_type === 'webinar' && user?.role === 'admin' && (
+          <OpenAccessCard eventId={event.id} hostUnsaved={(formData.teacher_id ?? null) !== (event.teacher_id ?? null)} />
+        )}
+        {!event && formData.event_type === 'webinar' && user?.role === 'admin' && (
+          <p className="text-xs text-muted-foreground">{t('openWebinars.admin.access.saveFirst')}</p>
+        )}
 
         {/* Groups */}
         <Card>
