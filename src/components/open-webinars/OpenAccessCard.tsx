@@ -20,7 +20,7 @@ const FIELD = 'h-9 w-full rounded-md border border-input bg-background px-3 text
  * «Public access» of one webinar, on its edit page: students only (as always), anyone with the link, or anyone
  * who registers. Saved on its own — it is not part of the event form's Save, because it is not a field of the event.
  */
-export default function OpenAccessCard({ eventId }: { eventId: number }) {
+export default function OpenAccessCard({ eventId, hostUnsaved = false }: { eventId: number; /** The form's Host differs from the saved one: the guard reads the saved one. */ hostUnsaved?: boolean }) {
   const t = useT();
   const [access, setAccess] = useState<OpenAccess | null>(null);
   const [settings, setSettings] = useState<OpenSettings | null>(null);
@@ -54,6 +54,10 @@ export default function OpenAccessCard({ eventId }: { eventId: number }) {
   if (state === 'failed' || !access || !settings) return <Card><CardContent className="py-6 text-sm text-muted-foreground">{t('openWebinars.admin.loadFailed')}</CardContent></Card>;
 
   const policyMissing = mode === 'registration' && !settings.policy_text.trim();
+  // The same rule the server applies: a Meet link on the event, or a saved host with a Workspace account.
+  const roomPossible = access.has_meeting_url || access.host?.has_workspace === true;
+  const hostNote = access.has_meeting_url ? 'link' : !access.host ? 'none' : access.host.has_workspace ? 'ok' : 'noWorkspace';
+  const hostBlocked = mode !== 'students' && (hostUnsaved || !roomPossible);
   const publicUrl = access.slug ? `${LMS_ORIGIN}/w/${access.slug}` : null;
 
   const save = async () => {
@@ -122,6 +126,15 @@ export default function OpenAccessCard({ eventId }: { eventId: number }) {
                 {settings.pipelines.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
+            <p data-host-note={hostUnsaved ? 'unsaved' : hostNote} role={hostBlocked ? 'alert' : 'status'}
+               className={hostBlocked
+                 ? 'rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200'
+                 : 'rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground'}>
+              {hostUnsaved
+                ? t('openWebinars.admin.access.host.unsaved')
+                : t(`openWebinars.admin.access.host.${hostNote}` as 'openWebinars.admin.access.host.ok', { name: access.host?.name ?? '' })}
+              {!hostUnsaved && hostNote === 'noWorkspace' && (<>{' '}<Link to="/admin/users" className="underline underline-offset-4">{t('openWebinars.admin.access.host.manageUsers')}</Link></>)}
+            </p>
             <p className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">{t('openWebinars.admin.access.producer')}</p>
             {policyMissing && (
               <p role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200">
@@ -134,7 +147,7 @@ export default function OpenAccessCard({ eventId }: { eventId: number }) {
 
         {note && <p role={note.kind === 'error' ? 'alert' : 'status'} className={note.kind === 'error' ? 'text-sm text-red-600 dark:text-red-400' : 'text-sm text-green-700 dark:text-green-400'}>{note.text}</p>}
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="button" onClick={save} disabled={busy || policyMissing || (mode !== 'students' && pipelineId === null)}>
+          <Button type="button" onClick={save} disabled={busy || policyMissing || hostBlocked || (mode !== 'students' && pipelineId === null)}>
             {busy ? t('openWebinars.admin.saving') : t('openWebinars.admin.save')}
           </Button>
           {access.open && publicUrl && (

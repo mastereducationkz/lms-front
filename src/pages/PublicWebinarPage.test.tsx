@@ -81,7 +81,7 @@ describe('a webinar page anyone can open', () => {
     await submit();
     const post = backend.calls.find((c) => c.method === 'POST')!;
     expect(post.url).toBe(`/public/webinars/${SLUG}/register`);
-    expect(post.body).toMatchObject({ name: 'Aigerim S', phone: '8 700 123 45 67', email: 'a@example.com', consent: true, website: '' });
+    expect(post.body).toMatchObject({ name: 'Aigerim S', phone: '8 700 123 45 67', email: 'a@example.com', consent: true, ow_extra: '' });
     expect(post.body!.utm).toEqual({ utm_source: 'instagram', utm_campaign: 'oct' });
     expect(text()).toContain('JOIN PAGE');
   });
@@ -115,6 +115,18 @@ describe('a webinar page anyone can open', () => {
     expect(join.target).toBe('_blank');
     expect(join.rel).toContain('noopener');
     expect(text()).toContain('The webinar is on now');
+  });
+
+  it('says the room is being opened when an open-link webinar is on but has no link yet', async () => {
+    await open({ [PAGE]: { body: webinar({ access_mode: 'open', registration_open: false, state: 'live', join_url: null }) } });
+    expect(text()).toContain('the room is being opened');
+    expect(text()).not.toContain('The join button appears 15 minutes before the start.');
+  });
+
+  it('says the webinar was cancelled — not «not found» — when the backend answers 410', async () => {
+    await open({ [PAGE]: { status: 410, body: { detail: 'This webinar was cancelled', reason_code: 'webinar_cancelled' } } });
+    expect(text()).toContain('This webinar has been cancelled.');
+    expect(text()).not.toContain('was not found');
   });
 
   it('leaves a number for a call-back without asking for an e-mail', async () => {

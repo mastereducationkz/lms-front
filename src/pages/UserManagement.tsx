@@ -95,6 +95,9 @@ import { useOffboardLauncher } from '../components/offboarding/useOffboardLaunch
 import LeftBadge from '../components/offboarding/LeftBadge';
 import { STAFF_ROLES } from '../lib/offboarding';
 
+/** Staff who can run an event (a webinar's host may be a curator or an admin): any of them can be connected to Google Workspace. */
+const WORKSPACE_ROLES: string[] = ['teacher', 'head_teacher', 'curator', 'head_curator', 'admin'];
+
 /** The server's reason for a refusal (already in the reader's language when it has a reason_code). */
 const serverDetail = (error: unknown): string | null => {
   const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
@@ -1051,7 +1054,7 @@ export default function UserManagement() {
     // current value is fetched separately; a miss just leaves the field empty and — because
     // only diffs are submitted — can never disconnect anyone by accident.
     let workspaceEmail = '';
-    if (user.role === 'teacher' || user.role === 'head_teacher') {
+    if (WORKSPACE_ROLES.includes(user.role)) {
       try {
         workspaceEmail = (await getRecordingTeacher(Number(user.id))).workspace_email ?? '';
       } catch {
@@ -2132,7 +2135,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
 
         {/* Recordings connection — the teacher's @mastereducation.kz account. Only in edit
             mode: creating it here would run before the user row exists. */}
-        {isEdit && (formData.role === 'teacher' || formData.role === 'head_teacher') && (
+        {isEdit && WORKSPACE_ROLES.includes(formData.role) && (
           <div className="p-1">
             <Label htmlFor="workspace_email" className="text-sm font-medium">
               {t('adminUsers.fields.workspaceEmail')}

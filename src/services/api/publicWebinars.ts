@@ -51,8 +51,8 @@ export interface ContactBody {
   consent: boolean;
   utm?: Record<string, string>;
   referer?: string;
-  /** The hidden honeypot: a person never fills it. */
-  website?: string;
+  /** The hidden honeypot: a person never fills it. Named so that no browser autofill or password manager knows it. */
+  ow_extra?: string;
 }
 
 /** A refusal with the backend's stable `reason_code`, so the page can say it in the visitor's language. */

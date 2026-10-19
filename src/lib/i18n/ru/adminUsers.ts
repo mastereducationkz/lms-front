@@ -124,9 +124,9 @@ export const adminUsers: RuTable<typeof en> = {
   'adminUsers.fields.email': 'Email',
   'adminUsers.fields.role': 'Роль',
   'adminUsers.fields.rolePlaceholder': 'Выберите роль',
-  'adminUsers.fields.workspaceEmail': 'Почта Workspace (записи уроков)',
+  'adminUsers.fields.workspaceEmail': 'Почта Workspace (Meet, записи)',
   'adminUsers.fields.workspaceHelp':
-    'После подключения у уроков этого преподавателя появятся комнаты Meet, записи и приглашения в Telegram. Аккаунт уже должен быть в списке пользователей Workspace, загруженном в разделе «Админ → Запуск записей уроков». Чтобы отключить, очистите поле.',
+    'После подключения у уроков и вебинаров этого человека появятся комнаты Meet и записи (у преподавателей ещё и приглашения в Telegram); вебинар можно открыть для всех, только если его ведущий подключён. Аккаунт уже должен быть в списке пользователей Workspace, загруженном в разделе «Админ → Запуск записей уроков». Чтобы отключить, очистите поле.',
   'adminUsers.fields.personalEmail': 'Личный e-mail',
   'adminUsers.fields.personalEmailHelp': 'Только для связи и восстановления доступа. Для входа не используется.',
   'adminUsers.fields.groups': 'Группы',

@@ -12,7 +12,7 @@ import { usePublicLocale } from '../lib/publicLocale';
 import { captureAttribution } from '../lib/utm';
 import '@/lib/i18n/catalogs/openWebinars';
 
-type State = { kind: 'loading' } | { kind: 'ready'; data: PublicWebinar } | { kind: 'missing' } | { kind: 'error' };
+type State = { kind: 'loading' } | { kind: 'ready'; data: PublicWebinar } | { kind: 'missing' } | { kind: 'cancelled' } | { kind: 'error' };
 
 /** How often the page re-asks, so «starts in …» turns into the join button without a reload. */
 const REFRESH_MS = 30_000;
@@ -31,7 +31,7 @@ export default function PublicWebinarPage() {
     try {
       setState({ kind: 'ready', data: await getPublicWebinar(slug) });
     } catch (failure) {
-      setState((now) => (now.kind === 'ready' ? now : failure instanceof PublicApiError && failure.status === 404 ? { kind: 'missing' } : { kind: 'error' }));
+      setState((now) => (now.kind === 'ready' ? now : failure instanceof PublicApiError && failure.status === 404 ? { kind: 'missing' } : failure instanceof PublicApiError && failure.status === 410 ? { kind: 'cancelled' } : { kind: 'error' }));
     }
   }, [slug]);
 
@@ -55,6 +55,7 @@ export default function PublicWebinarPage() {
         </div>
       )}
       {state.kind === 'missing' && <p className="rounded-2xl border border-border bg-card px-6 py-12 text-sm text-foreground shadow-sm">{t('openWebinars.notFound')}</p>}
+      {state.kind === 'cancelled' && <p role="status" className="rounded-2xl border border-border bg-card px-6 py-12 text-sm text-foreground shadow-sm">{t('openWebinars.cancelled')}</p>}
       {state.kind === 'error' && (
         <div className="space-y-3 rounded-2xl border border-border bg-card px-6 py-12 text-sm shadow-sm">
           <p>{t('openWebinars.loadFailed')}</p>
@@ -126,7 +127,7 @@ export default function PublicWebinarPage() {
                   </Button>
                   <p className="text-xs text-muted-foreground">{t('openWebinars.join.opens')}</p>
                 </div>
-              ) : <p className="text-sm text-muted-foreground">{t('openWebinars.join.opensAt')}</p>
+              ) : <p className="text-sm text-muted-foreground">{t(data.state === 'live' ? 'openWebinars.join.preparing' : 'openWebinars.join.opensAt')}</p>
             )}
 
             {data.state === 'ended' && data.recording_slug && (

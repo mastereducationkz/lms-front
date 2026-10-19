@@ -3,10 +3,11 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const auth = vi.hoisted(() => ({ role: 'admin' }));
 // useT() reads AuthContext, whose module pulls the API client in (localStorage at module scope).
 vi.mock('../contexts/AuthContext', async () => {
   const { createContext } = await import('react');
-  return { default: createContext(undefined), useAuth: () => ({ user: { role: 'admin' } }) };
+  return { default: createContext(undefined), useAuth: () => ({ user: { role: auth.role } }) };
 });
 
 const getEventSeries = vi.fn();
@@ -30,8 +31,12 @@ vi.mock('../services/api', () => ({
   createCuratorEvent: vi.fn(),
 }));
 
-// The public-access card has its own tests and talks to the API client, which these form tests never use.
-vi.mock('./open-webinars/OpenAccessCard', () => ({ default: () => null }));
+// The public-access card has its own tests and talks to the API client, which these form tests never use:
+// a marker stands in for it, carrying what the form tells it.
+vi.mock('./open-webinars/OpenAccessCard', async () => {
+  const { createElement } = await import('react');
+  return { default: (p: { eventId: number; hostUnsaved?: boolean }) => createElement('i', { 'data-open-card': p.eventId, 'data-unsaved': String(!!p.hostUnsaved) }) };
+});
 
 import EventForm from './EventForm';
 import type { Event } from '../types';
@@ -60,6 +65,7 @@ async function show(ev: Event) {
   await settle();
 }
 beforeEach(() => {
+  auth.role = 'admin';
   getEventSeries.mockReset(); updateEvent.mockReset(); getEventHosts.mockReset();
   getEventHosts.mockResolvedValue(STAFF);
   getEventSeries.mockResolvedValue({ series_id: 's1', total: 49, position: 1, following: 49 });
@@ -118,6 +124,28 @@ describe('event form: who runs the event', () => {
     getEventHosts.mockRejectedValue(new Error('boom'));
     await show(webinar);
     expect(host.querySelector('[role="alert"]')?.textContent).toContain('The list of staff could not be loaded');
+  });
+
+  it('the public-access card is for admins editing a webinar, and learns when the host was changed but not saved', async () => {
+    await show(webinar);
+    const card = () => host.querySelector('[data-open-card]') as HTMLElement | null;
+    expect(card()?.getAttribute('data-open-card')).toBe('19283');
+    expect(card()?.getAttribute('data-unsaved')).toBe('false');
+    await act(async () => { trigger()!.click(); });
+    const option = Array.from(document.body.querySelectorAll('[role="option"]')).find((o) => o.textContent?.includes('Сулеймен Нуриддин'));
+    await act(async () => { (option as HTMLElement).click(); });
+    expect(card()?.getAttribute('data-unsaved')).toBe('true');
+  });
+
+  it('a head teacher editing the same webinar gets no public-access card (its endpoints are admin-only)', async () => {
+    auth.role = 'head_teacher';
+    await show(webinar);
+    expect(host.querySelector('[data-open-card]')).toBeNull();
+  });
+
+  it('a lesson has no public-access card either', async () => {
+    await show(lesson);
+    expect(host.querySelector('[data-open-card]')).toBeNull();
   });
 
   it('a class lesson keeps its Teacher field, without the host note', async () => {

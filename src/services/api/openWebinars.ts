@@ -36,6 +36,9 @@ export interface Funnel {
   existing_students: number;
 }
 
+/** The event's saved host, as the guard on «open to everyone» sees them. */
+export interface AccessHost { id: number; name: string; role: string; has_workspace: boolean }
+
 export interface OpenAccess {
   event_id: number;
   open: boolean;
@@ -43,6 +46,10 @@ export interface OpenAccess {
   slug: string | null;
   speaker_id: number | null;
   lead_pipeline_id: number | null;
+  /** The saved host; null when the event has none. A Meet room is made only for a host with a Workspace account. */
+  host: AccessHost | null;
+  /** Someone already pasted a Meet link into the event, so no host is needed for the room. */
+  has_meeting_url: boolean;
   funnel: Funnel;
 }
 

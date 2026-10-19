@@ -18,15 +18,16 @@ import OpenAccessCard from './OpenAccessCard';
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const funnel = { registered: 0, joined: 0, consultation_requests: 0, leads_sent: 0, leads_pending: 0, leads_failed: 0, existing_students: 0 };
-const closed = { event_id: 7, open: false, access_mode: 'students', slug: null, speaker_id: null, lead_pipeline_id: null, funnel };
+const host = { id: 5, name: 'Aldiyar Zhumadilda', role: 'admin', has_workspace: true };
+const closed = { event_id: 7, open: false, access_mode: 'students', slug: null, speaker_id: null, lead_pipeline_id: null, host, has_meeting_url: false, funnel };
 const opened = { ...closed, open: true, access_mode: 'registration', slug: 'ielts-writing-2030-03-03', lead_pipeline_id: 10736538, funnel: { ...funnel, registered: 12, joined: 5 } };
 const settings = (policy = 'Policy text') => ({
   policy_text: policy, policy_version: 'abc', policy_updated_at: null, consent_text_ru: 'ru', consent_text_en: 'en',
   pipelines: [{ id: 10520038, name: 'SAT' }, { id: 10736538, name: 'NUET + IELTS' }],
 });
 
-async function show() {
-  await mount(<MemoryRouter><OpenAccessCard eventId={7} /></MemoryRouter>);
+async function show(hostUnsaved = false) {
+  await mount(<MemoryRouter><OpenAccessCard eventId={7} hostUnsaved={hostUnsaved} /></MemoryRouter>);
 }
 const radio = (value: string) => document.querySelector(`input[name="access-mode"][value="${value}"]`);
 const saveButton = () => Array.from(document.querySelectorAll('button')).find((b) => b.textContent === 'Save') as HTMLButtonElement;
@@ -74,6 +75,45 @@ describe('a webinar’s public access card', () => {
     expect(saveButton().disabled).toBe(true);
     await click(radio('open'));
     expect(saveButton().disabled).toBe(false);
+  });
+
+  it('says who the host is and that the room is made by itself, when the host has a Workspace account', async () => {
+    await show();
+    await click(radio('open'));
+    expect(text()).toContain('Host: Aldiyar Zhumadilda. The Meet room is made automatically three days before the start.');
+    expect(saveButton().disabled).toBe(false);
+  });
+
+  it('blocks Save and names the host when they have no Workspace account — the server would refuse', async () => {
+    api.getOpenAccess.mockResolvedValue({ ...closed, host: { ...host, name: 'Dana Curator', role: 'curator', has_workspace: false } });
+    await show();
+    await click(radio('open'));
+    expect(text()).toContain('Dana Curator has no Google Workspace account linked in the LMS');
+    expect(document.querySelector('a[href="/admin/users"]')).not.toBeNull();
+    expect(saveButton().disabled).toBe(true);
+    await click(radio('students'));
+    expect(saveButton().disabled).toBe(false);
+  });
+
+  it('blocks Save when the webinar has no host and no link, and unblocks it for a pasted Meet link', async () => {
+    api.getOpenAccess.mockResolvedValue({ ...closed, host: null });
+    await show();
+    await click(radio('open'));
+    expect(text()).toContain('This webinar has no host.');
+    expect(saveButton().disabled).toBe(true);
+    await unmount();
+    api.getOpenAccess.mockResolvedValue({ ...closed, host: null, has_meeting_url: true });
+    await show();
+    await click(radio('open'));
+    expect(text()).toContain('A Meet link is already set on the event');
+    expect(saveButton().disabled).toBe(false);
+  });
+
+  it('asks to save the event first when the Host in the form was changed but not saved', async () => {
+    await show(true);
+    await click(radio('open'));
+    expect(text()).toContain('You changed the host but have not saved the event yet.');
+    expect(saveButton().disabled).toBe(true);
   });
 
   it('closes the public access when set back to students only, keeping the registrations', async () => {
