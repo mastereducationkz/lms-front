@@ -11,9 +11,13 @@ COPY . .
 ARG VITE_SENTRY_DSN=""
 ARG VITE_SENTRY_ENVIRONMENT=""
 ARG VITE_SENTRY_RELEASE=""
+# Cloudflare Turnstile site key of the public webinar forms: public by design (it only makes the page show the check), empty
+# by default = no check (plain `docker build` in CI, local builds, staging). The matching secret is TURNSTILE_SECRET on the API.
+ARG VITE_TURNSTILE_SITE_KEY=""
 ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN \
     VITE_SENTRY_ENVIRONMENT=$VITE_SENTRY_ENVIRONMENT \
-    VITE_SENTRY_RELEASE=$VITE_SENTRY_RELEASE
+    VITE_SENTRY_RELEASE=$VITE_SENTRY_RELEASE \
+    VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
 # Staging (deploy-staging.yml): `--mode staging` loads .env.staging instead of .env.production, and
 # the branch and commit go into the «STAGING · branch · commit» badge. Production leaves all three
 # at their defaults.

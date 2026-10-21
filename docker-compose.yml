@@ -9,6 +9,8 @@ services:
         VITE_SENTRY_ENVIRONMENT: production
         # Set by deploy-frontend.yml from `git rev-parse HEAD`; "unknown" leaves release unset.
         VITE_SENTRY_RELEASE: ${LMS_FRONT_GIT_COMMIT:-unknown}
+        # Public by design: it only makes the webinar pages show the bot check (the secret is on the API).
+        VITE_TURNSTILE_SITE_KEY: 0x4AAAAAAFfj3_-cWNYLCtaS
     # One image for both containers below (without it compose would build one per service).
     image: lms-frontend:latest
     container_name: lms-frontend
