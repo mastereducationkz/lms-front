@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { CalendarClock, Loader2, Mic2, PlayCircle, Video } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -6,15 +6,15 @@ import PublicShell from '../components/open-webinars/PublicShell';
 import ContactForm from '../components/open-webinars/ContactForm';
 import ConsultationCard from '../components/open-webinars/ConsultationCard';
 import { countdownText, useCountdown } from '../components/open-webinars/useCountdown';
-import { getPublicWebinar, PublicApiError, registerForWebinar, type PublicWebinar } from '../services/api/publicWebinars';
+import { usePublicPage } from '../components/open-webinars/usePublicPage';
+import { getPublicWebinar, registerForWebinar } from '../services/api/publicWebinars';
 import { formatDate, formatTime } from '../lib/i18n/format';
+import { mediaUrl } from '../lib/mediaUrl';
 import { usePublicLocale } from '../lib/publicLocale';
 import { captureAttribution } from '../lib/utm';
 import '@/lib/i18n/catalogs/openWebinars';
 
-type State = { kind: 'loading' } | { kind: 'ready'; data: PublicWebinar } | { kind: 'missing' } | { kind: 'cancelled' } | { kind: 'error' };
-
-/** How often the page re-asks, so «starts in …» turns into the join button without a reload. */
+/** How often the page re-asks while the webinar is not over, so «starts in …» turns into the join button without a reload. */
 const REFRESH_MS = 30_000;
 
 /**
@@ -25,27 +25,17 @@ export default function PublicWebinarPage() {
   const { slug = '' } = useParams();
   const navigate = useNavigate();
   const { locale, setLocale, t } = usePublicLocale();
-  const [state, setState] = useState<State>({ kind: 'loading' });
-
-  const load = useCallback(async () => {
-    try {
-      setState({ kind: 'ready', data: await getPublicWebinar(slug) });
-    } catch (failure) {
-      setState((now) => (now.kind === 'ready' ? now : failure instanceof PublicApiError && failure.status === 404 ? { kind: 'missing' } : failure instanceof PublicApiError && failure.status === 410 ? { kind: 'cancelled' } : { kind: 'error' }));
-    }
-  }, [slug]);
+  const { state, retry } = usePublicPage(slug, getPublicWebinar, REFRESH_MS);
+  // A phone that is already registered gets no personal link back (nobody may open another person's page by typing
+  // their number): the server re-sends it to the e-mail on file, and this is all the page can say.
+  const [sentToEmail, setSentToEmail] = useState(false);
 
   // Where the visitor came from is read the moment they land, so it survives anything the page does next.
   useEffect(() => { captureAttribution(); }, []);
 
-  useEffect(() => {
-    void load();
-    const id = window.setInterval(() => void load(), REFRESH_MS);
-    return () => window.clearInterval(id);
-  }, [load]);
-
   const data = state.kind === 'ready' ? state.data : null;
   const untilStart = useCountdown(data?.starts_at);
+  const banner = mediaUrl(data?.banner_url);
 
   return (
     <PublicShell locale={locale} setLocale={setLocale} t={t}>
@@ -59,11 +49,13 @@ export default function PublicWebinarPage() {
       {state.kind === 'error' && (
         <div className="space-y-3 rounded-2xl border border-border bg-card px-6 py-12 text-sm shadow-sm">
           <p>{t('openWebinars.loadFailed')}</p>
-          <Button variant="outline" size="sm" onClick={() => { setState({ kind: 'loading' }); void load(); }}>{t('openWebinars.retry')}</Button>
+          <Button variant="outline" size="sm" onClick={retry}>{t('openWebinars.retry')}</Button>
         </div>
       )}
       {data && (
         <div className="space-y-5">
+          {/* The poster leads the page. Everything below stays the source of truth: the date baked into a poster can go stale. */}
+          {banner && <img src={banner} alt={data.title} data-banner className="mx-auto h-auto max-h-[85vh] w-auto max-w-full rounded-2xl object-contain" />}
           <article className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7">
             <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">{data.title}</h1>
             <p className="mt-3 flex items-center gap-2 text-sm text-foreground">
@@ -103,7 +95,13 @@ export default function PublicWebinarPage() {
             {data.state === 'live' && <p className="mb-4 text-sm font-semibold text-green-700 dark:text-green-400">{t('openWebinars.state.live')}</p>}
             {data.state === 'ended' && <p className="mb-4 text-sm text-muted-foreground">{t('openWebinars.state.ended')}</p>}
 
-            {data.registration_open && (data.consent.policy_ready ? (
+            {data.full && data.access_mode === 'registration' && data.state !== 'ended' && (
+              <p role="status" data-full className="text-sm font-medium text-foreground">{t('openWebinars.form.full')}</p>
+            )}
+
+            {data.registration_open && !data.full && (sentToEmail ? (
+              <p role="status" data-registered-neutral className="text-sm text-foreground">{t('openWebinars.form.registeredNeutral')}</p>
+            ) : data.consent.policy_ready ? (
               <>
                 <h2 className="mb-4 text-lg font-semibold text-foreground">{t('openWebinars.form.title')}</h2>
                 <ContactForm
@@ -114,6 +112,7 @@ export default function PublicWebinarPage() {
                   onSubmit={async (body) => {
                     const done = await registerForWebinar(data.slug, body);
                     if (done.join_path) navigate(done.join_path);
+                    else setSentToEmail(true);
                   }}
                 />
               </>

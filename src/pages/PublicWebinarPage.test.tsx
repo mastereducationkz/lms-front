@@ -2,7 +2,8 @@
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PublicWebinarPage from './PublicWebinarPage';
-import { click, fakeBackend, memoryStorage, mount, submit, text, type, unmount, webinar } from './publicWebinarsTestKit';
+import { act } from 'react';
+import { click, fakeBackend, memoryStorage, mount, settle, submit, text, type, unmount, webinar } from './publicWebinarsTestKit';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -160,5 +161,137 @@ describe('a webinar page anyone can open', () => {
     await mount(<MemoryRouter initialEntries={[`/w/${SLUG}`]}><Routes><Route path="/w/:slug" element={<PublicWebinarPage />} /></Routes></MemoryRouter>);
     expect(text()).toContain('Couldn’t load the page.');
     expect(Array.from(document.querySelectorAll('button')).some((b) => b.textContent === 'Try again')).toBe(true);
+  });
+});
+
+
+describe('the poster, the seats and the neutral answer', () => {
+  it('leads the page with the banner, above the title, and shows it whole', async () => {
+    await open({ [PAGE]: { body: webinar({ banner_url: '/uploads/webinar_banners/42.png' }) } });
+    const img = document.querySelector('img[data-banner]') as HTMLImageElement;
+    expect(img.alt).toBe('IELTS Writing Office Hours');
+    expect(img.src).toMatch(/\/uploads\/webinar_banners\/42\.png$/);
+    expect(img.className).toContain('object-contain');
+    expect(img.className).toContain('rounded');
+    expect(img.compareDocumentPosition(document.querySelector('h1')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('has no banner image when the webinar has none, and the page reads as before', async () => {
+    await open({ [PAGE]: { body: webinar({ banner_url: null }) } });
+    expect(document.querySelector('img[data-banner]')).toBeNull();
+    expect(text()).toContain('Register for free');
+  });
+
+  it('says all seats are taken instead of showing the form', async () => {
+    await open({ [PAGE]: { body: webinar({ full: true, seats_left: 0 }) } });
+    expect(document.querySelector('[data-full]')?.textContent).toBe('All seats are taken.');
+    expect(document.querySelector('form')).toBeNull();
+    expect(text()).not.toContain('Register for free');
+  });
+
+  it('still says so when the server also closes registration for a full webinar', async () => {
+    await open({ [PAGE]: { body: webinar({ full: true, seats_left: 0, registration_open: false }) } });
+    expect(document.querySelector('[data-full]')).not.toBeNull();
+  });
+
+  it('shows the form while there are seats left', async () => {
+    await open({ [PAGE]: { body: webinar({ full: false, seats_left: 3 }) } });
+    expect(document.querySelector('[data-full]')).toBeNull();
+    expect(document.querySelector('form')).not.toBeNull();
+  });
+
+  it('for a phone that is already registered, never opens the personal page: it says the link went to the e-mail on file', async () => {
+    const backend = await open({ [PAGE]: { body: webinar() }, [REGISTER]: { body: { ok: true } } });
+    await fill();
+    await click(document.querySelector('#ow-consent'));
+    await submit();
+    expect(backend.calls.some((c) => c.method === 'POST')).toBe(true);
+    expect(text()).not.toContain('JOIN PAGE');
+    expect(document.querySelector('[data-registered-neutral]')?.textContent).toBe('If this number is registered, we sent the personal link to the e-mail on file.');
+    expect(document.querySelector('form')).toBeNull();
+  });
+
+  it('says the webinar was cancelled when a registration is refused with 410', async () => {
+    await open({ [PAGE]: { body: webinar() }, [REGISTER]: { status: 410, body: { detail: 'This webinar was cancelled', reason_code: 'webinar_cancelled' } } });
+    await fill();
+    await click(document.querySelector('#ow-consent'));
+    await submit();
+    expect(text()).toContain('This webinar has been cancelled.');
+    expect(text()).not.toContain('Something went wrong');
+  });
+});
+
+describe('keeping the page fresh', () => {
+  type Reply = { status?: number; body: unknown };
+  /** The page's answers, one per poll; the last one repeats. Only intervals are faked, so the DOM helpers keep working. */
+  async function poll(replies: Reply[]) {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    let n = 0;
+    const backend = await open({ [PAGE]: () => replies[Math.min(n++, replies.length - 1)] });
+    const gets = () => backend.calls.filter((c) => c.method === 'GET').length;
+    const tick = async (ms: number) => { await act(async () => { vi.advanceTimersByTime(ms); }); await settle(); };
+    return { gets, tick };
+  }
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('asks again every 30 seconds while the webinar is not over, and the countdown turns into the join button', async () => {
+    const { gets, tick } = await poll([
+      { body: webinar({ access_mode: 'open', registration_open: false }) },
+      { body: webinar({ access_mode: 'open', registration_open: false, state: 'live', join_url: 'https://meet.google.com/abc-defg-hij' }) },
+    ]);
+    expect(gets()).toBe(1);
+    await tick(29_000);
+    expect(gets()).toBe(1);
+    await tick(1_000);
+    expect(gets()).toBe(2);
+    expect(document.querySelector('a[href="https://meet.google.com/abc-defg-hij"]')).not.toBeNull();
+  });
+
+  it('stops asking once the page says the webinar is over', async () => {
+    const { gets, tick } = await poll([{ body: webinar({ state: 'live', registration_open: false }) }, { body: webinar({ state: 'ended', registration_open: false }) }]);
+    await tick(30_000);
+    expect(gets()).toBe(2);
+    expect(text()).toContain('This webinar is over');
+    await tick(120_000);
+    expect(gets()).toBe(2);
+  });
+
+  it('does not poll a webinar that was already over when the page opened', async () => {
+    const { gets, tick } = await poll([{ body: webinar({ state: 'ended', registration_open: false }) }]);
+    await tick(120_000);
+    expect(gets()).toBe(1);
+  });
+
+  it('stops asking once the webinar is cancelled', async () => {
+    const { gets, tick } = await poll([{ status: 410, body: { detail: 'cancelled', reason_code: 'webinar_cancelled' } }]);
+    expect(text()).toContain('This webinar has been cancelled.');
+    await tick(120_000);
+    expect(gets()).toBe(1);
+  });
+
+  it('a later 410 replaces the page that was showing, form included', async () => {
+    const { tick } = await poll([{ body: webinar() }, { status: 410, body: { detail: 'cancelled', reason_code: 'webinar_cancelled' } }]);
+    expect(document.querySelector('form')).not.toBeNull();
+    await tick(30_000);
+    expect(text()).toContain('This webinar has been cancelled.');
+    expect(document.querySelector('form')).toBeNull();
+    expect(text()).not.toContain('IELTS Writing Office Hours');
+  });
+
+  it('a later 404 replaces it with «not found»', async () => {
+    const { tick } = await poll([{ body: webinar() }, { status: 404, body: { detail: 'not found', reason_code: 'webinar_not_found' } }]);
+    await tick(30_000);
+    expect(text()).toContain('This webinar was not found.');
+    expect(document.querySelector('form')).toBeNull();
+  });
+
+  it('a hiccup (a 500) does not replace what the visitor is reading, and the next poll recovers', async () => {
+    const { gets, tick } = await poll([{ body: webinar() }, { status: 500, body: { detail: 'boom' } }, { body: webinar({ title: 'Renamed webinar' }) }]);
+    await tick(30_000);
+    expect(gets()).toBe(2);
+    expect(text()).toContain('IELTS Writing Office Hours');
+    expect(text()).not.toContain('Couldn’t load the page');
+    await tick(30_000);
+    expect(text()).toContain('Renamed webinar');
   });
 });

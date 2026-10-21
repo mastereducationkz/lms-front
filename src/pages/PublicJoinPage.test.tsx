@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
+import { act } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PublicJoinPage, { googleCalendarUrl } from './PublicJoinPage';
 import PrivacyPolicyPage from './PrivacyPolicyPage';
-import { fakeBackend, memoryStorage, mount, text, unmount } from './publicWebinarsTestKit';
+import { fakeBackend, memoryStorage, mount, settle, text, unmount } from './publicWebinarsTestKit';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -105,5 +106,55 @@ describe('the privacy policy page', () => {
   it('says plainly when none has been published yet', async () => {
     await openPolicy(undefined);
     expect(text()).toContain('The privacy policy has not been published yet.');
+  });
+});
+
+
+describe('a registrant’s page keeps itself fresh', () => {
+  type Reply = { status?: number; body: unknown };
+  const JOIN = 'GET /public/webinars/join/CODE123';
+  /** One reply per poll (the last repeats); only intervals are faked, so the DOM helpers keep working. */
+  async function poll(replies: Reply[]) {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    let n = 0;
+    const backend = fakeBackend({ [JOIN]: () => replies[Math.min(n++, replies.length - 1)] });
+    vi.stubGlobal('fetch', backend.fetchMock);
+    await mount(<MemoryRouter initialEntries={['/w/j/CODE123']}><Routes><Route path="/w/j/:code" element={<PublicJoinPage />} /></Routes></MemoryRouter>);
+    const gets = () => backend.calls.length;
+    const tick = async (ms: number) => { await act(async () => { vi.advanceTimersByTime(ms); }); await settle(); };
+    return { gets, tick };
+  }
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('asks again every 15 seconds until the webinar is over, and the room button appears by itself', async () => {
+    const { gets, tick } = await poll([{ body: info() }, { body: info({ state: 'live', join_url: 'https://meet.google.com/abc-defg-hij' }) }]);
+    expect(gets()).toBe(1);
+    await tick(15_000);
+    expect(gets()).toBe(2);
+    expect(document.querySelector('a[href="https://meet.google.com/abc-defg-hij"]')).not.toBeNull();
+  });
+
+  it('stops asking once the webinar is over', async () => {
+    const { gets, tick } = await poll([{ body: info({ state: 'live' }) }, { body: info({ state: 'ended' }) }]);
+    await tick(15_000);
+    expect(text()).toContain('This webinar is over');
+    await tick(120_000);
+    expect(gets()).toBe(2);
+  });
+
+  it('a later 410 replaces the page, and polling stops', async () => {
+    const { gets, tick } = await poll([{ body: info() }, { status: 410, body: { detail: 'cancelled', reason_code: 'webinar_cancelled' } }]);
+    await tick(15_000);
+    expect(text()).toContain('This webinar has been cancelled.');
+    expect(text()).not.toContain('You are registered');
+    await tick(120_000);
+    expect(gets()).toBe(2);
+  });
+
+  it('a later 404 replaces it with «not valid»', async () => {
+    const { tick } = await poll([{ body: info() }, { status: 404, body: { detail: 'not found', reason_code: 'join_not_found' } }]);
+    await tick(15_000);
+    expect(text()).toContain('This link is not valid.');
+    expect(text()).not.toContain('You are registered');
   });
 });

@@ -1,16 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { CalendarPlus, CheckCircle2, Loader2, PlayCircle, Video } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import PublicShell from '../components/open-webinars/PublicShell';
 import { countdownText, useCountdown } from '../components/open-webinars/useCountdown';
-import { getJoinInfo, PublicApiError, type JoinInfo } from '../services/api/publicWebinars';
+import { usePublicPage } from '../components/open-webinars/usePublicPage';
+import { getJoinInfo, type JoinInfo } from '../services/api/publicWebinars';
 import { formatDate, formatTime } from '../lib/i18n/format';
 import { usePublicLocale } from '../lib/publicLocale';
 import '@/lib/i18n/catalogs/openWebinars';
 
-type State = { kind: 'loading' } | { kind: 'ready'; data: JoinInfo } | { kind: 'missing' } | { kind: 'cancelled' } | { kind: 'error' };
-
+/** A registrant waits on this page for the room to open: it asks more often than the public page does, until the webinar is over. */
 const REFRESH_MS = 15_000;
 
 export function googleCalendarUrl(data: JoinInfo, pageUrl: string): string {
@@ -26,22 +25,7 @@ export function googleCalendarUrl(data: JoinInfo, pageUrl: string): string {
 export default function PublicJoinPage() {
   const { code = '' } = useParams();
   const { locale, setLocale, t } = usePublicLocale();
-  const [state, setState] = useState<State>({ kind: 'loading' });
-
-  const load = useCallback(async () => {
-    try {
-      setState({ kind: 'ready', data: await getJoinInfo(code) });
-    } catch (failure) {
-      setState((now) => (now.kind === 'ready' ? now : failure instanceof PublicApiError && failure.status === 404 ? { kind: 'missing' } : failure instanceof PublicApiError && failure.status === 410 ? { kind: 'cancelled' } : { kind: 'error' }));
-    }
-  }, [code]);
-
-  useEffect(() => {
-    void load();
-    const id = window.setInterval(() => void load(), REFRESH_MS);
-    return () => window.clearInterval(id);
-  }, [load]);
-
+  const { state, retry } = usePublicPage(code, getJoinInfo, REFRESH_MS);
   const data = state.kind === 'ready' ? state.data : null;
   const untilStart = useCountdown(data?.starts_at);
 
@@ -57,7 +41,7 @@ export default function PublicJoinPage() {
       {state.kind === 'error' && (
         <div className="space-y-3 rounded-2xl border border-border bg-card px-6 py-12 text-sm shadow-sm">
           <p>{t('openWebinars.loadFailed')}</p>
-          <Button variant="outline" size="sm" onClick={() => { setState({ kind: 'loading' }); void load(); }}>{t('openWebinars.retry')}</Button>
+          <Button variant="outline" size="sm" onClick={retry}>{t('openWebinars.retry')}</Button>
         </div>
       )}
       {data && (
