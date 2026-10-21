@@ -341,6 +341,7 @@ describe('a webinar’s recording on the admin page', () => {
     api.getRecordingStatus.mockResolvedValue(ready);
     await show();
     expect(panel()).toContain('The recording is ready. It is not public until you publish it.');
+    expect(panel()).not.toContain('Withdrawing removes the public page only.');
     expect(panel()).toContain('Anyone with the link can watch it.');
   });
 
@@ -354,6 +355,7 @@ describe('a webinar’s recording on the admin page', () => {
     expect(api.publishRecording).toHaveBeenCalledWith(7);
     expect(panel()).toContain('7 views');
     expect(document.querySelector('[data-recording-panel] a[href$="/r/my-webinar"]')).not.toBeNull();
+    expect(panel()).toContain('Withdrawing removes the public page only. The recording stays in the staff archive.');
     await click(button('Withdraw'));
     await settle();
     expect(api.withdrawRecording).toHaveBeenCalledWith(7);

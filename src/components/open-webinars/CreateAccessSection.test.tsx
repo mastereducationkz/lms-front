@@ -70,9 +70,11 @@ describe('«Who can join» on the create form', () => {
     await pause(ASK);
     expect(api.preflightOpenAccess).toHaveBeenCalledTimes(1);
     expect(api.preflightOpenAccess.mock.calls[0][0]).toMatchObject({
-      access_mode: 'registration', lead_pipeline_id: 10736538, teacher_id: 5, title: 'IELTS Writing', is_recurring: false, presenter: 'host', speaker_id: null,
+      access_mode: 'registration', lead_pipeline_id: 10736538, teacher_id: 5, title: 'IELTS Writing', is_recurring: false, speaker_id: null,
       start_datetime: '2099-03-03T09:00:00.000Z', end_datetime: '2099-03-03T10:30:00.000Z',
     });
+    // The presenter was not touched: nothing is sent, and the server reads «no speaker» as the host.
+    expect(api.preflightOpenAccess.mock.calls[0][0]).not.toHaveProperty('presenter');
     expect(document.querySelector('[data-address]')?.textContent).toMatch(/\/w\/ielts-writing-2099-03-03$/);
     expect(document.querySelector('[data-summary]')?.textContent).toContain('Opens to everyone at /w/ielts-writing-2099-03-03 · Presenter: the host · leads → NUET + IELTS');
   });
@@ -188,5 +190,18 @@ describe('«Who can join» on the create form', () => {
     await pause(ASK);
     const calls = api.preflightOpenAccess.mock.calls;
     expect(calls[calls.length - 1][0]).toMatchObject({ presenter: 'none', speaker_id: null });
+  });
+
+  it('shows «The host» as the standing choice, and sends the presenter only once the person has chosen', async () => {
+    await mount(<Harness hostName="Aldiyar Zhumadilda" />);
+    await click(radio('open'));
+    expect(presenter('host').checked).toBe(true);
+    expect(latest.presenter).toBeNull();
+    await click(presenter('none'));
+    await click(presenter('host'));                       // back to the host: now it is a choice the person made
+    expect(latest.presenter).toBe('host');
+    await pick('#ow-pipeline', '10520038');
+    await pause(ASK);
+    expect(api.preflightOpenAccess.mock.calls[0][0]).toMatchObject({ presenter: 'host', speaker_id: null });
   });
 });

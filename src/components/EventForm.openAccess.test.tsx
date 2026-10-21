@@ -293,7 +293,7 @@ describe('create form: «No student audience»', () => {
 });
 
 describe('create form: the presenter on the public page', () => {
-  it('names the chosen host in the summary, and sends «host» with no guest speaker', async () => {
+  it('names the chosen host in the summary, and sends no presenter while the choice is untouched', async () => {
     await show();
     await fillWebinar();
     await act(async () => {
@@ -307,8 +307,22 @@ describe('create form: the presenter on the public page', () => {
     await pause(ASK);
     expect(host.querySelector('[data-summary]')?.textContent).toContain('Presenter: the host, Aldiyar');
     await submit();
+    // Untouched: the server reads no speaker as the host, so nothing is sent.
+    expect(open.saveOpenAccess.mock.calls[0][1]).not.toHaveProperty('presenter');
+    expect(open.saveOpenAccess.mock.calls[0][1]).toMatchObject({ speaker_id: null });
+    expect(open.preflightOpenAccess.mock.calls[0][0]).not.toHaveProperty('presenter');
+    expect(open.preflightOpenAccess.mock.calls[0][0]).toMatchObject({ speaker_id: null, teacher_id: 5 });
+  });
+
+  it('sends «host» once the person has chosen it', async () => {
+    await show();
+    await fillWebinar();
+    await click(radio('open'));
+    await pick('#ow-pipeline', '10520038');
+    await radioPick('presenter', 'none');
+    await radioPick('presenter', 'host');
+    await submit();
     expect(open.saveOpenAccess.mock.calls[0][1]).toMatchObject({ presenter: 'host', speaker_id: null });
-    expect(open.preflightOpenAccess.mock.calls[0][0]).toMatchObject({ presenter: 'host', speaker_id: null, teacher_id: 5 });
   });
 
   it('refuses a guest speaker nobody picked, and keeps Save off, before anything is created', async () => {

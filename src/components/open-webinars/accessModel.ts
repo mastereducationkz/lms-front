@@ -14,8 +14,12 @@ export interface AccessDraft {
   pipelineId: number | null;
   /** The typed address; empty lets the server make one from the title. */
   slug: string;
-  /** Who is named on the public page. `speakerId` counts only for `speaker`; it is kept while another choice is on, so switching back restores it. */
-  presenter: Presenter;
+  /**
+   * Who is named on the public page. null = the person has not touched it: nothing is sent, and the server reads a
+   * chosen speaker as `speaker` and otherwise `host`. `speakerId` counts only for `speaker`; it is kept while another
+   * choice is on, so switching back restores it.
+   */
+  presenter: Presenter | null;
   speakerId: number | null;
   /** A stable relative path (`/uploads/webinar_banners/…`) or null. */
   bannerUrl: string | null;
@@ -23,13 +27,13 @@ export interface AccessDraft {
   noAudience: boolean;
 }
 
-export const emptyDraft = (): AccessDraft => ({ mode: 'students', pipelineId: null, slug: '', presenter: 'host', speakerId: null, bannerUrl: null, noAudience: false });
+export const emptyDraft = (): AccessDraft => ({ mode: 'students', pipelineId: null, slug: '', presenter: null, speakerId: null, bannerUrl: null, noAudience: false });
 
 export const draftOf = (access: OpenAccess): AccessDraft => ({
   mode: access.access_mode,
   pipelineId: access.lead_pipeline_id,
   slug: access.slug ?? '',
-  presenter: access.presenter ?? (access.speaker_id ? 'speaker' : 'host'),
+  presenter: access.presenter ?? null,
   speakerId: access.speaker_id,
   bannerUrl: access.banner_url ?? null,
   noAudience: false,
@@ -38,11 +42,17 @@ export const draftOf = (access: OpenAccess): AccessDraft => ({
 /** Public access is on for this draft (it is not «students only»). */
 export const isPublicMode = (draft: AccessDraft): draft is AccessDraft & { mode: 'open' | 'registration' } => draft.mode !== 'students';
 
+/** Who the public page will name: the touched choice, else the server's own default (the chosen speaker, else the host). */
+export const presenterOf = (draft: AccessDraft): Presenter => draft.presenter ?? (draft.speakerId !== null ? 'speaker' : 'host');
+
 /** The guest speaker the server will be told about: only when the presenter IS the guest speaker. */
-const speakerOf = (draft: AccessDraft): number | null => (draft.presenter === 'speaker' ? draft.speakerId : null);
+const speakerOf = (draft: AccessDraft): number | null => (presenterOf(draft) === 'speaker' ? draft.speakerId : null);
+
+/** `presenter` is sent only once the person has chosen. */
+const presenterField = (draft: AccessDraft): { presenter?: Presenter } => (draft.presenter ? { presenter: draft.presenter } : {});
 
 /** «Guest speaker» is chosen but nobody is picked yet: the server would refuse (`speaker_required`). */
-export const speakerMissing = (draft: AccessDraft): boolean => draft.presenter === 'speaker' && draft.speakerId === null;
+export const speakerMissing = (draft: AccessDraft): boolean => presenterOf(draft) === 'speaker' && draft.speakerId === null;
 
 /** Everything a public webinar needs before Save: somewhere for the leads to go, and the named presenter if it is a guest. */
 export const draftReady = (draft: AccessDraft): boolean => !isPublicMode(draft) || (draft.pipelineId !== null && !speakerMissing(draft));
@@ -53,7 +63,7 @@ export function accessBody(draft: AccessDraft & { mode: 'open' | 'registration';
     access_mode: draft.mode,
     ...(lockedSlug ? {} : { slug: draft.slug.trim() || null }),
     speaker_id: speakerOf(draft),
-    presenter: draft.presenter,
+    ...presenterField(draft),
     lead_pipeline_id: draft.pipelineId,
     banner_url: draft.bannerUrl,
   };
@@ -99,7 +109,7 @@ export function preflightBodyOf(draft: AccessDraft, facts: EventFacts): Prefligh
     is_recurring: false,
     slug: draft.slug.trim() || null,
     speaker_id: speakerOf(draft),
-    presenter: draft.presenter,
+    ...presenterField(draft),
   };
 }
 

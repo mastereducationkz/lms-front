@@ -298,6 +298,10 @@ describe('the presenter on the public page', () => {
     api.getOpenAccess.mockResolvedValue({ ...older, speaker_id: 3 });
     await show();
     expect(presenter('speaker').checked).toBe(true);
+    await click(saveButton());
+    await settle();
+    expect(api.saveOpenAccess.mock.calls[0][1]).not.toHaveProperty('presenter');
+    expect(api.saveOpenAccess.mock.calls[0][1].speaker_id).toBe(3);
     await unmount();
     api.getOpenAccess.mockResolvedValue({ ...older, speaker_id: null });
     await show();

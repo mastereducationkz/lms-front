@@ -5,7 +5,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import BannerField from './BannerField';
-import type { AccessDraft } from './accessModel';
+import { presenterOf, type AccessDraft } from './accessModel';
 import type { AccessMode, GuestSpeaker, Pipeline, Presenter } from '../../services/api/openWebinars';
 import { LMS_ORIGIN } from '../../lib/lessonLinks';
 import { useT } from '@/lib/i18n/react';
@@ -100,7 +100,7 @@ export default function WhoCanJoinSection({
             <legend className="mb-1 text-sm font-medium">{t('openWebinars.admin.access.presenter.title')}</legend>
             {PRESENTERS.map((id) => (
               <label key={id} className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                <input type="radio" name="presenter" value={id} checked={draft.presenter === id} onChange={() => set({ presenter: id })} className="mt-1" />
+                <input type="radio" name="presenter" value={id} checked={presenterOf(draft) === id} onChange={() => set({ presenter: id })} className="mt-1" />
                 <span>
                   <span className="font-medium">{t(`openWebinars.admin.access.presenter.${id}` as 'openWebinars.admin.access.presenter.speaker')}</span>
                   <span data-presenter-hint={id} className="block text-xs text-muted-foreground">
@@ -113,7 +113,7 @@ export default function WhoCanJoinSection({
             ))}
           </fieldset>
 
-          {draft.presenter === 'speaker' && (
+          {presenterOf(draft) === 'speaker' && (
             <div className="space-y-1.5">
               <Label htmlFor="ow-speaker">{t('openWebinars.admin.access.speaker')}</Label>
               <select id="ow-speaker" className={FIELD} disabled={disabled} value={draft.speakerId ?? ''} onChange={(e) => set({ speakerId: e.target.value ? Number(e.target.value) : null })}>

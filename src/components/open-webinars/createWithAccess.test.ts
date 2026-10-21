@@ -69,4 +69,10 @@ describe('creating a webinar that opens to everyone', () => {
     await createWithAccess({ create, eventData, draft: { ...draft, presenter }, preflight, fallbackMessage: 'x' });
     expect(api.saveOpenAccess.mock.calls[0][1]).toMatchObject({ presenter, speaker_id: null });
   });
+
+  it('sends no presenter while it is untouched (the server reads a chosen speaker as the speaker, else the host)', async () => {
+    await createWithAccess({ create, eventData, draft: { ...draft, presenter: null }, preflight, fallbackMessage: 'x' });
+    expect(api.saveOpenAccess.mock.calls[0][1]).not.toHaveProperty('presenter');
+    expect(api.saveOpenAccess.mock.calls[0][1].speaker_id).toBe(3);
+  });
 });

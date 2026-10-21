@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Globe2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import WhoCanJoinSection from './WhoCanJoinSection';
-import { preflightBodyOf, speakerMissing, type AccessDraft, type EventFacts } from './accessModel';
+import { preflightBodyOf, presenterOf, speakerMissing, type AccessDraft, type EventFacts } from './accessModel';
 import { usePreflightPreview } from './usePreflightPreview';
 import { getOpenSettings, listGuestSpeakers, type GuestSpeaker, type OpenSettings } from '../../services/api/openWebinars';
 import { useT } from '@/lib/i18n/react';
@@ -44,9 +44,10 @@ export default function CreateAccessSection({ draft, onChange, facts, hostName }
   const address = draft.slug.trim() || preview.slug;
   const speaker = loaded?.speakers.find((sp) => sp.id === draft.speakerId);
   // Who the public page will name, in the summary: the guest speaker, the host (by name), or nobody.
-  const presenterText = draft.presenter === 'speaker'
+  const chosen = presenterOf(draft);
+  const presenterText = chosen === 'speaker'
     ? t('openWebinars.admin.access.presenter.summary.speaker', { name: speaker?.name ?? '' })
-    : draft.presenter === 'none'
+    : chosen === 'none'
       ? t('openWebinars.admin.access.presenter.summary.none')
       : hostName ? t('openWebinars.admin.access.presenter.summary.hostNamed', { name: hostName }) : t('openWebinars.admin.access.presenter.summary.host');
 
