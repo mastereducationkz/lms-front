@@ -68,7 +68,7 @@ export default function OverviewCard() {
               <div className="overflow-x-auto rounded-xl border border-border">
                 <table className="w-full text-left text-sm">
                   <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
-                    <tr>{(['title', 'date', 'mode', 'registered', 'failed'] as const).map((c) => <th key={c} className="px-3 py-2.5 font-medium">{t(`openWebinars.admin.overview.col.${c}` as 'openWebinars.admin.overview.col.title')}</th>)}</tr>
+                    <tr>{(['title', 'date', 'mode', 'registered', 'consultations', 'failed'] as const).map((c) => <th key={c} className="px-3 py-2.5 font-medium">{t(`openWebinars.admin.overview.col.${c}` as 'openWebinars.admin.overview.col.title')}</th>)}</tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {overview.items.map((w) => (
@@ -80,6 +80,7 @@ export default function OverviewCard() {
                         <td className="whitespace-nowrap px-3 py-2.5">{formatDateTime(w.start_datetime, undefined, locale)}</td>
                         <td className="px-3 py-2.5">{t(`openWebinars.admin.access.${w.access_mode}` as 'openWebinars.admin.access.open')}</td>
                         <td className="px-3 py-2.5 tabular-nums">{w.registered}</td>
+                        <td data-consultations className="px-3 py-2.5 tabular-nums">{w.consultations}</td>
                         <td className={`px-3 py-2.5 tabular-nums ${w.leads_failed > 0 ? 'font-semibold text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>{w.leads_failed}</td>
                       </tr>
                     ))}

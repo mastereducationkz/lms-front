@@ -87,7 +87,7 @@ export default function OpenAccessCard({ eventId, hostUnsaved = false, initialEr
         if (access.open) await closeOpenAccess(eventId);
         setNote({ kind: 'ok', text: t('openWebinars.admin.access.closed') });
       } else {
-        await saveOpenAccess(eventId, accessBody({ ...draft, pipelineId: draft.pipelineId as number }, slugLocked));
+        await saveOpenAccess(eventId, accessBody({ ...draft, pipelineId: draft.pipelineId as number }, slugLocked, true));
         setNote({ kind: 'ok', text: t('openWebinars.admin.saved') });
       }
       apply(await getOpenAccess(eventId));

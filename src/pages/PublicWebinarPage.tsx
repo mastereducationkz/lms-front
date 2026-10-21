@@ -6,6 +6,7 @@ import PublicShell from '../components/open-webinars/PublicShell';
 import ContactForm from '../components/open-webinars/ContactForm';
 import ConsultationCard from '../components/open-webinars/ConsultationCard';
 import PresenterBlock from '../components/open-webinars/PresenterBlock';
+import { inLocale } from '../components/open-webinars/englishText';
 import { countdownText, useCountdown } from '../components/open-webinars/useCountdown';
 import { usePublicPage } from '../components/open-webinars/usePublicPage';
 import { getPublicWebinar, registerForWebinar } from '../services/api/publicWebinars';
@@ -37,6 +38,9 @@ export default function PublicWebinarPage() {
   const data = state.kind === 'ready' ? state.data : null;
   const untilStart = useCountdown(data?.starts_at);
   const banner = mediaUrl(data?.banner_url);
+  // The English title and description when the visitor reads English and they were written; the original otherwise.
+  const title = data ? inLocale(locale, data.title, data.title_en) : '';
+  const description = data ? inLocale(locale, data.description, data.description_en) : null;
 
   return (
     <PublicShell locale={locale} setLocale={setLocale} t={t}>
@@ -56,9 +60,9 @@ export default function PublicWebinarPage() {
       {data && (
         <div className="space-y-5">
           {/* The poster leads the page. Everything below stays the source of truth: the date baked into a poster can go stale. */}
-          {banner && <img src={banner} alt={data.title} data-banner className="mx-auto h-auto max-h-[85vh] w-auto max-w-full rounded-2xl object-contain" />}
+          {banner && <img src={banner} alt={title} data-banner className="mx-auto h-auto max-h-[85vh] w-auto max-w-full rounded-2xl object-contain" />}
           <article className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7">
-            <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">{data.title}</h1>
+            <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">{title}</h1>
             <p className="mt-3 flex items-center gap-2 text-sm text-foreground">
               <CalendarClock className="h-4 w-4 flex-none text-muted-foreground" aria-hidden />
               <span>
@@ -70,8 +74,8 @@ export default function PublicWebinarPage() {
                 <span className="text-muted-foreground">· {t('openWebinars.timeNote')}</span>
               </span>
             </p>
-            <PresenterBlock speaker={data.speaker} t={t} />
-            {data.description && <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-foreground">{data.description}</p>}
+            <PresenterBlock speaker={data.speaker} locale={locale} t={t} />
+            {description && <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-foreground">{description}</p>}
           </article>
 
           <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7" aria-live="polite">

@@ -23,6 +23,9 @@ export interface GuestSpeaker {
   name: string;
   organisation: string | null;
   bio: string | null;
+  /** English versions, shown on the public page in English; absent on an older server. Empty = the page shows the original. */
+  name_en?: string | null;
+  bio_en?: string | null;
   /** A stable relative path (`/uploads/webinar_speakers/…`) from `uploadSpeakerPhoto`; an older speaker may still hold an absolute URL. Show it through `mediaUrl`. */
   photo_url: string | null;
   email: string | null;
@@ -66,6 +69,9 @@ export interface OpenAccess {
   started: boolean;
   ended: boolean;
   registrations_total: number;
+  /** The English title and description of the public page; null/absent = the page shows the original. */
+  title_en?: string | null;
+  description_en?: string | null;
   /** Registrations exist: the address can no longer change. */
   slug_locked: boolean;
   can_close: boolean;
@@ -109,7 +115,10 @@ export interface PreflightBody {
   presenter?: Presenter;
 }
 
-/** The access card's Save. `slug` is left out when the address is locked; `banner_url: null` removes the banner. */
+/**
+ * The access card's Save. `slug` is left out when the address is locked; `banner_url: null` removes the banner.
+ * `title_en` / `description_en`: left out = unchanged on the server; null or '' = cleared.
+ */
 export interface AccessBody {
   access_mode: 'open' | 'registration';
   slug?: string | null;
@@ -117,6 +126,8 @@ export interface AccessBody {
   presenter?: Presenter;
   lead_pipeline_id: number;
   banner_url?: string | null;
+  title_en?: string | null;
+  description_en?: string | null;
 }
 
 /** What the host teacher or curator sees on their event: no personal data. */

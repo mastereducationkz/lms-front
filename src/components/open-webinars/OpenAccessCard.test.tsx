@@ -2,6 +2,7 @@
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiError } from '../../services/api/apiError';
+import { act } from 'react';
 import { button, click, mount, pick, settle, text, type, unmount, upload } from '../../pages/publicWebinarsTestKit';
 
 vi.mock('../../contexts/AuthContext', async () => {
@@ -72,7 +73,9 @@ describe('a webinar’s public access card', () => {
     api.getOpenAccess.mockResolvedValue(opened);
     await click(saveButton());
     await settle();
-    expect(api.saveOpenAccess).toHaveBeenCalledWith(7, { access_mode: 'registration', slug: 'my-webinar', speaker_id: 3, presenter: 'speaker', lead_pipeline_id: 10520038, banner_url: null });
+    expect(api.saveOpenAccess).toHaveBeenCalledWith(7, {
+      access_mode: 'registration', slug: 'my-webinar', speaker_id: 3, presenter: 'speaker', lead_pipeline_id: 10520038, banner_url: null, title_en: '', description_en: '',
+    });
     expect(text()).toContain('Saved');
     expect(text()).toContain('Registered 12 · joined 5');
     expect(document.querySelector('a[href$="/w/ielts-writing-2030-03-03"]')).not.toBeNull();
@@ -381,5 +384,73 @@ describe('a series, and a create that half-succeeded', () => {
   it('shows why the access did not save right after the event was created', async () => {
     await show({ initialError: 'This address is already used by another webinar.' });
     expect(text()).toContain('The event was created, but public access was not saved: This address is already used by another webinar.');
+  });
+});
+
+describe('the English version of the public page', () => {
+  const setDescription = async (value: string) => {
+    const el = document.querySelector('#ow-description-en') as HTMLTextAreaElement;
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!;
+    await act(async () => { setter.call(el, value); el.dispatchEvent(new Event('input', { bubbles: true })); });
+  };
+  const withEnglish = { ...opened, title_en: 'IELTS Writing Office Hours', description_en: 'Bring an essay.\nGet feedback.' };
+
+  it('is offered, empty and optional, only while the webinar is open to everyone', async () => {
+    await show();
+    expect(document.querySelector('[data-english-version]')).toBeNull();
+    await click(radio('open'));
+    expect(document.querySelector('[data-english-version] legend')?.textContent).toBe('English version (optional)');
+    expect((document.querySelector('#ow-title-en') as HTMLInputElement).value).toBe('');
+    expect((document.querySelector('#ow-description-en') as HTMLTextAreaElement).rows).toBeGreaterThan(2);
+    expect(document.querySelector('label[for="ow-title-en"]')?.textContent).toBe('Title in English');
+    expect(document.querySelector('label[for="ow-description-en"]')?.textContent).toBe('Description in English');
+    await click(radio('students'));
+    expect(document.querySelector('[data-english-version]')).toBeNull();
+  });
+
+  it('shows the saved English texts, and saving without touching them sends them back as they are', async () => {
+    api.getOpenAccess.mockResolvedValue(withEnglish);
+    await show();
+    expect((document.querySelector('#ow-title-en') as HTMLInputElement).value).toBe('IELTS Writing Office Hours');
+    expect((document.querySelector('#ow-description-en') as HTMLTextAreaElement).value).toBe('Bring an essay.\nGet feedback.');
+    await click(saveButton());
+    await settle();
+    expect(api.saveOpenAccess.mock.calls[0][1]).toMatchObject({ title_en: 'IELTS Writing Office Hours', description_en: 'Bring an essay.\nGet feedback.' });
+  });
+
+  it('saves a newly typed English title and description', async () => {
+    api.getOpenAccess.mockResolvedValue(opened);
+    await show();
+    await type('#ow-title-en', '  IELTS Writing consultation ');
+    await setDescription('Bring an essay.');
+    await click(saveButton());
+    await settle();
+    expect(api.saveOpenAccess.mock.calls[0][1]).toMatchObject({ title_en: 'IELTS Writing consultation', description_en: 'Bring an essay.' });
+  });
+
+  it('clears a saved English text by sending an empty string, and leaves the other one as it is', async () => {
+    api.getOpenAccess.mockResolvedValue(withEnglish);
+    await show();
+    await type('#ow-title-en', '');
+    await click(saveButton());
+    await settle();
+    expect(api.saveOpenAccess.mock.calls[0][1]).toMatchObject({ title_en: '', description_en: 'Bring an essay.\nGet feedback.' });
+  });
+
+  it('shows the fields empty for an older server that knows no English texts', async () => {
+    api.getOpenAccess.mockResolvedValue(opened);
+    await show();
+    expect((document.querySelector('#ow-title-en') as HTMLInputElement).value).toBe('');
+    expect((document.querySelector('#ow-description-en') as HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('shows the saved texts again after Save reloads the card', async () => {
+    api.getOpenAccess.mockResolvedValue(opened);
+    await show();
+    await type('#ow-title-en', 'IELTS Writing consultation');
+    api.getOpenAccess.mockResolvedValue({ ...opened, title_en: 'IELTS Writing consultation' });
+    await click(saveButton());
+    await settle();
+    expect((document.querySelector('#ow-title-en') as HTMLInputElement).value).toBe('IELTS Writing consultation');
   });
 });

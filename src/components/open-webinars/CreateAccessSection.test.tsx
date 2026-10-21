@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { useState } from 'react';
+import { act, useState } from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiError } from '../../services/api/apiError';
@@ -203,5 +203,33 @@ describe('«Who can join» on the create form', () => {
     await pick('#ow-pipeline', '10520038');
     await pause(ASK);
     expect(api.preflightOpenAccess.mock.calls[0][0]).toMatchObject({ presenter: 'host', speaker_id: null });
+  });
+
+  it('offers an optional English version for a public webinar only, and keeps what is typed in the draft', async () => {
+    await mount(<Harness />);
+    expect(document.querySelector('[data-english-version]')).toBeNull();
+    await click(radio('registration'));
+    expect(document.querySelector('[data-english-version] legend')?.textContent).toBe('English version (optional)');
+    expect(latest.titleEn).toBe('');
+    expect(latest.descriptionEn).toBe('');
+    await type('#ow-title-en', 'IELTS Writing consultation');
+    const description = document.querySelector('#ow-description-en') as HTMLTextAreaElement;
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!;
+    await act(async () => { setter.call(description, 'Bring an essay.\nGet feedback.'); description.dispatchEvent(new Event('input', { bubbles: true })); });
+    expect(latest.titleEn).toBe('IELTS Writing consultation');
+    expect(latest.descriptionEn).toBe('Bring an essay.\nGet feedback.');
+    expect((document.querySelector('#ow-description-en') as HTMLTextAreaElement).value).toBe('Bring an essay.\nGet feedback.');
+    await click(radio('students'));
+    expect(document.querySelector('[data-english-version]')).toBeNull();
+  });
+
+  it('does not ask the server again for the English texts: they are not part of the check', async () => {
+    await mount(<Harness />);
+    await click(radio('open'));
+    await pick('#ow-pipeline', '10520038');
+    await type('#ow-title-en', 'IELTS Writing consultation');
+    await pause(ASK);
+    expect(api.preflightOpenAccess).toHaveBeenCalledTimes(1);
+    expect(api.preflightOpenAccess.mock.calls[0][0]).not.toHaveProperty('title_en');
   });
 });

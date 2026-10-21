@@ -2,7 +2,7 @@
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { backendBase } from '../lib/mediaUrl';
-import { fakeBackend, memoryStorage, mount, text, unmount } from './publicWebinarsTestKit';
+import { click, fakeBackend, memoryStorage, mount, text, unmount } from './publicWebinarsTestKit';
 
 vi.mock('../contexts/AuthContext', async () => {
   const { createContext } = await import('react');
@@ -78,5 +78,50 @@ describe('a public recording', () => {
     expect(document.querySelector('[data-host-line]')?.textContent).toBe('Host: Aldiyar Zhumadilda');
     expect(document.querySelector('[data-speaker]')).toBeNull();
     expect(text()).not.toContain('Hidden');
+  });
+});
+
+describe('a public recording’s own text in English', () => {
+  const guest = { name: 'Д-р Гость', organisation: 'Some University', bio: 'Консультант по поступлению', photo_url: null };
+  const russian = recording({
+    title: 'Консультация по IELTS Writing', description: 'Принесите эссе.', title_en: 'IELTS Writing consultation', description_en: 'Bring an essay.',
+    speaker: { ...guest, name_en: 'Dr. Guest', bio_en: 'Admissions consultant' },
+  });
+  const switchTo = (label: string) => click(Array.from(document.querySelectorAll('button')).find((b) => b.textContent === label) ?? null);
+  const heading = () => document.querySelector('h1')?.textContent;
+
+  it('shows the English title, description and speaker to an English visitor, and the original after switching to Russian', async () => {
+    await open({ body: russian });
+    expect(heading()).toBe('IELTS Writing consultation');
+    expect(text()).toContain('Bring an essay.');
+    expect(text()).not.toContain('Принесите эссе.');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Dr. Guest, Some University');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Admissions consultant');
+    await switchTo('Русский');
+    expect(heading()).toBe('Консультация по IELTS Writing');
+    expect(text()).toContain('Принесите эссе.');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Д-р Гость, Some University');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Консультант по поступлению');
+    await switchTo('English');
+    expect(heading()).toBe('IELTS Writing consultation');
+  });
+
+  it('shows a Russian visitor the original', async () => {
+    vi.stubGlobal('navigator', { language: 'ru-RU' });
+    await open({ body: russian });
+    expect(heading()).toBe('Консультация по IELTS Writing');
+    expect(text()).not.toContain('Dr. Guest');
+  });
+
+  it.each([
+    ['null', { title_en: null, description_en: null }, { name_en: null, bio_en: null }],
+    ['empty', { title_en: '', description_en: ' ' }, { name_en: '', bio_en: '  ' }],
+    ['absent (an older server)', {}, {}],
+  ])('falls back to the original in English when the English texts are %s', async (_label, own, person) => {
+    await open({ body: recording({ title: 'Консультация по IELTS Writing', description: 'Принесите эссе.', ...own, speaker: { ...guest, ...person } }) });
+    expect(heading()).toBe('Консультация по IELTS Writing');
+    expect(text()).toContain('Принесите эссе.');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Д-р Гость, Some University');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Консультант по поступлению');
   });
 });

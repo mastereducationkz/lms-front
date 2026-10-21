@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
 import BannerField from './BannerField';
 import { presenterOf, type AccessDraft } from './accessModel';
 import type { AccessMode, GuestSpeaker, Pipeline, Presenter } from '../../services/api/openWebinars';
@@ -138,6 +139,19 @@ export default function WhoCanJoinSection({
           </div>
 
           <BannerField value={draft.bannerUrl} onChange={(bannerUrl) => set({ bannerUrl })} disabled={disabled} />
+
+          <fieldset data-english-version className="space-y-3 rounded-lg border border-border p-3" disabled={disabled}>
+            <legend className="px-1 text-sm font-medium">{t('openWebinars.admin.access.english.title')}</legend>
+            <p className="text-xs text-muted-foreground">{t('openWebinars.admin.access.english.hint')}</p>
+            <div className="space-y-1.5">
+              <Label htmlFor="ow-title-en">{t('openWebinars.admin.access.english.titleLabel')}</Label>
+              <Input id="ow-title-en" value={draft.titleEn} onChange={(e) => set({ titleEn: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ow-description-en">{t('openWebinars.admin.access.english.descriptionLabel')}</Label>
+              <Textarea id="ow-description-en" value={draft.descriptionEn} onChange={(e) => set({ descriptionEn: e.target.value })} rows={5} />
+            </div>
+          </fieldset>
 
           {showNoAudience && (
             <div className="flex items-start gap-2.5">
