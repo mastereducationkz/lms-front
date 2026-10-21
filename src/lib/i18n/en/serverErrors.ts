@@ -90,4 +90,18 @@ export const serverErrors = {
   'serverErrors.not_a_webinar': 'Only an active webinar can be opened to everyone.',
   'serverErrors.speaker_not_found': 'This guest speaker does not exist.',
   'serverErrors.registration_not_found': 'Registration not found.',
+  'serverErrors.slug_locked': 'People have registered through this address, so it can no longer change.',
+  'serverErrors.series_not_supported': 'A recurring series cannot be opened to everyone. Open each occurrence from its own edit page.',
+  'serverErrors.banner_invalid': 'The banner must be a PNG, JPG or WebP image at least 400 px wide.',
+  'serverErrors.banner_too_large': 'The banner is larger than 5 MB.',
+  'serverErrors.close_after_start': 'The webinar has already started, so public access cannot be closed. Withdraw the recording or cancel the event instead.',
+  'serverErrors.close_has_registrations': 'People have registered, so public access cannot be closed. Cancel the webinar instead: everyone who registered is told.',
+  'serverErrors.not_open': 'This webinar is not open to everyone.',
+  'serverErrors.recording_not_ready': 'The recording is not ready yet.',
+  'serverErrors.recording_not_published': 'The recording is not public.',
+  'serverErrors.event_not_found': 'Event not found.',
+  // An event that is open to everyone cannot be retyped, re-hosted into a room-less state, or deleted (2026-10-21).
+  'serverErrors.webinar_public_retype': 'This webinar is open to everyone. Close public access first (registrations are kept).',
+  'serverErrors.webinar_public_host': 'This webinar is open to everyone and the new host has no Google Workspace account linked, so no Meet room could be made. Choose a host with a Workspace account or paste a Meet link into the event.',
+  'serverErrors.webinar_public_delete': 'This webinar is open to everyone, so it cannot be deleted. Cancel it instead: everyone who registered is told.',
 } as const satisfies MessageTable;
