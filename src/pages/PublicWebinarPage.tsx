@@ -7,6 +7,7 @@ import ContactForm from '../components/open-webinars/ContactForm';
 import ConsultationCard from '../components/open-webinars/ConsultationCard';
 import PresenterBlock from '../components/open-webinars/PresenterBlock';
 import { inLocale } from '../components/open-webinars/englishText';
+import { usePageTitle } from '../components/open-webinars/usePageTitle';
 import { countdownText, useCountdown } from '../components/open-webinars/useCountdown';
 import { usePublicPage } from '../components/open-webinars/usePublicPage';
 import { getPublicWebinar, registerForWebinar } from '../services/api/publicWebinars';
@@ -40,6 +41,7 @@ export default function PublicWebinarPage() {
   const banner = mediaUrl(data?.banner_url);
   // The English title and description when the visitor reads English and they were written; the original otherwise.
   const title = data ? inLocale(locale, data.title, data.title_en) : '';
+  usePageTitle(title);
   const description = data ? inLocale(locale, data.description, data.description_en) : null;
 
   return (

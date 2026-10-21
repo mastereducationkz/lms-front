@@ -387,6 +387,7 @@ describe('the webinar’s own text in English', () => {
   it('shows the English title, description, speaker name and bio to an English visitor', async () => {
     await open({ [PAGE]: { body: russian } });
     expect(heading()).toBe('IELTS Writing Office Hours');
+    expect(document.title).toBe('IELTS Writing Office Hours · Master Education');
     expect(document.querySelector('[data-banner]')?.getAttribute('alt')).toBe('IELTS Writing Office Hours');
     expect(text()).toContain('Get feedback.');
     expect(text()).not.toContain('Принесите эссе.');
@@ -400,6 +401,7 @@ describe('the webinar’s own text in English', () => {
     await open({ [PAGE]: { body: russian } });
     await switchTo('Русский');
     expect(heading()).toBe('Консультация по IELTS Writing');
+    expect(document.title).toBe('Консультация по IELTS Writing · Master Education');
     expect(document.querySelector('[data-banner]')?.getAttribute('alt')).toBe('Консультация по IELTS Writing');
     expect(text()).toContain('Принесите эссе.');
     expect(document.querySelector('[data-speaker]')?.textContent).toContain('Д-р Гость, Some University');
@@ -407,6 +409,7 @@ describe('the webinar’s own text in English', () => {
     expect(text()).not.toContain('Get feedback.');
     await switchTo('English');
     expect(heading()).toBe('IELTS Writing Office Hours');
+    expect(document.title).toBe('IELTS Writing Office Hours · Master Education');
     expect(document.querySelector('[data-speaker]')?.textContent).toContain('Dr. Guest');
   });
 

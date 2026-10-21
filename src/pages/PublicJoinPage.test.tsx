@@ -36,6 +36,7 @@ afterEach(async () => {
 describe('a registrant’s personal link', () => {
   it('confirms the registration, greets by first name and counts down; no room yet', async () => {
     await open({ body: info() });
+    expect(document.title).toBe('IELTS Writing Office Hours · Master Education');
     expect(text()).toContain('You are registered');
     expect(text()).toContain('Hello, Aigerim!');
     expect(text()).not.toContain('Serikova');
@@ -45,6 +46,12 @@ describe('a registrant’s personal link', () => {
     expect(document.querySelector('a[href*="meet.google.com"]')).toBeNull();
     const calendar = document.querySelector('a[href^="https://calendar.google.com/"]') as HTMLAnchorElement;
     expect(calendar).not.toBeNull();
+  });
+
+  it('names the tab with the English title for an English visitor and falls back to the original when there is none', async () => {
+    await open({ body: info({ title: 'Консультация по IELTS Writing', title_en: 'IELTS Writing Office Hours' }) });
+    expect(document.querySelector('h1')?.textContent).toBe('IELTS Writing Office Hours');
+    expect(document.title).toBe('IELTS Writing Office Hours · Master Education');
   });
 
   it('says the room is being opened when the webinar is on but its link does not exist yet, instead of showing nothing', async () => {

@@ -6,6 +6,7 @@ import PublicShell from '../components/open-webinars/PublicShell';
 import ConsultationCard from '../components/open-webinars/ConsultationCard';
 import PresenterBlock from '../components/open-webinars/PresenterBlock';
 import { inLocale } from '../components/open-webinars/englishText';
+import { usePageTitle } from '../components/open-webinars/usePageTitle';
 import { getPublicRecording, PublicApiError, type PublicRecording } from '../services/api/publicWebinars';
 import { formatDate } from '../lib/i18n/format';
 import { usePublicLocale } from '../lib/publicLocale';
@@ -38,6 +39,7 @@ export default function PublicRecordingPage() {
   const data = state.kind === 'ready' ? state.data : null;
   // The English title and description when the visitor reads English and they were written; the original otherwise.
   const title = data ? inLocale(locale, data.title, data.title_en) : '';
+  usePageTitle(title);
   const description = data ? inLocale(locale, data.description, data.description_en) : null;
   const message = state.kind === 'withdrawn' ? t('openWebinars.recording.withdrawn')
     : state.kind === 'missing' ? t('openWebinars.recording.missing') : state.kind === 'error' ? t('openWebinars.loadFailed') : null;

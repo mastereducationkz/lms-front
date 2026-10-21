@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import PublicShell from '../components/open-webinars/PublicShell';
+import { usePageTitle } from '../components/open-webinars/usePageTitle';
 import { getPrivacyPolicy } from '../services/api/publicWebinars';
 import { formatDate } from '../lib/i18n/format';
 import { usePublicLocale } from '../lib/publicLocale';
@@ -20,6 +21,8 @@ export default function PrivacyPolicyPage() {
       .catch(() => live && setState({ kind: 'missing' }));
     return () => { live = false; };
   }, []);
+
+  usePageTitle(t('openWebinars.privacy.title'));
 
   return (
     <PublicShell locale={locale} setLocale={setLocale} t={t} hidePrivacyLink>
