@@ -25,6 +25,8 @@ vi.mock('../services/api', () => ({
 
 // The detail card's recording section and platform links reach for the API client, which a lesson card never uses.
 vi.mock('../components/calendar/LessonRecordingSection', () => ({ default: () => null }));
+// The calendar card's public strip talks to the API client, which this page's tests never use.
+vi.mock('../components/open-webinars/PublicAccessStrip', () => ({ default: () => null }));
 vi.mock('../lib/platformLinks', () => ({ openPlatformPage: vi.fn(), parsePlatformUrl: () => null }));
 
 import EventManagement from './EventManagement';
