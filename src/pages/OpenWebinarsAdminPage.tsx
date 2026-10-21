@@ -16,9 +16,10 @@ import { formatDate } from '../lib/i18n/format';
 import { useLocale, useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/openWebinars';
 
-const EMPTY: SpeakerInput = { name: '', organisation: '', bio: '', photo_url: null, email: '' };
+const EMPTY: SpeakerInput = { name: '', organisation: '', bio: '', name_en: '', bio_en: '', photo_url: null, email: '' };
 const blankToNull = (s: SpeakerInput): SpeakerInput => ({
-  name: s.name.trim(), organisation: s.organisation?.trim() || null, bio: s.bio?.trim() || null, photo_url: s.photo_url?.trim() || null, email: s.email?.trim() || null,
+  name: s.name.trim(), organisation: s.organisation?.trim() || null, bio: s.bio?.trim() || null,
+  name_en: s.name_en?.trim() || null, bio_en: s.bio_en?.trim() || null, photo_url: s.photo_url?.trim() || null, email: s.email?.trim() || null,
 });
 
 /**
@@ -74,7 +75,7 @@ export default function OpenWebinarsAdminPage() {
     try { await retireGuestSpeaker(id); setSpeakers((all) => all.filter((s) => s.id !== id)); } catch (failure) { fail(failure); }
   };
 
-  const textField = (field: 'name' | 'organisation' | 'email') => (
+  const textField = (field: 'name' | 'name_en' | 'organisation' | 'email') => (
     <div key={field} className="space-y-1.5">
       <Label htmlFor={`ow-sp-${field}`}>{t(`openWebinars.admin.speakers.${field}`)}</Label>
       <Input id={`ow-sp-${field}`} value={draft[field] ?? ''} onChange={(e) => setDraft({ ...draft, [field]: e.target.value })} />
@@ -118,7 +119,7 @@ export default function OpenWebinarsAdminPage() {
               <li key={s.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                 <span><span className="font-medium">{s.name}</span>{s.organisation && <span className="text-muted-foreground">, {s.organisation}</span>}</span>
                 <span className="flex gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => { setEditing(s.id); setDraft({ name: s.name, organisation: s.organisation ?? '', bio: s.bio ?? '', photo_url: s.photo_url, email: s.email ?? '' }); }}>{t('openWebinars.admin.speakers.edit')}</Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => { setEditing(s.id); setDraft({ name: s.name, organisation: s.organisation ?? '', bio: s.bio ?? '', name_en: s.name_en ?? '', bio_en: s.bio_en ?? '', photo_url: s.photo_url, email: s.email ?? '' }); }}>{t('openWebinars.admin.speakers.edit')}</Button>
                   <Button type="button" variant="ghost" size="sm" onClick={() => retire(s.id)}>{t('openWebinars.admin.speakers.remove')}</Button>
                 </span>
               </li>
@@ -129,12 +130,14 @@ export default function OpenWebinarsAdminPage() {
           ) : (
             <div key={String(editing)} className="space-y-3 rounded-lg border border-border p-4">
               {textField('name')}
+              {textField('name_en')}
               {textField('organisation')}
               {/* The photo is uploaded the moment it is chosen; Save sends the path the server gave back (or null after «Remove photo»). */}
               <ImageUploadField kind="photo" id="ow-sp-photo" value={draft.photo_url} upload={uploadSpeakerPhoto} onBusyChange={setPhotoBusy}
                                 onChange={(photo_url) => setDraft((d) => ({ ...d, photo_url }))} />
               {textField('email')}
               <div className="space-y-1.5"><Label htmlFor="ow-sp-bio">{t('openWebinars.admin.speakers.bio')}</Label><Textarea id="ow-sp-bio" value={draft.bio ?? ''} onChange={(e) => setDraft({ ...draft, bio: e.target.value })} rows={3} /></div>
+              <div className="space-y-1.5"><Label htmlFor="ow-sp-bio_en">{t('openWebinars.admin.speakers.bio_en')}</Label><Textarea id="ow-sp-bio_en" value={draft.bio_en ?? ''} onChange={(e) => setDraft({ ...draft, bio_en: e.target.value })} rows={3} /></div>
               <div className="flex gap-2">
                 <Button type="button" onClick={saveSpeaker} disabled={busy || photoBusy || draft.name.trim().length < 2}>{busy ? t('openWebinars.admin.saving') : t('openWebinars.admin.save')}</Button>
                 <Button type="button" variant="ghost" onClick={() => { setEditing(null); setDraft(EMPTY); }}>{t('openWebinars.admin.speakers.cancel')}</Button>

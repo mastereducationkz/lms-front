@@ -17,6 +17,9 @@ export interface PublicSpeaker {
   name: string;
   organisation: string | null;
   bio: string | null;
+  /** English versions, absent on an older server; the page shows them in English when non-empty. */
+  name_en?: string | null;
+  bio_en?: string | null;
   photo_url: string | null;
 }
 
@@ -24,6 +27,8 @@ export interface PublicWebinar {
   slug: string;
   title: string;
   description: string | null;
+  title_en?: string | null;
+  description_en?: string | null;
   access_mode: AccessMode;
   starts_at: string;
   ends_at: string;
@@ -121,6 +126,8 @@ export interface PublicRecording {
   slug: string;
   title: string;
   description: string | null;
+  title_en?: string | null;
+  description_en?: string | null;
   starts_at: string;
   ends_at: string;
   duration_seconds: number | null;

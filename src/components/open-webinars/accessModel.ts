@@ -23,11 +23,14 @@ export interface AccessDraft {
   speakerId: number | null;
   /** A stable relative path (`/uploads/webinar_banners/…`) or null. */
   bannerUrl: string | null;
+  /** The optional English title and description of the public page; empty = the page shows the original in English too. */
+  titleEn: string;
+  descriptionEn: string;
   /** Create form only: the webinar has no group or course, just the public page. */
   noAudience: boolean;
 }
 
-export const emptyDraft = (): AccessDraft => ({ mode: 'students', pipelineId: null, slug: '', presenter: null, speakerId: null, bannerUrl: null, noAudience: false });
+export const emptyDraft = (): AccessDraft => ({ mode: 'students', pipelineId: null, slug: '', presenter: null, speakerId: null, bannerUrl: null, titleEn: '', descriptionEn: '', noAudience: false });
 
 export const draftOf = (access: OpenAccess): AccessDraft => ({
   mode: access.access_mode,
@@ -36,6 +39,8 @@ export const draftOf = (access: OpenAccess): AccessDraft => ({
   presenter: access.presenter ?? null,
   speakerId: access.speaker_id,
   bannerUrl: access.banner_url ?? null,
+  titleEn: access.title_en ?? '',
+  descriptionEn: access.description_en ?? '',
   noAudience: false,
 });
 
@@ -57,8 +62,24 @@ export const speakerMissing = (draft: AccessDraft): boolean => presenterOf(draft
 /** Everything a public webinar needs before Save: somewhere for the leads to go, and the named presenter if it is a guest. */
 export const draftReady = (draft: AccessDraft): boolean => !isPublicMode(draft) || (draft.pipelineId !== null && !speakerMissing(draft));
 
-/** The body of `PUT /{event_id}`. `lockedSlug`: the address can no longer change, so it is not sent. */
-export function accessBody(draft: AccessDraft & { mode: 'open' | 'registration'; pipelineId: number }, lockedSlug = false): AccessBody {
+/**
+ * The English texts of the body. A new webinar sends only what was written (nothing to clear yet); a saved one
+ * (`clearEmpty`) sends what the form holds, so emptying a field removes the saved English text.
+ */
+function englishFields(draft: AccessDraft, clearEmpty: boolean): Pick<AccessBody, 'title_en' | 'description_en'> {
+  const title = draft.titleEn.trim();
+  const description = draft.descriptionEn.trim();
+  return {
+    ...(clearEmpty || title ? { title_en: title } : {}),
+    ...(clearEmpty || description ? { description_en: description } : {}),
+  };
+}
+
+/**
+ * The body of `PUT /{event_id}`. `lockedSlug`: the address can no longer change, so it is not sent.
+ * `clearEmpty`: the webinar already exists, so an emptied English text is sent as '' (clears it) instead of left out.
+ */
+export function accessBody(draft: AccessDraft & { mode: 'open' | 'registration'; pipelineId: number }, lockedSlug = false, clearEmpty = false): AccessBody {
   return {
     access_mode: draft.mode,
     ...(lockedSlug ? {} : { slug: draft.slug.trim() || null }),
@@ -66,6 +87,7 @@ export function accessBody(draft: AccessDraft & { mode: 'open' | 'registration';
     ...presenterField(draft),
     lead_pipeline_id: draft.pipelineId,
     banner_url: draft.bannerUrl,
+    ...englishFields(draft, clearEmpty),
   };
 }
 

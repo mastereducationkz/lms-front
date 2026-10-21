@@ -5,6 +5,7 @@ import HlsVideoPlayer from '../components/HlsVideoPlayer';
 import PublicShell from '../components/open-webinars/PublicShell';
 import ConsultationCard from '../components/open-webinars/ConsultationCard';
 import PresenterBlock from '../components/open-webinars/PresenterBlock';
+import { inLocale } from '../components/open-webinars/englishText';
 import { getPublicRecording, PublicApiError, type PublicRecording } from '../services/api/publicWebinars';
 import { formatDate } from '../lib/i18n/format';
 import { usePublicLocale } from '../lib/publicLocale';
@@ -35,6 +36,9 @@ export default function PublicRecordingPage() {
   }, [slug]);
 
   const data = state.kind === 'ready' ? state.data : null;
+  // The English title and description when the visitor reads English and they were written; the original otherwise.
+  const title = data ? inLocale(locale, data.title, data.title_en) : '';
+  const description = data ? inLocale(locale, data.description, data.description_en) : null;
   const message = state.kind === 'withdrawn' ? t('openWebinars.recording.withdrawn')
     : state.kind === 'missing' ? t('openWebinars.recording.missing') : state.kind === 'error' ? t('openWebinars.loadFailed') : null;
 
@@ -50,17 +54,17 @@ export default function PublicRecordingPage() {
         <div className="space-y-5">
           <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
             <div className="bg-black">
-              <HlsVideoPlayer url={data.url} poster={data.poster_url} title={data.title} className="aspect-video w-full" onError={() => setPlayFailed(true)} />
+              <HlsVideoPlayer url={data.url} poster={data.poster_url} title={title} className="aspect-video w-full" onError={() => setPlayFailed(true)} />
             </div>
             {playFailed && <p role="alert" className="px-5 pt-3 text-sm text-red-600 dark:text-red-400">{t('openWebinars.recording.playFailed')}</p>}
             <div className="space-y-3 p-5 sm:p-7">
-              <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">{data.title}</h1>
+              <h1 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">{title}</h1>
               <p className="flex items-center gap-2 text-sm text-muted-foreground">
                 <CalendarClock className="h-4 w-4 flex-none" aria-hidden />
                 {t('openWebinars.recording.recordedOn', { date: formatDate(data.starts_at, { day: 'numeric', month: 'long', year: 'numeric' }, locale) })}
               </p>
-              <PresenterBlock speaker={data.speaker} t={t} />
-              {data.description && <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{data.description}</p>}
+              <PresenterBlock speaker={data.speaker} locale={locale} t={t} />
+              {description && <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{description}</p>}
             </div>
           </article>
           <ConsultationCard t={t} locale={locale} webinarSlug={data.slug} consent={data.consent} />

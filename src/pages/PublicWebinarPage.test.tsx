@@ -373,3 +373,73 @@ describe('who is named on the page', () => {
     expect(document.querySelector('[data-speaker]')).not.toBeNull();
   });
 });
+
+describe('the webinar’s own text in English', () => {
+  const guest = { name: 'Д-р Гость', organisation: 'Some University', bio: 'Консультант по поступлению', photo_url: null };
+  const english = { title_en: 'IELTS Writing Office Hours', description_en: 'Bring an essay.\nGet feedback.' };
+  const russian = webinar({
+    title: 'Консультация по IELTS Writing', description: 'Принесите эссе.\nПолучите отзыв.', banner_url: '/uploads/webinar_banners/1.png',
+    ...english, speaker: { ...guest, name_en: 'Dr. Guest', bio_en: 'Admissions consultant' },
+  });
+  const switchTo = (label: string) => click(Array.from(document.querySelectorAll('button')).find((b) => b.textContent === label) ?? null);
+  const heading = () => document.querySelector('h1')?.textContent;
+
+  it('shows the English title, description, speaker name and bio to an English visitor', async () => {
+    await open({ [PAGE]: { body: russian } });
+    expect(heading()).toBe('IELTS Writing Office Hours');
+    expect(document.querySelector('[data-banner]')?.getAttribute('alt')).toBe('IELTS Writing Office Hours');
+    expect(text()).toContain('Get feedback.');
+    expect(text()).not.toContain('Принесите эссе.');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Dr. Guest, Some University');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Admissions consultant');
+    expect(text()).not.toContain('Д-р Гость');
+    expect(text()).not.toContain('Консультант по поступлению');
+  });
+
+  it('follows the switch: Russian shows the original, English brings the English back', async () => {
+    await open({ [PAGE]: { body: russian } });
+    await switchTo('Русский');
+    expect(heading()).toBe('Консультация по IELTS Writing');
+    expect(document.querySelector('[data-banner]')?.getAttribute('alt')).toBe('Консультация по IELTS Writing');
+    expect(text()).toContain('Принесите эссе.');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Д-р Гость, Some University');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Консультант по поступлению');
+    expect(text()).not.toContain('Get feedback.');
+    await switchTo('English');
+    expect(heading()).toBe('IELTS Writing Office Hours');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Dr. Guest');
+  });
+
+  it('shows a Russian visitor the original even when an English version exists', async () => {
+    vi.stubGlobal('navigator', { language: 'ru-RU' });
+    await open({ [PAGE]: { body: russian } });
+    expect(heading()).toBe('Консультация по IELTS Writing');
+    expect(text()).toContain('Принесите эссе.');
+    expect(text()).not.toContain('Dr. Guest');
+  });
+
+  it.each([
+    ['null', { title_en: null, description_en: null }, { name_en: null, bio_en: null }],
+    ['empty', { title_en: '', description_en: '  ' }, { name_en: '', bio_en: ' ' }],
+    ['absent (an older server)', {}, {}],
+  ])('falls back to the original in English when the English texts are %s', async (_label, own, person) => {
+    await open({ [PAGE]: { body: webinar({ title: 'Консультация по IELTS Writing', description: 'Принесите эссе.', ...own, speaker: { ...guest, ...person } }) } });
+    expect(heading()).toBe('Консультация по IELTS Writing');
+    expect(text()).toContain('Принесите эссе.');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Д-р Гость, Some University');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Консультант по поступлению');
+  });
+
+  it('uses each English text on its own: a title alone leaves the description in the original', async () => {
+    await open({ [PAGE]: { body: webinar({ title: 'Консультация по IELTS Writing', description: 'Принесите эссе.', title_en: 'IELTS Writing consultation', speaker: { ...guest, name_en: 'Dr. Guest' } }) } });
+    expect(heading()).toBe('IELTS Writing consultation');
+    expect(text()).toContain('Принесите эссе.');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Dr. Guest, Some University');
+    expect(document.querySelector('[data-speaker]')?.textContent).toContain('Консультант по поступлению');
+  });
+
+  it('keeps showing no description when neither language has one', async () => {
+    await open({ [PAGE]: { body: webinar({ description: null, description_en: null }) } });
+    expect(document.querySelector('article p.whitespace-pre-line')).toBeNull();
+  });
+});

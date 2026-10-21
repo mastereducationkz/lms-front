@@ -72,9 +72,62 @@ describe('Admin → Open webinars', () => {
     await type('#ow-sp-organisation', 'Some University');
     await click(Array.from(document.querySelectorAll('button')).filter((b) => b.textContent === 'Save').pop() ?? null);
     await settle();
-    expect(api.createGuestSpeaker).toHaveBeenCalledWith({ name: 'Dr. Guest', organisation: 'Some University', bio: null, photo_url: null, email: null });
+    expect(api.createGuestSpeaker).toHaveBeenCalledWith({ name: 'Dr. Guest', organisation: 'Some University', bio: null, name_en: null, bio_en: null, photo_url: null, email: null });
     expect(text()).toContain('Dr. Guest');
     expect(text()).toContain('Some University');
+  });
+
+  it('adds a speaker with an English name and bio, sent with the rest', async () => {
+    api.createGuestSpeaker.mockResolvedValue({ id: 5, name: 'Др. Гость', organisation: null, bio: 'Лингвист', name_en: 'Dr. Guest', bio_en: 'A linguist', photo_url: null, email: null, is_active: true });
+    await show();
+    await click(button('Add speaker'));
+    expect(document.querySelector('label[for="ow-sp-name_en"]')?.textContent).toBe('Name (English)');
+    expect(document.querySelector('label[for="ow-sp-bio_en"]')?.textContent).toBe('About (English)');
+    await type('#ow-sp-name', 'Др. Гость');
+    await type('#ow-sp-name_en', 'Dr. Guest');
+    await setTextarea(document.querySelector('#ow-sp-bio') as HTMLTextAreaElement, 'Лингвист');
+    await setTextarea(document.querySelector('#ow-sp-bio_en') as HTMLTextAreaElement, 'A linguist');
+    await click(Array.from(document.querySelectorAll('button')).filter((b) => b.textContent === 'Save').pop() ?? null);
+    await settle();
+    expect(api.createGuestSpeaker).toHaveBeenCalledWith({ name: 'Др. Гость', organisation: null, bio: 'Лингвист', name_en: 'Dr. Guest', bio_en: 'A linguist', photo_url: null, email: null });
+  });
+
+  it('shows a speaker’s saved English text for editing, and a save that touches nothing else sends it back unchanged', async () => {
+    api.listGuestSpeakers.mockResolvedValue([{ id: 5, name: 'Др. Гость', organisation: 'Вуз', bio: 'Лингвист', name_en: 'Dr. Guest', bio_en: 'A linguist', photo_url: '/uploads/webinar_speakers/a.jpg', email: 'g@example.com', is_active: true }]);
+    api.updateGuestSpeaker.mockImplementation(async (id: number, body: object) => ({ id, is_active: true, ...body }));
+    await show();
+    await click(button('Edit'));
+    expect((document.querySelector('#ow-sp-name_en') as HTMLInputElement).value).toBe('Dr. Guest');
+    expect((document.querySelector('#ow-sp-bio_en') as HTMLTextAreaElement).value).toBe('A linguist');
+    await type('#ow-sp-organisation', 'Университет');
+    await click(Array.from(document.querySelectorAll('button')).filter((b) => b.textContent === 'Save').pop() ?? null);
+    await settle();
+    expect(api.updateGuestSpeaker).toHaveBeenCalledWith(5, {
+      name: 'Др. Гость', organisation: 'Университет', bio: 'Лингвист', name_en: 'Dr. Guest', bio_en: 'A linguist', photo_url: '/uploads/webinar_speakers/a.jpg', email: 'g@example.com',
+    });
+  });
+
+  it('clears a speaker’s English text when the fields are emptied', async () => {
+    api.listGuestSpeakers.mockResolvedValue([{ id: 5, name: 'Др. Гость', organisation: null, bio: null, name_en: 'Dr. Guest', bio_en: 'A linguist', photo_url: null, email: null, is_active: true }]);
+    api.updateGuestSpeaker.mockImplementation(async (id: number, body: object) => ({ id, is_active: true, ...body }));
+    await show();
+    await click(button('Edit'));
+    await type('#ow-sp-name_en', '  ');
+    await setTextarea(document.querySelector('#ow-sp-bio_en') as HTMLTextAreaElement, '');
+    await click(Array.from(document.querySelectorAll('button')).filter((b) => b.textContent === 'Save').pop() ?? null);
+    await settle();
+    expect(api.updateGuestSpeaker).toHaveBeenCalledWith(5, expect.objectContaining({ name_en: null, bio_en: null }));
+  });
+
+  it('edits a speaker an older server sent without any English fields', async () => {
+    api.listGuestSpeakers.mockResolvedValue([{ id: 5, name: 'Dr. Guest', organisation: null, bio: null, photo_url: null, email: null, is_active: true }]);
+    api.updateGuestSpeaker.mockImplementation(async (id: number, body: object) => ({ id, is_active: true, ...body }));
+    await show();
+    await click(button('Edit'));
+    expect((document.querySelector('#ow-sp-name_en') as HTMLInputElement).value).toBe('');
+    await click(Array.from(document.querySelectorAll('button')).filter((b) => b.textContent === 'Save').pop() ?? null);
+    await settle();
+    expect(api.updateGuestSpeaker).toHaveBeenCalledWith(5, expect.objectContaining({ name: 'Dr. Guest', name_en: null, bio_en: null }));
   });
 
   it('removes a speaker from the list', async () => {
@@ -118,6 +171,17 @@ describe('Admin → Open webinars: the overview', () => {
     expect(row(8).querySelector('td:last-child')?.className).toContain('text-red');
     expect(row(7).querySelector('td:last-child')?.className).not.toContain('text-red');
     expect(document.querySelector('[data-failed-total]')?.textContent).toBe('2 failed leads in total');
+  });
+
+  it('has a call-backs column: an open-link webinar has no registrations, only people who left their number', async () => {
+    api.getOverview.mockResolvedValue({ failed_total: 0, items: [item(7, { access_mode: 'open', registered: 0, consultations: 4 }), item(8, { registered: 12, consultations: 0 })] });
+    await show();
+    const headers = Array.from(document.querySelectorAll('[data-overview] thead th')).map((th) => th.textContent);
+    expect(headers).toEqual(['Webinar', 'Date', 'Access', 'Registered', 'Call-backs', 'Failed leads']);
+    expect(row(7).querySelector('[data-consultations]')?.textContent).toBe('4');
+    expect(row(7).querySelector('td:nth-child(4)')?.textContent).toBe('0');
+    expect(row(8).querySelector('[data-consultations]')?.textContent).toBe('0');
+    expect(row(8).querySelector('td:nth-child(4)')?.textContent).toBe('12');
   });
 
   it('opens a webinar’s registrations when its row is clicked', async () => {

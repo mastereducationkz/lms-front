@@ -9,7 +9,7 @@ import { createWithAccess } from './createWithAccess';
 
 const eventData = { title: 'Open day', event_type: 'webinar', start_datetime: '2099-01-03T12:00:00Z', end_datetime: '2099-01-03T13:00:00Z' } as CreateEventRequest;
 const preflight = { access_mode: 'registration', lead_pipeline_id: 10520038, title: 'Open day', start_datetime: eventData.start_datetime, end_datetime: eventData.end_datetime } as const;
-const draft = { mode: 'registration', pipelineId: 10520038, slug: ' my-day ', presenter: 'speaker', speakerId: 3, bannerUrl: '/uploads/webinar_banners/1.png', noAudience: false } as AccessDraft & { mode: 'registration'; pipelineId: number };
+const draft = { mode: 'registration', pipelineId: 10520038, slug: ' my-day ', presenter: 'speaker', speakerId: 3, bannerUrl: '/uploads/webinar_banners/1.png', titleEn: '', descriptionEn: '', noAudience: false } as AccessDraft & { mode: 'registration'; pipelineId: number };
 const created = { id: 77, title: 'Open day' } as Event;
 
 /** Every call in the order it happened. */
@@ -74,5 +74,20 @@ describe('creating a webinar that opens to everyone', () => {
     await createWithAccess({ create, eventData, draft: { ...draft, presenter: null }, preflight, fallbackMessage: 'x' });
     expect(api.saveOpenAccess.mock.calls[0][1]).not.toHaveProperty('presenter');
     expect(api.saveOpenAccess.mock.calls[0][1].speaker_id).toBe(3);
+  });
+
+  it('sends no English texts when none were written: there is nothing to clear on a new webinar', async () => {
+    await createWithAccess({ create, eventData, draft: { ...draft, titleEn: '  ', descriptionEn: '' }, preflight, fallbackMessage: 'x' });
+    const body = api.saveOpenAccess.mock.calls[0][1];
+    expect(body).not.toHaveProperty('title_en');
+    expect(body).not.toHaveProperty('description_en');
+  });
+
+  it('sends the English texts that were written, trimmed, and only those', async () => {
+    await createWithAccess({ create, eventData, draft: { ...draft, titleEn: ' Open day ', descriptionEn: '' }, preflight, fallbackMessage: 'x' });
+    expect(api.saveOpenAccess.mock.calls[0][1]).toMatchObject({ title_en: 'Open day' });
+    expect(api.saveOpenAccess.mock.calls[0][1]).not.toHaveProperty('description_en');
+    await createWithAccess({ create, eventData, draft: { ...draft, titleEn: 'Open day', descriptionEn: 'Come and see.\nBring a friend.' }, preflight, fallbackMessage: 'x' });
+    expect(api.saveOpenAccess.mock.calls[1][1]).toMatchObject({ title_en: 'Open day', description_en: 'Come and see.\nBring a friend.' });
   });
 });

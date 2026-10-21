@@ -57,7 +57,7 @@ describe('a guest speaker’s photo', () => {
     expect(text()).toContain('at least 200 px on the short side');
     await click(saveSpeaker());
     await settle();
-    expect(api.createGuestSpeaker).toHaveBeenCalledWith({ name: 'Dr. Guest', organisation: null, bio: null, photo_url: '/uploads/webinar_speakers/9.jpg', email: null });
+    expect(api.createGuestSpeaker).toHaveBeenCalledWith({ name: 'Dr. Guest', organisation: null, bio: null, name_en: null, bio_en: null, photo_url: '/uploads/webinar_speakers/9.jpg', email: null });
   });
 
   it('turns away a file that is not a PNG, JPG or WebP, or is over 5 MB, without uploading it', async () => {
