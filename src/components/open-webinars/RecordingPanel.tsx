@@ -48,6 +48,7 @@ export default function RecordingPanel({ eventId, slug }: { eventId: number; slu
         <h2 className="flex items-center gap-2 text-base font-semibold"><Video className="h-4 w-4" aria-hidden />{t('openWebinars.admin.rec.title')}</h2>
         <p className="text-sm text-muted-foreground">{line}</p>
         {rec.ready && !rec.published && <p className="text-xs text-muted-foreground">{t('openWebinars.admin.rec.warn')}</p>}
+        {rec.published && <p className="text-xs text-muted-foreground">{t('openWebinars.admin.rec.withdrawHelp')}</p>}
         {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div className="flex flex-wrap items-center gap-3">
           {rec.ready && !rec.published && (

@@ -376,7 +376,7 @@ export const announcements: RuTable<typeof en> = {
   'announcements.mlChecklist.unknownNote': 'Support не отвечает, поэтому шаг пока нельзя проверить. Обновите через минуту.',
   'announcements.mlChecklist.openGroups': 'Открыть вкладку «Группы»',
   'announcements.mlChecklist.steps.chat_found.label': 'Чат создан, бот добавлен',
-  'announcements.mlChecklist.steps.chat_found.why': 'Бот работает только в чате, куда его добавили, а название чата должно совпадать с названием группы в LMS.',
+  'announcements.mlChecklist.steps.chat_found.why': 'Бот работает только в чате, куда его добавили. Название чата должно быть похоже на название группы в LMS (приставка вроде «SAT» допустима).',
   'announcements.mlChecklist.steps.chat_found.fix': 'В Telegram создайте чат с названием «{name}» (точно как группа называется в LMS) и добавьте в него бота.',
   'announcements.mlChecklist.steps.one_active_row.label': 'В Support ровно одна активная запись чата',
   'announcements.mlChecklist.steps.one_active_row.why': 'Support хранит по записи на чат, а привязке в LMS нужна ровно одна живая запись.',
