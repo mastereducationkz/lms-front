@@ -4,6 +4,8 @@ import { Button } from '../components/ui/button';
 import PublicShell from '../components/open-webinars/PublicShell';
 import { countdownText, useCountdown } from '../components/open-webinars/useCountdown';
 import { usePublicPage } from '../components/open-webinars/usePublicPage';
+import { usePageTitle } from '../components/open-webinars/usePageTitle';
+import { inLocale } from '../components/open-webinars/englishText';
 import { getJoinInfo, type JoinInfo } from '../services/api/publicWebinars';
 import { formatDate, formatTime } from '../lib/i18n/format';
 import { usePublicLocale } from '../lib/publicLocale';
@@ -28,6 +30,8 @@ export default function PublicJoinPage() {
   const { state, retry } = usePublicPage(code, getJoinInfo, REFRESH_MS);
   const data = state.kind === 'ready' ? state.data : null;
   const untilStart = useCountdown(data?.starts_at);
+  const title = data ? inLocale(locale, data.title, data.title_en) : '';
+  usePageTitle(title);
 
   return (
     <PublicShell locale={locale} setLocale={setLocale} t={t}>
@@ -51,7 +55,7 @@ export default function PublicJoinPage() {
           </p>
           <div>
             <p className="text-sm text-muted-foreground">{t('openWebinars.join.hello', { name: data.name.split(' ')[0] })}</p>
-            <h1 className="mt-1 text-2xl font-bold leading-tight text-foreground">{data.title}</h1>
+            <h1 className="mt-1 text-2xl font-bold leading-tight text-foreground">{title}</h1>
             <p className="mt-2 text-sm text-foreground">
               {t('openWebinars.when', {
                 date: formatDate(data.starts_at, { weekday: 'long', day: 'numeric', month: 'long' }, locale),

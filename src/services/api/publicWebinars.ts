@@ -48,6 +48,7 @@ export interface PublicWebinar {
 
 export interface JoinInfo {
   title: string;
+  title_en?: string | null;
   slug: string;
   name: string;
   state: WebinarState;
