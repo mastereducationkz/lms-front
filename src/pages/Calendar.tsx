@@ -232,7 +232,7 @@ export default function Calendar() {
   };
 
   const isEventManager = user?.role === 'admin' || user?.role === 'head_teacher';
-  const canCreate = isEventManager || user?.role === 'curator';
+  const canCreate = isEventManager || user?.role === 'curator' || user?.role === 'head_curator';
   const showGroupFilter =
     (user?.role === 'teacher' || user?.role === 'curator' || user?.role === 'admin') && groups.length > 0;
   // Oversight roles always get it; everyone else once any of their lessons has a recording.

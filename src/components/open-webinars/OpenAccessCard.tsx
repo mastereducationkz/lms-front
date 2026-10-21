@@ -3,77 +3,100 @@ import { Link } from 'react-router-dom';
 import { Check, Copy, Globe2, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
+import WhoCanJoinSection from './WhoCanJoinSection';
+import { accessBody, closeBlock, draftOf, isPublicMode, type AccessDraft } from './accessModel';
 import {
   closeOpenAccess, getOpenAccess, getOpenSettings, listGuestSpeakers, saveOpenAccess,
-  type AccessMode, type GuestSpeaker, type OpenAccess, type OpenSettings,
+  type GuestSpeaker, type OpenAccess, type OpenSettings,
 } from '../../services/api/openWebinars';
+import { reasonCodeOf } from '../../services/api/apiError';
 import { LMS_ORIGIN } from '../../lib/lessonLinks';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/openWebinars';
 
-const MODES: AccessMode[] = ['students', 'open', 'registration'];
-const FIELD = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm';
+/** Refusals that mean the card was showing stale facts (someone registered, the webinar began): it reloads them. */
+const STALE_FACTS = ['slug_locked', 'close_after_start', 'close_has_registrations'];
+const AMBER = 'rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200';
+
+interface Props {
+  eventId: number;
+  /** The form's Host differs from the saved one: the guard reads the saved one. */
+  hostUnsaved?: boolean;
+  /** Why saving the public access failed right after the event was created (the create form hands it over). */
+  initialError?: string | null;
+}
 
 /**
  * «Public access» of one webinar, on its edit page: students only (as always), anyone with the link, or anyone
  * who registers. Saved on its own — it is not part of the event form's Save, because it is not a field of the event.
  */
-export default function OpenAccessCard({ eventId, hostUnsaved = false }: { eventId: number; /** The form's Host differs from the saved one: the guard reads the saved one. */ hostUnsaved?: boolean }) {
+export default function OpenAccessCard({ eventId, hostUnsaved = false, initialError = null }: Props) {
   const t = useT();
   const [access, setAccess] = useState<OpenAccess | null>(null);
   const [settings, setSettings] = useState<OpenSettings | null>(null);
   const [speakers, setSpeakers] = useState<GuestSpeaker[]>([]);
-  const [mode, setMode] = useState<AccessMode>('students');
-  const [slug, setSlug] = useState('');
-  const [speakerId, setSpeakerId] = useState<number | null>(null);
-  const [pipelineId, setPipelineId] = useState<number | null>(null);
+  const [draft, setDraft] = useState<AccessDraft | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'failed'>('loading');
   const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const [note, setNote] = useState<{ kind: 'ok' | 'error'; text: string } | null>(
+    initialError ? { kind: 'error', text: t('openWebinars.admin.access.afterCreateFailed', { message: initialError }) } : null,
+  );
   const [copied, setCopied] = useState(false);
 
-  const apply = useCallback((a: OpenAccess, s: OpenSettings) => {
-    setAccess(a);
-    setMode(a.access_mode);
-    setSlug(a.slug ?? '');
-    setSpeakerId(a.speaker_id);
-    setPipelineId(a.lead_pipeline_id ?? s.pipelines[0]?.id ?? null);
-  }, []);
+  const apply = useCallback((a: OpenAccess) => { setAccess(a); setDraft(draftOf(a)); }, []);
 
   useEffect(() => {
     let live = true;
-    Promise.all([getOpenAccess(eventId), getOpenSettings(), listGuestSpeakers()])
-      .then(([a, s, sp]) => { if (!live) return; setSettings(s); setSpeakers(sp); apply(a, s); setState('ready'); })
-      .catch(() => live && setState('failed'));
+    (async () => {
+      try {
+        const a = await getOpenAccess(eventId);
+        // The webinar's own speaker stays in the list even after they were removed from it.
+        const [s, sp] = await Promise.all([getOpenSettings(), listGuestSpeakers(a.speaker_id)]);
+        if (!live) return;
+        setSettings(s); setSpeakers(sp); apply(a); setState('ready');
+      } catch {
+        if (live) setState('failed');
+      }
+    })();
     return () => { live = false; };
   }, [eventId, apply]);
 
   if (state === 'loading') return <Card><CardContent className="flex items-center gap-2 py-6 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" aria-hidden />{t('openWebinars.loading')}</CardContent></Card>;
-  if (state === 'failed' || !access || !settings) return <Card><CardContent className="py-6 text-sm text-muted-foreground">{t('openWebinars.admin.loadFailed')}</CardContent></Card>;
+  if (state === 'failed' || !access || !settings || !draft) return <Card><CardContent className="py-6 text-sm text-muted-foreground">{t('openWebinars.admin.loadFailed')}</CardContent></Card>;
 
-  const policyMissing = mode === 'registration' && !settings.policy_text.trim();
+  const title = <CardTitle className="flex items-center gap-2"><Globe2 className="h-5 w-5" aria-hidden />{t('openWebinars.admin.access.title')}</CardTitle>;
+  // A series cannot be opened (the server refuses it); each occurrence is opened from its own edit page.
+  if (access.is_recurring && !access.open) {
+    return <Card><CardHeader>{title}</CardHeader><CardContent><p data-recurring-note className="text-sm text-muted-foreground">{t('openWebinars.admin.access.recurringNote')}</p></CardContent></Card>;
+  }
+
+  const policyMissing = draft.mode === 'registration' && !settings.policy_text.trim();
   // The same rule the server applies: a Meet link on the event, or a saved host with a Workspace account.
   const roomPossible = access.has_meeting_url || access.host?.has_workspace === true;
   const hostNote = access.has_meeting_url ? 'link' : !access.host ? 'none' : access.host.has_workspace ? 'ok' : 'noWorkspace';
-  const hostBlocked = mode !== 'students' && (hostUnsaved || !roomPossible);
+  const hostBlocked = draft.mode !== 'students' && (hostUnsaved || !roomPossible);
   const publicUrl = access.slug ? `${LMS_ORIGIN}/w/${access.slug}` : null;
+  const blocked = closeBlock(access);
+  const slugLocked = access.slug_locked === true;
 
   const save = async () => {
     setBusy(true);
     setNote(null);
     try {
-      if (mode === 'students') {
+      if (!isPublicMode(draft)) {
         if (access.open) await closeOpenAccess(eventId);
         setNote({ kind: 'ok', text: t('openWebinars.admin.access.closed') });
       } else {
-        await saveOpenAccess(eventId, { access_mode: mode, slug: slug.trim() || null, speaker_id: speakerId, lead_pipeline_id: pipelineId ?? 0 });
+        await saveOpenAccess(eventId, accessBody({ ...draft, pipelineId: draft.pipelineId as number }, slugLocked));
         setNote({ kind: 'ok', text: t('openWebinars.admin.saved') });
       }
-      apply(await getOpenAccess(eventId), settings);
+      apply(await getOpenAccess(eventId));
     } catch (failure) {
       setNote({ kind: 'error', text: failure instanceof Error ? failure.message : t('openWebinars.error.generic') });
+      const code = reasonCodeOf(failure);
+      if (code && STALE_FACTS.includes(code)) {
+        try { apply(await getOpenAccess(eventId)); } catch { /* the refusal above is already on screen */ }
+      }
     } finally {
       setBusy(false);
     }
@@ -87,67 +110,38 @@ export default function OpenAccessCard({ eventId, hostUnsaved = false }: { event
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Globe2 className="h-5 w-5" aria-hidden />{t('openWebinars.admin.access.title')}</CardTitle>
+        {title}
         <p className="text-sm text-muted-foreground">{t('openWebinars.admin.access.help')}</p>
       </CardHeader>
       <CardContent className="space-y-5">
-        <fieldset className="space-y-2">
-          <legend className="mb-1 text-sm font-medium">{t('openWebinars.admin.access.mode')}</legend>
-          {MODES.map((id) => (
-            <label key={id} className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-              <input type="radio" name="access-mode" value={id} checked={mode === id} onChange={() => setMode(id)} className="mt-1" />
-              <span>
-                <span className="font-medium">{t(`openWebinars.admin.access.${id}` as 'openWebinars.admin.access.students')}</span>
-                {id !== 'students' && <span className="block text-xs text-muted-foreground">{t(id === 'open' ? 'openWebinars.admin.access.openHint' : 'openWebinars.admin.access.registrationHint')}</span>}
-              </span>
-            </label>
-          ))}
-        </fieldset>
-
-        {mode !== 'students' && (
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="ow-slug">{t('openWebinars.admin.access.slug')}</Label>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground"><span className="shrink-0">{LMS_ORIGIN.replace(/^https?:\/\//, '')}/w/</span>
-                <Input id="ow-slug" value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} placeholder={t('openWebinars.admin.access.slugExample')} /></div>
-              <p className="text-xs text-muted-foreground">{t('openWebinars.admin.access.slugHint')}</p>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ow-speaker">{t('openWebinars.admin.access.speaker')}</Label>
-              <select id="ow-speaker" className={FIELD} value={speakerId ?? ''} onChange={(e) => setSpeakerId(e.target.value ? Number(e.target.value) : null)}>
-                <option value="">{t('openWebinars.admin.access.noSpeaker')}</option>
-                {speakers.map((s) => <option key={s.id} value={s.id}>{s.name}{s.organisation ? `, ${s.organisation}` : ''}</option>)}
-              </select>
-              <Link to="/admin/open-webinars" className="text-xs text-primary underline-offset-4 hover:underline">{t('openWebinars.admin.access.manageSpeakers')}</Link>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ow-pipeline">{t('openWebinars.admin.access.pipeline')}</Label>
-              <select id="ow-pipeline" className={FIELD} value={pipelineId ?? ''} onChange={(e) => setPipelineId(Number(e.target.value))}>
-                {settings.pipelines.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </div>
-            <p data-host-note={hostUnsaved ? 'unsaved' : hostNote} role={hostBlocked ? 'alert' : 'status'}
-               className={hostBlocked
-                 ? 'rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200'
-                 : 'rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground'}>
-              {hostUnsaved
-                ? t('openWebinars.admin.access.host.unsaved')
-                : t(`openWebinars.admin.access.host.${hostNote}` as 'openWebinars.admin.access.host.ok', { name: access.host?.name ?? '' })}
-              {!hostUnsaved && hostNote === 'noWorkspace' && (<>{' '}<Link to="/admin/users" className="underline underline-offset-4">{t('openWebinars.admin.access.host.manageUsers')}</Link></>)}
+        <WhoCanJoinSection
+          draft={draft}
+          onChange={setDraft}
+          pipelines={settings.pipelines}
+          speakers={speakers}
+          addressPreview={access.slug}
+          slugLocked={slugLocked}
+          studentsDisabledReason={blocked ? t(`openWebinars.admin.access.closeBlocked.${blocked}` as 'openWebinars.admin.access.closeBlocked.started') : null}
+        >
+          <p data-host-note={hostUnsaved ? 'unsaved' : hostNote} role={hostBlocked ? 'alert' : 'status'}
+             className={hostBlocked ? AMBER : 'rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground'}>
+            {hostUnsaved
+              ? t('openWebinars.admin.access.host.unsaved')
+              : t(`openWebinars.admin.access.host.${hostNote}` as 'openWebinars.admin.access.host.ok', { name: access.host?.name ?? '' })}
+            {!hostUnsaved && hostNote === 'noWorkspace' && (<>{' '}<Link to="/admin/users" className="underline underline-offset-4">{t('openWebinars.admin.access.host.manageUsers')}</Link></>)}
+          </p>
+          <p className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">{t('openWebinars.admin.access.producer')}</p>
+          {policyMissing && (
+            <p role="alert" className={AMBER}>
+              {t('openWebinars.admin.access.needPolicy')}{' '}
+              <Link to="/admin/open-webinars" className="underline underline-offset-4">{t('openWebinars.admin.access.policyLink')}</Link>
             </p>
-            <p className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">{t('openWebinars.admin.access.producer')}</p>
-            {policyMissing && (
-              <p role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200">
-                {t('openWebinars.admin.access.needPolicy')}{' '}
-                <Link to="/admin/open-webinars" className="underline underline-offset-4">{t('openWebinars.admin.access.policyLink')}</Link>
-              </p>
-            )}
-          </div>
-        )}
+          )}
+        </WhoCanJoinSection>
 
         {note && <p role={note.kind === 'error' ? 'alert' : 'status'} className={note.kind === 'error' ? 'text-sm text-red-600 dark:text-red-400' : 'text-sm text-green-700 dark:text-green-400'}>{note.text}</p>}
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="button" onClick={save} disabled={busy || policyMissing || hostBlocked || (mode !== 'students' && pipelineId === null)}>
+          <Button type="button" onClick={save} disabled={busy || policyMissing || hostBlocked || (draft.mode !== 'students' && draft.pipelineId === null)}>
             {busy ? t('openWebinars.admin.saving') : t('openWebinars.admin.save')}
           </Button>
           {access.open && publicUrl && (

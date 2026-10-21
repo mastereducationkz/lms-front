@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { click, mount, settle, text, type, unmount } from '../../pages/publicWebinarsTestKit';
+import { apiError } from '../../services/api/apiError';
+import { button, click, mount, pick, settle, text, type, unmount, upload } from '../../pages/publicWebinarsTestKit';
 
 vi.mock('../../contexts/AuthContext', async () => {
   const { createContext } = await import('react');
@@ -9,7 +10,7 @@ vi.mock('../../contexts/AuthContext', async () => {
 });
 
 const api = vi.hoisted(() => ({
-  getOpenAccess: vi.fn(), getOpenSettings: vi.fn(), listGuestSpeakers: vi.fn(), saveOpenAccess: vi.fn(), closeOpenAccess: vi.fn(),
+  getOpenAccess: vi.fn(), getOpenSettings: vi.fn(), listGuestSpeakers: vi.fn(), saveOpenAccess: vi.fn(), closeOpenAccess: vi.fn(), uploadBanner: vi.fn(),
 }));
 vi.mock('../../services/api/openWebinars', () => api);
 
@@ -19,25 +20,33 @@ import OpenAccessCard from './OpenAccessCard';
 
 const funnel = { registered: 0, joined: 0, consultation_requests: 0, leads_sent: 0, leads_pending: 0, leads_failed: 0, existing_students: 0 };
 const host = { id: 5, name: 'Aldiyar Zhumadilda', role: 'admin', has_workspace: true };
-const closed = { event_id: 7, open: false, access_mode: 'students', slug: null, speaker_id: null, lead_pipeline_id: null, host, has_meeting_url: false, funnel };
+const closed = {
+  event_id: 7, open: false, access_mode: 'students', slug: null, speaker_id: null, lead_pipeline_id: null, host, has_meeting_url: false, funnel,
+  banner_url: null, starts_at: '2099-03-03T09:00:00Z', ends_at: '2099-03-03T10:00:00Z', started: false, ended: false, registrations_total: 0,
+  slug_locked: false, can_close: true, close_blocked_reason: null, is_recurring: false,
+};
 const opened = { ...closed, open: true, access_mode: 'registration', slug: 'ielts-writing-2030-03-03', lead_pipeline_id: 10736538, funnel: { ...funnel, registered: 12, joined: 5 } };
 const settings = (policy = 'Policy text') => ({
   policy_text: policy, policy_version: 'abc', policy_updated_at: null, consent_text_ru: 'ru', consent_text_en: 'en',
   pipelines: [{ id: 10520038, name: 'SAT' }, { id: 10736538, name: 'NUET + IELTS' }],
 });
+const speaker = { id: 3, name: 'Dr. Guest', organisation: 'Some University', bio: null, photo_url: null, email: null, is_active: true };
 
-async function show(hostUnsaved = false) {
-  await mount(<MemoryRouter><OpenAccessCard eventId={7} hostUnsaved={hostUnsaved} /></MemoryRouter>);
+async function show(props: { hostUnsaved?: boolean; initialError?: string } = {}) {
+  await mount(<MemoryRouter><OpenAccessCard eventId={7} {...props} /></MemoryRouter>);
 }
-const radio = (value: string) => document.querySelector(`input[name="access-mode"][value="${value}"]`);
-const saveButton = () => Array.from(document.querySelectorAll('button')).find((b) => b.textContent === 'Save') as HTMLButtonElement;
+const radio = (value: string) => document.querySelector(`input[name="access-mode"][value="${value}"]`) as HTMLInputElement;
+const saveButton = () => button('Save');
+const choosePipeline = (id = '10520038') => pick('#ow-pipeline', id);
+/** A server refusal as the app's API layer throws it: the localized detail, with the AxiosError (and its reason_code) as the cause. */
+const refusal = (detail: string, reason_code: string) => apiError({ response: { data: { detail, reason_code } } }, 'failed');
 
 beforeEach(() => {
   Object.values(api).forEach((fn) => fn.mockReset());
   api.getOpenAccess.mockResolvedValue(closed);
   api.getOpenSettings.mockResolvedValue(settings());
-  api.listGuestSpeakers.mockResolvedValue([{ id: 3, name: 'Dr. Guest', organisation: 'Some University', bio: null, photo_url: null, email: null, is_active: true }]);
-  api.saveOpenAccess.mockResolvedValue({ event_id: 7, access_mode: 'registration', slug: 'ielts-writing-2030-03-03' });
+  api.listGuestSpeakers.mockResolvedValue([speaker]);
+  api.saveOpenAccess.mockResolvedValue({ event_id: 7, access_mode: 'registration', slug: 'ielts-writing-2030-03-03', banner_url: null });
   api.closeOpenAccess.mockResolvedValue({ ok: true });
 });
 afterEach(unmount);
@@ -45,31 +54,52 @@ afterEach(unmount);
 describe('a webinar’s public access card', () => {
   it('starts as «students only» with nothing else to fill in', async () => {
     await show();
-    expect((radio('students') as HTMLInputElement).checked).toBe(true);
-    expect(document.querySelector('#ow-slug')).toBeNull();
+    expect(radio('students').checked).toBe(true);
+    expect(document.querySelector('#ow-pipeline')).toBeNull();
   });
 
   it('opens a webinar to everyone who registers, with its speaker and pipeline, and saves the address', async () => {
     await show();
     await click(radio('registration'));
+    await click(button('Edit address'));
     await type('#ow-slug', 'my-webinar');
-    const speaker = document.querySelector('#ow-speaker') as HTMLSelectElement;
-    expect(Array.from(speaker.options).map((o) => o.textContent)).toEqual(['No guest speaker', 'Dr. Guest, Some University']);
-    speaker.value = '3'; speaker.dispatchEvent(new Event('change', { bubbles: true }));
-    await settle();
+    const speakers = document.querySelector('#ow-speaker') as HTMLSelectElement;
+    expect(Array.from(speakers.options).map((o) => o.textContent)).toEqual(['No guest speaker', 'Dr. Guest, Some University']);
+    await pick('#ow-speaker', '3');
+    await choosePipeline();
     api.getOpenAccess.mockResolvedValue(opened);
     await click(saveButton());
     await settle();
-    expect(api.saveOpenAccess).toHaveBeenCalledWith(7, { access_mode: 'registration', slug: 'my-webinar', speaker_id: 3, lead_pipeline_id: 10520038 });
+    expect(api.saveOpenAccess).toHaveBeenCalledWith(7, { access_mode: 'registration', slug: 'my-webinar', speaker_id: 3, lead_pipeline_id: 10520038, banner_url: null });
     expect(text()).toContain('Saved');
     expect(text()).toContain('Registered 12 · joined 5');
     expect(document.querySelector('a[href$="/w/ielts-writing-2030-03-03"]')).not.toBeNull();
+  });
+
+  it('never preselects a pipeline: the field says «Choose the pipeline» and Save waits for a choice — in both public modes', async () => {
+    await show();
+    for (const mode of ['open', 'registration']) {
+      await click(radio(mode));
+      const select = document.querySelector('#ow-pipeline') as HTMLSelectElement;
+      expect(select.value).toBe('');
+      expect(select.options[0].textContent).toBe('Choose the pipeline');
+      expect(saveButton().disabled).toBe(true);
+    }
+    await choosePipeline('10736538');
+    expect(saveButton().disabled).toBe(false);
+  });
+
+  it('keeps the saved pipeline of a webinar that is already open', async () => {
+    api.getOpenAccess.mockResolvedValue(opened);
+    await show();
+    expect((document.querySelector('#ow-pipeline') as HTMLSelectElement).value).toBe('10736538');
   });
 
   it('will not offer registration until a privacy policy is published, and says where to publish it', async () => {
     api.getOpenSettings.mockResolvedValue(settings('  '));
     await show();
     await click(radio('registration'));
+    await choosePipeline();
     expect(text()).toContain('Registration needs a published privacy policy.');
     expect(document.querySelector('a[href="/admin/open-webinars"]')).not.toBeNull();
     expect(saveButton().disabled).toBe(true);
@@ -80,6 +110,7 @@ describe('a webinar’s public access card', () => {
   it('says who the host is and that the room is made by itself, when the host has a Workspace account', async () => {
     await show();
     await click(radio('open'));
+    await choosePipeline();
     expect(text()).toContain('Host: Aldiyar Zhumadilda. The Meet room is made automatically three days before the start.');
     expect(saveButton().disabled).toBe(false);
   });
@@ -88,6 +119,7 @@ describe('a webinar’s public access card', () => {
     api.getOpenAccess.mockResolvedValue({ ...closed, host: { ...host, name: 'Dana Curator', role: 'curator', has_workspace: false } });
     await show();
     await click(radio('open'));
+    await choosePipeline();
     expect(text()).toContain('Dana Curator has no Google Workspace account linked in the LMS');
     expect(document.querySelector('a[href="/admin/users"]')).not.toBeNull();
     expect(saveButton().disabled).toBe(true);
@@ -99,24 +131,51 @@ describe('a webinar’s public access card', () => {
     api.getOpenAccess.mockResolvedValue({ ...closed, host: null });
     await show();
     await click(radio('open'));
+    await choosePipeline();
     expect(text()).toContain('This webinar has no host.');
     expect(saveButton().disabled).toBe(true);
     await unmount();
     api.getOpenAccess.mockResolvedValue({ ...closed, host: null, has_meeting_url: true });
     await show();
     await click(radio('open'));
+    await choosePipeline();
     expect(text()).toContain('A Meet link is already set on the event');
     expect(saveButton().disabled).toBe(false);
   });
 
   it('asks to save the event first when the Host in the form was changed but not saved', async () => {
-    await show(true);
+    await show({ hostUnsaved: true });
     await click(radio('open'));
+    await choosePipeline();
     expect(text()).toContain('You changed the host but have not saved the event yet.');
     expect(saveButton().disabled).toBe(true);
   });
 
-  it('closes the public access when set back to students only, keeping the registrations', async () => {
+  it('shows the server’s refusal in words and keeps what was typed', async () => {
+    api.saveOpenAccess.mockRejectedValue(refusal('This address is already used by another webinar.', 'slug_taken'));
+    await show();
+    await click(radio('open'));
+    await click(button('Edit address'));
+    await type('#ow-slug', 'taken');
+    await choosePipeline();
+    await click(saveButton());
+    await settle();
+    expect(text()).toContain('This address is already used by another webinar.');
+    expect((document.querySelector('#ow-slug') as HTMLInputElement).value).toBe('taken');
+  });
+
+  it('shows the page address under an «Edit address» toggle instead of an empty box', async () => {
+    api.getOpenAccess.mockResolvedValue(opened);
+    await show();
+    expect(document.querySelector('#ow-slug')).toBeNull();
+    expect(document.querySelector('[data-address]')?.textContent).toMatch(/\/w\/ielts-writing-2030-03-03$/);
+    await click(button('Edit address'));
+    expect((document.querySelector('#ow-slug') as HTMLInputElement).value).toBe('ielts-writing-2030-03-03');
+  });
+});
+
+describe('closing public access', () => {
+  it('closes it when set back to students only', async () => {
     api.getOpenAccess.mockResolvedValue(opened);
     await show();
     await click(radio('students'));
@@ -125,17 +184,134 @@ describe('a webinar’s public access card', () => {
     await settle();
     expect(api.closeOpenAccess).toHaveBeenCalledWith(7);
     expect(api.saveOpenAccess).not.toHaveBeenCalled();
-    expect(text()).toContain('Registrations already made are kept.');
+    expect(text()).toContain('Back to students only.');
   });
 
-  it('shows the server’s refusal in words and keeps what was typed', async () => {
-    api.saveOpenAccess.mockRejectedValue(new Error('This address is already used by another webinar.'));
+  it('disables «Students only» and says why once the webinar has started', async () => {
+    api.getOpenAccess.mockResolvedValue({ ...opened, started: true, can_close: false, close_blocked_reason: 'started' });
     await show();
-    await click(radio('open'));
-    await type('#ow-slug', 'taken');
+    expect(radio('students').disabled).toBe(true);
+    expect(document.querySelector('[data-students-blocked]')?.textContent).toContain('already started');
+  });
+
+  it('disables «Students only» and points to cancelling once people have registered', async () => {
+    api.getOpenAccess.mockResolvedValue({ ...opened, registrations_total: 4, can_close: false, close_blocked_reason: 'has_registrations' });
+    await show();
+    expect(radio('students').disabled).toBe(true);
+    expect(document.querySelector('[data-students-blocked]')?.textContent).toContain('Cancel the webinar instead');
+  });
+
+  it('reloads the card when the server says closing is no longer allowed (someone registered meanwhile)', async () => {
+    api.getOpenAccess.mockResolvedValueOnce(opened).mockResolvedValue({ ...opened, registrations_total: 1, can_close: false, close_blocked_reason: 'has_registrations' });
+    api.closeOpenAccess.mockRejectedValue(refusal('People have registered, so public access cannot be closed.', 'close_has_registrations'));
+    await show();
+    await click(radio('students'));
     await click(saveButton());
     await settle();
-    expect(text()).toContain('This address is already used by another webinar.');
-    expect((document.querySelector('#ow-slug') as HTMLInputElement).value).toBe('taken');
+    expect(text()).toContain('People have registered, so public access cannot be closed.');
+    expect(radio('students').disabled).toBe(true);
+    expect(radio('registration').checked).toBe(true);
+  });
+});
+
+describe('the address', () => {
+  it('is shown read-only once people have registered, and is not sent on Save', async () => {
+    api.getOpenAccess.mockResolvedValue({ ...opened, slug_locked: true, registrations_total: 12 });
+    await show();
+    expect(button('Edit address')).toBeUndefined();
+    expect(document.querySelector('#ow-slug')).toBeNull();
+    expect(text()).toContain('The address can no longer change');
+    await click(saveButton());
+    await settle();
+    const body = api.saveOpenAccess.mock.calls[0][1];
+    expect(body).not.toHaveProperty('slug');
+    expect(body.lead_pipeline_id).toBe(10736538);
+  });
+
+  it('turns read-only when the server refuses a change because registrations appeared meanwhile', async () => {
+    api.getOpenAccess.mockResolvedValueOnce(opened).mockResolvedValue({ ...opened, slug_locked: true });
+    api.saveOpenAccess.mockRejectedValue(refusal('People have registered through this address, so it can no longer change.', 'slug_locked'));
+    await show();
+    await click(button('Edit address'));
+    await type('#ow-slug', 'another');
+    await click(saveButton());
+    await settle();
+    expect(text()).toContain('so it can no longer change');
+    expect(button('Edit address')).toBeUndefined();
+  });
+});
+
+describe('the guest speaker', () => {
+  it('keeps a removed speaker in the list, marked, and asks for them by id', async () => {
+    api.getOpenAccess.mockResolvedValue({ ...opened, speaker_id: 9 });
+    api.listGuestSpeakers.mockResolvedValue([speaker, { ...speaker, id: 9, name: 'Dr. Gone', organisation: null, is_active: false }]);
+    await show();
+    expect(api.listGuestSpeakers).toHaveBeenCalledWith(9);
+    const select = document.querySelector('#ow-speaker') as HTMLSelectElement;
+    expect(select.value).toBe('9');
+    expect(Array.from(select.options).map((o) => o.textContent)).toContain('Dr. Gone (removed)');
+  });
+});
+
+describe('the banner', () => {
+  const png = (size = 1000, type = 'image/png') => new File([new Uint8Array(size)], 'poster.png', { type });
+
+  it('uploads a picture, previews it, and saves its path with the access', async () => {
+    api.uploadBanner.mockResolvedValue({ url: '/uploads/webinar_banners/42.png' });
+    await show();
+    await click(radio('open'));
+    await choosePipeline();
+    expect(document.querySelector('[data-banner-preview]')).toBeNull();
+    await upload('#ow-banner', png());
+    expect(api.uploadBanner).toHaveBeenCalledTimes(1);
+    expect((document.querySelector('[data-banner-preview]') as HTMLImageElement).src).toMatch(/\/uploads\/webinar_banners\/42\.png$/);
+    expect(text()).toContain('1080x1350 (4:5) or 1200x630');
+    await click(saveButton());
+    await settle();
+    expect(api.saveOpenAccess.mock.calls[0][1].banner_url).toBe('/uploads/webinar_banners/42.png');
+  });
+
+  it('removes the banner by sending null', async () => {
+    api.getOpenAccess.mockResolvedValue({ ...opened, banner_url: '/uploads/webinar_banners/42.png' });
+    await show();
+    expect(document.querySelector('[data-banner-preview]')).not.toBeNull();
+    await click(button('Remove'));
+    expect(document.querySelector('[data-banner-preview]')).toBeNull();
+    await click(saveButton());
+    await settle();
+    expect(api.saveOpenAccess.mock.calls[0][1].banner_url).toBeNull();
+  });
+
+  it('turns away a file that is not a PNG, JPG or WebP, or is over 5 MB, without uploading it', async () => {
+    await show();
+    await click(radio('open'));
+    await upload('#ow-banner', png(1000, 'application/pdf'));
+    expect(text()).toContain('must be a PNG, JPG or WebP image');
+    await upload('#ow-banner', png(6 * 1024 * 1024));
+    expect(text()).toContain('larger than 5 MB');
+    expect(api.uploadBanner).not.toHaveBeenCalled();
+  });
+
+  it('shows the server’s refusal of a picture (too narrow, say)', async () => {
+    api.uploadBanner.mockRejectedValue(refusal('The banner must be a PNG, JPG or WebP image at least 400 px wide.', 'banner_invalid'));
+    await show();
+    await click(radio('open'));
+    await upload('#ow-banner', png());
+    expect(text()).toContain('at least 400 px wide');
+    expect(document.querySelector('[data-banner-preview]')).toBeNull();
+  });
+});
+
+describe('a series, and a create that half-succeeded', () => {
+  it('says a recurring series cannot be opened, and offers no controls', async () => {
+    api.getOpenAccess.mockResolvedValue({ ...closed, is_recurring: true });
+    await show();
+    expect(text()).toContain('A recurring series cannot be opened to everyone. Open each occurrence from its own edit page.');
+    expect(document.querySelector('input[name="access-mode"]')).toBeNull();
+  });
+
+  it('shows why the access did not save right after the event was created', async () => {
+    await show({ initialError: 'This address is already used by another webinar.' });
+    expect(text()).toContain('The event was created, but public access was not saved: This address is already used by another webinar.');
   });
 });

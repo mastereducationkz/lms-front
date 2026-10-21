@@ -154,12 +154,6 @@ const base = '/admin/open-webinars';
 /** Registrations come in pages of this size until a page is shorter. */
 export const REGISTRATIONS_PAGE = 100;
 
-/** The backend's stable `reason_code` of a refusal thrown by one of these calls, or null. */
-export function reasonCodeOf(error: unknown): string | null {
-  const code = (error as { cause?: { response?: { data?: { reason_code?: unknown } } } } | null)?.cause?.response?.data?.reason_code;
-  return typeof code === 'string' ? code : null;
-}
-
 async function run<T>(request: Promise<{ data: T }>, fallback: string): Promise<T> {
   try {
     return (await request).data;

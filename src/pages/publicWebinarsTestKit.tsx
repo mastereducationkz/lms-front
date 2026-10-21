@@ -65,3 +65,14 @@ export async function type(selector: string, value: string) {
 export const click = async (el: Element | null) => { await act(async () => { (el as HTMLElement).click(); }); };
 export const submit = async () => { await act(async () => { (document.querySelector('form') as HTMLFormElement).requestSubmit(); }); await settle(); };
 export const text = () => document.body.textContent ?? '';
+export async function pick(selector: string, value: string) {
+  const select = document.querySelector(selector) as HTMLSelectElement;
+  await act(async () => { select.value = value; select.dispatchEvent(new Event('change', { bubbles: true })); });
+}
+export async function upload(selector: string, file: File) {
+  const input = document.querySelector(selector) as HTMLInputElement;
+  await act(async () => { Object.defineProperty(input, 'files', { value: [file], configurable: true }); input.dispatchEvent(new Event('change', { bubbles: true })); });
+  await settle();
+}
+export const pause = (ms: number) => act(async () => { await new Promise((r) => setTimeout(r, ms)); });
+export const button = (label: string) => Array.from(document.querySelectorAll('button')).find((b) => b.textContent === label) as HTMLButtonElement;

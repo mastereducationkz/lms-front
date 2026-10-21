@@ -9,3 +9,9 @@
 export function apiError(error: any, fallback: string): Error {
   return Object.assign(new Error(error?.response?.data?.detail || fallback), { cause: error });
 }
+
+/** The backend's stable `reason_code` behind an error thrown by `apiError`, or null (a refusal's wording is localized; its code is not). */
+export function reasonCodeOf(error: unknown): string | null {
+  const code = (error as { cause?: { response?: { data?: { reason_code?: unknown } } } } | null)?.cause?.response?.data?.reason_code;
+  return typeof code === 'string' ? code : null;
+}

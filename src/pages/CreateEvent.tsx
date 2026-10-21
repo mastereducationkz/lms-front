@@ -14,6 +14,11 @@ export default function CreateEvent() {
     });
   };
 
+  // The event exists but its public access did not save: its edit page shows the card with the reason.
+  const handleAccessFailed = (event: Event, message: string) => {
+    navigate(`/admin/events/${event.id}/edit`, { state: { accessError: message } });
+  };
+
   const handleCancel = () => {
     // Navigate back to appropriate page based on role
     if (user?.role === 'admin' || user?.role === 'head_teacher') {
@@ -27,6 +32,7 @@ export default function CreateEvent() {
     <EventForm
       onSave={handleSave}
       onCancel={handleCancel}
+      onAccessFailed={handleAccessFailed}
     />
   );
 }

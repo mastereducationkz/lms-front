@@ -6,6 +6,7 @@ import { meetInvitationText, meetJoinUrl } from '../../lib/meetLinks';
 import { safeLinkUrl } from '../../lib/mediaUrl';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import LessonRecordingSection from './LessonRecordingSection';
+import PublicAccessStrip from '../open-webinars/PublicAccessStrip';
 import { lessonPath } from '../../lib/lessonLinks';
 import type { Event } from '../../types';
 import { cx, formatTime, eventStyle, typeLabel } from './calendarUtils';
@@ -40,6 +41,8 @@ export default function EventDetailDialog({ event, open, onOpenChange, user }: P
   // What this lesson's substitution means for whoever is reading it.
   const badge = substitutionBadge(event, user);
   const dateLabel = formatDate(event.start_datetime, { weekday: 'long', day: 'numeric', month: 'long' }, locale);
+  // A host teacher or curator sees whether their webinar is open to everyone, read-only (heads change it on the edit page).
+  const showsPublicStrip = event.event_type === 'webinar' && (user?.role === 'teacher' || user?.role === 'curator');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -166,6 +169,8 @@ export default function EventDetailDialog({ event, open, onOpenChange, user }: P
               {badge.text}
             </div>
           )}
+
+          {showsPublicStrip && <PublicAccessStrip eventId={event.id} />}
 
           {/* A webinar keeps its recording on the card; a class lesson's lives on its page. */}
           {event.event_type === 'webinar' && <LessonRecordingSection event={event} />}
