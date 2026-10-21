@@ -27,6 +27,8 @@ vi.mock('../services/api', () => ({
 vi.mock('../components/calendar/LessonRecordingSection', () => ({ default: () => null }));
 // The calendar card's public strip talks to the API client, which this page's tests never use.
 vi.mock('../components/open-webinars/PublicAccessStrip', () => ({ default: () => null }));
+// The delete confirmation asks whether a webinar is open to everyone; none is in these series tests.
+vi.mock('../services/api/openWebinars', () => ({ getPublicSummary: vi.fn().mockResolvedValue({ open: false }) }));
 vi.mock('../lib/platformLinks', () => ({ openPlatformPage: vi.fn(), parsePlatformUrl: () => null }));
 
 import EventManagement from './EventManagement';

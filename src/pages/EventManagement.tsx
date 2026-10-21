@@ -27,12 +27,14 @@ import { getAllEvents, deleteEvent, restoreEvent, bulkDeleteEvents, getAllGroups
 import { SeriesDeleteDialog, SeriesRow, type SeriesScope } from '../components/events/SeriesScope';
 import EventRowMenu from '../components/events/EventRowMenu';
 import EventDetailDialog from '../components/calendar/EventDetailDialog';
+import { opensToEveryoneAhead, publicWebinarRefusal } from '../components/open-webinars/deleteNotice';
 import { useAuth } from '../contexts/AuthContext';
 import { groupSeries, canRestore, isCancelled, type EventListItem } from '../lib/eventSeries';
 import type { Event, EventType, Group } from '../types';
 import { formatDate, formatDateTime as formatAppDateTime, type MessageKey } from '../lib/i18n';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/adminPages';
+import '@/lib/i18n/catalogs/openWebinars';
 
 const EVENT_TYPE_KEYS = {
   class: 'adminPages.events.type.class',
@@ -138,7 +140,9 @@ export default function EventManagement() {
     if (target && await askSeriesCancel(target, 'this')) {
       return;
     }
-    if (!confirm(t('adminPages.events.list.confirmDelete'))) {
+    // An open webinar still ahead is cancelled with a mail to everyone who registered: the confirmation says so.
+    const mails = target ? await opensToEveryoneAhead([target]) : false;
+    if (!confirm(mails ? `${t('adminPages.events.list.confirmDelete')}\n\n${t('openWebinars.admin.deleteNote')}` : t('adminPages.events.list.confirmDelete'))) {
       return;
     }
 
@@ -148,14 +152,16 @@ export default function EventManagement() {
       setSelectedEventIds(prev => prev.filter(id => id !== eventId));
     } catch (error) {
       console.error('Failed to delete event:', error);
-      alert(t('adminPages.events.list.deleteFailed'));
+      alert(publicWebinarRefusal(error) ?? t('adminPages.events.list.deleteFailed'));
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedEventIds.length === 0) return;
     
-    if (!confirm(t('adminPages.events.list.confirmBulkDelete', { count: selectedEventIds.length }))) {
+    const mails = await opensToEveryoneAhead(events.filter(event => selectedEventIds.includes(event.id)));
+    const question = t('adminPages.events.list.confirmBulkDelete', { count: selectedEventIds.length });
+    if (!confirm(mails ? `${question}\n\n${t('openWebinars.admin.deleteNote')}` : question)) {
       return;
     }
 
@@ -171,7 +177,7 @@ export default function EventManagement() {
       setSelectedEventIds([]);
     } catch (error) {
       console.error('Failed to delete events:', error);
-      alert(t('adminPages.events.list.bulkDeleteFailed'));
+      alert(publicWebinarRefusal(error) ?? t('adminPages.events.list.bulkDeleteFailed'));
     } finally {
       setIsDeleting(false);
     }
