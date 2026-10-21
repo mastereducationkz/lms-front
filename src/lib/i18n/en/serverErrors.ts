@@ -94,6 +94,8 @@ export const serverErrors = {
   'serverErrors.series_not_supported': 'A recurring series cannot be opened to everyone. Open each occurrence from its own edit page.',
   'serverErrors.banner_invalid': 'The banner must be a PNG, JPG or WebP image at least 400 px wide.',
   'serverErrors.banner_too_large': 'The banner is larger than 5 MB.',
+  'serverErrors.photo_invalid': 'The photo must be a PNG, JPG or WebP image at least 200 px on the short side.',
+  'serverErrors.photo_too_large': 'The photo is larger than 5 MB.',
   'serverErrors.close_after_start': 'The webinar has already started, so public access cannot be closed. Withdraw the recording or cancel the event instead.',
   'serverErrors.close_has_registrations': 'People have registered, so public access cannot be closed. Cancel the webinar instead: everyone who registered is told.',
   'serverErrors.not_open': 'This webinar is not open to everyone.',

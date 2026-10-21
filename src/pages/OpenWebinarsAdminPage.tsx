@@ -5,17 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import ImageUploadField from '../components/open-webinars/ImageUploadField';
 import OverviewCard from '../components/open-webinars/OverviewCard';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  createGuestSpeaker, getOpenSettings, listGuestSpeakers, retireGuestSpeaker, saveOpenSettings, updateGuestSpeaker,
+  createGuestSpeaker, getOpenSettings, listGuestSpeakers, retireGuestSpeaker, saveOpenSettings, updateGuestSpeaker, uploadSpeakerPhoto,
   type GuestSpeaker, type OpenSettings, type SpeakerInput,
 } from '../services/api/openWebinars';
 import { formatDate } from '../lib/i18n/format';
 import { useLocale, useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/openWebinars';
 
-const EMPTY: SpeakerInput = { name: '', organisation: '', bio: '', photo_url: '', email: '' };
+const EMPTY: SpeakerInput = { name: '', organisation: '', bio: '', photo_url: null, email: '' };
 const blankToNull = (s: SpeakerInput): SpeakerInput => ({
   name: s.name.trim(), organisation: s.organisation?.trim() || null, bio: s.bio?.trim() || null, photo_url: s.photo_url?.trim() || null, email: s.email?.trim() || null,
 });
@@ -40,6 +41,7 @@ export default function OpenWebinarsAdminPage() {
   const [note, setNote] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   const show = (s: OpenSettings) => { setSettings(s); setPolicy(s.policy_text); setConsentRu(s.consent_text_ru); setConsentEn(s.consent_text_en); };
   useEffect(() => {
@@ -71,6 +73,13 @@ export default function OpenWebinarsAdminPage() {
   const retire = async (id: number) => {
     try { await retireGuestSpeaker(id); setSpeakers((all) => all.filter((s) => s.id !== id)); } catch (failure) { fail(failure); }
   };
+
+  const textField = (field: 'name' | 'organisation' | 'email') => (
+    <div key={field} className="space-y-1.5">
+      <Label htmlFor={`ow-sp-${field}`}>{t(`openWebinars.admin.speakers.${field}`)}</Label>
+      <Input id={`ow-sp-${field}`} value={draft[field] ?? ''} onChange={(e) => setDraft({ ...draft, [field]: e.target.value })} />
+    </div>
+  );
 
   if (failed) return <p className="p-6 text-sm text-muted-foreground">{t('openWebinars.admin.loadFailed')}</p>;
   if (!settings) return <p className="flex items-center gap-2 p-6 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" aria-hidden />{t('openWebinars.loading')}</p>;
@@ -109,7 +118,7 @@ export default function OpenWebinarsAdminPage() {
               <li key={s.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                 <span><span className="font-medium">{s.name}</span>{s.organisation && <span className="text-muted-foreground">, {s.organisation}</span>}</span>
                 <span className="flex gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={() => { setEditing(s.id); setDraft({ name: s.name, organisation: s.organisation ?? '', bio: s.bio ?? '', photo_url: s.photo_url ?? '', email: s.email ?? '' }); }}>{t('openWebinars.admin.speakers.edit')}</Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => { setEditing(s.id); setDraft({ name: s.name, organisation: s.organisation ?? '', bio: s.bio ?? '', photo_url: s.photo_url, email: s.email ?? '' }); }}>{t('openWebinars.admin.speakers.edit')}</Button>
                   <Button type="button" variant="ghost" size="sm" onClick={() => retire(s.id)}>{t('openWebinars.admin.speakers.remove')}</Button>
                 </span>
               </li>
@@ -118,16 +127,16 @@ export default function OpenWebinarsAdminPage() {
           {editing === null ? (
             <Button type="button" variant="outline" onClick={() => { setEditing('new'); setDraft(EMPTY); }}>{t('openWebinars.admin.speakers.add')}</Button>
           ) : (
-            <div className="space-y-3 rounded-lg border border-border p-4">
-              {(['name', 'organisation', 'photo_url', 'email'] as const).map((field) => (
-                <div key={field} className="space-y-1.5">
-                  <Label htmlFor={`ow-sp-${field}`}>{t(`openWebinars.admin.speakers.${field === 'photo_url' ? 'photo' : field}` as 'openWebinars.admin.speakers.name')}</Label>
-                  <Input id={`ow-sp-${field}`} value={draft[field] ?? ''} onChange={(e) => setDraft({ ...draft, [field]: e.target.value })} />
-                </div>
-              ))}
+            <div key={String(editing)} className="space-y-3 rounded-lg border border-border p-4">
+              {textField('name')}
+              {textField('organisation')}
+              {/* The photo is uploaded the moment it is chosen; Save sends the path the server gave back (or null after «Remove photo»). */}
+              <ImageUploadField kind="photo" id="ow-sp-photo" value={draft.photo_url} upload={uploadSpeakerPhoto} onBusyChange={setPhotoBusy}
+                                onChange={(photo_url) => setDraft((d) => ({ ...d, photo_url }))} />
+              {textField('email')}
               <div className="space-y-1.5"><Label htmlFor="ow-sp-bio">{t('openWebinars.admin.speakers.bio')}</Label><Textarea id="ow-sp-bio" value={draft.bio ?? ''} onChange={(e) => setDraft({ ...draft, bio: e.target.value })} rows={3} /></div>
               <div className="flex gap-2">
-                <Button type="button" onClick={saveSpeaker} disabled={busy || draft.name.trim().length < 2}>{busy ? t('openWebinars.admin.saving') : t('openWebinars.admin.save')}</Button>
+                <Button type="button" onClick={saveSpeaker} disabled={busy || photoBusy || draft.name.trim().length < 2}>{busy ? t('openWebinars.admin.saving') : t('openWebinars.admin.save')}</Button>
                 <Button type="button" variant="ghost" onClick={() => { setEditing(null); setDraft(EMPTY); }}>{t('openWebinars.admin.speakers.cancel')}</Button>
               </div>
             </div>

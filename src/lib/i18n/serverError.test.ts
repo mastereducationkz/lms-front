@@ -51,7 +51,7 @@ describe('the open-webinar refusals', () => {
   });
 
   it('has a sentence for every code the open-webinar endpoints and the public form can refuse with', () => {
-    const codes = ['bad_presenter', 'speaker_required', 'captcha_failed', 'too_many', 'slug_locked', 'series_not_supported', 'banner_invalid', 'banner_too_large',
+    const codes = ['bad_presenter', 'speaker_required', 'captcha_failed', 'too_many', 'slug_locked', 'series_not_supported', 'banner_invalid', 'banner_too_large', 'photo_invalid', 'photo_too_large',
       'close_after_start', 'close_has_registrations', 'not_open', 'recording_not_ready', 'recording_not_published', 'event_not_found',
       'webinar_public_retype', 'webinar_public_host', 'webinar_public_delete'];
     for (const code of codes) {

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { backendBase } from '../lib/mediaUrl';
 import { fakeBackend, memoryStorage, mount, text, unmount } from './publicWebinarsTestKit';
 
 vi.mock('../contexts/AuthContext', async () => {
@@ -62,6 +63,14 @@ describe('a public recording', () => {
     await unmount();
     await open(undefined);
     expect(text()).toContain('This recording was not found.');
+  });
+
+  it('shows the speaker’s uploaded photo from the API host, and an old absolute URL as it is', async () => {
+    await open({ body: recording({ speaker: { name: 'Dr. Guest', organisation: null, bio: null, photo_url: '/uploads/webinar_speakers/5.jpg' } }) });
+    expect(document.querySelector('[data-speaker] img')?.getAttribute('src')).toBe(`${backendBase()}/uploads/webinar_speakers/5.jpg`);
+    await unmount();
+    await open({ body: recording({ speaker: { name: 'Dr. Guest', organisation: null, bio: null, photo_url: 'https://cdn.example/old.jpg' } }) });
+    expect(document.querySelector('[data-speaker] img')?.getAttribute('src')).toBe('https://cdn.example/old.jpg');
   });
 
   it('names the host as one plain line, like the webinar page', async () => {

@@ -11,7 +11,7 @@ vi.mock('../contexts/AuthContext', async () => {
 
 const api = vi.hoisted(() => ({
   getOpenSettings: vi.fn(), saveOpenSettings: vi.fn(), listGuestSpeakers: vi.fn(), createGuestSpeaker: vi.fn(), updateGuestSpeaker: vi.fn(),
-  retireGuestSpeaker: vi.fn(), getOpenAccess: vi.fn(), listRegistrations: vi.fn(), retryLead: vi.fn(),
+  retireGuestSpeaker: vi.fn(), uploadSpeakerPhoto: vi.fn(), getOpenAccess: vi.fn(), listRegistrations: vi.fn(), retryLead: vi.fn(),
   getRecordingStatus: vi.fn(), publishRecording: vi.fn(), withdrawRecording: vi.fn(), getOverview: vi.fn(), retryFailedLeads: vi.fn(),
 }));
 vi.mock('../services/api/openWebinars', () => api);
