@@ -23,6 +23,7 @@ export interface GuestSpeaker {
   name: string;
   organisation: string | null;
   bio: string | null;
+  /** A stable relative path (`/uploads/webinar_speakers/…`) from `uploadSpeakerPhoto`; an older speaker may still hold an absolute URL. Show it through `mediaUrl`. */
   photo_url: string | null;
   email: string | null;
   is_active: boolean;
@@ -179,6 +180,12 @@ export const listGuestSpeakers = (includeId?: number | null) =>
 export const createGuestSpeaker = (body: SpeakerInput) => run<GuestSpeaker>(api.post(`${base}/speakers`, body), 'Failed to add the speaker');
 export const updateGuestSpeaker = (id: number, body: SpeakerInput) => run<GuestSpeaker>(api.put(`${base}/speakers/${id}`, body), 'Failed to save the speaker');
 export const retireGuestSpeaker = (id: number) => run<{ ok: boolean }>(api.delete(`${base}/speakers/${id}`), 'Failed to remove the speaker');
+/** Uploads a speaker's photo (PNG/JPEG/WebP, up to 5 MB, at least 200 px on the short side); the server crops it square and returns its stable relative path. */
+export const uploadSpeakerPhoto = (file: File) => {
+  const form = new FormData();
+  form.append('file', file);
+  return run<{ url: string }>(api.post(`${base}/speakers/photo`, form, { headers: { 'Content-Type': 'multipart/form-data' } }), 'Failed to upload the photo');
+};
 
 export const getOpenAccess = (eventId: number) => run<OpenAccess>(api.get(`${base}/${eventId}`), 'Failed to load the public access');
 export const saveOpenAccess = (eventId: number, body: AccessBody) =>

@@ -1,6 +1,7 @@
 import { Mic2, UserRound } from 'lucide-react';
 import type { TFunction } from '../../lib/i18n/translate';
 import type { PublicSpeaker } from '../../services/api/publicWebinars';
+import { mediaUrl } from '../../lib/mediaUrl';
 import '@/lib/i18n/catalogs/openWebinars';
 
 /**
@@ -10,6 +11,8 @@ import '@/lib/i18n/catalogs/openWebinars';
  */
 export default function PresenterBlock({ speaker, t }: { speaker: PublicSpeaker | null; t: TFunction }) {
   if (!speaker) return null;
+  // An uploaded photo is a path on the API host; an older speaker may still hold an absolute URL, which `mediaUrl` leaves alone.
+  const photo = mediaUrl(speaker.photo_url);
   if (speaker.kind === 'host') {
     return (
       <p data-host-line className="mt-4 flex items-center gap-2 text-sm text-foreground">
@@ -20,8 +23,8 @@ export default function PresenterBlock({ speaker, t }: { speaker: PublicSpeaker 
   }
   return (
     <div className="mt-4 flex items-start gap-3 rounded-xl bg-muted/50 p-3" data-speaker>
-      {speaker.photo_url ? (
-        <img src={speaker.photo_url} alt="" className="h-12 w-12 flex-none rounded-full object-cover" />
+      {photo ? (
+        <img src={photo} alt="" className="h-12 w-12 flex-none rounded-full object-cover" />
       ) : (
         <span className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-primary/10 text-primary"><Mic2 className="h-5 w-5" aria-hidden /></span>
       )}

@@ -89,6 +89,8 @@ export const serverErrors: RuTable<typeof en> = {
   'serverErrors.series_not_supported': 'Повторяющуюся серию нельзя открыть для всех. Откройте каждое занятие на его странице редактирования.',
   'serverErrors.banner_invalid': 'Баннер должен быть изображением PNG, JPG или WebP шириной не менее 400 px.',
   'serverErrors.banner_too_large': 'Баннер больше 5 МБ.',
+  'serverErrors.photo_invalid': 'Фото должно быть изображением PNG, JPG или WebP, не меньше 200 px по короткой стороне.',
+  'serverErrors.photo_too_large': 'Фото больше 5 МБ.',
   'serverErrors.close_after_start': 'Вебинар уже начался, поэтому закрыть публичный доступ нельзя. Отзовите запись или отмените событие.',
   'serverErrors.close_has_registrations': 'Люди уже зарегистрировались, поэтому закрыть публичный доступ нельзя. Отмените вебинар: все зарегистрированные получат уведомление.',
   'serverErrors.not_open': 'Этот вебинар не открыт для всех.',

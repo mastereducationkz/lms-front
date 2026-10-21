@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PublicWebinarPage from './PublicWebinarPage';
 import { act } from 'react';
+import { backendBase } from '../lib/mediaUrl';
 import { click, fakeBackend, memoryStorage, mount, settle, submit, text, type, unmount, webinar } from './publicWebinarsTestKit';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -339,6 +340,11 @@ describe('who is named on the page', () => {
     expect(block.textContent).toContain('Admissions');
     expect(block.querySelector('img')?.getAttribute('src')).toBe('https://cdn.example/p.jpg');
     expect(document.querySelector('[data-host-line]')).toBeNull();
+  });
+
+  it('an uploaded photo is a path on the API host, so the page asks the API for it, not its own server', async () => {
+    await open({ [PAGE]: { body: webinar({ speaker: { ...guest, photo_url: '/uploads/webinar_speakers/5.jpg' } }) } });
+    expect(document.querySelector('[data-speaker] img')?.getAttribute('src')).toBe(`${backendBase()}/uploads/webinar_speakers/5.jpg`);
   });
 
   it('the host is one plain «Host: <name>» line: no photo, no bio, no speaker card', async () => {
