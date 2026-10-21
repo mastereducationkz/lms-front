@@ -241,4 +241,5 @@ export const openWebinars: RuTable<typeof en> = {
   'openWebinars.admin.deleteNote': 'Все, кто зарегистрировался, получат уведомление об отмене.',
   'openWebinars.host': 'Ведущий: {name}',
   'openWebinars.error.captcha_failed': 'Подтвердите, что вы не робот, и попробуйте ещё раз.',
+  'openWebinars.captcha.loadFailed': 'Не удалось загрузить проверку безопасности. Проверьте соединение или отключите блокировщик контента для этой страницы и обновите её.',
 };

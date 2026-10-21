@@ -60,7 +60,7 @@ export interface ContactBody {
   consent: boolean;
   /** The language the page was shown in: the server stores the consent sentence the visitor actually saw. */
   lang: 'ru' | 'en';
-  /** Cloudflare Turnstile answer. No widget is rendered yet; the field is kept so it can be switched on. */
+  /** Cloudflare Turnstile answer, single use. Sent only while the build has `VITE_TURNSTILE_SITE_KEY`; left out otherwise. */
   captcha_token?: string;
   utm?: Record<string, string>;
   referer?: string;

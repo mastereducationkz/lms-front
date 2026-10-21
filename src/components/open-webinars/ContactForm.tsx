@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import TurnstileWidget, { turnstileSiteKey, type TurnstileHandle } from './TurnstileWidget';
 import { PublicApiError, type ContactBody } from '../../services/api/publicWebinars';
 import { captureAttribution } from '../../lib/utm';
 import { hasMessage, type TFunction } from '../../lib/i18n/translate';
@@ -32,7 +33,11 @@ export function errorText(error: unknown, t: TFunction): string {
   return t('openWebinars.error.generic');
 }
 
-/** Name, phone, (e-mail), consent. Used for a seat at a webinar and for «leave your number». */
+/**
+ * Name, phone, (e-mail), consent. Used for a seat at a webinar and for «leave your number». With a Turnstile site key
+ * in the build, the Cloudflare check sits above the button, which waits for its token and sends it as `captcha_token`;
+ * without one the form is exactly as it was.
+ */
 export default function ContactForm({ t, locale, withEmail, consentText, submitLabel, onSubmit }: Props) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -41,6 +46,10 @@ export default function ContactForm({ t, locale, withEmail, consentText, submitL
   const [trap, setTrap] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const siteKey = turnstileSiteKey();
+  const check = useRef<TurnstileHandle>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const waitingForCheck = siteKey !== '' && !token;
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -48,14 +57,19 @@ export default function ContactForm({ t, locale, withEmail, consentText, submitL
       setError(t('openWebinars.error.consent_required'));
       return;
     }
+    if (waitingForCheck) return;
     setBusy(true);
     setError(null);
     const { utm, referer } = captureAttribution();
     try {
-      await onSubmit({ name: name.trim(), phone: phone.trim(), email: email.trim() || undefined, consent, lang: locale, utm, referer, ow_extra: trap });
+      await onSubmit({
+        name: name.trim(), phone: phone.trim(), email: email.trim() || undefined, consent, lang: locale, utm, referer, ow_extra: trap,
+        ...(siteKey && token ? { captcha_token: token } : {}),
+      });
     } catch (failure) {
       setError(errorText(failure, t));
       setBusy(false);
+      check.current?.reset();           // the token was spent on that attempt, whatever came back
     }
   };
 
@@ -87,8 +101,9 @@ export default function ContactForm({ t, locale, withEmail, consentText, submitL
           <Link to="/privacy" target="_blank" className="underline underline-offset-4">{t('openWebinars.form.privacy')}</Link>
         </Label>
       </div>
+      {siteKey && <TurnstileWidget ref={check} siteKey={siteKey} locale={locale} t={t} onToken={setToken} />}
       {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-      <Button type="submit" className="w-full" disabled={busy}>
+      <Button type="submit" className="w-full" disabled={busy || waitingForCheck}>
         {busy ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />{t('openWebinars.form.sending')}</>) : submitLabel}
       </Button>
     </form>

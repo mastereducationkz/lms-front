@@ -241,4 +241,5 @@ export const openWebinars = {
   'openWebinars.admin.deleteNote': 'Everyone who registered is told it is cancelled.',
   'openWebinars.host': 'Host: {name}',
   'openWebinars.error.captcha_failed': 'Please confirm you are not a robot and try again.',
+  'openWebinars.captcha.loadFailed': 'The security check could not be loaded. Check your connection or switch off the content blocker for this page, then reload it.',
 } as const satisfies MessageTable;
