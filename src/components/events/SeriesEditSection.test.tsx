@@ -29,6 +29,8 @@ vi.mock('../../services/api', () => ({
 
 // The public-access card has its own tests and talks to the API client, which these form tests never use.
 vi.mock('../open-webinars/OpenAccessCard', () => ({ default: () => null }));
+// The create form's public-access calls reach the API client the same way; these tests edit.
+vi.mock('../../services/api/openWebinars', () => ({}));
 
 import EventForm from '../EventForm';
 import { HostTitleSuggestion } from './SeriesEditSection';

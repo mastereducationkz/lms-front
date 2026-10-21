@@ -36,3 +36,30 @@ describe('serverMessage', () => {
     expect(serverMessage('staff_leaving', 'Aida is leaving on 2026-10-31', 'ru')).toBe('Aida is leaving on 2026-10-31');
   });
 });
+
+describe('the open-webinar refusals', () => {
+  it('words the presenter, delete and retype refusals in Russian and in English', () => {
+    const speaker = { detail: 'x', reason_code: 'speaker_required' };
+    localizeServerError(speaker, 'ru');
+    expect(speaker.detail).toBe('Выберите приглашённого спикера либо назовите ведущего или никого.');
+    const gone = { detail: 'x', reason_code: 'webinar_public_delete', reason_details: { event_ids: [7] } };
+    localizeServerError(gone, 'en');
+    expect(gone.detail).toBe('This webinar already took place and has a public page, registrations or a recording, so it stays as history. Withdraw its recording if it should no longer be public.');
+    const retype = { detail: 'x', reason_code: 'webinar_public_retype' };
+    localizeServerError(retype, 'en');
+    expect(retype.detail).toContain('so its type cannot change');
+  });
+
+  it('has a sentence for every code the open-webinar endpoints and the public form can refuse with', () => {
+    const codes = ['bad_presenter', 'speaker_required', 'captcha_failed', 'too_many', 'slug_locked', 'series_not_supported', 'banner_invalid', 'banner_too_large',
+      'close_after_start', 'close_has_registrations', 'not_open', 'recording_not_ready', 'recording_not_published', 'event_not_found',
+      'webinar_public_retype', 'webinar_public_host', 'webinar_public_delete'];
+    for (const code of codes) {
+      for (const locale of ['en', 'ru'] as const) {
+        const body = { detail: 'server English', reason_code: code };
+        localizeServerError(body, locale);
+        expect(body.detail, `${code} (${locale})`).not.toBe('server English');
+      }
+    }
+  });
+});

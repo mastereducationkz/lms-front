@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import EventForm from '../components/EventForm';
 import Loader from '../components/Loader';
+import OpenAccessCard from '../components/open-webinars/OpenAccessCard';
 import { getEventDetails } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import type { Event } from '../types';
 import { useT } from '../lib/i18n/react';
 import '@/lib/i18n/catalogs/adminTools';
@@ -11,6 +13,8 @@ import '@/lib/i18n/catalogs/adminPages';
 export default function EditEvent() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
   const t = useT();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,11 +90,26 @@ export default function EditEvent() {
     );
   }
 
+  // Set by the create form when the event was made but its public access did not save.
+  const accessError = (location.state as { accessError?: string } | null)?.accessError ?? null;
+
+  // A head curator cannot edit events (that is for admins and head teachers) but may open a webinar to everyone:
+  // they get the access card alone, which is where the create form sends them when saving the access failed.
+  if (user?.role === 'head_curator') {
+    return (
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
+        <h1 className="text-2xl font-bold text-foreground">{event.title}</h1>
+        <OpenAccessCard eventId={event.id} initialError={accessError} />
+      </div>
+    );
+  }
+
   return (
     <EventForm
       event={event}
       onSave={handleSave}
       onCancel={handleCancel}
+      accessError={accessError}
     />
   );
 }

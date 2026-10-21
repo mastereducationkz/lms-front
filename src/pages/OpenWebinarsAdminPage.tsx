@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import OverviewCard from '../components/open-webinars/OverviewCard';
+import { useAuth } from '../contexts/AuthContext';
 import {
   createGuestSpeaker, getOpenSettings, listGuestSpeakers, retireGuestSpeaker, saveOpenSettings, updateGuestSpeaker,
   type GuestSpeaker, type OpenSettings, type SpeakerInput,
@@ -18,10 +20,16 @@ const blankToNull = (s: SpeakerInput): SpeakerInput => ({
   name: s.name.trim(), organisation: s.organisation?.trim() || null, bio: s.bio?.trim() || null, photo_url: s.photo_url?.trim() || null, email: s.email?.trim() || null,
 });
 
-/** Admin → Open webinars: the privacy policy and consent wording every public form uses, and the guest speakers. */
+/**
+ * Admin → Open webinars: every webinar open to everyone, the privacy policy and consent wording every public form
+ * uses, and the guest speakers. Heads (admin, head teacher, head curator) manage webinars and speakers; the policy
+ * and the consent wording are the admin's to change, so a head reads them here but cannot save.
+ */
 export default function OpenWebinarsAdminPage() {
   const t = useT();
   const locale = useLocale();
+  const { user } = useAuth();
+  const canEditSettings = user?.role === 'admin';
   const [settings, setSettings] = useState<OpenSettings | null>(null);
   const [policy, setPolicy] = useState('');
   const [consentRu, setConsentRu] = useState('');
@@ -68,11 +76,13 @@ export default function OpenWebinarsAdminPage() {
   if (!settings) return <p className="flex items-center gap-2 p-6 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" aria-hidden />{t('openWebinars.loading')}</p>;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       <div>
         <h1 className="text-2xl font-bold">{t('openWebinars.admin.title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t('openWebinars.admin.intro')}</p>
       </div>
+
+      <OverviewCard />
 
       <Card>
         <CardHeader><CardTitle>{t('openWebinars.admin.policy.title')}</CardTitle><p className="text-sm text-muted-foreground">{t('openWebinars.admin.policy.help')}</p></CardHeader>
@@ -82,10 +92,11 @@ export default function OpenWebinarsAdminPage() {
               ? `${t('openWebinars.admin.policy.version', { version: settings.policy_version })}${settings.policy_updated_at ? ` · ${formatDate(settings.policy_updated_at, undefined, locale)}` : ''}`
               : t('openWebinars.admin.policy.none')}
           </p>
-          <Textarea aria-label={t('openWebinars.admin.policy.title')} value={policy} onChange={(e) => setPolicy(e.target.value)} rows={14} />
-          <div className="space-y-1.5"><Label htmlFor="ow-consent-ru">{t('openWebinars.admin.consent.ru')}</Label><Textarea id="ow-consent-ru" value={consentRu} onChange={(e) => setConsentRu(e.target.value)} rows={3} /></div>
-          <div className="space-y-1.5"><Label htmlFor="ow-consent-en">{t('openWebinars.admin.consent.en')}</Label><Textarea id="ow-consent-en" value={consentEn} onChange={(e) => setConsentEn(e.target.value)} rows={3} /></div>
-          <Button type="button" onClick={saveSettings} disabled={busy}>{busy ? t('openWebinars.admin.saving') : t('openWebinars.admin.save')}</Button>
+          {!canEditSettings && <p data-settings-readonly className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">{t('openWebinars.admin.readOnly')}</p>}
+          <Textarea aria-label={t('openWebinars.admin.policy.title')} value={policy} onChange={(e) => setPolicy(e.target.value)} rows={14} readOnly={!canEditSettings} />
+          <div className="space-y-1.5"><Label htmlFor="ow-consent-ru">{t('openWebinars.admin.consent.ru')}</Label><Textarea id="ow-consent-ru" value={consentRu} onChange={(e) => setConsentRu(e.target.value)} rows={3} readOnly={!canEditSettings} /></div>
+          <div className="space-y-1.5"><Label htmlFor="ow-consent-en">{t('openWebinars.admin.consent.en')}</Label><Textarea id="ow-consent-en" value={consentEn} onChange={(e) => setConsentEn(e.target.value)} rows={3} readOnly={!canEditSettings} /></div>
+          {canEditSettings && <Button type="button" onClick={saveSettings} disabled={busy}>{busy ? t('openWebinars.admin.saving') : t('openWebinars.admin.save')}</Button>}
         </CardContent>
       </Card>
 

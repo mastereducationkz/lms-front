@@ -614,16 +614,16 @@ export default function Router() {
             </ProtectedRoute>
           } />
 
-          {/* Webinars for everyone: the shared policy + guest speakers, and each webinar's registrations. */}
+          {/* Webinars for everyone: the shared policy + guest speakers, and each webinar's registrations. Heads open them. */}
           <Route path="/admin/open-webinars" element={
-            <ProtectedRoute allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_teacher', 'head_curator']}>
               <AppLayout>
                 <OpenWebinarsAdminPage />
               </AppLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/open-webinars/:eventId" element={
-            <ProtectedRoute allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_teacher', 'head_curator']}>
               <AppLayout>
                 <OpenWebinarRegistrationsPage />
               </AppLayout>
@@ -636,7 +636,7 @@ export default function Router() {
           } />
 
           <Route path="/admin/events/:eventId/edit" element={
-            <ProtectedRoute allowedRoles={['admin', 'head_teacher']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_teacher', 'head_curator']}>
               <EditEvent />
             </ProtectedRoute>
           } />

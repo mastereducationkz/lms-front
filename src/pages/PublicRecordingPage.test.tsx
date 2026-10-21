@@ -63,4 +63,11 @@ describe('a public recording', () => {
     await open(undefined);
     expect(text()).toContain('This recording was not found.');
   });
+
+  it('names the host as one plain line, like the webinar page', async () => {
+    await open({ body: recording({ speaker: { kind: 'host', name: 'Aldiyar Zhumadilda', organisation: null, bio: 'Hidden', photo_url: null } }) });
+    expect(document.querySelector('[data-host-line]')?.textContent).toBe('Host: Aldiyar Zhumadilda');
+    expect(document.querySelector('[data-speaker]')).toBeNull();
+    expect(text()).not.toContain('Hidden');
+  });
 });

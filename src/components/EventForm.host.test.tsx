@@ -38,6 +38,9 @@ vi.mock('./open-webinars/OpenAccessCard', async () => {
   return { default: (p: { eventId: number; hostUnsaved?: boolean }) => createElement('i', { 'data-open-card': p.eventId, 'data-unsaved': String(!!p.hostUnsaved) }) };
 });
 
+// The create form's public-access section and its calls reach the API client the same way; these tests edit.
+vi.mock('../services/api/openWebinars', () => ({}));
+
 import EventForm from './EventForm';
 import type { Event } from '../types';
 
@@ -126,7 +129,7 @@ describe('event form: who runs the event', () => {
     expect(host.querySelector('[role="alert"]')?.textContent).toContain('The list of staff could not be loaded');
   });
 
-  it('the public-access card is for admins editing a webinar, and learns when the host was changed but not saved', async () => {
+  it('the public-access card shows on a webinar being edited, and learns when the host was changed but not saved', async () => {
     await show(webinar);
     const card = () => host.querySelector('[data-open-card]') as HTMLElement | null;
     expect(card()?.getAttribute('data-open-card')).toBe('19283');
@@ -137,8 +140,14 @@ describe('event form: who runs the event', () => {
     expect(card()?.getAttribute('data-unsaved')).toBe('true');
   });
 
-  it('a head teacher editing the same webinar gets no public-access card (its endpoints are admin-only)', async () => {
-    auth.role = 'head_teacher';
+  it.each(['head_teacher', 'head_curator'])('a %s editing the same webinar gets the card too: heads open webinars to everyone', async (role) => {
+    auth.role = role;
+    await show(webinar);
+    expect(host.querySelector('[data-open-card]')?.getAttribute('data-open-card')).toBe('19283');
+  });
+
+  it.each(['teacher', 'curator'])('a %s editing the webinar gets no card: they only see its public state on the calendar', async (role) => {
+    auth.role = role;
     await show(webinar);
     expect(host.querySelector('[data-open-card]')).toBeNull();
   });

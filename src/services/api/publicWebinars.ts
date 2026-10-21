@@ -9,7 +9,11 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 export type WebinarState = 'upcoming' | 'live' | 'ended';
 export type AccessMode = 'open' | 'registration';
 
+/** `guest`: a speaker's profile (photo, bio). `host`: the event's host, by their LMS display name only. Absent reads as `guest`. */
+export type PresenterKind = 'guest' | 'host';
+
 export interface PublicSpeaker {
+  kind?: PresenterKind;
   name: string;
   organisation: string | null;
   bio: string | null;
@@ -29,6 +33,11 @@ export interface PublicWebinar {
   registration_open: boolean;
   speaker: PublicSpeaker | null;
   recording_slug: string | null;
+  /** A relative `/uploads/…` path: show it through `mediaUrl`. */
+  banner_url?: string | null;
+  /** Seats still free; null = no limit. */
+  seats_left?: number | null;
+  full?: boolean;
   consent: { text_ru: string; text_en: string; policy_version: string; policy_ready: boolean };
 }
 
@@ -49,6 +58,10 @@ export interface ContactBody {
   phone: string;
   email?: string;
   consent: boolean;
+  /** The language the page was shown in: the server stores the consent sentence the visitor actually saw. */
+  lang: 'ru' | 'en';
+  /** Cloudflare Turnstile answer. No widget is rendered yet; the field is kept so it can be switched on. */
+  captcha_token?: string;
   utm?: Record<string, string>;
   referer?: string;
   /** The hidden honeypot: a person never fills it. Named so that no browser autofill or password manager knows it. */
@@ -91,8 +104,13 @@ const post = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.strin
 
 export const getPublicWebinar = (slug: string) => call<PublicWebinar>(`/public/webinars/${encodeURIComponent(slug)}`);
 
+/**
+ * A phone that is already registered gets `{ ok: true }` without a personal link (the server re-sends it to the
+ * e-mail on file), so nobody can open another person's page by typing their number.
+ */
+export interface Registration { ok: boolean; join_code?: string; join_path?: string }
 export const registerForWebinar = (slug: string, body: ContactBody) =>
-  call<{ join_code: string; join_path: string }>(`/public/webinars/${encodeURIComponent(slug)}/register`, post(body));
+  call<Registration>(`/public/webinars/${encodeURIComponent(slug)}/register`, post(body));
 
 export const getJoinInfo = (code: string) => call<JoinInfo>(`/public/webinars/join/${encodeURIComponent(code)}`);
 

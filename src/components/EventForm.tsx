@@ -44,6 +44,9 @@ import { followingPayload } from '../lib/eventSeries';
 import { HostTitleSuggestion, SeriesEditSection, useEventSeries } from './events/SeriesEditSection';
 import EventHostField from './events/EventHostField';
 import OpenAccessCard from './open-webinars/OpenAccessCard';
+import CreateAccessSection from './open-webinars/CreateAccessSection';
+import { createWithAccess } from './open-webinars/createWithAccess';
+import { draftReady, emptyDraft, isOpenRole, isPublicMode, preflightBodyOf, speakerMissing, type AccessDraft } from './open-webinars/accessModel';
 import '@/lib/i18n/catalogs/openWebinars';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/adminTools';
@@ -53,9 +56,13 @@ interface EventFormProps {
   event?: Event;
   onSave: (event: Event) => void;
   onCancel: () => void;
+  /** Create only: the event was made but saving its public access failed. Without it the form just reports a save. */
+  onAccessFailed?: (event: Event, message: string) => void;
+  /** Edit only: why the public access did not save right after the event was created; shown on its card. */
+  accessError?: string | null;
 }
 
-export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
+export default function EventForm({ event, onSave, onCancel, onAccessFailed, accessError = null }: EventFormProps) {
   const { user } = useAuth();
   const t = useT();
   const [loading, setLoading] = useState(false);
@@ -69,6 +76,8 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
   const [selectedCourseForLesson, setSelectedCourseForLesson] = useState<string>('');
   const [selectedModuleForLesson, setSelectedModuleForLesson] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  // «Who can join» of a new webinar (create only): the roles that may open one to everyone choose it here.
+  const [access, setAccess] = useState<AccessDraft>(emptyDraft);
   // An occurrence of a recurring series can carry its edit to the later weeks.
   const series = useEventSeries(event);
 
@@ -91,6 +100,13 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
     lesson_id: event?.lesson_id || undefined,
     teacher_id: event?.teacher_id || undefined
   });
+
+  // Heads may open a webinar to everyone; a series cannot be opened, so a ticked «recurring» ignores the choice.
+  const canOpen = isOpenRole(user?.role) && formData.event_type === 'webinar';
+  const opening = !event && canOpen && !formData.is_recurring && isPublicMode(access);
+  const noAudience = opening && access.noAudience;
+  // A curator or a head curator creates through the curator endpoint; the admin one is for admins and head teachers.
+  const createsAsCurator = user?.role === 'curator' || user?.role === 'head_curator';
 
   useEffect(() => {
     loadData();
@@ -212,8 +228,15 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
       return t('adminPages.events.form.startBeforeEnd');
     }
     
-    if (formData.group_ids.length === 0 && formData.course_ids.length === 0) {
+    if (!noAudience && formData.group_ids.length === 0 && formData.course_ids.length === 0) {
       return t('adminPages.events.form.audienceRequired');
+    }
+
+    if (opening && access.pipelineId === null) {
+      return t('openWebinars.admin.access.pipelineRequired');
+    }
+    if (opening && speakerMissing(access)) {
+      return t('openWebinars.admin.access.presenter.speakerRequired');
     }
     
     if (formData.event_type === 'webinar' && formData.max_participants && formData.max_participants < 1) {
@@ -236,6 +259,11 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
     }
 
     return null;
+  };
+
+  const eventFacts = {
+    title: formData.title, teacherId: formData.teacher_id, meetingUrl: formData.meeting_url,
+    startLocal: formData.start_datetime, endLocal: formData.end_datetime, isRecurring: formData.is_recurring,
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -264,8 +292,8 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
         recurrence_pattern: formData.is_recurring ? formData.recurrence_pattern : undefined,
         recurrence_end_date: formData.is_recurring && formData.recurrence_end_date ? formData.recurrence_end_date : undefined,
         max_participants: formData.event_type === 'webinar' ? formData.max_participants : undefined,
-        group_ids: formData.group_ids,
-        course_ids: formData.course_ids,
+        group_ids: noAudience ? [] : formData.group_ids,
+        course_ids: noAudience ? [] : formData.course_ids,
         lesson_id: formData.lesson_id,
         teacher_id: formData.teacher_id
       };
@@ -286,11 +314,21 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
       } else if (event) {
         savedEvent = await updateEvent(event.id, eventData);
       } else {
-        // Use curator-specific endpoint for curators, admin endpoint for admins
-        if (user?.role === 'curator') {
-          savedEvent = await createCuratorEvent(eventData as CreateEventRequest);
+        const create = createsAsCurator ? createCuratorEvent : createEvent;
+        const preflight = opening ? preflightBodyOf(access, eventFacts) : null;
+        if (opening && preflight && access.pipelineId !== null) {
+          // Open to everyone: ask the server first, create the event, then save its public access.
+          const outcome = await createWithAccess({
+            create, eventData: eventData as CreateEventRequest, draft: { ...access, mode: access.mode as 'open' | 'registration', pipelineId: access.pipelineId },
+            preflight, fallbackMessage: t('openWebinars.error.generic'),
+          });
+          if (outcome.kind === 'access_failed' && onAccessFailed) {
+            onAccessFailed(outcome.event, outcome.message);
+            return;
+          }
+          savedEvent = outcome.event;
         } else {
-          savedEvent = await createEvent(eventData as CreateEventRequest);
+          savedEvent = await create(eventData as CreateEventRequest);
         }
       }
 
@@ -636,17 +674,15 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
           </Card>
         )}
 
-        {/* Public access: opens a webinar to everyone. Saved on its own, so only for an event that exists. */}
-        {/* Admins operate it (the endpoints are admin-only): a head teacher editing the same webinar would only see an error. */}
-        {event && formData.event_type === 'webinar' && user?.role === 'admin' && (
-          <OpenAccessCard eventId={event.id} hostUnsaved={(formData.teacher_id ?? null) !== (event.teacher_id ?? null)} />
+        {/* Public access: opens a webinar to everyone. On the edit page it is saved on its own; on the create form it is
+            part of Save (check, create, then save the access). Heads (admin, head teacher, head curator) operate it. */}
+        {event && canOpen && (
+          <OpenAccessCard eventId={event.id} initialError={accessError} hostUnsaved={(formData.teacher_id ?? null) !== (event.teacher_id ?? null)} />
         )}
-        {!event && formData.event_type === 'webinar' && user?.role === 'admin' && (
-          <p className="text-xs text-muted-foreground">{t('openWebinars.admin.access.saveFirst')}</p>
-        )}
+        {!event && canOpen && <CreateAccessSection draft={access} onChange={setAccess} facts={eventFacts} hostName={teachers.find((teacher) => teacher.id === formData.teacher_id)?.name} />}
 
-        {/* Groups */}
-        <Card>
+        {/* Groups: a webinar that is only a public page has no student audience. */}
+        {!noAudience && <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
@@ -706,7 +742,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
 
 
           </CardContent>
-        </Card>
+        </Card>}
 
         {event && series.summary && (
           <SeriesEditSection summary={series.summary} scope={series.scope} onScopeChange={series.setScope}>
@@ -721,7 +757,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
 
         {/* Actions */}
         <div className="flex justify-end gap-4">
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading || (opening && !draftReady(access))}>
             <Save className="w-4 h-4 mr-2" />
             {loading ? t('adminPages.events.form.saving') : event ? t('adminPages.events.form.update') : t('adminPages.events.form.create')}
           </Button>
