@@ -29,6 +29,11 @@ export interface PublicWebinar {
   registration_open: boolean;
   speaker: PublicSpeaker | null;
   recording_slug: string | null;
+  /** A relative `/uploads/…` path: show it through `mediaUrl`. */
+  banner_url?: string | null;
+  /** Seats still free; null = no limit. */
+  seats_left?: number | null;
+  full?: boolean;
   consent: { text_ru: string; text_en: string; policy_version: string; policy_ready: boolean };
 }
 
@@ -91,8 +96,13 @@ const post = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.strin
 
 export const getPublicWebinar = (slug: string) => call<PublicWebinar>(`/public/webinars/${encodeURIComponent(slug)}`);
 
+/**
+ * A phone that is already registered gets `{ ok: true }` without a personal link (the server re-sends it to the
+ * e-mail on file), so nobody can open another person's page by typing their number.
+ */
+export interface Registration { ok: boolean; join_code?: string; join_path?: string }
 export const registerForWebinar = (slug: string, body: ContactBody) =>
-  call<{ join_code: string; join_path: string }>(`/public/webinars/${encodeURIComponent(slug)}/register`, post(body));
+  call<Registration>(`/public/webinars/${encodeURIComponent(slug)}/register`, post(body));
 
 export const getJoinInfo = (code: string) => call<JoinInfo>(`/public/webinars/join/${encodeURIComponent(code)}`);
 

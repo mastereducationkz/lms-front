@@ -39,6 +39,9 @@ export interface Funnel {
 /** The event's saved host, as the guard on «open to everyone» sees them. */
 export interface AccessHost { id: number; name: string; role: string; has_workspace: boolean }
 
+/** Why public access cannot be closed any more: the webinar began, or people have registered. */
+export type CloseBlockedReason = 'started' | 'has_registrations' | null;
+
 export interface OpenAccess {
   event_id: number;
   open: boolean;
@@ -51,6 +54,71 @@ export interface OpenAccess {
   /** Someone already pasted a Meet link into the event, so no host is needed for the room. */
   has_meeting_url: boolean;
   funnel: Funnel;
+  /** A stable relative path (`/uploads/webinar_banners/…`); show it through `mediaUrl`. */
+  banner_url: string | null;
+  starts_at: string;
+  ends_at: string;
+  started: boolean;
+  ended: boolean;
+  registrations_total: number;
+  /** Registrations exist: the address can no longer change. */
+  slug_locked: boolean;
+  can_close: boolean;
+  close_blocked_reason: CloseBlockedReason;
+  /** A recurring series cannot be opened; each occurrence is opened from its own edit page. */
+  is_recurring: boolean;
+}
+
+/** One line of the overview: a webinar that is, or was, open to everyone, with its funnel in numbers. */
+export interface OverviewItem {
+  event_id: number;
+  title: string;
+  start_datetime: string;
+  end_datetime: string;
+  is_active: boolean;
+  access_mode: AccessMode;
+  slug: string | null;
+  registered: number;
+  consultations: number;
+  joined: number;
+  leads_sent: number;
+  leads_pending: number;
+  leads_failed: number;
+}
+export interface Overview { failed_total: number; items: OverviewItem[] }
+
+/** What the create form knows before the event exists. The server answers with the address it WILL use, or refuses as `PUT /{event_id}` would. */
+export interface PreflightBody {
+  access_mode: 'open' | 'registration';
+  lead_pipeline_id: number;
+  /** Not in the contract's list, sent so the previewed address (made from the title) is the one that will be used. */
+  title?: string;
+  teacher_id?: number | null;
+  meeting_url?: string | null;
+  start_datetime: string;
+  end_datetime: string;
+  is_recurring?: boolean;
+  slug?: string | null;
+  speaker_id?: number | null;
+}
+
+/** The access card's Save. `slug` is left out when the address is locked; `banner_url: null` removes the banner. */
+export interface AccessBody {
+  access_mode: 'open' | 'registration';
+  slug?: string | null;
+  speaker_id?: number | null;
+  lead_pipeline_id: number;
+  banner_url?: string | null;
+}
+
+/** What the host teacher or curator sees on their event: no personal data. */
+export interface PublicSummary {
+  open: boolean;
+  access_mode: string | null;
+  slug: string | null;
+  registered: number;
+  joined: number;
+  recording_published: boolean;
 }
 
 export interface RegistrationRow {
@@ -62,6 +130,7 @@ export interface RegistrationRow {
   registered_at: string;
   joined: boolean;
   lead_state: 'pending' | 'sent' | 'failed' | 'skipped_student';
+  /** `created`, `tagged_existing` or `existing_client` once the lead was handled. */
   lead_outcome: string | null;
   lead_error: string | null;
   lead_attempts: number;
@@ -82,6 +151,15 @@ export interface RecordingStatus {
 
 const base = '/admin/open-webinars';
 
+/** Registrations come in pages of this size until a page is shorter. */
+export const REGISTRATIONS_PAGE = 100;
+
+/** The backend's stable `reason_code` of a refusal thrown by one of these calls, or null. */
+export function reasonCodeOf(error: unknown): string | null {
+  const code = (error as { cause?: { response?: { data?: { reason_code?: unknown } } } } | null)?.cause?.response?.data?.reason_code;
+  return typeof code === 'string' ? code : null;
+}
+
 async function run<T>(request: Promise<{ data: T }>, fallback: string): Promise<T> {
   try {
     return (await request).data;
@@ -94,16 +172,37 @@ export const getOpenSettings = () => run<OpenSettings>(api.get(`${base}/settings
 export const saveOpenSettings = (body: Partial<Pick<OpenSettings, 'policy_text' | 'consent_text_ru' | 'consent_text_en'>>) =>
   run<OpenSettings>(api.put(`${base}/settings`, body), 'Failed to save the settings');
 
-export const listGuestSpeakers = () => run<GuestSpeaker[]>(api.get(`${base}/speakers`), 'Failed to load the speakers');
+/** Active speakers; `includeId` keeps a webinar's own speaker in the list even after they were removed. */
+export const listGuestSpeakers = (includeId?: number | null) =>
+  run<GuestSpeaker[]>(api.get(`${base}/speakers`, includeId ? { params: { include_id: includeId } } : undefined), 'Failed to load the speakers');
 export const createGuestSpeaker = (body: SpeakerInput) => run<GuestSpeaker>(api.post(`${base}/speakers`, body), 'Failed to add the speaker');
 export const updateGuestSpeaker = (id: number, body: SpeakerInput) => run<GuestSpeaker>(api.put(`${base}/speakers/${id}`, body), 'Failed to save the speaker');
 export const retireGuestSpeaker = (id: number) => run<{ ok: boolean }>(api.delete(`${base}/speakers/${id}`), 'Failed to remove the speaker');
 
 export const getOpenAccess = (eventId: number) => run<OpenAccess>(api.get(`${base}/${eventId}`), 'Failed to load the public access');
-export const saveOpenAccess = (eventId: number, body: { access_mode: 'open' | 'registration'; slug?: string | null; speaker_id: number | null; lead_pipeline_id: number }) =>
-  run<{ event_id: number; access_mode: string; slug: string }>(api.put(`${base}/${eventId}`, body), 'Failed to save the public access');
+export const saveOpenAccess = (eventId: number, body: AccessBody) =>
+  run<{ event_id: number; access_mode: string; slug: string; banner_url: string | null }>(api.put(`${base}/${eventId}`, body), 'Failed to save the public access');
 export const closeOpenAccess = (eventId: number) => run<{ ok: boolean }>(api.delete(`${base}/${eventId}`), 'Failed to close the public access');
-export const listRegistrations = (eventId: number) => run<RegistrationRow[]>(api.get(`${base}/${eventId}/registrations`, { params: { limit: 500 } }), 'Failed to load the registrations');
+export const preflightOpenAccess = (body: PreflightBody) => run<{ ok: true; slug: string }>(api.post(`${base}/preflight`, body), 'Failed to check the public access');
+/** Uploads a banner (PNG/JPEG/WebP, up to 5 MB, at least 400 px wide) and returns its stable relative path. */
+export const uploadBanner = (file: File) => {
+  const form = new FormData();
+  form.append('file', file);
+  return run<{ url: string }>(api.post(`${base}/banner`, form, { headers: { 'Content-Type': 'multipart/form-data' } }), 'Failed to upload the banner');
+};
+export const getPublicSummary = (eventId: number) =>
+  run<PublicSummary>(api.get(`${base}/${eventId}/public-summary`, { cache: false } as never), 'Failed to load the public access');
+
+export const getOverview = () => run<Overview>(api.get(`${base}/overview`, { cache: false } as never), 'Failed to load the webinars');
+/** Sends every failed lead again: one webinar's (`eventId`), or all webinars'. */
+export const retryFailedLeads = (eventId?: number) =>
+  run<{ retried: number }>(api.post(`${base}/retry-failed`, eventId ? { event_id: eventId } : {}), 'Failed to retry');
+
+export const listRegistrations = (eventId: number, page: { limit?: number; offset?: number } = {}) =>
+  run<RegistrationRow[]>(
+    api.get(`${base}/${eventId}/registrations`, { params: { limit: page.limit ?? REGISTRATIONS_PAGE, offset: page.offset ?? 0 }, cache: false } as never),
+    'Failed to load the registrations',
+  );
 export const retryLead = (registrationId: number) => run<{ id: number; lead_state: string }>(api.post(`${base}/registrations/${registrationId}/retry`), 'Failed to retry');
 
 export const getRecordingStatus = (eventId: number) => run<RecordingStatus>(api.get(`${base}/${eventId}/recording`), 'Failed to load the recording');

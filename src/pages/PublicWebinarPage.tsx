@@ -113,7 +113,7 @@ export default function PublicWebinarPage() {
                   submitLabel={t('openWebinars.form.submit')}
                   onSubmit={async (body) => {
                     const done = await registerForWebinar(data.slug, body);
-                    navigate(done.join_path);
+                    if (done.join_path) navigate(done.join_path);
                   }}
                 />
               </>
