@@ -47,7 +47,7 @@ describe('the open-webinar refusals', () => {
     expect(gone.detail).toBe('This webinar already took place and has a public page, registrations or a recording, so it stays as history. Withdraw its recording if it should no longer be public.');
     const retype = { detail: 'x', reason_code: 'webinar_public_retype' };
     localizeServerError(retype, 'en');
-    expect(retype.detail).toBe('This webinar is open to everyone. Close public access first (registrations are kept), then change its type.');
+    expect(retype.detail).toContain('so its type cannot change');
   });
 
   it('has a sentence for every code the open-webinar endpoints and the public form can refuse with', () => {

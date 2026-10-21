@@ -101,7 +101,7 @@ export const serverErrors = {
   'serverErrors.recording_not_published': 'The recording is not public.',
   'serverErrors.event_not_found': 'Event not found.',
   // An event that is open to everyone cannot be retyped, re-hosted into a room-less state, or deleted (2026-10-21).
-  'serverErrors.webinar_public_retype': 'This webinar is open to everyone. Close public access first (registrations are kept), then change its type.',
+  'serverErrors.webinar_public_retype': 'This webinar is open to everyone, so its type cannot change. If it should not be public, close public access first: that is possible only before it starts and while nobody has registered. Otherwise cancel it.',
   'serverErrors.webinar_public_host': 'This webinar is open to everyone, so it needs a host with a Google Workspace account or a Meet link.',
   'serverErrors.webinar_public_delete': 'This webinar already took place and has a public page, registrations or a recording, so it stays as history. Withdraw its recording if it should no longer be public.',
   'serverErrors.bad_presenter': 'Choose who is named on the public page: the guest speaker, the host, or nobody.',
