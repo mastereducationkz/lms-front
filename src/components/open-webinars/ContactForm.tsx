@@ -7,11 +7,14 @@ import { Label } from '../ui/label';
 import { PublicApiError, type ContactBody } from '../../services/api/publicWebinars';
 import { captureAttribution } from '../../lib/utm';
 import { hasMessage, type TFunction } from '../../lib/i18n/translate';
+import type { Locale } from '../../lib/i18n/locale';
 import { Link } from 'react-router-dom';
 import '@/lib/i18n/catalogs/openWebinars';
 
 interface Props {
   t: TFunction;
+  /** The language the page is shown in: sent as `lang`, so the server keeps the consent sentence the visitor read. */
+  locale: Locale;
   /** A seat needs an e-mail (the link and reminders go there); a call-back request does not. */
   withEmail: boolean;
   consentText: string;
@@ -30,7 +33,7 @@ export function errorText(error: unknown, t: TFunction): string {
 }
 
 /** Name, phone, (e-mail), consent. Used for a seat at a webinar and for «leave your number». */
-export default function ContactForm({ t, withEmail, consentText, submitLabel, onSubmit }: Props) {
+export default function ContactForm({ t, locale, withEmail, consentText, submitLabel, onSubmit }: Props) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -49,7 +52,7 @@ export default function ContactForm({ t, withEmail, consentText, submitLabel, on
     setError(null);
     const { utm, referer } = captureAttribution();
     try {
-      await onSubmit({ name: name.trim(), phone: phone.trim(), email: email.trim() || undefined, consent, utm, referer, ow_extra: trap });
+      await onSubmit({ name: name.trim(), phone: phone.trim(), email: email.trim() || undefined, consent, lang: locale, utm, referer, ow_extra: trap });
     } catch (failure) {
       setError(errorText(failure, t));
       setBusy(false);

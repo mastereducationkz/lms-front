@@ -9,7 +9,7 @@ import { createWithAccess } from './createWithAccess';
 
 const eventData = { title: 'Open day', event_type: 'webinar', start_datetime: '2099-01-03T12:00:00Z', end_datetime: '2099-01-03T13:00:00Z' } as CreateEventRequest;
 const preflight = { access_mode: 'registration', lead_pipeline_id: 10520038, title: 'Open day', start_datetime: eventData.start_datetime, end_datetime: eventData.end_datetime } as const;
-const draft = { mode: 'registration', pipelineId: 10520038, slug: ' my-day ', speakerId: 3, bannerUrl: '/uploads/webinar_banners/1.png', noAudience: false } as AccessDraft & { mode: 'registration'; pipelineId: number };
+const draft = { mode: 'registration', pipelineId: 10520038, slug: ' my-day ', presenter: 'speaker', speakerId: 3, bannerUrl: '/uploads/webinar_banners/1.png', noAudience: false } as AccessDraft & { mode: 'registration'; pipelineId: number };
 const created = { id: 77, title: 'Open day' } as Event;
 
 /** Every call in the order it happened. */
@@ -30,7 +30,7 @@ describe('creating a webinar that opens to everyone', () => {
     expect(api.preflightOpenAccess).toHaveBeenCalledWith(preflight);
     expect(create).toHaveBeenCalledWith(eventData);
     expect(api.saveOpenAccess).toHaveBeenCalledWith(77, {
-      access_mode: 'registration', slug: 'my-day', speaker_id: 3, lead_pipeline_id: 10520038, banner_url: '/uploads/webinar_banners/1.png',
+      access_mode: 'registration', slug: 'my-day', speaker_id: 3, presenter: 'speaker', lead_pipeline_id: 10520038, banner_url: '/uploads/webinar_banners/1.png',
     });
     expect(outcome).toEqual({ kind: 'created', event: created });
   });
@@ -63,5 +63,10 @@ describe('creating a webinar that opens to everyone', () => {
   it('sends no address when none was typed, so the server makes one from the title', async () => {
     await createWithAccess({ create, eventData, draft: { ...draft, slug: '  ' }, preflight, fallbackMessage: 'x' });
     expect(api.saveOpenAccess.mock.calls[0][1].slug).toBeNull();
+  });
+
+  it.each(['host', 'none'] as const)('names %s as the presenter and sends no guest speaker, even if one was picked before', async (presenter) => {
+    await createWithAccess({ create, eventData, draft: { ...draft, presenter }, preflight, fallbackMessage: 'x' });
+    expect(api.saveOpenAccess.mock.calls[0][1]).toMatchObject({ presenter, speaker_id: null });
   });
 });

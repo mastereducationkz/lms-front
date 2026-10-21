@@ -4,7 +4,7 @@ import { Check, Copy, Globe2, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import WhoCanJoinSection from './WhoCanJoinSection';
-import { accessBody, closeBlock, draftOf, isPublicMode, type AccessDraft } from './accessModel';
+import { accessBody, closeBlock, draftOf, draftReady, isPublicMode, type AccessDraft } from './accessModel';
 import {
   closeOpenAccess, getOpenAccess, getOpenSettings, listGuestSpeakers, saveOpenAccess,
   type GuestSpeaker, type OpenAccess, type OpenSettings,
@@ -119,6 +119,7 @@ export default function OpenAccessCard({ eventId, hostUnsaved = false, initialEr
           onChange={setDraft}
           pipelines={settings.pipelines}
           speakers={speakers}
+          hostName={access.host?.name}
           addressPreview={access.slug}
           slugLocked={slugLocked}
           studentsDisabledReason={blocked ? t(`openWebinars.admin.access.closeBlocked.${blocked}` as 'openWebinars.admin.access.closeBlocked.started') : null}
@@ -141,7 +142,7 @@ export default function OpenAccessCard({ eventId, hostUnsaved = false, initialEr
 
         {note && <p role={note.kind === 'error' ? 'alert' : 'status'} className={note.kind === 'error' ? 'text-sm text-red-600 dark:text-red-400' : 'text-sm text-green-700 dark:text-green-400'}>{note.text}</p>}
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="button" onClick={save} disabled={busy || policyMissing || hostBlocked || (draft.mode !== 'students' && draft.pipelineId === null)}>
+          <Button type="button" onClick={save} disabled={busy || policyMissing || hostBlocked || !draftReady(draft)}>
             {busy ? t('openWebinars.admin.saving') : t('openWebinars.admin.save')}
           </Button>
           {access.open && publicUrl && (

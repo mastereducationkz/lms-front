@@ -60,6 +60,7 @@ const type = (selector: string, value: string) => act(async () => {
   input.dispatchEvent(new Event('input', { bubbles: true }));
 });
 const click = (el: Element | null) => act(async () => { (el as HTMLElement).click(); });
+const radioPick = (name: string, value: string) => click(host.querySelector(`input[name="${name}"][value="${value}"]`));
 const pick = (selector: string, value: string) => act(async () => {
   const select = host.querySelector(selector) as HTMLSelectElement;
   select.value = value; select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -156,7 +157,7 @@ describe('create form: Save for a webinar that opens to everyone', () => {
     await pick('#ow-pipeline', '10736538');
     expect(saveButton().disabled).toBe(false);
     await pause(ASK);
-    expect(host.querySelector('[data-summary]')?.textContent).toContain('Opens to everyone at /w/open-day-2099-03-03 · leads → NUET + IELTS');
+    expect(host.querySelector('[data-summary]')?.textContent).toContain('Opens to everyone at /w/open-day-2099-03-03 · Presenter: the host · leads → NUET + IELTS');
   });
 
   it('checks first, then creates the event, then saves the access — in that order', async () => {
@@ -168,12 +169,13 @@ describe('create form: Save for a webinar that opens to everyone', () => {
     await fillWebinar();
     await click(radio('registration'));
     await pick('#ow-pipeline', '10520038');
+    await click(host.querySelector('input[name="presenter"][value="speaker"]'));
     await pick('#ow-speaker', '3');
     await pause(ASK);
     order.length = 0;                        // the preview's own check is not the one under test
     await submit();
     expect(order).toEqual(['preflight', 'create', 'put']);
-    expect(open.saveOpenAccess).toHaveBeenCalledWith(501, { access_mode: 'registration', slug: null, speaker_id: 3, lead_pipeline_id: 10520038, banner_url: null });
+    expect(open.saveOpenAccess).toHaveBeenCalledWith(501, { access_mode: 'registration', slug: null, speaker_id: 3, presenter: 'speaker', lead_pipeline_id: 10520038, banner_url: null });
     expect(events.createEvent.mock.calls[0][0]).toMatchObject({ title: 'Open day', event_type: 'webinar', group_ids: [1] });
     expect(onSave).toHaveBeenCalledWith(CREATED);
     expect(onAccessFailed).not.toHaveBeenCalled();
@@ -287,5 +289,46 @@ describe('create form: «No student audience»', () => {
     expect(host.querySelector('#group-1')).not.toBeNull();
     await submit();
     expect(events.createEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe('create form: the presenter on the public page', () => {
+  it('names the chosen host in the summary, and sends «host» with no guest speaker', async () => {
+    await show();
+    await fillWebinar();
+    await act(async () => {
+      const trigger = host.querySelector('#teacher_id') as HTMLButtonElement;
+      trigger.click();
+    });
+    const option = Array.from(document.body.querySelectorAll('[role="option"]')).find((o) => o.textContent?.includes('Aldiyar'));
+    await act(async () => { (option as HTMLElement).click(); });
+    await click(radio('open'));
+    await pick('#ow-pipeline', '10520038');
+    await pause(ASK);
+    expect(host.querySelector('[data-summary]')?.textContent).toContain('Presenter: the host, Aldiyar');
+    await submit();
+    expect(open.saveOpenAccess.mock.calls[0][1]).toMatchObject({ presenter: 'host', speaker_id: null });
+    expect(open.preflightOpenAccess.mock.calls[0][0]).toMatchObject({ presenter: 'host', speaker_id: null, teacher_id: 5 });
+  });
+
+  it('refuses a guest speaker nobody picked, and keeps Save off, before anything is created', async () => {
+    await show();
+    await fillWebinar();
+    await click(radio('open'));
+    await pick('#ow-pipeline', '10520038');
+    await radioPick('presenter', 'speaker');
+    expect(saveButton().disabled).toBe(true);
+    expect(text()).toContain('Choose the guest speaker, or name the host or nobody.');
+    expect(events.createEvent).not.toHaveBeenCalled();
+  });
+
+  it('can name nobody, for a host who only starts the recording', async () => {
+    await show();
+    await fillWebinar();
+    await click(radio('open'));
+    await pick('#ow-pipeline', '10520038');
+    await radioPick('presenter', 'none');
+    await submit();
+    expect(open.saveOpenAccess.mock.calls[0][1]).toMatchObject({ presenter: 'none', speaker_id: null });
   });
 });

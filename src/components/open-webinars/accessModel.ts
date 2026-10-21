@@ -1,4 +1,4 @@
-import type { AccessBody, AccessMode, OpenAccess, PreflightBody } from '../../services/api/openWebinars';
+import type { AccessBody, AccessMode, OpenAccess, PreflightBody, Presenter } from '../../services/api/openWebinars';
 import { fromDatetimeLocalKZ } from '../../lib/datetime';
 
 /**
@@ -14,6 +14,8 @@ export interface AccessDraft {
   pipelineId: number | null;
   /** The typed address; empty lets the server make one from the title. */
   slug: string;
+  /** Who is named on the public page. `speakerId` counts only for `speaker`; it is kept while another choice is on, so switching back restores it. */
+  presenter: Presenter;
   speakerId: number | null;
   /** A stable relative path (`/uploads/webinar_banners/…`) or null. */
   bannerUrl: string | null;
@@ -21,12 +23,13 @@ export interface AccessDraft {
   noAudience: boolean;
 }
 
-export const emptyDraft = (): AccessDraft => ({ mode: 'students', pipelineId: null, slug: '', speakerId: null, bannerUrl: null, noAudience: false });
+export const emptyDraft = (): AccessDraft => ({ mode: 'students', pipelineId: null, slug: '', presenter: 'host', speakerId: null, bannerUrl: null, noAudience: false });
 
 export const draftOf = (access: OpenAccess): AccessDraft => ({
   mode: access.access_mode,
   pipelineId: access.lead_pipeline_id,
   slug: access.slug ?? '',
+  presenter: access.presenter ?? (access.speaker_id ? 'speaker' : 'host'),
   speakerId: access.speaker_id,
   bannerUrl: access.banner_url ?? null,
   noAudience: false,
@@ -35,12 +38,22 @@ export const draftOf = (access: OpenAccess): AccessDraft => ({
 /** Public access is on for this draft (it is not «students only»). */
 export const isPublicMode = (draft: AccessDraft): draft is AccessDraft & { mode: 'open' | 'registration' } => draft.mode !== 'students';
 
+/** The guest speaker the server will be told about: only when the presenter IS the guest speaker. */
+const speakerOf = (draft: AccessDraft): number | null => (draft.presenter === 'speaker' ? draft.speakerId : null);
+
+/** «Guest speaker» is chosen but nobody is picked yet: the server would refuse (`speaker_required`). */
+export const speakerMissing = (draft: AccessDraft): boolean => draft.presenter === 'speaker' && draft.speakerId === null;
+
+/** Everything a public webinar needs before Save: somewhere for the leads to go, and the named presenter if it is a guest. */
+export const draftReady = (draft: AccessDraft): boolean => !isPublicMode(draft) || (draft.pipelineId !== null && !speakerMissing(draft));
+
 /** The body of `PUT /{event_id}`. `lockedSlug`: the address can no longer change, so it is not sent. */
 export function accessBody(draft: AccessDraft & { mode: 'open' | 'registration'; pipelineId: number }, lockedSlug = false): AccessBody {
   return {
     access_mode: draft.mode,
     ...(lockedSlug ? {} : { slug: draft.slug.trim() || null }),
-    speaker_id: draft.speakerId,
+    speaker_id: speakerOf(draft),
+    presenter: draft.presenter,
     lead_pipeline_id: draft.pipelineId,
     banner_url: draft.bannerUrl,
   };
@@ -71,7 +84,7 @@ const utc = (local: string): string | null => {
  * check without a pipeline, a title or a valid time span would only repeat what the form already says.
  */
 export function preflightBodyOf(draft: AccessDraft, facts: EventFacts): PreflightBody | null {
-  if (!isPublicMode(draft) || draft.pipelineId === null || facts.isRecurring || !facts.title.trim()) return null;
+  if (!isPublicMode(draft) || draft.pipelineId === null || speakerMissing(draft) || facts.isRecurring || !facts.title.trim()) return null;
   const start = facts.startLocal ? utc(facts.startLocal) : null;
   const end = facts.endLocal ? utc(facts.endLocal) : null;
   if (!start || !end || Date.parse(start) >= Date.parse(end)) return null;
@@ -85,7 +98,8 @@ export function preflightBodyOf(draft: AccessDraft, facts: EventFacts): Prefligh
     end_datetime: end,
     is_recurring: false,
     slug: draft.slug.trim() || null,
-    speaker_id: draft.speakerId,
+    speaker_id: speakerOf(draft),
+    presenter: draft.presenter,
   };
 }
 

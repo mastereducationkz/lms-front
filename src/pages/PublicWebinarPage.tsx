@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { CalendarClock, Loader2, Mic2, PlayCircle, Video } from 'lucide-react';
+import { CalendarClock, Loader2, PlayCircle, Video } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import PublicShell from '../components/open-webinars/PublicShell';
 import ContactForm from '../components/open-webinars/ContactForm';
 import ConsultationCard from '../components/open-webinars/ConsultationCard';
+import PresenterBlock from '../components/open-webinars/PresenterBlock';
 import { countdownText, useCountdown } from '../components/open-webinars/useCountdown';
 import { usePublicPage } from '../components/open-webinars/usePublicPage';
 import { getPublicWebinar, registerForWebinar } from '../services/api/publicWebinars';
@@ -69,20 +70,7 @@ export default function PublicWebinarPage() {
                 <span className="text-muted-foreground">· {t('openWebinars.timeNote')}</span>
               </span>
             </p>
-            {data.speaker && (
-              <div className="mt-4 flex items-start gap-3 rounded-xl bg-muted/50 p-3" data-speaker>
-                {data.speaker.photo_url ? (
-                  <img src={data.speaker.photo_url} alt="" className="h-12 w-12 flex-none rounded-full object-cover" />
-                ) : (
-                  <span className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-primary/10 text-primary"><Mic2 className="h-5 w-5" aria-hidden /></span>
-                )}
-                <div className="min-w-0 text-sm">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('openWebinars.speaker')}</p>
-                  <p className="font-semibold text-foreground">{data.speaker.name}{data.speaker.organisation ? `, ${data.speaker.organisation}` : ''}</p>
-                  {data.speaker.bio && <p className="mt-0.5 text-muted-foreground">{data.speaker.bio}</p>}
-                </div>
-              </div>
-            )}
+            <PresenterBlock speaker={data.speaker} t={t} />
             {data.description && <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-foreground">{data.description}</p>}
           </article>
 
@@ -106,6 +94,7 @@ export default function PublicWebinarPage() {
                 <h2 className="mb-4 text-lg font-semibold text-foreground">{t('openWebinars.form.title')}</h2>
                 <ContactForm
                   t={t}
+                  locale={locale}
                   withEmail
                   consentText={locale === 'ru' ? data.consent.text_ru : data.consent.text_en}
                   submitLabel={t('openWebinars.form.submit')}

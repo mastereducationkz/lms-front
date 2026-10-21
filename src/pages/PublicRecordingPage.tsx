@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { CalendarClock, Loader2, Mic2 } from 'lucide-react';
+import { CalendarClock, Loader2 } from 'lucide-react';
 import HlsVideoPlayer from '../components/HlsVideoPlayer';
 import PublicShell from '../components/open-webinars/PublicShell';
 import ConsultationCard from '../components/open-webinars/ConsultationCard';
+import PresenterBlock from '../components/open-webinars/PresenterBlock';
 import { getPublicRecording, PublicApiError, type PublicRecording } from '../services/api/publicWebinars';
 import { formatDate } from '../lib/i18n/format';
 import { usePublicLocale } from '../lib/publicLocale';
@@ -58,18 +59,7 @@ export default function PublicRecordingPage() {
                 <CalendarClock className="h-4 w-4 flex-none" aria-hidden />
                 {t('openWebinars.recording.recordedOn', { date: formatDate(data.starts_at, { day: 'numeric', month: 'long', year: 'numeric' }, locale) })}
               </p>
-              {data.speaker && (
-                <div className="flex items-start gap-3 rounded-xl bg-muted/50 p-3" data-speaker>
-                  {data.speaker.photo_url
-                    ? <img src={data.speaker.photo_url} alt="" className="h-12 w-12 flex-none rounded-full object-cover" />
-                    : <span className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-primary/10 text-primary"><Mic2 className="h-5 w-5" aria-hidden /></span>}
-                  <div className="min-w-0 text-sm">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{t('openWebinars.speaker')}</p>
-                    <p className="font-semibold text-foreground">{data.speaker.name}{data.speaker.organisation ? `, ${data.speaker.organisation}` : ''}</p>
-                    {data.speaker.bio && <p className="mt-0.5 text-muted-foreground">{data.speaker.bio}</p>}
-                  </div>
-                </div>
-              )}
+              <PresenterBlock speaker={data.speaker} t={t} />
               {data.description && <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{data.description}</p>}
             </div>
           </article>

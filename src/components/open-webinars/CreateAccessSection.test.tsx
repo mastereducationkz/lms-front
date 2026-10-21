@@ -27,11 +27,12 @@ const SETTINGS = {
 const ASK = 450;
 
 let latest: AccessDraft;
-function Harness({ facts = FACTS }: { facts?: EventFacts }) {
+function Harness({ facts = FACTS, hostName }: { facts?: EventFacts; hostName?: string }) {
   const [draft, setDraft] = useState<AccessDraft>(emptyDraft);
   latest = draft;
-  return <MemoryRouter><CreateAccessSection draft={draft} onChange={setDraft} facts={facts} /></MemoryRouter>;
+  return <MemoryRouter><CreateAccessSection draft={draft} onChange={setDraft} facts={facts} hostName={hostName} /></MemoryRouter>;
 }
+const presenter = (value: string) => document.querySelector(`input[name="presenter"][value="${value}"]`) as HTMLInputElement;
 const radio = (value: string) => document.querySelector(`input[name="access-mode"][value="${value}"]`) as HTMLInputElement;
 
 beforeEach(() => {
@@ -69,11 +70,11 @@ describe('«Who can join» on the create form', () => {
     await pause(ASK);
     expect(api.preflightOpenAccess).toHaveBeenCalledTimes(1);
     expect(api.preflightOpenAccess.mock.calls[0][0]).toMatchObject({
-      access_mode: 'registration', lead_pipeline_id: 10736538, teacher_id: 5, title: 'IELTS Writing', is_recurring: false,
+      access_mode: 'registration', lead_pipeline_id: 10736538, teacher_id: 5, title: 'IELTS Writing', is_recurring: false, presenter: 'host', speaker_id: null,
       start_datetime: '2099-03-03T09:00:00.000Z', end_datetime: '2099-03-03T10:30:00.000Z',
     });
     expect(document.querySelector('[data-address]')?.textContent).toMatch(/\/w\/ielts-writing-2099-03-03$/);
-    expect(document.querySelector('[data-summary]')?.textContent).toContain('Opens to everyone at /w/ielts-writing-2099-03-03 · leads → NUET + IELTS');
+    expect(document.querySelector('[data-summary]')?.textContent).toContain('Opens to everyone at /w/ielts-writing-2099-03-03 · Presenter: the host · leads → NUET + IELTS');
   });
 
   it('lets the address be edited under «Edit address», and asks again with it', async () => {
@@ -132,6 +133,7 @@ describe('«Who can join» on the create form', () => {
     await mount(<Harness />);
     expect(document.querySelector('#ow-no-audience')).toBeNull();
     await click(radio('open'));
+    await click(presenter('speaker'));
     expect(document.querySelector('#ow-speaker')).not.toBeNull();
     expect(document.querySelector('#ow-banner')).not.toBeNull();
     expect(text()).toContain('No student audience (public page only)');
@@ -154,5 +156,37 @@ describe('«Who can join» on the create form', () => {
     expect(document.querySelector('input[name="access-mode"]')).toBeNull();
     await pause(ASK);
     expect(api.preflightOpenAccess).not.toHaveBeenCalled();
+  });
+
+  it('names the presenter in the summary: the host by name, a guest speaker, or nobody', async () => {
+    await mount(<Harness hostName="Aldiyar Zhumadilda" />);
+    await click(radio('open'));
+    await pick('#ow-pipeline', '10520038');
+    await pause(ASK);
+    const summary = () => document.querySelector('[data-summary]')?.textContent ?? '';
+    expect(document.querySelector('[data-presenter-hint="host"]')?.textContent).toContain('Shown as: Aldiyar Zhumadilda');
+    expect(summary()).toContain('Presenter: the host, Aldiyar Zhumadilda');
+    await click(presenter('none'));
+    expect(summary()).toContain('No presenter named');
+    await click(presenter('speaker'));
+    await pick('#ow-speaker', '3');
+    expect(summary()).toContain('Presenter: Dr. Guest');
+  });
+
+  it('sends the presenter with the check, and asks nothing while a guest speaker is chosen but not picked', async () => {
+    await mount(<Harness />);
+    await click(radio('open'));
+    await pick('#ow-pipeline', '10520038');
+    await click(presenter('speaker'));
+    await pause(ASK);
+    expect(api.preflightOpenAccess).not.toHaveBeenCalled();
+    expect(document.querySelector('[data-summary]')).toBeNull();
+    await pick('#ow-speaker', '3');
+    await pause(ASK);
+    expect(api.preflightOpenAccess.mock.calls[0][0]).toMatchObject({ presenter: 'speaker', speaker_id: 3 });
+    await click(presenter('none'));
+    await pause(ASK);
+    const calls = api.preflightOpenAccess.mock.calls;
+    expect(calls[calls.length - 1][0]).toMatchObject({ presenter: 'none', speaker_id: null });
   });
 });

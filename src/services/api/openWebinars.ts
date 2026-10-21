@@ -4,6 +4,9 @@ import { apiError } from './apiError';
 
 export type AccessMode = 'students' | 'open' | 'registration';
 
+/** Who is named on the public page: the guest speaker (photo, bio), the event's host (name only), or nobody. */
+export type Presenter = 'speaker' | 'host' | 'none';
+
 export interface Pipeline { id: number; name: string }
 
 export interface OpenSettings {
@@ -48,6 +51,7 @@ export interface OpenAccess {
   access_mode: AccessMode;
   slug: string | null;
   speaker_id: number | null;
+  presenter: Presenter;
   lead_pipeline_id: number | null;
   /** The saved host; null when the event has none. A Meet room is made only for a host with a Workspace account. */
   host: AccessHost | null;
@@ -100,6 +104,8 @@ export interface PreflightBody {
   is_recurring?: boolean;
   slug?: string | null;
   speaker_id?: number | null;
+  /** Left out, the server reads `speaker` when a speaker is set and `host` otherwise; the forms always send it. */
+  presenter?: Presenter;
 }
 
 /** The access card's Save. `slug` is left out when the address is locked; `banner_url: null` removes the banner. */
@@ -107,6 +113,7 @@ export interface AccessBody {
   access_mode: 'open' | 'registration';
   slug?: string | null;
   speaker_id?: number | null;
+  presenter?: Presenter;
   lead_pipeline_id: number;
   banner_url?: string | null;
 }

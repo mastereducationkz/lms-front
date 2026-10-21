@@ -82,7 +82,8 @@ describe('a webinar page anyone can open', () => {
     await submit();
     const post = backend.calls.find((c) => c.method === 'POST')!;
     expect(post.url).toBe(`/public/webinars/${SLUG}/register`);
-    expect(post.body).toMatchObject({ name: 'Aigerim S', phone: '8 700 123 45 67', email: 'a@example.com', consent: true, ow_extra: '' });
+    expect(post.body).toMatchObject({ name: 'Aigerim S', phone: '8 700 123 45 67', email: 'a@example.com', consent: true, lang: 'en', ow_extra: '' });
+    expect(post.body).not.toHaveProperty('captcha_token');
     expect(post.body!.utm).toEqual({ utm_source: 'instagram', utm_campaign: 'oct' });
     expect(text()).toContain('JOIN PAGE');
   });
@@ -138,7 +139,7 @@ describe('a webinar page anyone can open', () => {
     await click(document.querySelector('#ow-consent'));
     await submit();
     const post = backend.calls.find((c) => c.url === '/public/leads')!;
-    expect(post.body).toMatchObject({ webinar_slug: SLUG, name: 'Aigerim S', consent: true });
+    expect(post.body).toMatchObject({ webinar_slug: SLUG, name: 'Aigerim S', consent: true, lang: 'en' });
     expect(post.body!.email).toBeUndefined();
     expect(text()).toContain('Thank you! We will contact you soon.');
   });
@@ -293,5 +294,76 @@ describe('keeping the page fresh', () => {
     expect(text()).not.toContain('Couldn’t load the page');
     await tick(30_000);
     expect(text()).toContain('Renamed webinar');
+  });
+});
+
+describe('the language a visitor read the consent in', () => {
+  const REG = { [PAGE]: { body: webinar() }, [REGISTER]: { body: { ok: true } } };
+
+  it('is sent with a registration: Russian when the page was shown in Russian', async () => {
+    vi.stubGlobal('navigator', { language: 'ru-RU' });
+    const backend = await open(REG);
+    await fill();
+    await click(document.querySelector('#ow-consent'));
+    await submit();
+    expect(backend.calls.find((c) => c.method === 'POST')!.body).toMatchObject({ lang: 'ru' });
+  });
+
+  it('follows the visitor’s switch: switching to Russian after the page opened sends ru', async () => {
+    const backend = await open(REG);
+    await click(Array.from(document.querySelectorAll('button')).find((b) => b.textContent === 'Русский') ?? null);
+    await fill();
+    await click(document.querySelector('#ow-consent'));
+    await submit();
+    expect(backend.calls.find((c) => c.method === 'POST')!.body).toMatchObject({ lang: 'ru' });
+  });
+
+  it('is sent with a call-back request too', async () => {
+    vi.stubGlobal('navigator', { language: 'ru-RU' });
+    const backend = await open({ [PAGE]: { body: webinar({ access_mode: 'open', registration_open: false }) }, 'POST /public/leads': { body: { ok: true } } });
+    await type('#ow-name', 'Aigerim S');
+    await type('#ow-phone', '+7 700 123 45 67');
+    await click(document.querySelector('#ow-consent'));
+    await submit();
+    expect(backend.calls.find((c) => c.url === '/public/leads')!.body).toMatchObject({ lang: 'ru', webinar_slug: SLUG });
+  });
+});
+
+describe('who is named on the page', () => {
+  const guest = { kind: 'guest', name: 'Dr. Guest', organisation: 'Some University', bio: 'Admissions', photo_url: 'https://cdn.example/p.jpg' };
+
+  it('a guest speaker keeps their profile: name, organisation, bio and photo', async () => {
+    await open({ [PAGE]: { body: webinar({ speaker: guest }) } });
+    const block = document.querySelector('[data-speaker]')!;
+    expect(block.textContent).toContain('Dr. Guest, Some University');
+    expect(block.textContent).toContain('Admissions');
+    expect(block.querySelector('img')?.getAttribute('src')).toBe('https://cdn.example/p.jpg');
+    expect(document.querySelector('[data-host-line]')).toBeNull();
+  });
+
+  it('the host is one plain «Host: <name>» line: no photo, no bio, no speaker card', async () => {
+    await open({ [PAGE]: { body: webinar({ speaker: { kind: 'host', name: 'Aldiyar Zhumadilda', organisation: null, bio: 'Must not show', photo_url: 'https://cdn.example/x.jpg' } }) } });
+    expect(document.querySelector('[data-host-line]')?.textContent).toBe('Host: Aldiyar Zhumadilda');
+    expect(document.querySelector('[data-speaker]')).toBeNull();
+    expect(document.querySelector('[data-host-line] img')).toBeNull();
+    expect(text()).not.toContain('Must not show');
+  });
+
+  it('the host line is in Russian for a Russian visitor', async () => {
+    vi.stubGlobal('navigator', { language: 'ru-RU' });
+    await open({ [PAGE]: { body: webinar({ speaker: { kind: 'host', name: 'Алдияр Жумадилда', organisation: null, bio: null, photo_url: null } }) } });
+    expect(document.querySelector('[data-host-line]')?.textContent).toBe('Ведущий: Алдияр Жумадилда');
+  });
+
+  it('names nobody when the webinar names nobody', async () => {
+    await open({ [PAGE]: { body: webinar({ speaker: null }) } });
+    expect(document.querySelector('[data-speaker]')).toBeNull();
+    expect(document.querySelector('[data-host-line]')).toBeNull();
+    expect(text()).toContain('IELTS Writing Office Hours');
+  });
+
+  it('a speaker without a kind (an older server) reads as a guest speaker', async () => {
+    await open({ [PAGE]: { body: webinar({ speaker: { name: 'Dr. Guest', organisation: null, bio: null, photo_url: null } }) } });
+    expect(document.querySelector('[data-speaker]')).not.toBeNull();
   });
 });

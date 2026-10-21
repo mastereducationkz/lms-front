@@ -27,6 +27,7 @@ export default function ConsultationCard({ t, locale, webinarSlug, consent }: Pr
           <p className="mb-4 mt-1 text-sm text-muted-foreground">{t('openWebinars.card.text')}</p>
           <ContactForm
             t={t}
+            locale={locale}
             withEmail={false}
             consentText={locale === 'ru' ? consent.text_ru : consent.text_en}
             submitLabel={t('openWebinars.card.submit')}

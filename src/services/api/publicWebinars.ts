@@ -9,7 +9,11 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 export type WebinarState = 'upcoming' | 'live' | 'ended';
 export type AccessMode = 'open' | 'registration';
 
+/** `guest`: a speaker's profile (photo, bio). `host`: the event's host, by their LMS display name only. Absent reads as `guest`. */
+export type PresenterKind = 'guest' | 'host';
+
 export interface PublicSpeaker {
+  kind?: PresenterKind;
   name: string;
   organisation: string | null;
   bio: string | null;
@@ -54,6 +58,10 @@ export interface ContactBody {
   phone: string;
   email?: string;
   consent: boolean;
+  /** The language the page was shown in: the server stores the consent sentence the visitor actually saw. */
+  lang: 'ru' | 'en';
+  /** Cloudflare Turnstile answer. No widget is rendered yet; the field is kept so it can be switched on. */
+  captcha_token?: string;
   utm?: Record<string, string>;
   referer?: string;
   /** The hidden honeypot: a person never fills it. Named so that no browser autofill or password manager knows it. */

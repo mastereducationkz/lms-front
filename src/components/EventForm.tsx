@@ -46,7 +46,7 @@ import EventHostField from './events/EventHostField';
 import OpenAccessCard from './open-webinars/OpenAccessCard';
 import CreateAccessSection from './open-webinars/CreateAccessSection';
 import { createWithAccess } from './open-webinars/createWithAccess';
-import { emptyDraft, isOpenRole, isPublicMode, preflightBodyOf, type AccessDraft } from './open-webinars/accessModel';
+import { draftReady, emptyDraft, isOpenRole, isPublicMode, preflightBodyOf, speakerMissing, type AccessDraft } from './open-webinars/accessModel';
 import '@/lib/i18n/catalogs/openWebinars';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/adminTools';
@@ -234,6 +234,9 @@ export default function EventForm({ event, onSave, onCancel, onAccessFailed, acc
 
     if (opening && access.pipelineId === null) {
       return t('openWebinars.admin.access.pipelineRequired');
+    }
+    if (opening && speakerMissing(access)) {
+      return t('openWebinars.admin.access.presenter.speakerRequired');
     }
     
     if (formData.event_type === 'webinar' && formData.max_participants && formData.max_participants < 1) {
@@ -676,7 +679,7 @@ export default function EventForm({ event, onSave, onCancel, onAccessFailed, acc
         {event && canOpen && (
           <OpenAccessCard eventId={event.id} initialError={accessError} hostUnsaved={(formData.teacher_id ?? null) !== (event.teacher_id ?? null)} />
         )}
-        {!event && canOpen && <CreateAccessSection draft={access} onChange={setAccess} facts={eventFacts} />}
+        {!event && canOpen && <CreateAccessSection draft={access} onChange={setAccess} facts={eventFacts} hostName={teachers.find((teacher) => teacher.id === formData.teacher_id)?.name} />}
 
         {/* Groups: a webinar that is only a public page has no student audience. */}
         {!noAudience && <Card>
@@ -754,7 +757,7 @@ export default function EventForm({ event, onSave, onCancel, onAccessFailed, acc
 
         {/* Actions */}
         <div className="flex justify-end gap-4">
-          <Button type="submit" disabled={loading || (opening && access.pipelineId === null)}>
+          <Button type="submit" disabled={loading || (opening && !draftReady(access))}>
             <Save className="w-4 h-4 mr-2" />
             {loading ? t('adminPages.events.form.saving') : event ? t('adminPages.events.form.update') : t('adminPages.events.form.create')}
           </Button>

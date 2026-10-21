@@ -21,7 +21,7 @@ import OpenAccessCard from './OpenAccessCard';
 const funnel = { registered: 0, joined: 0, consultation_requests: 0, leads_sent: 0, leads_pending: 0, leads_failed: 0, existing_students: 0 };
 const host = { id: 5, name: 'Aldiyar Zhumadilda', role: 'admin', has_workspace: true };
 const closed = {
-  event_id: 7, open: false, access_mode: 'students', slug: null, speaker_id: null, lead_pipeline_id: null, host, has_meeting_url: false, funnel,
+  event_id: 7, open: false, access_mode: 'students', slug: null, speaker_id: null, presenter: 'host', lead_pipeline_id: null, host, has_meeting_url: false, funnel,
   banner_url: null, starts_at: '2099-03-03T09:00:00Z', ends_at: '2099-03-03T10:00:00Z', started: false, ended: false, registrations_total: 0,
   slug_locked: false, can_close: true, close_blocked_reason: null, is_recurring: false,
 };
@@ -38,6 +38,7 @@ async function show(props: { hostUnsaved?: boolean; initialError?: string } = {}
 const radio = (value: string) => document.querySelector(`input[name="access-mode"][value="${value}"]`) as HTMLInputElement;
 const saveButton = () => button('Save');
 const choosePipeline = (id = '10520038') => pick('#ow-pipeline', id);
+const presenter = (value: string) => document.querySelector(`input[name="presenter"][value="${value}"]`) as HTMLInputElement;
 /** A server refusal as the app's API layer throws it: the localized detail, with the AxiosError (and its reason_code) as the cause. */
 const refusal = (detail: string, reason_code: string) => apiError({ response: { data: { detail, reason_code } } }, 'failed');
 
@@ -63,14 +64,15 @@ describe('a webinar’s public access card', () => {
     await click(radio('registration'));
     await click(button('Edit address'));
     await type('#ow-slug', 'my-webinar');
+    await click(presenter('speaker'));
     const speakers = document.querySelector('#ow-speaker') as HTMLSelectElement;
-    expect(Array.from(speakers.options).map((o) => o.textContent)).toEqual(['No guest speaker', 'Dr. Guest, Some University']);
+    expect(Array.from(speakers.options).map((o) => o.textContent)).toEqual(['Choose the guest speaker', 'Dr. Guest, Some University']);
     await pick('#ow-speaker', '3');
     await choosePipeline();
     api.getOpenAccess.mockResolvedValue(opened);
     await click(saveButton());
     await settle();
-    expect(api.saveOpenAccess).toHaveBeenCalledWith(7, { access_mode: 'registration', slug: 'my-webinar', speaker_id: 3, lead_pipeline_id: 10520038, banner_url: null });
+    expect(api.saveOpenAccess).toHaveBeenCalledWith(7, { access_mode: 'registration', slug: 'my-webinar', speaker_id: 3, presenter: 'speaker', lead_pipeline_id: 10520038, banner_url: null });
     expect(text()).toContain('Saved');
     expect(text()).toContain('Registered 12 · joined 5');
     expect(document.querySelector('a[href$="/w/ielts-writing-2030-03-03"]')).not.toBeNull();
@@ -241,9 +243,71 @@ describe('the address', () => {
   });
 });
 
+describe('the presenter on the public page', () => {
+  it('starts as «The host», names who that is, and offers no speaker list', async () => {
+    await show();
+    await click(radio('open'));
+    expect(presenter('host').checked).toBe(true);
+    expect(document.querySelector('[data-presenter-hint="host"]')?.textContent).toBe('Shown as: Aldiyar Zhumadilda. Their name only: no photo, no bio.');
+    expect(document.querySelector('#ow-speaker')).toBeNull();
+  });
+
+  it('offers the three choices, and sends the choice with no guest speaker unless one is the presenter', async () => {
+    await show();
+    await click(radio('open'));
+    await choosePipeline();
+    expect(Array.from(document.querySelectorAll('input[name="presenter"]')).map((r) => (r as HTMLInputElement).value)).toEqual(['speaker', 'host', 'none']);
+    expect(text()).toContain('For a host who only starts the recording');
+    await click(presenter('none'));
+    await click(saveButton());
+    await settle();
+    expect(api.saveOpenAccess.mock.calls[0][1]).toMatchObject({ access_mode: 'open', presenter: 'none', speaker_id: null });
+  });
+
+  it('keeps the picked speaker out of the request once the host is named instead', async () => {
+    await show();
+    await click(radio('open'));
+    await choosePipeline();
+    await click(presenter('speaker'));
+    await pick('#ow-speaker', '3');
+    await click(presenter('host'));
+    await click(saveButton());
+    await settle();
+    expect(api.saveOpenAccess.mock.calls[0][1]).toMatchObject({ presenter: 'host', speaker_id: null });
+  });
+
+  it('will not save «Guest speaker» without a speaker, and says what to do', async () => {
+    await show();
+    await click(radio('open'));
+    await choosePipeline();
+    await click(presenter('speaker'));
+    expect(document.querySelector('[data-speaker-required]')?.textContent).toBe('Choose the guest speaker, or name the host or nobody.');
+    expect(saveButton().disabled).toBe(true);
+    await pick('#ow-speaker', '3');
+    expect(saveButton().disabled).toBe(false);
+  });
+
+  it('shows the saved choice of an open webinar', async () => {
+    api.getOpenAccess.mockResolvedValue({ ...opened, presenter: 'none' });
+    await show();
+    expect(presenter('none').checked).toBe(true);
+  });
+
+  it('reads an older server’s answer (no presenter): a speaker means «Guest speaker», no speaker means the host', async () => {
+    const { presenter: _drop, ...older } = opened;
+    api.getOpenAccess.mockResolvedValue({ ...older, speaker_id: 3 });
+    await show();
+    expect(presenter('speaker').checked).toBe(true);
+    await unmount();
+    api.getOpenAccess.mockResolvedValue({ ...older, speaker_id: null });
+    await show();
+    expect(presenter('host').checked).toBe(true);
+  });
+});
+
 describe('the guest speaker', () => {
   it('keeps a removed speaker in the list, marked, and asks for them by id', async () => {
-    api.getOpenAccess.mockResolvedValue({ ...opened, speaker_id: 9 });
+    api.getOpenAccess.mockResolvedValue({ ...opened, speaker_id: 9, presenter: 'speaker' });
     api.listGuestSpeakers.mockResolvedValue([speaker, { ...speaker, id: 9, name: 'Dr. Gone', organisation: null, is_active: false }]);
     await show();
     expect(api.listGuestSpeakers).toHaveBeenCalledWith(9);

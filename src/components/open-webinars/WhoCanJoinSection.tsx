@@ -6,12 +6,13 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import BannerField from './BannerField';
 import type { AccessDraft } from './accessModel';
-import type { AccessMode, GuestSpeaker, Pipeline } from '../../services/api/openWebinars';
+import type { AccessMode, GuestSpeaker, Pipeline, Presenter } from '../../services/api/openWebinars';
 import { LMS_ORIGIN } from '../../lib/lessonLinks';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/openWebinars';
 
 const MODES: AccessMode[] = ['students', 'open', 'registration'];
+const PRESENTERS: Presenter[] = ['speaker', 'host', 'none'];
 const FIELD = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm';
 const HOST = LMS_ORIGIN.replace(/^https?:\/\//, '');
 
@@ -20,6 +21,8 @@ interface Props {
   onChange: (next: AccessDraft) => void;
   pipelines: Pipeline[];
   speakers: GuestSpeaker[];
+  /** The event's host as the LMS names them: what «The host» shows on the public page. Absent while none is chosen. */
+  hostName?: string;
   /** The address that will be used when the draft has none of its own: the server's answer to the preflight. */
   addressPreview?: string | null;
   /** People have registered: the address is shown, not editable. */
@@ -41,7 +44,7 @@ interface Props {
  * audience». Shared by the create form and the edit page's Public access card, so both say the same things.
  */
 export default function WhoCanJoinSection({
-  draft, onChange, pipelines, speakers, addressPreview = null, slugLocked = false, studentsDisabledReason = null,
+  draft, onChange, pipelines, speakers, hostName, addressPreview = null, slugLocked = false, studentsDisabledReason = null,
   showNoAudience = false, hideLegend = false, disabled = false, children,
 }: Props) {
   const t = useT();
@@ -93,18 +96,38 @@ export default function WhoCanJoinSection({
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="ow-speaker">{t('openWebinars.admin.access.speaker')}</Label>
-            <select id="ow-speaker" className={FIELD} disabled={disabled} value={draft.speakerId ?? ''} onChange={(e) => set({ speakerId: e.target.value ? Number(e.target.value) : null })}>
-              <option value="">{t('openWebinars.admin.access.noSpeaker')}</option>
-              {speakers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}{s.organisation ? `, ${s.organisation}` : ''}{s.is_active === false ? ` (${t('openWebinars.admin.access.speakerRemoved')})` : ''}
-                </option>
-              ))}
-            </select>
-            <Link to="/admin/open-webinars" className="text-xs text-primary underline-offset-4 hover:underline">{t('openWebinars.admin.access.manageSpeakers')}</Link>
-          </div>
+          <fieldset className="space-y-2" disabled={disabled}>
+            <legend className="mb-1 text-sm font-medium">{t('openWebinars.admin.access.presenter.title')}</legend>
+            {PRESENTERS.map((id) => (
+              <label key={id} className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border p-3 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                <input type="radio" name="presenter" value={id} checked={draft.presenter === id} onChange={() => set({ presenter: id })} className="mt-1" />
+                <span>
+                  <span className="font-medium">{t(`openWebinars.admin.access.presenter.${id}` as 'openWebinars.admin.access.presenter.speaker')}</span>
+                  <span data-presenter-hint={id} className="block text-xs text-muted-foreground">
+                    {id === 'host'
+                      ? (hostName ? t('openWebinars.admin.access.presenter.hostHintNamed', { name: hostName }) : t('openWebinars.admin.access.presenter.hostHint'))
+                      : t(`openWebinars.admin.access.presenter.${id}Hint` as 'openWebinars.admin.access.presenter.speakerHint')}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+
+          {draft.presenter === 'speaker' && (
+            <div className="space-y-1.5">
+              <Label htmlFor="ow-speaker">{t('openWebinars.admin.access.speaker')}</Label>
+              <select id="ow-speaker" className={FIELD} disabled={disabled} value={draft.speakerId ?? ''} onChange={(e) => set({ speakerId: e.target.value ? Number(e.target.value) : null })}>
+                <option value="" disabled>{t('openWebinars.admin.access.presenter.speakerPlaceholder')}</option>
+                {speakers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}{s.organisation ? `, ${s.organisation}` : ''}{s.is_active === false ? ` (${t('openWebinars.admin.access.speakerRemoved')})` : ''}
+                  </option>
+                ))}
+              </select>
+              {draft.speakerId === null && <p role="alert" data-speaker-required className="text-xs text-amber-800 dark:text-amber-300">{t('openWebinars.admin.access.presenter.speakerRequired')}</p>}
+              <Link to="/admin/open-webinars" className="text-xs text-primary underline-offset-4 hover:underline">{t('openWebinars.admin.access.manageSpeakers')}</Link>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="ow-pipeline">{t('openWebinars.admin.access.pipeline')}</Label>

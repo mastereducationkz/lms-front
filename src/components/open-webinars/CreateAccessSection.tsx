@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Globe2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import WhoCanJoinSection from './WhoCanJoinSection';
-import { preflightBodyOf, type AccessDraft, type EventFacts } from './accessModel';
+import { preflightBodyOf, speakerMissing, type AccessDraft, type EventFacts } from './accessModel';
 import { usePreflightPreview } from './usePreflightPreview';
 import { getOpenSettings, listGuestSpeakers, type GuestSpeaker, type OpenSettings } from '../../services/api/openWebinars';
 import { useT } from '@/lib/i18n/react';
@@ -14,6 +14,8 @@ interface Props {
   onChange: (next: AccessDraft) => void;
   /** The event's own fields as the form holds them now: what the server's check and the summary read. */
   facts: EventFacts;
+  /** The chosen host's name in the LMS (what «The host» would show), or undefined while none is chosen. */
+  hostName?: string;
 }
 
 const NOTE = 'rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200';
@@ -23,7 +25,7 @@ const NOTE = 'rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-am
  * fields are filled in it asks the server what Save would do (the address it would use, or why not), so the
  * summary names the real address and a refusal shows here, before anything is created.
  */
-export default function CreateAccessSection({ draft, onChange, facts }: Props) {
+export default function CreateAccessSection({ draft, onChange, facts, hostName }: Props) {
   const t = useT();
   const [options, setOptions] = useState<{ settings: OpenSettings; speakers: GuestSpeaker[] } | 'failed' | null>(null);
   const preview = usePreflightPreview(preflightBodyOf(draft, facts));
@@ -40,6 +42,13 @@ export default function CreateAccessSection({ draft, onChange, facts }: Props) {
   const policyMissing = draft.mode === 'registration' && !!loaded && !loaded.settings.policy_text.trim();
   const pipeline = loaded?.settings.pipelines.find((p) => p.id === draft.pipelineId);
   const address = draft.slug.trim() || preview.slug;
+  const speaker = loaded?.speakers.find((sp) => sp.id === draft.speakerId);
+  // Who the public page will name, in the summary: the guest speaker, the host (by name), or nobody.
+  const presenterText = draft.presenter === 'speaker'
+    ? t('openWebinars.admin.access.presenter.summary.speaker', { name: speaker?.name ?? '' })
+    : draft.presenter === 'none'
+      ? t('openWebinars.admin.access.presenter.summary.none')
+      : hostName ? t('openWebinars.admin.access.presenter.summary.hostNamed', { name: hostName }) : t('openWebinars.admin.access.presenter.summary.host');
 
   return (
     <Card>
@@ -59,6 +68,7 @@ export default function CreateAccessSection({ draft, onChange, facts }: Props) {
             onChange={onChange}
             pipelines={loaded?.settings.pipelines ?? []}
             speakers={loaded?.speakers ?? []}
+            hostName={hostName}
             addressPreview={preview.slug}
           >
             {policyMissing && (
@@ -68,10 +78,11 @@ export default function CreateAccessSection({ draft, onChange, facts }: Props) {
               </p>
             )}
             {preview.error && <p role="alert" data-preflight-error className="text-sm text-red-600 dark:text-red-400">{preview.error}</p>}
-            {pipeline && !preview.error && (
+            {pipeline && !preview.error && !speakerMissing(draft) && (
               <p role="status" data-summary className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
                 {t('openWebinars.admin.access.create.summary', {
                   address: address ? `/w/${address}` : t('openWebinars.admin.access.create.addressPending'),
+                  presenter: presenterText,
                   pipeline: pipeline.name,
                 })}
                 {preview.checking && ` · ${t('openWebinars.admin.access.create.checking')}`}
