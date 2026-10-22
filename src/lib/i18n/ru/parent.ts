@@ -7,6 +7,8 @@ export const parent: RuTable<typeof en> = {
   'parent.dashboard.subtitle': 'Здесь ваши дети и связь с их учителями и кураторами.',
   'parent.dashboard.children': 'Мои дети',
   'parent.dashboard.noGroup': 'Без группы',
+  'parent.dashboard.accessEnded': 'Доступ ребёнка к платформе закончился {date}.',
+  'parent.dashboard.accessEndedHint': 'Чтобы продлить, напишите менеджеру:',
   'parent.dashboard.noChildren': 'Пока нет привязанных детей. Обратитесь к администратору, чтобы связать ваш аккаунт с ребёнком.',
   'parent.dashboard.contactTitle': 'Связь с учителями и кураторами',
   'parent.dashboard.contactBody': 'Пишите напрямую или в родительских чатах групп вашего ребёнка.',

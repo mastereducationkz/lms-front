@@ -14,6 +14,7 @@ import { activeLocale, intlLocale, type Locale } from './locale';
 export type DateInput = Date | string | number | null | undefined;
 
 export const DATE: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' };
+const DATE_LONG: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
 export const TIME: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
 export const DATE_TIME: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
 
@@ -30,6 +31,11 @@ export function formatTime(value: DateInput, options: Intl.DateTimeFormatOptions
 /** "7 Oct, 19:00" / "7 окт., 19:00" */
 export function formatDateTime(value: DateInput, options: Intl.DateTimeFormatOptions = DATE_TIME, locale: Locale = activeLocale()): string {
   return formatWith(value, options, locale);
+}
+
+/** "7 November 2026" / "7 ноября 2026": the full month, and no «г.» after the Russian year, so a sentence can end on it. */
+export function formatDateLong(value: DateInput, locale: Locale = activeLocale()): string {
+  return formatWith(value, DATE_LONG, locale).replace(/\s*г\.$/, '');
 }
 
 /** "12,500" / "12 500" */

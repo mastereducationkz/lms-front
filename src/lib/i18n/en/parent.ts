@@ -7,6 +7,8 @@ export const parent = {
   'parent.dashboard.subtitle': 'Your children, and a direct line to their teachers and curators.',
   'parent.dashboard.children': 'My children',
   'parent.dashboard.noGroup': 'No group',
+  'parent.dashboard.accessEnded': 'Your child’s access to the platform ended on {date}.',
+  'parent.dashboard.accessEndedHint': 'To extend it, message the manager:',
   'parent.dashboard.noChildren': 'No children are linked yet. Ask an administrator to link your account to your child.',
   'parent.dashboard.contactTitle': 'Contact teachers and curators',
   'parent.dashboard.contactBody': 'Message them directly or in your child’s group parent chats.',

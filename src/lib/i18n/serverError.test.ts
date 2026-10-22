@@ -25,6 +25,35 @@ describe('localizeServerError', () => {
   });
 });
 
+describe('a student whose access ended', () => {
+  const refusal = () => ({
+    detail: 'Your access to the platform ended on 6 Nov 2026. To renew it, message the manager on Telegram: @master_education_manager',
+    reason_code: 'access_expired',
+    reason_details: { date: '2026-11-06' },
+  });
+
+  it('is told the day in their language, with the manager to write to', () => {
+    const ru = refusal();
+    localizeServerError(ru, 'ru');
+    expect(ru.detail).toBe('Ваш доступ к платформе закончился 6 ноября 2026. Чтобы продлить, напишите менеджеру в Telegram: @master_education_manager');
+    const en = refusal();
+    localizeServerError(en, 'en');
+    expect(en.detail).toBe('Your access to the platform ended on 6 November 2026. To renew it, message the manager on Telegram: @master_education_manager');
+  });
+
+  it('writes only a bare ISO `date` as a date; a `date` that is already text stays as the server wrote it', () => {
+    const taught = { detail: 'x', reason_code: 'lesson_already_taught', reason_details: { date: '7 Oct 2026, 19:00', marks: 3 } };
+    localizeServerError(taught, 'en');
+    expect(taught.detail).toContain('The lesson on 7 Oct 2026, 19:00 has already been taught (marks given: 3)');
+  });
+
+  it('has a sentence for the parent portal’s refusal too', () => {
+    const body = { detail: 'x', reason_code: 'child_access_ended' };
+    localizeServerError(body, 'ru');
+    expect(body.detail).toBe('Доступ ребёнка к платформе закончился, поэтому его данные больше не показываются.');
+  });
+});
+
 describe('serverMessage', () => {
   it('words a code sent inside a body (a per-item result) in the reader’s language', () => {
     expect(serverMessage('offboarding_owner_role', 'Dana S. cannot take a lesson', 'ru')).toBe('Этому человеку такое передать нельзя');

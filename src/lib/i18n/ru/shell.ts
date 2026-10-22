@@ -98,6 +98,11 @@ export const shell: RuTable<typeof en> = {
   'shell.referral.step3': 'Как только он начнёт обучение, вы получите 15 000 ₸',
   'shell.referral.noLimit': 'Без ограничений по количеству. Чем больше друзей, тем больше бонус.',
 
+  'shell.access.endsOn': 'Ваш доступ к платформе заканчивается {date}.',
+  'shell.access.lastDay': 'Сегодня последний день вашего доступа к платформе.',
+  'shell.access.extend': 'Чтобы продлить, напишите менеджеру:',
+  'shell.access.dismiss': 'Скрыть до завтра',
+
   'shell.role.admin': 'Админ',
   'shell.role.headTeacher': 'Руководитель преподавателей',
   'shell.role.teacher': 'Преподаватель',
