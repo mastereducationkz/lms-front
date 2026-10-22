@@ -5,6 +5,7 @@ import Topbar from '../components/Topbar.tsx';
 import PlatformUpdatesModal from '../components/PlatformUpdatesModal.tsx';
 import DailyQuestionsPopup from '../components/DailyQuestionsPopup.tsx';
 import UnlockCelebration from '../components/achievements/UnlockCelebration';
+import AccessEndingBanner from '../components/AccessEndingBanner.tsx';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import apiClient from '../services/api';
 import { hideReferral, readReferralHidden, useAttention } from '../lib/attention';
@@ -81,6 +82,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <SidebarDesktop isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
         <main className={`flex-1 bg-gray-50 dark:bg-background h-screen overflow-y-auto overflow-x-hidden transition-all duration-300 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
         {/* <MaintenanceBanner /> */}
+        {/* A student's last 30 days of platform access (renders nothing for anyone else). */}
+        <AccessEndingBanner />
         {referralVisible && (
           <section className="relative mx-4 mt-3 sm:mx-5 md:mx-6 rounded-lg border border-emerald-200/80 bg-emerald-50/70 text-emerald-900 dark:border-emerald-800/80 dark:bg-emerald-950/30 dark:text-emerald-100">
             <button

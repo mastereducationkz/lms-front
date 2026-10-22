@@ -3,6 +3,7 @@ import type { User } from '../../types';
 import { api, tokenManager, API_BASE_URL, CookieUtils, setLogoutHandler, clearCache } from './client';
 import { apiError } from './apiError';
 import { t } from '../../lib/i18n';
+import { localizeServerError } from '../../lib/i18n/serverError';
 import '@/lib/i18n/catalogs/sharedUi';
 
 let currentUser: User | null = getCurrentUserFromStorage();
@@ -50,6 +51,9 @@ export async function login(email: string, password: string): Promise<{ success:
 
     return { success: true, user };
   } catch (error: any) {
+    // This call is a bare axios.post, outside the client's interceptor: a refusal with a reason_code
+    // (access ended) is worded in the language this device last used before it becomes the message.
+    localizeServerError(error?.response?.data);
     throw apiError(error, t('sharedUi.auth.loginFailed'));
   }
 }

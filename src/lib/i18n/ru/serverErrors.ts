@@ -104,4 +104,6 @@ export const serverErrors: RuTable<typeof en> = {
   'serverErrors.speaker_required': 'Выберите приглашённого спикера либо назовите ведущего или никого.',
   'serverErrors.captcha_failed': 'Подтвердите, что вы не робот, и попробуйте ещё раз.',
   'serverErrors.too_many': 'Слишком много попыток, попробуйте позже.',
+  'serverErrors.access_expired': 'Ваш доступ к платформе закончился {date}. Чтобы продлить, напишите менеджеру в Telegram: @master_education_manager',
+  'serverErrors.child_access_ended': 'Доступ ребёнка к платформе закончился, поэтому его данные больше не показываются.',
 };

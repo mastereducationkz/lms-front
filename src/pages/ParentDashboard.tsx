@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, MessageCircle, Users } from 'lucide-react';
+import { MessageCircle, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { getMyChildren, type ParentChild } from '../services/api';
-import { ChildTargets } from '../components/parents/ChildTargets';
+import { ChildCard } from '../components/parents/ChildCard';
 import Skeleton from '../components/Skeleton.tsx';
 import { useT } from '../lib/i18n/react';
 import '@/lib/i18n/catalogs/parent';
@@ -56,21 +56,7 @@ export default function ParentDashboard() {
         ) : children.length > 0 ? (
           <div className="grid grid-cols-1 @2xl:grid-cols-2 @4xl:grid-cols-3 gap-4">
             {children.map((child) => (
-              <div key={child.id} className="card p-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-brand-subtle flex items-center justify-center text-brand font-bold">
-                    {child.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-foreground dark:text-foreground truncate">{child.name}</p>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1 truncate">
-                      <GraduationCap className="w-4 h-4 shrink-0" />
-                      {child.group_name || t('parent.dashboard.noGroup')}
-                    </p>
-                  </div>
-                </div>
-                <ChildTargets studentId={child.id} />
-              </div>
+              <ChildCard key={child.id} child={child} />
             ))}
           </div>
         ) : (

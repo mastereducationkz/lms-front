@@ -32,6 +32,10 @@ export interface User {
   is_analytics_hidden?: boolean; // Curator hidden from analytics/dashboard/leaderboard views
   is_trial?: boolean; // Sales-prospect trial account (see /trial-access admin page)
   trial_expires_at?: string; // Earliest active trial deadline; absent/undefined => no active trial
+  /** From /auth/me, students only: the last day of platform access (YYYY-MM-DD, set by the CRM); null/absent = no scheduled end. */
+  access_until?: string | null;
+  /** From /auth/me, students only: whole Almaty days to `access_until` (0 on the last day, negative once it has passed). */
+  access_days_left?: number | null;
   /** From /auth/me only: the user's own Google Workspace address, used to open Meet on the work account. */
   workspace_email?: string | null;
   avatar_url?: string | null;

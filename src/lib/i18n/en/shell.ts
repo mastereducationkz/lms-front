@@ -98,6 +98,12 @@ export const shell = {
   'shell.referral.step3': 'As soon as they start classes, you get 15,000 ₸',
   'shell.referral.noLimit': 'No limit on referrals: the more friends, the bigger the bonus.',
 
+  // The banner a student sees in the last 30 days of platform access (src/components/AccessEndingBanner.tsx).
+  'shell.access.endsOn': 'Your access to the platform ends on {date}.',
+  'shell.access.lastDay': 'Today is the last day of your access to the platform.',
+  'shell.access.extend': 'To extend it, message the manager:',
+  'shell.access.dismiss': 'Hide until tomorrow',
+
   'shell.role.admin': 'Admin',
   'shell.role.headTeacher': 'Head Teacher',
   'shell.role.teacher': 'Teacher',
