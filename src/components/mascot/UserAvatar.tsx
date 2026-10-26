@@ -5,6 +5,8 @@
 import Orca from './Orca';
 import { resolveMascot } from './config';
 import { t } from '../../lib/i18n';
+import { useSeason } from '../../seasonal/SeasonProvider';
+import { SeasonSlot } from '../../seasonal/SeasonSlot';
 import '@/lib/i18n/catalogs/sharedUi';
 
 interface UserAvatarProps {
@@ -36,26 +38,38 @@ export default function UserAvatar({
   className = '',
   fallbackClassName = 'bg-brand-solid text-brand-solid-foreground',
 }: UserAvatarProps) {
+  // In a season everyone wears a costume (src/seasonal): the avatar sits in a box of its own size
+  // that takes the caller's classes, and the costume is drawn inside that box.
+  const dressed = useSeason().decorate;
+  const outer = dressed ? '' : className;
   const box = { width: size, height: size };
+  let avatar: React.ReactElement;
   if (avatarUrl) {
-    return <img src={avatarUrl} alt="" style={box} className={`rounded-full object-cover shrink-0 ${className}`} />;
-  }
-  if (isStudent && userId != null && userId !== '') {
-    return (
+    avatar = <img src={avatarUrl} alt="" style={box} className={`rounded-full object-cover shrink-0 ${outer}`} />;
+  } else if (isStudent && userId != null && userId !== '') {
+    avatar = (
       <Orca
         config={resolveMascot(mascot, userId)}
         size={size}
         title={name ? t('sharedUi.mascot.avatarOf', { name }) : t('sharedUi.mascot.avatar')}
-        className={`rounded-full shrink-0 ${className}`}
+        className={`rounded-full shrink-0 ${outer}`}
       />
     );
+  } else {
+    avatar = (
+      <div
+        style={{ ...box, fontSize: Math.max(10, Math.round(size * 0.36)) }}
+        className={`rounded-full flex items-center justify-center font-semibold shrink-0 ${fallbackClassName} ${outer}`}
+      >
+        {initialsOf(name)}
+      </div>
+    );
   }
+  if (!dressed) return avatar;
   return (
-    <div
-      style={{ ...box, fontSize: Math.max(10, Math.round(size * 0.36)) }}
-      className={`rounded-full flex items-center justify-center font-semibold shrink-0 ${fallbackClassName} ${className}`}
-    >
-      {initialsOf(name)}
-    </div>
+    <span style={{ ...box, lineHeight: 0 }} className={`relative inline-block shrink-0 align-middle ${className}`}>
+      {avatar}
+      <SeasonSlot name="avatar" size={size} seed={userId ?? name} />
+    </span>
   );
 }

@@ -9,6 +9,7 @@ import StreakIcon from './StreakIcon';
 import { WhatsNewButton } from './PlatformUpdatesModal';
 import PointsDisplay from './gamification/PointsDisplay';
 import NotificationsBell from './NotificationsBell';
+import { SeasonSlot } from '../seasonal/SeasonSlot';
 import { useT } from '../lib/i18n/react';
 import '@/lib/i18n/catalogs/shell';
 
@@ -91,6 +92,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
             <span aria-hidden className="hidden h-6 w-px bg-border sm:block" />
           </>
         )}
+        <SeasonSlot name="topbar" />
         {user?.role !== 'parent' && <NotificationsBell />}
         <ThemeMenu />
         <button className="lg:hidden w-10 h-10 rounded-lg bg-card border flex items-center justify-center text-gray-700 dark:text-foreground" onClick={onOpenSidebar} aria-label={t('shell.topbar.openMenu')} data-tour="mobile-menu"><Menu className="w-5 h-5" aria-hidden="true" /></button>

@@ -4,6 +4,7 @@ import type { ThemeChoice } from '../../lib/theme';
 import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/settings';
 import { SettingsSection } from './SettingsSection';
+import { SeasonToggle } from '../../seasonal/SeasonToggle';
 
 // Each theme drawn as a small window in its own colours (the app's light and dark tokens), so the
 // choice reads at a glance. These are illustrations of the themes, not UI colours of this page.
@@ -77,6 +78,7 @@ export default function AppearanceSection() {
           );
         })}
       </div>
+      <SeasonToggle />
     </SettingsSection>
   );
 }

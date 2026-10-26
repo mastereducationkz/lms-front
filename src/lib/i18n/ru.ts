@@ -50,6 +50,7 @@ import { live } from './ru/live';
 import { offboarding } from './ru/offboarding';
 import { openWebinars } from './ru/openWebinars';
 import { pastPapers } from './ru/pastPapers';
+import { seasonal } from './ru/seasonal';
 
 export const RU_NAMESPACES = {
   common,
@@ -102,6 +103,7 @@ export const RU_NAMESPACES = {
   offboarding,
   openWebinars,
   pastPapers,
+  seasonal,
 } as const;
 
 export const ru: Readonly<Record<string, Message>> = {
@@ -155,4 +157,5 @@ export const ru: Readonly<Record<string, Message>> = {
   ...offboarding,
   ...openWebinars,
   ...pastPapers,
+  ...seasonal,
 };

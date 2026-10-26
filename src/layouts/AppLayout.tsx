@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext.tsx';
 import apiClient from '../services/api';
 import { hideReferral, readReferralHidden, useAttention } from '../lib/attention';
 import { useT } from '../lib/i18n/react';
+import { SeasonSlot } from '../seasonal/SeasonSlot';
 import '@/lib/i18n/catalogs/shell';
 
 interface AppLayoutProps {
@@ -153,6 +154,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         {/* A size container: pages lay out by the width they get (@md:, @3xl: ...), not by the
             viewport - at 1100px the sidebar leaves ~780px, which lg: grids mistake for desktop. */}
         <div className="@container p-4 sm:p-6 lg:p-8">
+          <SeasonSlot name="greeting" />
           {children}
         </div>
       </main>
@@ -166,6 +168,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* Kasatik Achievements: one celebration for every new unlock */}
       {user?.role === 'student' && <UnlockCelebration />}
+
+      {/* A season's hidden pumpkins and finale (renders nothing outside one) */}
+      <SeasonSlot name="overlay" />
     </div>
   );
 }

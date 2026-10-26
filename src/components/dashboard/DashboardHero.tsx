@@ -7,6 +7,8 @@ import ExamCountdown from "../ExamCountdown";
 import type { MessageKey } from "@/lib/i18n";
 import { useT } from "@/lib/i18n/react";
 import "@/lib/i18n/catalogs/studentHome";
+import { useSeason } from "@/seasonal/SeasonProvider";
+import { seasonHero } from "@/seasonal/dashboardHero";
 
 // Dashboard hero background presets (all dark so white text + the flip board stay legible).
 // `tile` is an opaque, banner-tinted color for the flip-clock digits (must be
@@ -57,14 +59,17 @@ export default function DashboardHero({
   const tr = useT();
   // Student-chosen hero banner color (persisted per user in localStorage).
   const heroThemeKey = `dashboard_hero_theme_${userId ?? "me"}`;
-  const [heroTheme, setHeroTheme] = useState<string>(() => {
+  // null = never picked: the default blue, or the season's banner while one runs (src/seasonal).
+  const [heroTheme, setHeroTheme] = useState<string | null>(() => {
     try {
-      return localStorage.getItem(heroThemeKey) || "blue";
+      return localStorage.getItem(heroThemeKey);
     } catch {
-      return "blue";
+      return null;
     }
   });
-  const activeHeroTheme = HERO_THEMES.find((t) => t.key === heroTheme) ?? HERO_THEMES[0];
+  const { season, enabled: seasonOn } = useSeason();
+  const seasonal = heroTheme === null && seasonOn ? seasonHero(season) : null;
+  const activeHeroTheme = seasonal ?? HERO_THEMES.find((t) => t.key === (heroTheme ?? "blue")) ?? HERO_THEMES[0];
   const heroThemeCss = activeHeroTheme.css;
   const activeHeroDark = heroDark(activeHeroTheme);
   const applyHeroTheme = (key: string) => {
@@ -97,7 +102,7 @@ export default function DashboardHero({
               title={tr(t.label)}
               aria-label={tr(t.label)}
               className={`h-8 w-8 rounded-full ring-2 ring-offset-2 ring-offset-background transition ${
-                heroTheme === t.key ? "ring-foreground" : "ring-transparent hover:ring-border"
+                (heroTheme ?? (seasonal ? null : "blue")) === t.key ? "ring-foreground" : "ring-transparent hover:ring-border"
               }`}
               style={{ background: t.css }}
             />

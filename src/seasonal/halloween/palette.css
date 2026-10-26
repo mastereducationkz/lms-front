@@ -1,0 +1,69 @@
+/*
+ * Halloween palette (owner, 2026-10-26; «Midnight» chosen 2026-10-27 over two other looks).
+ * Applied by SeasonProvider as a class on <html>: pumpkin orange takes over the brand tokens
+ * (src/index.css) — buttons, links, focus rings, active nav, brand panels — and the night is drawn
+ * into the neutrals: a warm parchment tint in light, aubergine violet in dark. Unlayered on
+ * purpose: it must beat the token blocks in @layer base. Every text pair is >= 4.5:1 (2026-10-27):
+ *   light  brand/brand-solid on white 4.99 · on page 4.90 · subtle-fg on subtle 6.19 · muted-fg on muted 4.61
+ *   dark   brand on card 7.87 · white on brand-solid 4.64 · subtle-fg on surface 9.42 · muted-fg on muted 5.87
+ */
+
+html.season-halloween {
+  --background: 36 40% 99%;
+  --card: 36 40% 99%;
+  --popover: 36 40% 99%;
+  --muted: 30 25% 95%;
+  --secondary: 30 25% 95%;
+  --accent: 30 25% 95%;
+  --border: 30 18% 88%;
+  --input: 30 18% 88%;
+  --brand: 20 90% 40%;
+  --brand-solid: 20 90% 40%;
+  --brand-solid-hover: 18 88% 35%;
+  --brand-solid-foreground: 0 0% 100%;
+  --brand-surface: 33 100% 96%;
+  --brand-surface-foreground: 20 40% 12%;
+  --brand-subtle: 34 100% 92%;
+  --brand-subtle-foreground: 18 85% 33%;
+  --brand-border: 32 98% 83%;
+  --primary: 20 90% 40%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 20 90% 40%;
+}
+html.season-halloween.dark {
+  --background: 265 22% 7%;
+  --card: 265 18% 10.5%;
+  --popover: 265 16% 13%;
+  --muted: 265 14% 16%;
+  --secondary: 265 14% 16%;
+  --accent: 265 14% 16%;
+  --border: 265 12% 23%;
+  --input: 265 12% 27%;
+  --brand: 27 96% 61%;
+  --brand-solid: 20 88% 42%;
+  --brand-solid-hover: 21 88% 47%;
+  --brand-solid-foreground: 0 0% 100%;
+  --brand-surface: 268 28% 16%;
+  --brand-surface-foreground: 30 40% 95%;
+  --brand-subtle: 268 30% 21%;
+  --brand-subtle-foreground: 31 97% 72%;
+  --brand-border: 268 22% 28%;
+  --primary: 20 88% 42%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 27 96% 61%;
+}
+
+/* The parts of the browser no component draws. */
+html.season-halloween ::selection {
+  background: hsl(33 100% 85%);
+  color: hsl(20 40% 12%);
+}
+html.season-halloween.dark ::selection {
+  background: hsl(20 70% 30%);
+  color: hsl(30 40% 97%);
+}
+html.season-halloween input,
+html.season-halloween textarea,
+html.season-halloween [contenteditable='true'] {
+  caret-color: hsl(var(--brand));
+}

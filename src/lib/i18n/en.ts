@@ -52,6 +52,7 @@ import { live } from './en/live';
 import { offboarding } from './en/offboarding';
 import { openWebinars } from './en/openWebinars';
 import { pastPapers } from './en/pastPapers';
+import { seasonal } from './en/seasonal';
 
 export const EN_NAMESPACES = {
   common,
@@ -104,6 +105,7 @@ export const EN_NAMESPACES = {
   offboarding,
   openWebinars,
   pastPapers,
+  seasonal,
 } as const;
 
 export const en = {
@@ -157,6 +159,7 @@ export const en = {
   ...offboarding,
   ...openWebinars,
   ...pastPapers,
+  ...seasonal,
 } as const;
 
 export type MessageKey = keyof typeof en;
