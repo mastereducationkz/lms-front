@@ -225,6 +225,37 @@ describe('the coach’s note of the day', () => {
   });
 });
 
+describe('a news night the coach talks about (Kane, Ballon d\'Or, 2026-10-27)', () => {
+  const tuesday = Date.UTC(2026, 9, 27, 0, 0); // 05:00 Almaty, the morning after the ceremony
+  const lastMinute = Date.parse('2026-10-29T23:59:00+05:00');
+  const over = Date.parse('2026-10-30T00:00:00+05:00');
+
+  it('replaces the rotating note, counting down to the Final', () => {
+    expect(coachNote('season', tuesday, 7, 'en', 11)).toBe(
+      'Harry Kane has won the Ballon d\'Or, the first English winner since 2001, after years of steady work, week after week. Your Final is in 11 days: same habit, every matchday.',
+    );
+    expect(coachNote('finalWeek', lastMinute, 7, 'ru', 9)).toBe(
+      'Гарри Кейн выиграл «Золотой мяч» — первый англичанин с 2001 года. Путь к нему — годы стабильной работы, неделя за неделей. До вашего Финала 9 дней: та же привычка, каждый тур.',
+    );
+    expect(coachNote('season', tuesday, 7, 'ru', 1)).toContain('До вашего Финала 1 день:');
+    expect(coachNote('season', tuesday, 7, 'ru', 3)).toContain('До вашего Финала 3 дня:');
+  });
+
+  it('is the same for every student and every day of the window', () => {
+    expect(coachNote('season', tuesday, 7, 'en', 11)).toBe(coachNote('season', tuesday + 24 * HOUR, 8, 'en', 11));
+  });
+
+  it('ends on its own at midnight Almaty on Thursday', () => {
+    expect(coachNote('season', over, 7, 'en', 8)).not.toContain('Kane');
+  });
+
+  it('stays out of the eve, the exam day and after the Final, and when the days are unknown', () => {
+    for (const key of ['eve', 'examDay', 'after']) expect(coachNote(key, tuesday, 7, 'en', 1)).not.toContain('Kane');
+    expect(coachNote('season', tuesday, 7, 'en')).not.toContain('Kane');
+    expect(coachNote('season', tuesday, 7, 'en', 0)).not.toContain('Kane');
+  });
+});
+
 describe('the season goals', () => {
   it('lists the six in a fixed order, titled in the reader’s language, with what the server knows', () => {
     const views = goalViews([{ key: 'ml_hat_trick', unlocked: false, progress: { current: 2, target: 3 } }, { key: 'ml_signed', unlocked: true, progress: null }], 'en');

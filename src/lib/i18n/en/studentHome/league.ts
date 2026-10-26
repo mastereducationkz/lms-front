@@ -131,6 +131,11 @@ export const league = {
   'studentHome.league.note.examDay.3': 'The whole squad is with you today.',
   'studentHome.league.note.after.1': 'Final whistle. You took on The Final, and that already counts for something.',
   'studentHome.league.note.after.2': 'Your score report is the last stamp on your season ticket.',
+  // a news night (2026-10-27 to 29), shown instead of the rotating note
+  'studentHome.league.news.kane': {
+    one: 'Harry Kane has won the Ballon d\'Or, the first English winner since 2001, after years of steady work, week after week. Your Final is in {count} day: same habit, every matchday.',
+    other: 'Harry Kane has won the Ballon d\'Or, the first English winner since 2001, after years of steady work, week after week. Your Final is in {count} days: same habit, every matchday.',
+  },
   'studentHome.league.note.after.3': 'The league remembers. Send your result and close the season in style.',
 
   // ── the welcome scene ──

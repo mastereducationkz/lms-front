@@ -92,9 +92,9 @@ export function LeagueBannerView({ league, userId, now, locale, defaultOpen = fa
       {children}
 
       <div className="relative flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-white/10 px-4 py-3 @lg:px-6">
-        <p className="min-w-0 flex-1 text-xs italic text-blue-100/90">
+        <p className="min-w-0 flex-1 basis-full text-xs italic text-blue-100/90 @lg:basis-0">
           <span className="font-semibold not-italic text-amber-300">{t('studentHome.league.coach')}: </span>
-          {coachNote(copy.noteKey, now, userId, locale)}
+          {coachNote(copy.noteKey, now, userId, locale, league.days_to_exam)}
         </p>
         <button
           type="button"
