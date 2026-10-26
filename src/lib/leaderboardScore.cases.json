@@ -1,0 +1,2261 @@
+{
+ "cases": [
+  {
+   "name": "example 73: attendance 100, homework 83, test held but skipped",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 6
+      }
+     ]
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 3,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 5,
+        "max_score": 6
+       }
+      ]
+     },
+     "2": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     },
+     "3": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": true,
+   "expected": {
+    "attendance": {
+     "attended": 3,
+     "countable": 3,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "percent": 83.33333333333333
+    },
+    "test": {
+     "state": "skipped",
+     "percent": 0
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 83.33333333333333
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 0
+     }
+    ],
+    "percent": 73
+   }
+  },
+  {
+   "name": "example 92: no test that week",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 6
+      }
+     ]
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 3,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 5,
+        "max_score": 6
+       }
+      ]
+     },
+     "2": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     },
+     "3": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 3,
+     "countable": 3,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "percent": 83.33333333333333
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 83.33333333333333
+     }
+    ],
+    "percent": 92
+   }
+  },
+  {
+   "name": "a student who took the test is scored on it",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 6
+      }
+     ]
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 3,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 5,
+        "max_score": 6
+       }
+      ]
+     },
+     "2": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     },
+     "3": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": 90
+   },
+   "testHeld": true,
+   "expected": {
+    "attendance": {
+     "attended": 3,
+     "countable": 3,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "percent": 83.33333333333333
+    },
+    "test": {
+     "state": "scored",
+     "percent": 90
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 83.33333333333333
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 90
+     }
+    ],
+    "percent": 91
+   }
+  },
+  {
+   "name": "a 0 percent test is a score, not a skip",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 6
+      }
+     ]
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 3,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 5,
+        "max_score": 6
+       }
+      ]
+     },
+     "2": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     },
+     "3": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": 0
+   },
+   "testHeld": true,
+   "expected": {
+    "attendance": {
+     "attended": 3,
+     "countable": 3,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "percent": 83.33333333333333
+    },
+    "test": {
+     "state": "scored",
+     "percent": 0
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 83.33333333333333
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 0
+     }
+    ],
+    "percent": 73
+   }
+  },
+  {
+   "name": "late counts as attended",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "late",
+      "marked": true,
+      "enrolled": true
+     },
+     "2": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 2,
+     "percent": 50
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 50
+     }
+    ],
+    "percent": 50
+   }
+  },
+  {
+   "name": "an excused absence is left out, an ordinary one counts",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 3,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     },
+     "2": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": true,
+      "excused": true
+     },
+     "3": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 2,
+     "percent": 50
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 50
+     }
+    ],
+    "percent": 50
+   }
+  },
+  {
+   "name": "excused flag changes nothing on attended or late, and applies to registered",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 3,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "excused": true
+     },
+     "2": {
+      "attendance_status": "late",
+      "marked": true,
+      "enrolled": true,
+      "excused": true
+     },
+     "3": {
+      "attendance_status": "registered",
+      "marked": true,
+      "enrolled": true,
+      "excused": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 2,
+     "countable": 2,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "cancelled, before joining, frozen and blocked lessons are left out",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 3,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 4,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 5,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     },
+     "2": {
+      "attendance_status": "cancelled",
+      "marked": true,
+      "enrolled": true
+     },
+     "3": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": false
+     },
+     "4": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": true,
+      "frozen": true
+     },
+     "5": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": true,
+      "blocked": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "a past lesson nobody has marked is left out",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     },
+     "2": {
+      "attendance_status": "missed",
+      "marked": false
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "a lesson that has not happened yet is left out, marked or not",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2099-01-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 3,
+     "start_datetime": "2099-01-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     },
+     "2": {
+      "attendance_status": "missed",
+      "marked": false
+     },
+     "3": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "today's lesson counts once it is marked",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-10-26T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 0,
+     "countable": 1,
+     "percent": 0
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 0
+     }
+    ],
+    "percent": 0
+   }
+  },
+  {
+   "name": "the cut is the Almaty midnight, not the UTC one",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-10-26T18:59:00Z"
+    },
+    {
+     "lesson_number": 3,
+     "start_datetime": "2026-10-26T19:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     },
+     "2": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": true
+     },
+     "3": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 2,
+     "percent": 50
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 50
+     }
+    ],
+    "percent": 50
+   }
+  },
+  {
+   "name": "a future lesson with no row for the student is left out",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2099-01-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "a past lesson with no row for the student counts as an absence",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 2,
+     "percent": 50
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 50
+     }
+    ],
+    "percent": 50
+   }
+  },
+  {
+   "name": "a 30-point homework weighs like a 10-point one",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 30
+      }
+     ]
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 2,
+       "max_score": 10
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 15,
+        "max_score": 30
+       }
+      ]
+     },
+     "2": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 2,
+        "score": 10,
+        "max_score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 2,
+     "countable": 2,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 2,
+     "percent": 75
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 75
+     }
+    ],
+    "percent": 88
+   }
+  },
+  {
+   "name": "a half rounds up",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 30
+      }
+     ]
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 2,
+       "max_score": 10
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 15,
+        "max_score": 30
+       }
+      ]
+     },
+     "2": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 2,
+        "score": 10,
+        "max_score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 2,
+     "percent": 50
+    },
+    "homework": {
+     "assigned": 2,
+     "percent": 75
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 50
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 75
+     }
+    ],
+    "percent": 63
+   }
+  },
+  {
+   "name": "the maximum comes from the assignment when the submission has none",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 20
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 10,
+        "max_score": null
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "percent": 50
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 50
+     }
+    ],
+    "percent": 75
+   }
+  },
+  {
+   "name": "an unknown assignment id falls back to the first meta's maximum",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 20
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 9,
+        "score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "percent": 50
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 50
+     }
+    ],
+    "percent": 75
+   }
+  },
+  {
+   "name": "a matching meta without a maximum falls back to the first meta's",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 20
+      },
+      {
+       "id": 2,
+       "max_score": null
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 2,
+        "score": 10
+       },
+       {
+        "assignment_id": 1,
+        "score": 20,
+        "max_score": 20
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 2,
+     "percent": 75
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 75
+     }
+    ],
+    "percent": 88
+   }
+  },
+  {
+   "name": "unsubmitted, ungraded and max-less homework count 0 but stay in the average",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1
+      },
+      {
+       "id": 2
+      },
+      {
+       "id": 3
+      },
+      {
+       "id": 4
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 10,
+        "max_score": 10
+       },
+       {
+        "assignment_id": 2,
+        "score": null,
+        "max_score": 10
+       },
+       {
+        "assignment_id": 3,
+        "score": 5
+       },
+       {
+        "assignment_id": 4,
+        "score": null,
+        "max_score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 4,
+     "percent": 25
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 25
+     }
+    ],
+    "percent": 63
+   }
+  },
+  {
+   "name": "a zero maximum counts 0",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 0
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 5,
+        "max_score": 0
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "percent": 0
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 0
+     }
+    ],
+    "percent": 50
+   }
+  },
+  {
+   "name": "an assigned homework with no status row counts 0",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "percent": 0
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 0
+     }
+    ],
+    "percent": 50
+   }
+  },
+  {
+   "name": "cancelled and excused lessons keep their homework",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10
+      }
+     ]
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 2,
+       "max_score": 10
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "cancelled",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 10,
+        "max_score": 10
+       }
+      ]
+     },
+     "2": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": true,
+      "excused": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 2,
+        "score": 0,
+        "max_score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 0,
+     "countable": 0,
+     "percent": null
+    },
+    "homework": {
+     "assigned": 2,
+     "percent": 50
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 50
+     }
+    ],
+    "percent": 50
+   }
+  },
+  {
+   "name": "lessons that are not the student's lose their homework too",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10
+      }
+     ]
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 2,
+       "max_score": 10
+      }
+     ]
+    },
+    {
+     "lesson_number": 3,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 3,
+       "max_score": 10
+      }
+     ]
+    },
+    {
+     "lesson_number": 4,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 4,
+       "max_score": 10
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 10,
+        "max_score": 10
+       }
+      ]
+     },
+     "2": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": false,
+      "homework_statuses": [
+       {
+        "assignment_id": 2,
+        "score": 0,
+        "max_score": 10
+       }
+      ]
+     },
+     "3": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": true,
+      "frozen": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 3,
+        "score": 0,
+        "max_score": 10
+       }
+      ]
+     },
+     "4": {
+      "attendance_status": "missed",
+      "marked": true,
+      "enrolled": true,
+      "blocked": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 4,
+        "score": 0,
+        "max_score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "percent": 100
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "a lesson that has not happened yet loses its homework, even one handed in",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10
+      }
+     ]
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2099-01-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 2,
+       "max_score": 10
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 10,
+        "max_score": 10
+       }
+      ]
+     },
+     "2": {
+      "attendance_status": "missed",
+      "marked": false,
+      "homework_statuses": [
+       {
+        "assignment_id": 2,
+        "score": 10,
+        "max_score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "percent": 100
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "a past unmarked lesson counts for homework only",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "missed",
+      "marked": false,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 5,
+        "max_score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 0,
+     "countable": 0,
+     "percent": null
+    },
+    "homework": {
+     "assigned": 1,
+     "percent": 50
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 50
+     }
+    ],
+    "percent": 50
+   }
+  },
+  {
+   "name": "today's lesson keeps its homework",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-10-26T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 10,
+        "max_score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "percent": 100
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "reads the legacy single homework fields",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homework": {
+      "id": 1,
+      "max_score": 10
+     }
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_status": {
+       "assignment_id": 1,
+       "score": 5,
+       "max_score": 10
+      }
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "percent": 50
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 50
+     }
+    ],
+    "percent": 75
+   }
+  },
+  {
+   "name": "a test alone stands at its own percentage",
+   "today": "2026-10-26",
+   "lessons": [],
+   "student": {
+    "lessons": {},
+    "test_percent": 64
+   },
+   "testHeld": true,
+   "expected": {
+    "attendance": {
+     "attended": 0,
+     "countable": 0,
+     "percent": null
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "scored",
+     "percent": 64
+    },
+    "parts": [
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 64
+     }
+    ],
+    "percent": 64
+   }
+  },
+  {
+   "name": "a test held but skipped, with nothing else, is 0 not a dash",
+   "today": "2026-10-26",
+   "lessons": [],
+   "student": {
+    "lessons": {},
+    "test_percent": null
+   },
+   "testHeld": true,
+   "expected": {
+    "attendance": {
+     "attended": 0,
+     "countable": 0,
+     "percent": null
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "skipped",
+     "percent": 0
+    },
+    "parts": [
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 0
+     }
+    ],
+    "percent": 0
+   }
+  },
+  {
+   "name": "an older payload's mock_exam above zero is the test",
+   "today": "2026-10-26",
+   "lessons": [],
+   "student": {
+    "lessons": {},
+    "mock_exam": 64
+   },
+   "testHeld": true,
+   "expected": {
+    "attendance": {
+     "attended": 0,
+     "countable": 0,
+     "percent": null
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "scored",
+     "percent": 64
+    },
+    "parts": [
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 64
+     }
+    ],
+    "percent": 64
+   }
+  },
+  {
+   "name": "an older payload's mock_exam of zero is no test",
+   "today": "2026-10-26",
+   "lessons": [],
+   "student": {
+    "lessons": {},
+    "mock_exam": 0
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 0,
+     "countable": 0,
+     "percent": null
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [],
+    "percent": null
+   }
+  },
+  {
+   "name": "a week without lessons, homework or test is a dash, not 0",
+   "today": "2026-10-26",
+   "lessons": [],
+   "student": {
+    "lessons": {},
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 0,
+     "countable": 0,
+     "percent": null
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [],
+    "percent": null
+   }
+  },
+  {
+   "name": "a student with nothing countable and nothing else is a dash",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "cancelled",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 0,
+     "countable": 0,
+     "percent": null
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [],
+    "percent": null
+   }
+  },
+  {
+   "name": "a single part stands alone at its own percentage",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  }
+ ],
+ "groupHasTest": [
+  {
+   "name": "one student with a score",
+   "students": [
+    {
+     "test_percent": null
+    },
+    {
+     "test_percent": 80
+    }
+   ],
+   "expected": true
+  },
+  {
+   "name": "a 0 percent score counts",
+   "students": [
+    {
+     "test_percent": null
+    },
+    {
+     "test_percent": 0
+    }
+   ],
+   "expected": true
+  },
+  {
+   "name": "nobody has one",
+   "students": [
+    {
+     "test_percent": null
+    },
+    {
+     "test_percent": null
+    }
+   ],
+   "expected": false
+  },
+  {
+   "name": "no students",
+   "students": [],
+   "expected": false
+  },
+  {
+   "name": "mock_exam above zero stands in",
+   "students": [
+    {
+     "mock_exam": 64
+    }
+   ],
+   "expected": true
+  },
+  {
+   "name": "mock_exam of zero is none",
+   "students": [
+    {
+     "mock_exam": 0
+    }
+   ],
+   "expected": false
+  },
+  {
+   "name": "no fields at all",
+   "students": [
+    {}
+   ],
+   "expected": false
+  },
+  {
+   "name": "an explicit null test_percent beats mock_exam",
+   "students": [
+    {
+     "test_percent": null,
+     "mock_exam": 64
+    }
+   ],
+   "expected": false
+  }
+ ]
+}
