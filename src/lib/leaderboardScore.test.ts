@@ -14,7 +14,7 @@ import {
 const PAST = '2026-06-01T10:00:00';
 const FUTURE = '2099-01-01T10:00:00';
 const TODAY = '2026-10-26T10:00:00';
-const isLocked = (start: string) => start === FUTURE;
+const isFuture = (start: string) => start === FUTURE;
 
 const meta = (n: number, opts: { start?: string; hw?: { id: number; max_score?: number }[] } = {}): ScoreLessonMeta => ({
   lesson_number: n,
@@ -37,7 +37,7 @@ const student = (lessons: Record<string, ScoreStudentLesson>, test: number | nul
 const hwDone = (id: number, score: number | null, max = 10) => ({ assignment_id: id, score, max_score: max });
 
 function score(lessons: ScoreLessonMeta[], s: ScoreStudent, testHeld = false) {
-  return weeklyScore({ lessons, student: s, testHeld, isLocked });
+  return weeklyScore({ lessons, student: s, testHeld, isFuture });
 }
 
 describe('retired columns', () => {
@@ -149,6 +149,11 @@ describe('attendance part', () => {
   it('today\'s lesson counts once it is marked (not locked)', () => {
     const result = score([meta(1, { start: TODAY })], student({ '1': att('missed') }));
     expect(result.attendance).toMatchObject({ attended: 0, countable: 1 });
+  });
+
+  it('a future lesson with no row for the student is left out', () => {
+    const result = score([meta(1), meta(2, { start: FUTURE })], student({ '1': att('attended') }));
+    expect(result.attendance).toMatchObject({ attended: 1, countable: 1 });
   });
 
   it('a lesson with no row for the student counts as an absence', () => {

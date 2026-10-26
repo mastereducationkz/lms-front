@@ -965,7 +965,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   // for the whole group once any one student has a score.
   const testHeld = data ? groupHasTest(data.students) : false;
   const scoreOf = (student: StudentRow) =>
-    weeklyScore({ lessons: data?.lessons ?? [], student, testHeld, isLocked: isAttendanceLockedLesson });
+    weeklyScore({ lessons: data?.lessons ?? [], student, testHeld, isFuture: isAttendanceLockedLesson });
 
   const getPercentColor = (percent: number) => {
       if (percent >= 90) return "bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300";

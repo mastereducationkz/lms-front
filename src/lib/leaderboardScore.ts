@@ -102,9 +102,9 @@ function isAttended(status: string): boolean {
 }
 
 /** A lesson that has not happened yet: it counts for nothing, neither attendance nor homework. */
-function hasNotHappened(startDatetime: string | undefined, isLocked: (startDatetime: string) => boolean): boolean {
-  // `isLocked` is the register lock (`isAttendanceLockedLesson`): the Almaty day of the lesson is after today.
-  return startDatetime !== undefined && isLocked(startDatetime);
+function hasNotHappened(startDatetime: string | undefined, isFuture: (startDatetime: string) => boolean): boolean {
+  // `isFuture` is `isAttendanceLockedLesson`: the lesson's Almaty day is after today. Today's lesson is not future.
+  return startDatetime !== undefined && isFuture(startDatetime);
 }
 
 /**
@@ -114,9 +114,9 @@ function hasNotHappened(startDatetime: string | undefined, isLocked: (startDatet
 export function isCountableForAttendance(
   lesson: ScoreStudentLesson | undefined,
   startDatetime: string | undefined,
-  isLocked: (startDatetime: string) => boolean,
+  isFuture: (startDatetime: string) => boolean,
 ): boolean {
-  if (hasNotHappened(startDatetime, isLocked)) return false;
+  if (hasNotHappened(startDatetime, isFuture)) return false;
   if (!lesson) return true;
   if (lesson.attendance_status === 'cancelled') return false;
   if (isNotTheirs(lesson)) return false;
@@ -133,9 +133,9 @@ export function isCountableForAttendance(
 export function isCountableForHomework(
   lesson: ScoreStudentLesson | undefined,
   startDatetime: string | undefined,
-  isLocked: (startDatetime: string) => boolean,
+  isFuture: (startDatetime: string) => boolean,
 ): boolean {
-  return !hasNotHappened(startDatetime, isLocked) && !isNotTheirs(lesson);
+  return !hasNotHappened(startDatetime, isFuture) && !isNotTheirs(lesson);
 }
 
 /** One homework as a share of its maximum: score ÷ max, so a 30-point homework weighs like a 10-point one. */
@@ -164,7 +164,7 @@ export interface WeeklyScoreInput {
   student: ScoreStudent;
   /** Whether the group had a test that week — see {@link groupHasTest}. */
   testHeld: boolean;
-  isLocked: (startDatetime: string) => boolean;
+  isFuture: (startDatetime: string) => boolean;
 }
 
 export interface WeeklyScore {
@@ -178,7 +178,7 @@ export interface WeeklyScore {
   percent: number | null;
 }
 
-export function weeklyScore({ lessons, student, testHeld, isLocked }: WeeklyScoreInput): WeeklyScore {
+export function weeklyScore({ lessons, student, testHeld, isFuture }: WeeklyScoreInput): WeeklyScore {
   let attended = 0;
   let countable = 0;
   const shares: number[] = [];
@@ -186,12 +186,12 @@ export function weeklyScore({ lessons, student, testHeld, isLocked }: WeeklyScor
   for (const meta of lessons) {
     const lesson = student.lessons[meta.lesson_number.toString()];
 
-    if (isCountableForAttendance(lesson, meta.start_datetime, isLocked)) {
+    if (isCountableForAttendance(lesson, meta.start_datetime, isFuture)) {
       countable += 1;
       if (lesson && isAttended(lesson.attendance_status)) attended += 1;
     }
 
-    if (!isCountableForHomework(lesson, meta.start_datetime, isLocked)) continue;
+    if (!isCountableForHomework(lesson, meta.start_datetime, isFuture)) continue;
     const assigned = lessonHomeworkMetas(meta);
     const statuses = lessonHomeworkStatuses(lesson);
     for (const status of statuses) shares.push(homeworkShare(status, assigned));
