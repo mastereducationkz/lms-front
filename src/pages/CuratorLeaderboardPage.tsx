@@ -52,6 +52,8 @@ import { useLocale, useT } from '../lib/i18n/react';
 import ExamSectionCell from '../components/curator/ExamSectionCell';
 import { NUET_SECTION_MAX } from '../lib/examSection';
 import '@/lib/i18n/catalogs/attendance';
+import { WeeklyScoreButton, WeeklyScoreExplainer } from '../components/leaderboard/WeeklyScore';
+import { groupHasTest, isRetiredColumn, weeklyScore, withoutRetiredColumns } from '../lib/leaderboardScore';
 
 interface HomeworkMeta {
     id: number;
@@ -144,6 +146,8 @@ interface StudentRow {
     // Manual fields
     curator_hour: number;
     mock_exam: number;
+    /** The test part of the weekly %: platform score, else a manual one above 0, else null. */
+    test_percent?: number | null;
     sat_math_correct_count?: number | null;
     sat_math_total_count?: number | null;
     sat_math_scaled_score?: number | null;
@@ -957,94 +961,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const lessonHwStatuses = (ls?: StudentLessonStatus | null): HomeworkStatus[] =>
     ls?.homework_statuses ?? (ls?.homework_status ? [ls.homework_status] : []);
 
-  // Normalized HW contribution: score/max × 10 so a 30-point HW weighs the
-  // same as a 10-point one. Max comes from the submission, falling back to
-  // the assignment meta; a missing/zero max contributes nothing.
-  const hwContribution = (lessonKey: string, hw: HomeworkStatus) => {
-    if (!hw || hw.score === null || hw.score === undefined) return 0;
-    const metaHws = lessonHomeworks(data?.lessons.find(l => l.lesson_number.toString() === lessonKey));
-    const metaMax = metaHws.find(m => m.id === hw.assignment_id)?.max_score ?? metaHws[0]?.max_score;
-    const max = hw.max_score ?? metaMax ?? 0;
-    if (!max || max <= 0) return 0;
-    return (hw.score / max) * MAX_SCORES.homework;
-  };
-
-  const calculateTotal = (student: StudentRow) => {
-    if (!data) return 0;
-
-    // Sum HW and Attendance from dynamic lessons
-    let lessonsTotal = 0;
-    Object.entries(student.lessons).forEach(([lessonKey, lesson]) => {
-        // Attendance
-        if (lesson.attendance_status === 'attended') {
-            lessonsTotal += MAX_SCORES.attendance;
-        }
-        // Homework — each homework of the lesson is normalized to MAX_SCORES.homework
-        lessonHwStatuses(lesson).forEach(hw => {
-            lessonsTotal += hwContribution(lessonKey, hw);
-        });
-    });
-
-    // Manual Columns
-    const curatorHour = enabledCols.curator_hour ? student.curator_hour : 0;
-    const mockExam = student.mock_exam; // Always enabled logic-wise
-    const studyBuddy = enabledCols.study_buddy ? student.study_buddy : 0;
-    const journal = enabledCols.self_reflection_journal ? student.self_reflection_journal : 0;
-    const weeklyEval = enabledCols.weekly_evaluation ? student.weekly_evaluation : 0;
-    const extraPoints = enabledCols.extra_points ? student.extra_points : 0;
-
-    const total = lessonsTotal + curatorHour + mockExam + studyBuddy + journal + weeklyEval + extraPoints;
-    return Math.round(total * 10) / 10;
-  };
-  
-  const calculatePercent = (student: StudentRow) => {
-      if (!data) return 0;
-      const total = calculateTotal(student);
-      
-      // Each assigned HW is worth MAX_SCORES.homework in the denominator;
-      // unsubmitted HW stays in the denominator (it was assigned).
-      let maxLessons = 0;
-      data.lessons.forEach(meta => {
-          maxLessons += MAX_SCORES.attendance; // 10
-          maxLessons += lessonHomeworks(meta).length * MAX_SCORES.homework; // 10 each, normalized
-      });
-      
-      let maxForWeek = maxLessons + MAX_SCORES.mock_exam;
-      if (enabledCols.curator_hour) maxForWeek += MAX_SCORES.curator_hour;
-      if (enabledCols.study_buddy) maxForWeek += MAX_SCORES.study_buddy;
-      if (enabledCols.self_reflection_journal) maxForWeek += MAX_SCORES.self_reflection_journal;
-      if (enabledCols.weekly_evaluation) maxForWeek += MAX_SCORES.weekly_evaluation;
-      // extra_points NOT added to maxForWeek
-
-      // Cancelled lessons are excluded from the attendance denominator so a
-      // cancelled lesson never drags a student's percentage down.
-      const cancelledLessons = Object.values(student.lessons).filter(
-          l => l.attendance_status === 'cancelled'
-      ).length;
-      maxForWeek -= cancelledLessons * MAX_SCORES.attendance;
-
-      // Lessons that predate the student's join date (enrolled === false) aren't
-      // theirs — drop both their attendance and their homework from the
-      // denominator so early lessons never tank a late-added student's %.
-      // Past unmarked lessons (marked === false) are "no data", not an absence —
-      // drop only their attendance from the denominator until someone marks them
-      // (homework submission is independent of attendance, so it stays).
-      Object.entries(student.lessons).forEach(([lessonKey, l]) => {
-          const meta = data.lessons.find(m => m.lesson_number.toString() === lessonKey);
-          if (l.enrolled === false || l.frozen || l.blocked) {
-              // A frozen lesson is not theirs either: counting it would make a freeze look
-              // like a collapse in attendance, and the weeks they actually studied would be
-              // dragged down by the weeks they were away.
-              maxForWeek -= MAX_SCORES.attendance;
-              maxForWeek -= lessonHomeworks(meta).length * MAX_SCORES.homework;
-          } else if (l.marked === false && meta && !isAttendanceLockedLesson(meta.start_datetime)) {
-              maxForWeek -= MAX_SCORES.attendance;
-          }
-      });
-
-      if (maxForWeek <= 0) return 0;
-      return Math.round((total / maxForWeek) * 100); 
-  };
+  // Weekly % = Attendance 40 / Homework 40 / Test 20 (see lib/leaderboardScore.ts). A test "exists"
+  // for the whole group once any one student has a score.
+  const testHeld = data ? groupHasTest(data.students) : false;
+  const scoreOf = (student: StudentRow) =>
+    weeklyScore({ lessons: data?.lessons ?? [], student, testHeld, isLocked: isAttendanceLockedLesson });
 
   const getPercentColor = (percent: number) => {
       if (percent >= 90) return "bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300";
@@ -1327,7 +1248,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 if (student.self_reflection_journal !== null && student.self_reflection_journal !== undefined) entryData.self_reflection_journal = student.self_reflection_journal;
                 if (student.weekly_evaluation !== null && student.weekly_evaluation !== undefined) entryData.weekly_evaluation = student.weekly_evaluation;
                 if (student.extra_points !== null && student.extra_points !== undefined) entryData.extra_points = student.extra_points;
-                entryUpdates.push(entryData);
+                entryUpdates.push(withoutRetiredColumns(entryData));
             }
         }
 
@@ -1922,7 +1843,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     })}
                     
                     {/* Ручные кураторские колонки не показываем учителям — их зона это уроки и тесты */}
-                    {!isTeacher && (
+                    {!isTeacher && !isRetiredColumn('curator_hour') && (
                     <TableHead
                         className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.curator_hour && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('curator_hour')}
@@ -1970,7 +1891,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight"><span className="whitespace-pre-line">{t('attendance.columns.mockExam')}</span></TableHead>
                     )}
                     {!isTeacher && (<>
-                    <TableHead
+                    {!isRetiredColumn('study_buddy') && (<TableHead
                         className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.study_buddy && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('study_buddy')}
                         title={enabledCols.study_buddy ? t('attendance.columns.clickToHide') : t('attendance.columns.clickToShow')}
@@ -1982,8 +1903,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 : <EyeOff className="w-3 h-3 text-muted-foreground absolute top-1 right-1" />
                             }
                         </div>
-                    </TableHead>
-                    <TableHead 
+                    </TableHead>)}
+                    {!isRetiredColumn('self_reflection_journal') && (<TableHead 
                         className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.self_reflection_journal && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('self_reflection_journal')}
                         title={enabledCols.self_reflection_journal ? t('attendance.columns.clickToHide') : t('attendance.columns.clickToShow')}
@@ -1995,8 +1916,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 : <EyeOff className="w-3 h-3 text-muted-foreground absolute top-1 right-1" />
                             }
                         </div>
-                    </TableHead>
-                    <TableHead 
+                    </TableHead>)}
+                    {!isRetiredColumn('weekly_evaluation') && (<TableHead 
                         className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.weekly_evaluation && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('weekly_evaluation')}
                         title={enabledCols.weekly_evaluation ? t('attendance.columns.clickToHide') : t('attendance.columns.clickToShow')}
@@ -2008,8 +1929,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 : <EyeOff className="w-3 h-3 text-muted-foreground absolute top-1 right-1" />
                             }
                         </div>
-                    </TableHead>
-                    <TableHead 
+                    </TableHead>)}
+                    {!isRetiredColumn('extra_points') && (<TableHead 
                         className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.extra_points && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('extra_points')}
                         title={enabledCols.extra_points ? t('attendance.columns.clickToHide') : t('attendance.columns.clickToShow')}
@@ -2021,16 +1942,15 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 : <EyeOff className="w-3 h-3 text-muted-foreground absolute top-1 right-1" />
                             }
                         </div>
-                    </TableHead>
+                    </TableHead>)}
                     </>)}
 
-                    <TableHead className="text-center font-bold p-2 w-16 text-foreground dark:text-foreground bg-muted dark:bg-secondary border-r border-border align-middle">{t('attendance.columns.total')}</TableHead>
-                    <TableHead className="text-center font-bold p-2 w-16 md:sticky md:right-0 z-40 bg-muted dark:bg-secondary align-middle md:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">%</TableHead>
+                    <TableHead className="text-center font-bold p-2 w-16 md:sticky md:right-0 z-40 bg-muted dark:bg-secondary align-middle md:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]"><span className="inline-flex items-center gap-0.5">%<WeeklyScoreExplainer /></span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.students.map((student, index) => {
-                    const percent = calculatePercent(student);
+                    const score = scoreOf(student);
                     return (
                     <TableRow key={student.student_id} className="hover:bg-brand-surface/50 dark:hover:bg-secondary/50 border-b border-border h-16">
                         <TableCell className="p-2 sticky left-0 z-30 bg-card dark:bg-card border-r border-border">
@@ -2341,7 +2261,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             );
                         })}
 
-                        {!isTeacher && (
+                        {!isTeacher && !isRetiredColumn('curator_hour') && (
                         <TableCell className={cn("p-0 border-r border-border h-16", !enabledCols.curator_hour && "bg-muted dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.curator_hour} max={MAX_SCORES.curator_hour} onChange={(v) => handleManualScoreChange(student.student_id, 'curator_hour', v)} disabled={isTeacher} />
                         </TableCell>
@@ -2462,7 +2382,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             </TableCell>
                         )}
                         {!isTeacher && (<>
-                        <TableCell className={cn("p-0 border-r border-border", !enabledCols.study_buddy && "bg-muted dark:bg-secondary opacity-50 pointer-events-none")}>
+                        {!isRetiredColumn('study_buddy') && (<TableCell className={cn("p-0 border-r border-border", !enabledCols.study_buddy && "bg-muted dark:bg-secondary opacity-50 pointer-events-none")}>
                             <div className="h-16 w-full">
                                 <AttendanceToggle
                                     initialStatus={student.study_buddy === 15 ? 'attended' : 'absent'}
@@ -2470,26 +2390,23 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     disabled={isTeacher}
                                 />
                             </div>
-                        </TableCell>
-                        <TableCell className={cn("p-0 border-r border-border", !enabledCols.self_reflection_journal && "bg-muted dark:bg-secondary opacity-50 pointer-events-none")}>
+                        </TableCell>)}
+                        {!isRetiredColumn('self_reflection_journal') && (<TableCell className={cn("p-0 border-r border-border", !enabledCols.self_reflection_journal && "bg-muted dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.self_reflection_journal} max={MAX_SCORES.self_reflection_journal} onChange={(v) => handleManualScoreChange(student.student_id, 'self_reflection_journal', v)} disabled={isTeacher} />
-                        </TableCell>
-                        <TableCell className={cn("p-0 border-r border-border", !enabledCols.weekly_evaluation && "bg-muted dark:bg-secondary opacity-50 pointer-events-none")}>
+                        </TableCell>)}
+                        {!isRetiredColumn('weekly_evaluation') && (<TableCell className={cn("p-0 border-r border-border", !enabledCols.weekly_evaluation && "bg-muted dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.weekly_evaluation} max={MAX_SCORES.weekly_evaluation} onChange={(v) => handleManualScoreChange(student.student_id, 'weekly_evaluation', v)} disabled={isTeacher} />
-                        </TableCell>
-                        <TableCell className={cn("p-0 border-r border-border", !enabledCols.extra_points && "bg-muted dark:bg-secondary opacity-50 pointer-events-none")}>
+                        </TableCell>)}
+                        {!isRetiredColumn('extra_points') && (<TableCell className={cn("p-0 border-r border-border", !enabledCols.extra_points && "bg-muted dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.extra_points} max={10} onChange={(v) => handleManualScoreChange(student.student_id, 'extra_points', v)} disabled={isTeacher} />
-                        </TableCell>
+                        </TableCell>)}
                         </>)}
 
-                        <TableCell className="p-2 text-center font-semibold text-foreground dark:text-foreground border-r border-border bg-card dark:bg-card">
-                            {calculateTotal(student)}
-                        </TableCell>
                          <TableCell className={cn(
                              "p-2 text-center font-bold md:sticky md:right-0 z-30 md:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]",
-                             getPercentColor(percent)
+                             score.percent === null ? "bg-muted text-muted-foreground" : getPercentColor(score.percent)
                          )}>
-                            {percent}%
+                            <WeeklyScoreButton score={score} studentName={student.student_name} />
                         </TableCell>
                     </TableRow>
                     );
