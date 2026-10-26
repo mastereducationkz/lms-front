@@ -101,6 +101,8 @@ export const attendance = {
   'attendance.columns.journal': 'Journal',
   'attendance.columns.weeklyEvaluation': 'Weekly\nevaluation',
   'attendance.columns.extra': 'Extra',
+  'attendance.view.leaderboard': 'Leaderboard',
+  'attendance.view.substitutions': 'Substitutions',
 
   // The weekly % and the sum behind it
   'attendance.score.cellHint': 'Tap to see how this % is made',

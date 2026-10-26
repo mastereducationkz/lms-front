@@ -93,6 +93,8 @@ export const attendance: RuTable<typeof en> = {
   'attendance.columns.journal': 'Журнал',
   'attendance.columns.weeklyEvaluation': 'Ежен.\nоценка',
   'attendance.columns.extra': 'Доп.',
+  'attendance.view.leaderboard': 'Лидерборд',
+  'attendance.view.substitutions': 'Замены',
 
   // Недельный % и сумма за ним
   'attendance.score.cellHint': 'Нажмите, чтобы увидеть, из чего сложился %',

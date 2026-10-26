@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { cn } from '../lib/utils';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/attendance';
 import { useAttendanceOwed } from '../hooks/useAttendanceOwed';
 import { registersOwed } from '../lib/attendanceOwed';
 import { AttendanceBanner } from '../components/attendance/AttendanceBanner';
@@ -14,10 +16,11 @@ import SubstitutionAttendancePanel from './SubstitutionAttendancePanel';
 export default function AttendancePage() {
   const [view, setView] = useState<'leaderboard' | 'substitutions'>('leaderboard');
   const { owed } = useAttendanceOwed();
+  const t = useT();
 
   const toggle = (
     <div className="inline-flex max-w-full rounded-lg border border-border p-0.5 bg-muted dark:bg-secondary">
-      {([['leaderboard', 'Leaderboard'], ['substitutions', 'Substitutions']] as const).map(([key, label]) => (
+      {([['leaderboard', t('attendance.view.leaderboard')], ['substitutions', t('attendance.view.substitutions')]] as const).map(([key, label]) => (
         <button
           key={key}
           className={cn(
