@@ -163,8 +163,23 @@ export function dayIndex(now: number, userId: number | string): number {
   return Math.abs(d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate() + who);
 }
 
-/** The coach's note for today: one of three per phase, stable through the day. */
-export function coachNote(noteKey: string, now: number, userId: number | string, locale: Locale = activeLocale()): string {
+/**
+ * A news night the coach talks about instead of the rotating note (owner, 2026-10-27: Harry Kane won the
+ * Ballon d'Or the night before). Only while the Final is still ahead and before the eve; it ends on its
+ * own at `until` (Almaty), no deploy needed.
+ */
+const COACH_NEWS = [
+  { key: 'kane', until: Date.parse('2026-10-30T00:00:00+05:00'), phases: ['warmup', 'season', 'finalWeek'] },
+];
+
+/** The coach's note for today: a news night while one runs, else one of three per phase, stable through the day. */
+export function coachNote(
+  noteKey: string, now: number, userId: number | string, locale: Locale = activeLocale(), daysToExam?: number | null,
+): string {
+  const news = COACH_NEWS.find((n) => now < n.until && n.phases.includes(noteKey));
+  if (news && daysToExam != null && daysToExam > 0) {
+    return t(`studentHome.league.news.${news.key}` as MessageKey, { count: daysToExam }, locale);
+  }
   const n = (dayIndex(now, userId) % 3) + 1;
   return t(`studentHome.league.note.${noteKey}.${n}` as MessageKey, undefined, locale);
 }
