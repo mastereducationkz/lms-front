@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Trash2, GripVertical, BookOpen, FileText, MessageSquare, Link as LinkIcon, FileSearch, Mic, Star, ClipboardList } from 'lucide-react';
+import { Trash2, GripVertical, BookOpen, FileText, MessageSquare, Link as LinkIcon, FileSearch, Mic, Star, ClipboardList, FileCheck2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader } from '../ui/card';
 import { Label } from '../ui/label';
@@ -14,12 +14,16 @@ import LinkTaskEditor from './LinkTaskEditor';
 import FileUploadEditor from './FileUploadEditor';
 import PdfTextTaskEditor from './PdfTextTaskEditor';
 import { AnswerKeyEditor } from './AnswerKeyEditor';
+import PastPaperTaskEditor from './PastPaperTaskEditor';
+import { usePastPaperCatalog } from '../../hooks/usePastPaperCatalog';
+import { PAST_PAPER_TASK_TYPE } from '../../lib/pastPapers';
 import '@/lib/i18n/catalogs/teacher';
 import '@/lib/i18n/catalogs/homeworkStaff';
+import '@/lib/i18n/catalogs/pastPapers';
 
 interface Task {
   id: string;
-  task_type: 'course_unit' | 'file_task' | 'text_task' | 'link_task' | 'pdf_text_task' | 'audio_task' | 'bluebook_task';
+  task_type: 'course_unit' | 'file_task' | 'text_task' | 'link_task' | 'pdf_text_task' | 'audio_task' | 'bluebook_task' | 'sat_past_paper_task';
   title: string;
   description?: string;
   order_index: number;
@@ -33,6 +37,9 @@ interface MultiTaskEditorProps {
   content: any;
   onContentChange: (content: any) => void;
   assignmentId?: string;
+  /** The groups the homework goes to: the past-paper picker counts who already did each paper there. */
+  groupIds?: number[];
+  groupNames?: Record<number, string>;
 }
 
 const TASK_TYPES = [
@@ -42,15 +49,19 @@ const TASK_TYPES = [
   { value: 'link_task', label: 'homeworkStaff.taskType.link', icon: LinkIcon, description: 'homeworkStaff.taskType.linkHint' },
   { value: 'pdf_text_task', label: 'homeworkStaff.taskType.pdfText', icon: FileSearch, description: 'homeworkStaff.taskType.pdfTextHint' },
   { value: 'audio_task', label: 'homeworkStaff.taskType.audio', icon: Mic, description: 'homeworkStaff.taskType.audioHint' },
-  { value: 'bluebook_task', label: 'homeworkStaff.taskType.bluebook', icon: ClipboardList, description: 'homeworkStaff.taskType.bluebookHint' }
+  { value: 'bluebook_task', label: 'homeworkStaff.taskType.bluebook', icon: ClipboardList, description: 'homeworkStaff.taskType.bluebookHint' },
+  // Offered only while the SAT past-paper switch is on (the catalog says so); a stored task keeps rendering.
+  { value: PAST_PAPER_TASK_TYPE, label: 'pastPapers.taskType.label', icon: FileCheck2, description: 'pastPapers.taskType.hint' }
 ] as const;
 
 // College Board publishes practice tests 4-11 in Bluebook. Enforced again server-side:
 // the selector is a convenience, not a security boundary.
 const BLUEBOOK_TEST_NUMBERS = [4, 5, 6, 7, 8, 9, 10, 11];
 
-export default function MultiTaskEditor({ content, onContentChange, assignmentId }: MultiTaskEditorProps) {
+export default function MultiTaskEditor({ content, onContentChange, assignmentId, groupIds, groupNames }: MultiTaskEditorProps) {
   const tr = useT();
+  const paperCatalog = usePastPaperCatalog(groupIds);
+  const pastPapersEnabled = paperCatalog.catalog?.enabled === true;
   const [tasks, setTasks] = useState<Task[]>(content.tasks || []);
   const [instructions, setInstructions] = useState(content.instructions || '');
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -232,6 +243,22 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
             </div>
           </div>
         );
+      case PAST_PAPER_TASK_TYPE:
+        return (
+          <PastPaperTaskEditor
+            content={task.content}
+            catalogState={paperCatalog}
+            groupIds={groupIds}
+            groupNames={groupNames}
+            onContentChange={(next) =>
+              // The task name follows the paper while the teacher has not typed one of their own.
+              updateTask(index, {
+                content: next,
+                ...(!task.title.trim() || task.title === task.content?.paper_title ? { title: next.paper_title ?? '' } : {}),
+              })
+            }
+          />
+        );
       default:
         return <div>{tr('homeworkStaff.multi.unknownType')}</div>;
     }
@@ -353,12 +380,14 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
               </CardHeader>
               <CardContent>
                 {renderTaskEditor(task, index)}
-                <AnswerKeyEditor
-                  answerKeys={task.answer_keys || []}
-                  onChange={(answer_keys) => updateTask(index, { answer_keys })}
-                  assignmentId={assignmentId}
-                  taskId={task.id}
-                />
+                {task.task_type !== PAST_PAPER_TASK_TYPE && (
+                  <AnswerKeyEditor
+                    answerKeys={task.answer_keys || []}
+                    onChange={(answer_keys) => updateTask(index, { answer_keys })}
+                    assignmentId={assignmentId}
+                    taskId={task.id}
+                  />
+                )}
               </CardContent>
             </Card>
           );
@@ -370,7 +399,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
         <CardContent className="pt-6">
           <Label className="mb-3 block">{tr('homeworkStaff.multi.addTask')}</Label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {TASK_TYPES.map(taskType => {
+            {TASK_TYPES.filter(taskType => taskType.value !== PAST_PAPER_TASK_TYPE || pastPapersEnabled).map(taskType => {
               const Icon = taskType.icon;
               const isCourseUnit = taskType.value === 'course_unit';
               const courseUnitTaken = isCourseUnit && tasks.some(t => t.task_type === 'course_unit');

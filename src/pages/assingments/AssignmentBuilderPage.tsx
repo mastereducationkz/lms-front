@@ -31,10 +31,12 @@ import { prepareTeacherGroupList } from '../../lib/groupList';
 import { fetchGroupClasses, type ClassesState } from '../../lib/groupClasses';
 import { ClassPicker } from '../../components/homework/ClassPicker';
 import { taskUploadMessage } from '../../lib/uploadFailure';
+import { pastPaperDueDateMissing } from '../../lib/pastPapers';
 import { createUploadCache } from '../../lib/uploadOnce';
 import { formatDateTime, formatNumber } from '../../lib/i18n';
 import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/homeworkStaff';
+import '@/lib/i18n/catalogs/pastPapers';
 
 interface AssignmentFormData {
   title: string;
@@ -388,6 +390,13 @@ export default function AssignmentBuilderPage() {
       return;
     }
 
+    // SAT hides a paper's answer keys until the deadline, so a homework with a past paper must have one.
+    if (formData.assignment_type === 'multi_task' && pastPaperDueDateMissing(formData, formData.content?.tasks)) {
+      setError(t('pastPapers.builder.dueDateRequired'));
+      setLoading(false);
+      return;
+    }
+
     try {
       // Handle file uploads based on assignment type
       let finalContent = { ...formData.content };
@@ -561,12 +570,16 @@ export default function AssignmentBuilderPage() {
     }
   };
 
+  const groupNames = Object.fromEntries(groups.map((g) => [Number(g.id), String(g.name ?? '')])) as Record<number, string>;
+
   const renderAssignmentTypeEditor = () => {
     if (formData.assignment_type === 'multi_task') {
       return <MultiTaskEditor
         content={formData.content}
         onContentChange={handleContentChange}
         assignmentId={isEditing ? assignmentId : undefined}
+        groupIds={formData.group_ids}
+        groupNames={groupNames}
       />;
     }
 
