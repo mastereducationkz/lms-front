@@ -28,7 +28,7 @@ export function PendingExcuseDot({ onExcuse, label, className }: {
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(true); }}
-        className={cn(label ? '' : 'absolute left-1 top-1 h-2.5 w-2.5 rounded-full border border-muted-foreground/60 bg-transparent', className)}
+        className={cn(label ? '' : 'absolute left-1 top-1 h-2.5 w-2.5 rounded-full border border-muted-foreground/60 bg-transparent before:absolute before:-inset-2 before:content-[""] md:before:hidden', className)}
         title={t('attendance.excuse.markTitle')}
         aria-label={label ? undefined : t('attendance.excuse.markAria')}
       >
@@ -64,7 +64,7 @@ export function HeldBackButton({ eventId, onByHand, onNamed, className }: {
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(true); }}
-        className={className ?? 'absolute bottom-0 right-0 rounded-tl bg-amber-500 px-1 text-[9px] font-bold leading-3 text-white hover:bg-amber-600'}
+        className={className ?? 'absolute left-0 top-0 max-w-[58%] rounded-br bg-amber-500 px-1 text-left text-[9px] font-bold leading-3 text-white hover:bg-amber-600 md:bottom-0 md:left-auto md:right-0 md:top-auto md:max-w-none md:rounded-br-none md:rounded-tl'}
       >
         {t('attendance.who.button')}
       </button>

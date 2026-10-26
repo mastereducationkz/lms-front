@@ -367,7 +367,7 @@ const AttendanceToggle = ({
                 // teachers actually use. Always visible, never hover-only: the grid is dense
                 // and a hidden icon is a feature nobody finds.
                 className={cn(
-                    "shrink-0 h-2.5 w-2.5 rounded-full ring-1 ring-white/80 dark:ring-card/80 pointer-events-auto",
+                    "relative shrink-0 h-2.5 w-2.5 rounded-full ring-1 ring-white/80 dark:ring-card/80 pointer-events-auto before:absolute before:-inset-2 before:content-[''] md:before:hidden",
                     excused ? "bg-rose-600" : "bg-transparent border border-white/80"
                 )}
                 title={excused
@@ -562,7 +562,7 @@ const MarkdownContent = ({ children }: { children: string }) => {
     i++
   }
 
-  return <div className="space-y-0.5">{elements}</div>
+  return <div className="space-y-0.5 break-words">{elements}</div>
 }
 
 export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: { embedded?: boolean; titleSlot?: React.ReactNode } = {}) {
@@ -1526,14 +1526,14 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       {/* Header Controls */}
       <div className="flex flex-col gap-3 border-b pb-4 dark:border-border">
         {/* Row 1: title (or the wrapper's view toggle) + save */}
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           {titleSlot ?? <h1 className="text-xl font-semibold text-foreground dark:text-foreground">{t('attendance.header.title')}</h1>}
           <Button
               onClick={() => void handleSaveChanges()}
               disabled={(!configChanged && changedEntries.size === 0) || isSaving}
               size="sm"
               className={cn(
-                  "h-8 transition-colors rounded-md font-medium",
+                  "h-9 sm:h-8 ml-auto transition-colors rounded-md font-medium",
                   (configChanged || changedEntries.size > 0) ? "bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-600" : "bg-muted text-muted-foreground dark:bg-secondary"
               )}
           >
@@ -1552,7 +1552,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     value={programFilter}
                     onValueChange={(value) => setProgramFilter(value as 'all' | CourseType)}
                 >
-                    <SelectTrigger className="h-8 w-[130px] rounded-md border-border text-xs">
+                    <SelectTrigger className="h-9 sm:h-8 w-[130px] rounded-md border-border text-xs">
                         <SelectValue placeholder={t('attendance.filters.subject')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -1569,7 +1569,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         <PopoverTrigger asChild>
                             <button
                                 type="button"
-                                className="flex h-8 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 text-xs"
+                                className="flex h-9 sm:h-8 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 text-xs"
                             >
                                 <span className="truncate">
                                     {(() => {
@@ -1580,14 +1580,14 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
                             </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[min(300px,calc(100vw-2rem))] md:w-[360px] p-0" align="start">
+                        <PopoverContent className="flex max-h-[var(--radix-popover-content-available-height)] w-[min(300px,calc(100vw-2rem))] flex-col md:w-[360px] p-0" align="start" collisionPadding={8}>
                             <div className="p-2 border-b border-border">
                                 <Input
                                     autoFocus
                                     value={groupQuery}
                                     onChange={(e) => setGroupQuery(e.target.value)}
                                     placeholder={t('attendance.picker.search')}
-                                    className="h-8 text-xs"
+                                    className="h-9 sm:h-8 text-base md:text-xs"
                                 />
                             </div>
                             <div className="flex items-center justify-between px-3 py-1 border-b border-border">
@@ -1595,7 +1595,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     {t('common.groups', { count: groupMatches.length })}
                                 </span>
                             </div>
-                            <div className="max-h-72 overflow-y-auto py-0.5">
+                            <div className="min-h-0 max-h-72 overflow-y-auto py-0.5">
                                 {groupMatches.length === 0 ? (
                                     <div className="px-3 py-3 text-xs text-muted-foreground text-center">
                                         {t('attendance.picker.nothingFound')}
@@ -1672,20 +1672,20 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
 
             {/* Week navigation */}
             {selectedGroupId && (
-                <div className="flex items-center gap-2 shrink-0">
-                    <div className="flex items-stretch rounded-lg border border-border overflow-hidden bg-card dark:bg-card">
+                <div className="flex flex-wrap items-center gap-2 @4xl:shrink-0">
+                    <div className="flex shrink-0 items-stretch rounded-lg border border-border overflow-hidden bg-card dark:bg-card">
                         <button
                             type="button"
                             onClick={() => setCurrentWeek(Math.max(1, currentWeek - 1))}
                             disabled={currentWeek <= 1}
                             title={currentWeek <= 1 ? t('attendance.week.first') : t('attendance.week.previous')}
-                            className="flex w-8 items-center justify-center border-r border-border text-muted-foreground hover:bg-muted/60 disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="flex w-9 sm:w-8 items-center justify-center border-r border-border text-muted-foreground hover:bg-muted/60 disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
 
                         <Select value={currentWeek.toString()} onValueChange={(val) => setCurrentWeek(parseInt(val))}>
-                            <SelectTrigger className="h-auto min-w-[150px] gap-2 border-none rounded-none px-3 py-1 focus:ring-0 shadow-none bg-transparent hover:bg-muted/60">
+                            <SelectTrigger className="h-auto min-w-[140px] sm:min-w-[150px] gap-2 [&>span]:line-clamp-none border-none rounded-none px-3 py-1 focus:ring-0 shadow-none bg-transparent hover:bg-muted/60">
                                 <SelectValue>
                                     <div className="flex flex-col items-center leading-tight text-center">
                                         <span className="text-xs font-semibold text-foreground dark:text-foreground">
@@ -1715,7 +1715,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             onClick={() => setCurrentWeek(Math.min(maxWeek, currentWeek + 1))}
                             disabled={currentWeek >= maxWeek}
                             title={currentWeek >= maxWeek ? t('attendance.week.last') : t('attendance.week.next')}
-                            className="flex w-8 items-center justify-center border-l border-border text-muted-foreground hover:bg-muted/60 disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="flex w-9 sm:w-8 items-center justify-center border-l border-border text-muted-foreground hover:bg-muted/60 disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>
@@ -1725,7 +1725,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 text-xs"
+                            className="h-9 sm:h-8 text-xs"
                             onClick={() => setCurrentWeek(realCurrentWeek)}
                             title={t('attendance.week.goToCurrent')}
                         >
@@ -1735,7 +1735,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
 
                     {isIeltsGroup && (
                         <label
-                            className="flex items-center gap-1.5 rounded-lg border border-border bg-card dark:bg-card px-2 h-8 cursor-pointer select-none"
+                            className="flex items-center gap-1.5 rounded-lg border border-border bg-card dark:bg-card px-2 h-9 sm:h-8 cursor-pointer select-none"
                             title={t('attendance.platformTests.title')}
                         >
                             <input
@@ -1751,7 +1751,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     )}
                     {isNuetGroup && (
                         <div
-                            className="flex items-center gap-1.5 rounded-lg border border-border bg-card dark:bg-card px-2 h-8"
+                            className="flex items-center gap-1.5 rounded-lg border border-border bg-card dark:bg-card px-2 h-9 sm:h-8"
                             title={t('attendance.nuetOffset.title')}
                         >
                             <span className="text-[10px] text-muted-foreground whitespace-nowrap">{t('attendance.nuetOffset.label')}</span>
@@ -1873,7 +1873,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                         <Link
                                             to={lessonPath(lesson.event_id)}
                                             onClick={(e) => e.stopPropagation()}
-                                            className="absolute top-1 right-1 p-1 text-muted-foreground hover:text-brand"
+                                            className="absolute top-0.5 right-0.5 p-1.5 md:top-1 md:right-1 md:p-1 text-muted-foreground hover:text-brand"
                                             title={t('attendance.grid.openLesson')}
                                             aria-label={t('attendance.grid.openLesson')}
                                         >
@@ -1883,7 +1883,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     {canMarkAttendance && (
                                         <button
                                             type="button"
-                                            className="absolute top-1 right-6 p-1 text-muted-foreground hover:text-brand opacity-100 md:opacity-0 md:group-hover/lesson:opacity-100 transition-opacity"
+                                            className="absolute top-0.5 right-7 p-1.5 md:top-1 md:right-6 md:p-1 text-muted-foreground hover:text-brand opacity-100 md:opacity-0 md:group-hover/lesson:opacity-100 transition-opacity"
                                             title={t('attendance.grid.lessonTopic')}
                                             onClick={(e) => { e.stopPropagation(); setTopicModal({ open: true, lesson, value: lesson.topic ?? '' }); }}
                                         >
@@ -2041,12 +2041,18 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     type="button"
                                     onClick={() => setStudentHwModal({ open: true, studentId: student.student_id, studentName: student.student_name })}
                                     title={t('attendance.row.allHomework', { name: student.student_name })}
-                                    className="group flex items-center gap-1 truncate max-w-[84px] md:max-w-[150px] font-medium text-foreground dark:text-foreground hover:text-brand hover:underline transition-colors"
+                                    className={cn(
+                                        "group flex min-w-0 max-w-[112px] md:max-w-[150px] flex-col items-start gap-0.5 text-left text-[11px] md:text-xs font-medium text-foreground dark:text-foreground hover:text-brand hover:underline transition-colors",
+                                        !student.freeze?.is_frozen && "md:flex-row md:items-center md:gap-1"
+                                    )}
                                 >
-                                    <span className="truncate">{student.student_name}</span>
+                                    <span className="flex min-w-0 max-w-full items-center gap-1">
+                                        <span className={cn("min-w-0 break-words leading-tight md:block md:truncate", student.freeze?.is_frozen ? "line-clamp-2" : "line-clamp-3")}>{student.student_name}</span>
+                                        <ClipboardList className="w-3 h-3 shrink-0 text-muted-foreground/50 group-hover:text-brand " />
+                                    </span>
                                     {student.freeze?.is_frozen && (
                                         <span
-                                            className="ml-1 shrink-0 rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
+                                            className="max-w-full shrink-0 truncate rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
                                             title={student.freeze.planned_resume_date
                                                 ? t('attendance.row.plannedReturn', { date: student.freeze.planned_resume_date })
                                                 : undefined}
@@ -2054,7 +2060,6 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             {student.freeze.label}
                                         </span>
                                     )}
-                                    <ClipboardList className="w-3 h-3 shrink-0 text-muted-foreground/50 group-hover:text-brand " />
                                 </button>
                             </div>
                         </TableCell>
@@ -2228,7 +2233,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                 <button
                                                     type="button"
                                                     className={cn(
-                                                        "absolute bottom-0.5 right-0.5 p-1.5 rounded-full text-white transition-opacity",
+                                                        "absolute bottom-0.5 right-0.5 p-2 md:p-1.5 rounded-full text-white transition-opacity",
                                                         needsScore
                                                             ? "bg-amber-500 ring-2 ring-amber-300 opacity-100"
                                                             : "bg-black/20 hover:bg-black/35 opacity-100 md:opacity-0 md:group-hover/att:opacity-100"
@@ -2503,11 +2508,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
 
     {/* ── HW Feedback Modal ──────────────────────────────────────── */}
     <Dialog open={hwModal.open} onOpenChange={(open) => setHwModal(prev => ({ ...prev, open }))}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden max-h-[85dvh] flex flex-col">
         {/* Header */}
-        <div className="px-5 pt-5 pb-4 border-b border-border">
-          <p className="text-xs text-muted-foreground mb-0.5">{hwModal.lessonTitle}</p>
-          <h2 className="text-base font-semibold text-foreground dark:text-foreground">{hwModal.studentName}</h2>
+        <div className="px-5 pt-5 pb-4 pr-12 border-b border-border shrink-0">
+          <p className="text-xs text-muted-foreground mb-0.5 break-words">{hwModal.lessonTitle}</p>
+          <h2 className="text-base font-semibold text-foreground dark:text-foreground break-words">{hwModal.studentName}</h2>
           {hwModal.submittedAt && (
             <p className="text-xs text-muted-foreground mt-1">
               {t('attendance.hwModal.submitted', { date: formatDateTime(hwModal.submittedAt, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }, locale) })}
@@ -2517,7 +2522,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
 
         {/* Score strip */}
         {hwModal.score !== null ? (
-          <div className="flex items-center justify-between px-5 py-3 bg-green-50 dark:bg-green-900/20">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-5 py-3 bg-green-50 dark:bg-green-900/20 shrink-0">
             <span className="text-sm font-semibold text-green-700 dark:text-green-400">
               {t('attendance.hwModal.points', { score: `${hwModal.score}${hwModal.maxScore != null ? `/${hwModal.maxScore}` : ''}` })}
             </span>
@@ -2528,15 +2533,15 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             )}
           </div>
         ) : (
-          <div className="px-5 py-3 bg-gray-50 dark:bg-secondary text-xs text-muted-foreground">
+          <div className="px-5 py-3 bg-gray-50 dark:bg-secondary text-xs text-muted-foreground shrink-0">
             {t('attendance.hwModal.notGraded')}
           </div>
         )}
 
         {/* Feedback body */}
-        <div className="px-5 py-4">
+        <div className="px-5 py-4 overflow-y-auto">
           {hwModal.feedback ? (
-            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">
               {hwModal.feedback}
             </p>
           ) : (
@@ -2548,7 +2553,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
 
     {/* ── SAT Feedback Modal ─────────────────────────────────────── */}
     <Dialog open={satModal.open} onOpenChange={(open) => setSatModal(prev => ({ ...prev, open }))}>
-      <DialogContent className="sm:max-w-xl p-0 overflow-hidden max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-xl p-0 overflow-hidden max-h-[85dvh] flex flex-col">
         {/* Header */}
         <div className="px-5 pt-5 pb-4 border-b border-border shrink-0">
           <div className="flex items-center gap-2 mb-0.5">
@@ -2566,9 +2571,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
               </span>
             )}
           </div>
-          <h2 className="text-base font-semibold text-foreground dark:text-foreground">{satModal.studentName}</h2>
+          <h2 className="text-base font-semibold text-foreground dark:text-foreground break-words">{satModal.studentName}</h2>
           {satModal.testName && (
-            <p className="text-xs text-muted-foreground mt-0.5">{satModal.testName}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 break-words">{satModal.testName}</p>
           )}
         </div>
 
@@ -2642,7 +2647,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
 
     {/* ── IELTS Feedback Modal ───────────────────────────────────── */}
     <Dialog open={ieltsModal.open} onOpenChange={(open) => setIeltsModal(prev => ({ ...prev, open }))}>
-      <DialogContent className="sm:max-w-xl p-0 overflow-hidden max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-xl p-0 overflow-hidden max-h-[85dvh] flex flex-col">
         {ieltsModal.student && (() => {
           const s = ieltsModal.student;
           const bands: { label: string; value?: number | null }[] = [
@@ -2687,7 +2692,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     IELTS
                   </span>
                 </div>
-                <h2 className="text-base font-semibold text-foreground dark:text-foreground">{s.student_name}</h2>
+                <h2 className="text-base font-semibold text-foreground dark:text-foreground break-words">{s.student_name}</h2>
               </div>
 
               {/* Band strip */}
@@ -2810,7 +2815,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
                       {t('attendance.ielts.sectionFeedback', { section: f.label })}{f.testName ? ` · ${f.testName}` : ''}
                     </h3>
-                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{f.text}</p>
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">{f.text}</p>
                   </div>
                 ))}
                 {hasWritingFb && (
@@ -2822,7 +2827,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                       {writingTasks.filter(t => t.text).map(t => (
                         <div key={t.label}>
                           <p className="text-xs font-semibold text-foreground mb-1">{t.label}</p>
-                          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{t.text}</p>
+                          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">{t.text}</p>
                         </div>
                       ))}
                     </div>
@@ -2837,7 +2842,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                       {speakingCriteria.filter(c => c.text).map(c => (
                         <div key={c.label}>
                           <p className="text-xs font-semibold text-foreground mb-1">{c.label}</p>
-                          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{c.text}</p>
+                          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">{c.text}</p>
                         </div>
                       ))}
                     </div>
@@ -2862,7 +2867,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
 
     {/* Activity Score Modal */}
     <Dialog open={activityModal.open} onOpenChange={(open) => !open && setActivityModal(prev => ({ ...prev, open: false }))}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('attendance.cell.activityScore')}</DialogTitle>
         </DialogHeader>
@@ -2870,14 +2875,14 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
           <p className="text-sm text-muted-foreground">
             {t('attendance.activity.for')} <strong>{activityModal.studentName}</strong>
           </p>
-          <div className="flex flex-wrap gap-2 justify-center">
+          <div className="grid grid-cols-6 gap-2 sm:flex sm:flex-wrap sm:justify-center">
             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(score => (
               <Button
                 key={score}
                 variant={activityModal.currentScore === score ? "default" : "outline"}
                 size="sm"
                 className={cn(
-                  "w-10 h-10",
+                  "w-full sm:w-10 h-10",
                   activityModal.currentScore === score && "bg-yellow-500 hover:bg-yellow-600"
                 )}
                 onClick={() => setActivityModal(prev => ({ ...prev, currentScore: score }))}

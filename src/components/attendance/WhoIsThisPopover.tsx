@@ -37,8 +37,9 @@ export function WhoIsThisPopover({ eventId, onClose, onByHand, onNamed }: {
         <span className="absolute inset-0 pointer-events-none" />
       </PopoverAnchor>
       <PopoverContent
-        className="w-80 max-h-[70vh] overflow-y-auto p-3"
+        className="w-80 max-h-[min(70vh,var(--radix-popover-content-available-height))] overflow-y-auto p-3"
         align="start"
+        collisionPadding={8}
         onClick={(e) => e.stopPropagation()}
         onContextMenu={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}

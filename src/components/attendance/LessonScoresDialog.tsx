@@ -92,8 +92,8 @@ export default function LessonScoresDialog({ open, onOpenChange, eventId, start,
 
   return (
     <Dialog open={open} onOpenChange={(next) => !saving && onOpenChange(next)}>
-      <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-        <DialogHeader className="space-y-1 border-b border-border px-5 py-4">
+      <DialogContent className="flex max-h-[90dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogHeader className="space-y-1 border-b border-border px-5 py-4 pr-12">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Star className="h-4 w-4 text-yellow-500 dark:text-yellow-400" aria-hidden />
             {t('attendance.scores.title')}
@@ -129,7 +129,7 @@ export default function LessonScoresDialog({ open, onOpenChange, eventId, start,
                       </div>
                     </div>
                     {open_ && (
-                      <div className="flex flex-wrap gap-1" role="radiogroup" aria-label={s.name}>
+                      <div className="grid grid-cols-6 gap-1 sm:flex sm:flex-wrap" role="radiogroup" aria-label={s.name}>
                         {SCORES.map((n) => (
                           <button
                             key={n}
@@ -138,7 +138,7 @@ export default function LessonScoresDialog({ open, onOpenChange, eventId, start,
                             aria-checked={value === n}
                             onClick={() => setCurrent((prev) => new Map(prev).set(s.student_id, n))}
                             className={cn(
-                              'h-8 w-8 rounded-md border text-xs font-semibold tabular-nums transition',
+                              'h-9 w-full sm:h-8 sm:w-8 rounded-md border text-xs font-semibold tabular-nums transition',
                               value === n
                                 ? 'border-yellow-500 bg-yellow-400 text-yellow-950'
                                 : 'border-border bg-card text-foreground hover:bg-muted',
@@ -167,7 +167,7 @@ export default function LessonScoresDialog({ open, onOpenChange, eventId, start,
           )}
         </div>
 
-        <DialogFooter className="flex-row items-center gap-2 border-t border-border px-5 py-3 sm:justify-between">
+        <DialogFooter className="flex-row flex-wrap items-center gap-2 border-t border-border px-5 py-3 sm:justify-between">
           <span className="mr-auto text-xs text-muted-foreground">
             {count && count.of > 0 && t('attendance.scores.scoredCount', { scored: count.scored, total: count.of })}
             {error && students && <span className="ml-2 text-rose-600 dark:text-rose-400">{error}</span>}

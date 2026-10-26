@@ -36,8 +36,8 @@ export default function LessonMaterialsBadge({ eventId, count, role, onOpen }: P
       type="button"
       className={
         variant === 'count'
-          ? 'absolute top-1 left-1 z-10 flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold text-brand transition-colors hover:bg-brand-surface'
-          : 'absolute top-1 left-1 z-10 flex items-center gap-0.5 rounded px-1 py-0.5 text-muted-foreground opacity-100 transition-opacity hover:text-brand md:opacity-0 md:group-hover/lesson:opacity-100'
+          ? 'absolute top-0.5 left-0.5 md:top-1 md:left-1 z-10 flex items-center gap-0.5 rounded px-1.5 py-1 md:px-1 md:py-0.5 text-[10px] font-semibold text-brand transition-colors hover:bg-brand-surface'
+          : 'absolute top-0.5 left-0.5 md:top-1 md:left-1 z-10 flex items-center gap-0.5 rounded px-1.5 py-1 md:px-1 md:py-0.5 text-muted-foreground opacity-100 transition-opacity hover:text-brand md:opacity-0 md:group-hover/lesson:opacity-100'
       }
       title={label}
       aria-label={label}
@@ -70,7 +70,7 @@ export function LessonMaterialsDialog({ eventId, open, onOpenChange, onChanged }
   const t = useT();
   return (
     <Dialog open={open && eventId !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
+      <DialogContent className="max-h-[90dvh] max-w-md overflow-y-auto">
         {/* `ClassMaterialsSection` renders its own visible «Материалы урока» heading below;
             this title only supplies the dialog's accessible name, so the two don't stack. */}
         <DialogHeader className="sr-only">

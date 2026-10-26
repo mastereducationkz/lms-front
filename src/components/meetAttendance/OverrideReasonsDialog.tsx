@@ -36,25 +36,25 @@ export function OverrideReasonsDialog({ open, items, options, onCancel, onConfir
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onCancel(); }}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('meet.override.title')}</DialogTitle>
           <DialogDescription>{t('meet.override.description')}</DialogDescription>
         </DialogHeader>
-        <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1">
+        <div className="max-h-[50dvh] space-y-3 overflow-y-auto pr-1">
           {items.map((item) => {
             const reason = given.get(item.key);
             const presets = options[item.flag]?.reasons ?? [{ key: 'other', label: t('meet.reason.other') }];
             const flag = FLAG[item.flag];
             return (
               <div key={item.key} className="rounded-lg border border-border p-3">
-                <div className="text-sm font-medium text-foreground">{item.studentName} · {item.lessonLabel}</div>
+                <div className="break-words text-sm font-medium text-foreground">{item.studentName} · {item.lessonLabel}</div>
                 <div className="text-xs text-muted-foreground">{flag && t(flag)}</div>
                 <select
                   aria-label={t('meet.override.reasonFor', { name: item.studentName })}
                   value={reason?.code ?? ''}
                   onChange={(e) => set(item.key, { code: e.target.value })}
-                  className="mt-2 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                  className="mt-2 w-full rounded-md border border-border bg-background px-2 py-1.5 text-base sm:text-sm"
                 >
                   <option value="" disabled>{t('meet.override.choose')}</option>
                   {presets.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
@@ -67,7 +67,7 @@ export function OverrideReasonsDialog({ open, items, options, onCancel, onConfir
                     rows={2}
                     onChange={(e) => set(item.key, { text: e.target.value })}
                     placeholder={t('meet.override.describe')}
-                    className="mt-2 w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm"
+                    className="mt-2 w-full rounded-md border border-border bg-background px-2 py-1.5 text-base sm:text-sm"
                   />
                 )}
               </div>
@@ -76,11 +76,11 @@ export function OverrideReasonsDialog({ open, items, options, onCancel, onConfir
         </div>
         <DialogFooter className="gap-2">
           <button type="button" onClick={onCancel}
-            className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted">
+            className="rounded-lg border border-border px-3 py-2 sm:py-1.5 text-sm font-medium hover:bg-muted">
             {t('meet.override.back')}
           </button>
           <button type="button" disabled={!ready} onClick={() => onConfirm(given)}
-            className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50">
+            className="rounded-lg bg-primary px-3 py-2 sm:py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50">
             {t('meet.override.save')}
           </button>
         </DialogFooter>

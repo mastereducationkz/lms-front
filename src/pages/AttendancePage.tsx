@@ -16,12 +16,12 @@ export default function AttendancePage() {
   const { owed } = useAttendanceOwed();
 
   const toggle = (
-    <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted dark:bg-secondary">
+    <div className="inline-flex max-w-full rounded-lg border border-border p-0.5 bg-muted dark:bg-secondary">
       {([['leaderboard', 'Leaderboard'], ['substitutions', 'Substitutions']] as const).map(([key, label]) => (
         <button
           key={key}
           className={cn(
-            'px-4 py-1.5 text-sm font-semibold rounded-md transition-colors',
+            'px-2.5 sm:px-4 py-1.5 text-sm font-semibold rounded-md transition-colors',
             view === key
               ? 'bg-card text-foreground shadow-sm'
               : 'text-muted-foreground'
@@ -35,16 +35,16 @@ export default function AttendancePage() {
   );
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="sm:p-4 md:p-6">
       <AttendanceBanner handedBack={registersOwed(owed)} />
       <OwedLessonsList items={owed?.items ?? []} />
       <div className={view === 'leaderboard' ? '' : 'hidden'}>
-        <div className="p-4 bg-card rounded-lg border border-border">
+        <div className="p-2 sm:p-4 bg-card rounded-lg border border-border">
           <CuratorLeaderboardPage embedded titleSlot={toggle} />
         </div>
       </div>
       <div className={view === 'substitutions' ? '' : 'hidden'}>
-        <div className="p-4 bg-card rounded-lg border border-border space-y-4">
+        <div className="p-2 sm:p-4 bg-card rounded-lg border border-border space-y-4">
           <div className="border-b pb-4 dark:border-border">{toggle}</div>
           <SubstitutionAttendancePanel />
         </div>
