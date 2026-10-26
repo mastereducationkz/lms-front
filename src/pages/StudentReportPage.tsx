@@ -22,8 +22,10 @@ import { ArrowLeft, ArrowRight, Check, Paperclip, X } from 'lucide-react';
 import { formatNumber, type MessageKey, type TFunction } from '@/lib/i18n';
 import { useLocale, useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/studentReport';
+import '@/lib/i18n/catalogs/pastPapers';
 import { Section, fmtDate } from '../components/studentReport/ReportSection';
 import { BluebookReportSection } from '../components/studentReport/BluebookReportSection';
+import { PlatformPracticeSection } from '../components/studentReport/PlatformPracticeSection';
 
 /**
  * Полный отчёт об успеваемости студента для куратора / хэд-куратора /
@@ -59,6 +61,7 @@ const PDF_SECTIONS: { key: string; label: MessageKey; optIn?: boolean }[] = [
   { key: 'weekly', label: 'studentReport.section.weeklySatNuet' },
   { key: 'ielts', label: 'studentReport.section.weeklyIelts' },
   { key: 'bluebook', label: 'studentReport.section.bluebook' },
+  { key: 'platform_practice', label: 'pastPapers.report.section' },
   { key: 'quizzes', label: 'studentReport.section.quizzes' },
   { key: 'courses', label: 'studentReport.section.courses' },
   { key: 'attendance', label: 'studentReport.section.attendance' },
@@ -498,6 +501,9 @@ export default function StudentReportPage() {
 
       {/* Bluebook + official exams */}
       <BluebookReportSection bluebook={bluebook} exams={exams} />
+
+      {/* Practice papers from the SAT platform (estimates, never ranked) */}
+      <PlatformPracticeSection items={report.platform_practice ?? []} />
 
       {/* Quizzes */}
       {quizzes.map(course => (

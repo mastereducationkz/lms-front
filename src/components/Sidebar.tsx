@@ -156,6 +156,7 @@ function getNavigationItems(
     ['/admin/recordings', t('shell.nav.recordingsRollout'), Video, 0, ['admin', 'head_curator', 'head_teacher'], 'recordings-admin-nav', 'admin'],
     ['/exam-results', t('shell.nav.examResults'), ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'exam-results-nav', 'primary'],
     ['/bluebook-results', t('shell.nav.bluebookResults'), ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'bluebook-results-nav', 'primary'],
+    ['/past-paper-results', t('shell.nav.pastPaperResults'), ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'past-paper-results-nav', 'primary'],
     ['/admin/question-reports', t('shell.nav.questionReports'), AlertTriangle, 0, ['admin', 'head_teacher'], 'question-reports-nav', 'admin'],
     ['/curator/homeworks', t('shell.nav.homework'), FileText, 0, ['head_teacher'], 'head-homework-nav', 'primary'],
     ['/curator/leaderboard', t('shell.nav.leaderboard'), Trophy, 0, ['head_teacher'], 'head-leaderboard-nav', 'primary'],
