@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasPastPaperTask, isPastPaperOnly, pastPaperDueDateMissing, sectionTotals } from './pastPapers';
+import { firstPastPaperTaskWithoutPaper, hasPastPaperTask, isPastPaperOnly, pastPaperDueDateMissing, sectionTotals } from './pastPapers';
 
 const paper = { task_type: 'sat_past_paper_task' };
 const text = { task_type: 'text_task' };
@@ -27,5 +27,19 @@ describe('past paper homework rules', () => {
   it('adds up the sections a paper has', () => {
     expect(sectionTotals({ correct: 40, total: 54, scaled_estimate: 700 }, { correct: 30, total: 44, scaled_estimate: 650 })).toEqual({ correct: 70, total: 98 });
     expect(sectionTotals(null, { correct: 5, total: 22, scaled_estimate: null })).toEqual({ correct: 5, total: 22 });
+  });
+});
+
+describe('a past-paper task needs a paper', () => {
+  it('names the first task with none picked (1-based)', () => {
+    const picked = { task_type: 'sat_past_paper_task', content: { paper_id: 7 } };
+    expect(firstPastPaperTaskWithoutPaper([text, picked, { task_type: 'sat_past_paper_task', content: {} }])).toBe(3);
+    expect(firstPastPaperTaskWithoutPaper([{ task_type: 'sat_past_paper_task' }, picked])).toBe(1);
+  });
+
+  it('is null when every past paper has one, or there is none', () => {
+    expect(firstPastPaperTaskWithoutPaper([text, { task_type: 'sat_past_paper_task', content: { paper_id: 7 } }])).toBeNull();
+    expect(firstPastPaperTaskWithoutPaper([text])).toBeNull();
+    expect(firstPastPaperTaskWithoutPaper(undefined)).toBeNull();
   });
 });

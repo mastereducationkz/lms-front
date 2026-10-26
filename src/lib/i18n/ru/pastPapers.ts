@@ -10,6 +10,8 @@ export const pastPapers: RuTable<typeof en> = {
 
   'pastPapers.builder.dueDateRequired': 'Укажите срок сдачи: он обязателен для домашнего задания с SAT past paper, потому что платформа SAT показывает ответы только после него.',
 
+  'pastPapers.builder.paperRequired': 'Выберите пробник SAT для задания {number}.',
+
   'pastPapers.picker.search': 'Поиск по past papers',
   'pastPapers.picker.listLabel': 'SAT past papers',
   'pastPapers.picker.loading': 'Загружаем список SAT past papers…',

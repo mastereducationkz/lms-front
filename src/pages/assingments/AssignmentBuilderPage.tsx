@@ -31,7 +31,7 @@ import { prepareTeacherGroupList } from '../../lib/groupList';
 import { fetchGroupClasses, type ClassesState } from '../../lib/groupClasses';
 import { ClassPicker } from '../../components/homework/ClassPicker';
 import { taskUploadMessage } from '../../lib/uploadFailure';
-import { pastPaperDueDateMissing } from '../../lib/pastPapers';
+import { firstPastPaperTaskWithoutPaper, pastPaperDueDateMissing } from '../../lib/pastPapers';
 import { createUploadCache } from '../../lib/uploadOnce';
 import { formatDateTime, formatNumber } from '../../lib/i18n';
 import { useT } from '../../lib/i18n/react';
@@ -386,6 +386,13 @@ export default function AssignmentBuilderPage() {
         .map(gid => groups.find(g => g.id === gid)?.name || t('homeworkStaff.builder.groupFallback', { id: gid }))
         .join(', ');
       setError(t('homeworkStaff.builder.pickClassFor', { names }));
+      setLoading(false);
+      return;
+    }
+
+    const taskWithoutPaper = formData.assignment_type === 'multi_task' ? firstPastPaperTaskWithoutPaper(formData.content?.tasks) : null;
+    if (taskWithoutPaper != null) {
+      setError(t('pastPapers.builder.paperRequired', { number: taskWithoutPaper }));
       setLoading(false);
       return;
     }

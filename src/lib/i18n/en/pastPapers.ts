@@ -14,6 +14,8 @@ export const pastPapers = {
 
   'pastPapers.builder.dueDateRequired': 'Set a due date: a homework with a SAT past paper needs one, because the SAT platform shows the answers only after it.',
 
+  'pastPapers.builder.paperRequired': 'Pick a SAT past paper for task {number}.',
+
   'pastPapers.picker.search': 'Search past papers',
   'pastPapers.picker.listLabel': 'SAT past papers',
   'pastPapers.picker.loading': 'Loading the SAT past papers…',

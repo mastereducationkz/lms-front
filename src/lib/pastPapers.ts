@@ -41,3 +41,9 @@ export function sectionTotals(rw: PastPaperSection | null, math: PastPaperSectio
     { correct: 0, total: 0 },
   );
 }
+
+/** The 1-based number of the first past-paper task with no paper picked, or null when every one has a paper. */
+export function firstPastPaperTaskWithoutPaper(tasks: TaskLike[] | null | undefined): number | null {
+  const index = (tasks ?? []).findIndex((task) => isPastPaperTask(task) && task.content?.paper_id == null);
+  return index === -1 ? null : index + 1;
+}
