@@ -1,0 +1,76 @@
+import type { pastPapers as en } from '../en/pastPapers';
+import type { RuTable } from '../types';
+
+export const pastPapers: RuTable<typeof en> = {
+  'pastPapers.partial': 'Частичный',
+  'pastPapers.prediction': 'Прогноз',
+
+  'pastPapers.taskType.label': 'SAT past paper',
+  'pastPapers.taskType.hint': 'Полный пробный тест с платформы SAT',
+
+  'pastPapers.builder.dueDateRequired': 'Укажите срок сдачи: он обязателен для домашнего задания с SAT past paper, потому что платформа SAT показывает ответы только после него.',
+
+  'pastPapers.picker.search': 'Поиск по past papers',
+  'pastPapers.picker.listLabel': 'SAT past papers',
+  'pastPapers.picker.loading': 'Загружаем список SAT past papers…',
+  'pastPapers.picker.noMatch': 'По запросу ничего не найдено',
+  'pastPapers.picker.unavailable': 'Сейчас не удаётся загрузить список тестов SAT.',
+  'pastPapers.picker.retry': 'Повторить',
+  'pastPapers.picker.chooseGroups': 'Сначала выберите группы, и здесь будет видно, кто уже прошёл каждый тест.',
+  'pastPapers.picker.testDate': 'Дата теста: {date}',
+  'pastPapers.picker.alreadyDone': 'уже прошли {done} из {total}',
+  'pastPapers.picker.inProgress': 'в процессе: {count}',
+
+  'pastPapers.state.notStarted': 'Не начат',
+  'pastPapers.state.inProgress': 'В процессе',
+  'pastPapers.state.completed': 'Пройден',
+  'pastPapers.state.resetWaiting': 'Сброшен на SAT',
+
+  'pastPapers.score.estimate': '≈{score} (оценка)',
+  'pastPapers.score.rw': 'RW {correct}/{total}',
+  'pastPapers.score.math': 'Math {correct}/{total}',
+  'pastPapers.score.partial': 'Верно {correct}/{total}',
+
+  'pastPapers.card.untitled': 'SAT past paper',
+  'pastPapers.card.checking': 'Проверяем тест…',
+  'pastPapers.card.statusFailed': 'Сейчас не удаётся проверить статус теста. Открыть его всё равно можно.',
+  'pastPapers.card.retry': 'Повторить',
+  'pastPapers.card.start': 'Начать на SAT',
+  'pastPapers.card.continue': 'Продолжить на SAT',
+  'pastPapers.card.results': 'Смотреть результаты',
+  'pastPapers.card.doneBefore': 'Пройден до выдачи задания ({date})',
+  'pastPapers.card.inProgressSince': 'В процессе на платформе с {date}',
+  'pastPapers.card.resetWaiting': 'Сброшен на SAT — ждём новую попытку',
+  'pastPapers.card.cantOpen': 'Не открывается? Напишите куратору',
+  'pastPapers.card.selfSubmits': 'Это задание сдаётся само, когда вы завершите тест',
+
+  'pastPapers.review.notDone': 'Тест ещё не пройден',
+  'pastPapers.review.inProgressSince': 'Тест не завершён: в процессе на платформе с {date}',
+  'pastPapers.review.statusFailed': 'Сейчас не удаётся получить результат теста с платформы SAT.',
+  'pastPapers.review.completedOn': 'Завершён {date}',
+  'pastPapers.review.beforeAssigned': 'пройден до выдачи задания',
+  'pastPapers.review.weakest': 'Слабые темы',
+  'pastPapers.review.domainLine': '{domain}: {correct}/{total}',
+  'pastPapers.review.openFull': 'Открыть полный разбор на SAT',
+  'pastPapers.review.history': 'Прежние попытки (сброшены на SAT)',
+  'pastPapers.review.historyEstimate': '{date}: ≈{score} (оценка)',
+  'pastPapers.review.historyPartial': '{date}: верно {correct}/{total}',
+
+  'pastPapers.grid.title': 'Пробные тесты на платформе',
+  'pastPapers.grid.estimateNote': 'Баллы — оценка платформы SAT, в рейтингах они не участвуют.',
+  'pastPapers.grid.noPapers': 'Этой группе ещё не выдавали SAT past papers в домашних заданиях.',
+  'pastPapers.grid.loadFailed': 'Не удалось загрузить результаты пробных тестов.',
+  'pastPapers.grid.due': 'Срок: {date}',
+  'pastPapers.grid.notStarted': 'не начат',
+  'pastPapers.grid.resetWaiting': 'сброшен на SAT',
+  'pastPapers.grid.late': 'С опозданием',
+  'pastPapers.grid.beforeAssigned': 'До выдачи',
+
+  'pastPapers.report.section': 'Пробные тесты на платформе',
+  'pastPapers.report.note': 'Баллы — оценка платформы SAT, а не официальный результат.',
+  'pastPapers.report.paper': 'Тест',
+  'pastPapers.report.score': 'Балл',
+  'pastPapers.report.rw': 'RW',
+  'pastPapers.report.math': 'Math',
+  'pastPapers.report.partialScore': 'Частичный тест, без балла',
+};
