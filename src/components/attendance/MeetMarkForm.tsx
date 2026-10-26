@@ -97,7 +97,7 @@ export function MeetMarkForm({ current, register, lessonMinutes, lock, options, 
                     maxLength={500}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder={t('attendance.excuse.placeholder')}
-                    className="mt-1.5 w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+                    className="mt-1.5 w-full rounded-md border border-border bg-background px-2 py-1.5 text-base md:text-xs"
                   />
                 )}
               </div>
@@ -110,7 +110,7 @@ export function MeetMarkForm({ current, register, lessonMinutes, lock, options, 
               id={reasonId}
               value={reason.code}
               onChange={(e) => setReason({ code: e.target.value, text: e.target.value === 'other' ? reason.text : null })}
-              className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+              className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-base md:text-xs"
             >
               <option value="" disabled>{t('attendance.popover.choose')}</option>
               {presets.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
@@ -123,7 +123,7 @@ export function MeetMarkForm({ current, register, lessonMinutes, lock, options, 
                 maxLength={500}
                 onChange={(e) => setReason({ code: 'other', text: e.target.value })}
                 placeholder={t('attendance.popover.describe')}
-                className="mt-1.5 w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs"
+                className="mt-1.5 w-full rounded-md border border-border bg-background px-2 py-1.5 text-base md:text-xs"
               />
             )}
           </div>

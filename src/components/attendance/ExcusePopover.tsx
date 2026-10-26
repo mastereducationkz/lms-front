@@ -56,8 +56,9 @@ export function ExcusePopover({
         <span className="absolute inset-0 pointer-events-none" />
       </PopoverAnchor>
       <PopoverContent
-        className="w-64 p-3"
+        className="w-64 p-3 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto"
         align="start"
+        collisionPadding={8}
         onClick={(e) => e.stopPropagation()}
         onContextMenu={(e) => e.stopPropagation()}
         onOpenAutoFocus={(e) => {
@@ -93,7 +94,7 @@ export function ExcusePopover({
             // `scrollHeight`, which can come back shorter than three lines
             // once `rows={3}`'s own sizing is overridden — an explicit
             // min-height is a floor inline `height` can't shrink below.
-            'min-h-[4.5rem] resize-none px-2 py-1 text-xs md:text-xs',
+            'min-h-[4.5rem] resize-none px-2 py-1 text-base md:text-xs',
             touched && !valid ? 'border-rose-500' : 'border-input',
           )}
           // Namely NOT «предупредил заранее»: warning in advance is how the school hears

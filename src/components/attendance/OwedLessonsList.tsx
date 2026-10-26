@@ -29,7 +29,7 @@ export function OwedLessonsList({ items }: { items: OwedItem[] }) {
         {shown.map((item) => (
           <li key={`${item.kind}:${item.event_id}`}>
             <Link to={owedLink(item)} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm transition hover:bg-muted/60">
-              <span className="min-w-0 flex-1 basis-48 truncate font-medium text-foreground">
+              <span className="min-w-0 flex-1 basis-48 break-words font-medium text-foreground line-clamp-2">
                 {item.group_name}
                 <span className="font-normal text-muted-foreground"> · {stampKz(item.start, locale)}</span>
               </span>

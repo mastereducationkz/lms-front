@@ -57,14 +57,14 @@ export default function SubstitutionAttendancePanel() {
         key={lesson.event_id}
         to={substitutionLink(lesson, status)}
         className={cn(
-          'flex items-center justify-between gap-4 rounded-lg border p-4 transition-colors',
+          'flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border p-3 sm:p-4 transition-colors',
           'border-border bg-card hover:bg-muted dark:hover:bg-secondary',
           status === 'marked' && 'opacity-70'
         )}
       >
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-foreground truncate">
+        <div className="min-w-0 flex-1 basis-56">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="min-w-0 max-w-full text-sm font-semibold text-foreground break-words line-clamp-2">
               {primary}
             </span>
             <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
