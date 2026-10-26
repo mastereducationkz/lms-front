@@ -47,6 +47,7 @@ const AttendancePage = lazyRoute(() => import('../pages/AttendancePage.tsx'));
 const AdminDashboard = lazyRoute(() => import('../pages/admin/AdminDashboard.tsx'));
 const AssignmentZeroSubmissions = lazyRoute(() => import('../pages/admin/AssignmentZeroSubmissions.tsx'));
 const BluebookGroupGridPage = lazyRoute(() => import('../pages/BluebookGroupGridPage.tsx'));
+const PastPaperGroupGridPage = lazyRoute(() => import('../pages/PastPaperGroupGridPage.tsx'));
 const ExamResultsWorkbenchPage = lazyRoute(() => import('../pages/ExamResultsWorkbenchPage.tsx'));
 const QuestionReportsPage = lazyRoute(() => import('../pages/admin/QuestionReportsPage.tsx'));
 const WeeklyTopStudentsPage = lazyRoute(() => import('../pages/admin/WeeklyTopStudentsPage.tsx'));
@@ -567,6 +568,14 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['teacher', 'curator', 'head_curator', 'head_teacher', 'admin']}>
               <AppLayout>
                 <BluebookGroupGridPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/past-paper-results" element={
+            <ProtectedRoute allowedRoles={['teacher', 'curator', 'head_curator', 'head_teacher', 'admin']}>
+              <AppLayout>
+                <PastPaperGroupGridPage />
               </AppLayout>
             </ProtectedRoute>
           } />

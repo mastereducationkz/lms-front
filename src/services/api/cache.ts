@@ -61,6 +61,9 @@ const TTL_RULES: Array<{ test: RegExp; ttlMs: number }> = [
   { test: /^\/live(\/|$)/, ttlMs: 0 },
   { test: /^\/(class-materials|notifications)(\/|$)/, ttlMs: 0 },
   { test: /^\/checkpoints(\/|$)/, ttlMs: 15 * 1000 },
+  // A paper's state arrives from SAT at any moment (and auto-submits the homework): never cached.
+  { test: /^\/past-papers\/assignments\/.*\/status/, ttlMs: 0 },
+  { test: /^\/past-papers\/catalog/, ttlMs: 60 * 1000 },
 
   // Never cache
   { test: /^\/auth\//, ttlMs: 0 },
@@ -102,7 +105,7 @@ const INVALIDATION_RULES: Array<{ mutation: RegExp; invalidatePrefixes: string[]
   { mutation: /^\/lessons(\/|$)/, invalidatePrefixes: ['/courses', '/lessons', '/progress'] },
   { mutation: /^\/steps(\/|$)/, invalidatePrefixes: ['/courses', '/lessons', '/progress'] },
   // Handing in and grading homework award stars (the header pill's /gamification reads).
-  { mutation: /^\/assignments(\/|$)/, invalidatePrefixes: ['/assignments', '/dashboard', '/progress', '/analytics', '/gamification'] },
+  { mutation: /^\/assignments(\/|$)/, invalidatePrefixes: ['/assignments', '/dashboard', '/progress', '/analytics', '/gamification', '/past-papers'] },
   { mutation: /^\/assignment-zero(\/|$)/, invalidatePrefixes: ['/assignment-zero', '/dashboard'] },
   // Passing a course quiz (progress/quiz-attempt*) awards stars.
   { mutation: /^\/progress(\/|$)/, invalidatePrefixes: ['/progress', '/dashboard', '/analytics', '/courses', '/gamification'] },

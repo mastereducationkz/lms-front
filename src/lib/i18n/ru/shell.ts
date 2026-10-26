@@ -51,6 +51,7 @@ export const shell: RuTable<typeof en> = {
   'shell.nav.recordingsRollout': 'Запуск записей уроков',
   'shell.nav.examResults': 'Результаты экзаменов',
   'shell.nav.bluebookResults': 'Результаты Bluebook',
+  'shell.nav.pastPaperResults': 'Пробные тесты на платформе',
   'shell.nav.questionReports': 'Жалобы на вопросы',
   'shell.nav.lessonRequests': 'Заявки по урокам',
   'shell.nav.myRequests': 'Мои заявки',

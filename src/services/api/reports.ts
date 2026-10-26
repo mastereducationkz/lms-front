@@ -91,6 +91,16 @@ export interface WeeklyIeltsTest {
   };
 }
 
+export interface ReportPlatformPractice {
+  paper_title: string;
+  completed_at: string | null;
+  is_partial?: boolean;
+  /** An estimate (null for a partial paper); never rank by it. */
+  total_scaled_estimate: number | null;
+  rw: { correct: number; total: number } | null;
+  math: { correct: number; total: number } | null;
+}
+
 export interface StudentReport {
   student: {
     id: number;
@@ -116,6 +126,8 @@ export interface StudentReport {
     total: number;
     source: string;
   }[];
+  /** SAT platform practice papers given as homework: estimates, kept apart from `bluebook`. Absent in older payloads. */
+  platform_practice?: ReportPlatformPractice[];
   exams: {
     results: {
       exam_type: string;
