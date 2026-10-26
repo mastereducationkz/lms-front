@@ -6,6 +6,7 @@ import { AuthProvider } from '../contexts/AuthContext.tsx';
 import { SettingsProvider } from '../contexts/SettingsContext';
 import { ThemeProvider } from '../components/ThemeProvider.tsx';
 import { THEME_PROVIDER_PROPS } from '../lib/theme';
+import { SeasonProvider } from '../seasonal/SeasonProvider';
 import { Toaster } from '../components/Toast';
 import OnboardingManager from '../components/OnboardingManager.tsx';
 import ProtectedRoute from '../components/ProtectedRoute.tsx';
@@ -141,6 +142,7 @@ export default function Router() {
         <Toaster />
         <AuthProvider>
           <SettingsProvider>
+            <SeasonProvider>
               <OnboardingManager>
                 <Suspense fallback={<RouteFallback />}>
                 <Routes>
@@ -877,6 +879,7 @@ export default function Router() {
         </Routes>
                 </Suspense>
             </OnboardingManager>
+          </SeasonProvider>
         </SettingsProvider>
       </AuthProvider>
       </ThemeProvider>

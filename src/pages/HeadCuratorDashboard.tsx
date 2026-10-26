@@ -233,15 +233,15 @@ export default function HeadCuratorDashboard() {
 
       {/* Верхние карточки KPI */}
       <div className="grid grid-cols-1 @2xl:grid-cols-2 @4xl:grid-cols-4 gap-4">
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-600 to-indigo-700 text-white dark:from-brand-surface dark:to-brand-surface dark:border dark:border-brand-border dark:text-brand-surface-foreground">
+        <Card className="border-0 shadow-sm bg-brand-solid text-brand-solid-foreground dark:bg-brand-surface dark:border dark:border-brand-border dark:text-brand-surface-foreground">
           <CardContent className="p-6">
-            <p className="text-blue-100 dark:text-brand-subtle-foreground text-sm font-medium">
+            <p className="dark:text-brand-subtle-foreground text-sm font-medium">
               {user?.role === 'head_curator' ? t('curatorDashboard.kpi.totalCurators') : t('curatorDashboard.kpi.totalGroups')}
             </p>
             <h3 className="text-3xl font-bold mt-1">
               {user?.role === 'head_curator' ? stats.total_curators : stats.total_groups}
             </h3>
-            <div className="mt-4 text-xs text-blue-100 dark:text-brand-subtle-foreground flex items-center">
+            <div className="mt-4 text-xs dark:text-brand-subtle-foreground flex items-center">
               {user?.role === 'head_curator' ? t('curatorDashboard.kpi.activeOnPlatform') : t('curatorDashboard.kpi.assignedToYou')}
             </div>
           </CardContent>
