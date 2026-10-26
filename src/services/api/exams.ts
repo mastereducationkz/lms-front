@@ -76,6 +76,8 @@ export interface ExamResultRow {
     parent_full_name: string | null;
     parent_phone: string | null;
   };
+  /** False for a deactivated account (only listed when «Show inactive students» is on). Absent from an older server. */
+  student_is_active?: boolean;
   group_id: number | null;
   group_name: string | null;
   /** The group shown is over or archived: the student has no running group in this view. */
@@ -132,6 +134,8 @@ export interface ExamResultFilters {
   groupId?: number;
   /** Which of the caller's groups to list; left out, the server applies the role's default. */
   groupState?: GroupState;
+  /** Also list deactivated student accounts. Off by default: they keep a stale planned date and read as an overdue twin. */
+  includeInactive?: boolean;
   /** Which date the range applies to: the planned administration or the date actually sat. */
   dateField?: 'planned' | 'actual';
   dateFrom?: string;
@@ -149,6 +153,7 @@ const toQuery = (f: ExamResultFilters) => ({
   exam_type: f.examType ?? 'sat',
   ...(f.groupId != null ? { group_id: f.groupId } : {}),
   ...(f.groupState ? { group_state: f.groupState } : {}),
+  ...(f.includeInactive ? { include_inactive: true } : {}),
   date_field: f.dateField ?? 'planned',
   ...(f.dateFrom ? { date_from: f.dateFrom } : {}),
   ...(f.dateTo ? { date_to: f.dateTo } : {}),

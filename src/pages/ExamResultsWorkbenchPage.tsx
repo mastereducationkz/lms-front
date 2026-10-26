@@ -151,6 +151,7 @@ export default function ExamResultsWorkbenchPage() {
   const [testimonialFor, setTestimonialFor] = useState<ExamResultRow | null>(null);
   const [testimonials, setTestimonials] = useState<Record<number, Testimonial>>({});
   const [marketingOnly, setMarketingOnly] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   const [rescheduling, setRescheduling] = useState<number | null>(null);
 
   useEffect(() => {
@@ -180,6 +181,7 @@ export default function ExamResultsWorkbenchPage() {
     dateField,
     ...(groupId !== '' ? { groupId } : {}),
     groupState,
+    ...(showInactive ? { includeInactive: true } : {}),
     ...(exactDate ? { exactDate } : {}),
     ...(dateFrom ? { dateFrom } : {}),
     ...(dateTo ? { dateTo } : {}),
@@ -188,7 +190,7 @@ export default function ExamResultsWorkbenchPage() {
     // filters, so an XLSX of marketing-ready rows matches the screen exactly.
     ...(marketingOnly ? { marketingOnly: true } : {}),
     limit: 500,
-  }), [examType, dateField, groupId, groupState, exactDate, dateFrom, dateTo, search, marketingOnly]);
+  }), [examType, dateField, groupId, groupState, showInactive, exactDate, dateFrom, dateTo, search, marketingOnly]);
 
   const load = useCallback(async (f: ExamResultFilters) => {
     setLoading(true);
@@ -354,6 +356,12 @@ export default function ExamResultsWorkbenchPage() {
                      onChange={(e) => setMarketingOnly(e.target.checked)} />
               {marketingLabel}
             </label>
+            {/* Off by default: a deactivated account keeps its planned date and reads as an overdue twin of the live one. */}
+            <label className="ml-2 inline-flex items-center gap-1.5 text-xs" title={t('exams.filters.showInactiveHint')}>
+              <input type="checkbox" checked={showInactive}
+                     onChange={(e) => setShowInactive(e.target.checked)} />
+              {t('exams.filters.showInactive')}
+            </label>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -499,6 +507,12 @@ export default function ExamResultsWorkbenchPage() {
                           </TableCell>
                           <TableCell className="sticky left-0 z-[2] bg-background border-r font-medium">
                             {row.student.full_name}
+                            {row.student_is_active === false && (
+                              <span className="ml-1.5 inline-block rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                                    title={t('exams.inactive.hint')}>
+                                {t('exams.inactive.tag')}
+                              </span>
+                            )}
                             {row.attempts.length > 1 && (
                               <button type="button" onClick={() => setHistoryFor(row)}
                                       className="ml-1 text-[10px] text-muted-foreground hover:underline">
