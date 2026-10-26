@@ -51,6 +51,7 @@ export const shell = {
   'shell.nav.recordingsRollout': 'Recordings Rollout',
   'shell.nav.examResults': 'Exam Results',
   'shell.nav.bluebookResults': 'Bluebook Results',
+  'shell.nav.pastPaperResults': 'Platform practice tests',
   'shell.nav.questionReports': 'Question Reports',
   'shell.nav.lessonRequests': 'Lesson Requests',
   'shell.nav.myRequests': 'My Requests',

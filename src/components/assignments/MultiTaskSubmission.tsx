@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import React from 'react'
-import { BookOpen, FileText, MessageSquare, Link as LinkIcon, CheckCircle, ExternalLink, Upload, X, FileSearch, Mic, Square, RotateCcw, AlertCircle, Star } from 'lucide-react';
+import { BookOpen, FileText, MessageSquare, Link as LinkIcon, CheckCircle, ExternalLink, Upload, X, FileSearch, Mic, Square, RotateCcw, AlertCircle, Star, FileCheck2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader } from '../ui/card';
 import { Label } from '../ui/label';
@@ -14,16 +14,21 @@ import { cn } from '../../lib/utils';
 import { AudioPlayer } from '../AudioPlayer';
 import { parseBluebookReport } from '../../services/api/exams';
 import { BluebookGraderPanel } from './BluebookGraderPanel';
+import { PastPaperTaskCard } from './PastPaperTaskCard';
+import { PastPaperReviewPanel } from './PastPaperReviewPanel';
+import { usePastPaperStatus } from '../../hooks/usePastPaperStatus';
+import { PAST_PAPER_TASK_TYPE, hasPastPaperTask, isPastPaperOnly, isPastPaperTask } from '../../lib/pastPapers';
 import { gatedLessonIds, type UnitGate } from '../../lib/assignmentTask';
 import { UploadFailedError } from '../../lib/uploadFailure';
 import { safeLinkUrl, safeUploadUrl } from '../../lib/mediaUrl';
 import { formatTime } from '../../lib/i18n';
 import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/homework';
+import '@/lib/i18n/catalogs/pastPapers';
 
 interface Task {
   id: string;
-  task_type: 'course_unit' | 'file_task' | 'text_task' | 'link_task' | 'pdf_text_task' | 'audio_task' | 'bluebook_task';
+  task_type: 'course_unit' | 'file_task' | 'text_task' | 'link_task' | 'pdf_text_task' | 'audio_task' | 'bluebook_task' | 'sat_past_paper_task';
   title: string;
   description?: string;
   order_index: number;
@@ -619,6 +624,14 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
   const taskLabel = (title: string | null | undefined, index: number) =>
     title?.trim() || t('homework.tasks.taskNumber', { number: index + 1 });
   const [tasks, setTasks] = useState<Task[]>([]);
+  // SAT past papers: one status read per homework (and student); a student's own view passes no student.
+  const paperStatus = usePastPaperStatus(
+    hasPastPaperTask(assignment?.content?.tasks) ? Number(assignment?.id) : null,
+    studentId ? Number(studentId) : null,
+  );
+  // Only past papers: the server submits it when the paper is finished, so there is no Submit button.
+  const paperOnly = paperStatus.status?.past_paper_only ?? isPastPaperOnly(assignment?.content?.tasks);
+  const paperEntry = (task: Task) => paperStatus.status?.tasks.find((p) => String(p.task_id) === String(task.id)) ?? null;
   // Handle both formats: { tasks: {...} } or direct object {...}
   const [answers, setAnswers] = useState<Record<string, any>>(
     initialAnswers?.tasks || initialAnswers || {}
@@ -883,6 +896,20 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             )}
           </div>
         );
+      }
+
+      case PAST_PAPER_TASK_TYPE: {
+        // Staff reading a student's work see the review summary; the student sees their own card.
+        const common = {
+          paperTitle: task.content?.paper_title,
+          isPartial: task.content?.is_partial,
+          status: paperEntry(task),
+          loading: paperStatus.loading,
+          failed: paperStatus.failed,
+        };
+        return readOnly && studentId
+          ? <PastPaperReviewPanel {...common} />
+          : <PastPaperTaskCard {...common} paperId={task.content?.paper_id} onRetry={paperStatus.reload} />;
       }
 
       case 'course_unit':
@@ -1420,6 +1447,10 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
   const checkTaskCompletion = (task: Task) => {
     const taskAnswer = answers[task.id];
 
+    // A past paper is done when SAT says so. It is display-only here: the submit gate below
+    // skips it, so Submit never waits for the paper (Q22).
+    if (isPastPaperTask(task)) return paperEntry(task)?.state === 'completed';
+
     // course_unit is server-authoritative: it's complete when none of its linked
     // lessons are missing per the unit gate. Do NOT rely solely on the client-only
     // `completed` flag — that flag is set by a one-shot auto-complete effect and can
@@ -1478,6 +1509,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
       case 'link_task': return LinkIcon;
       case 'pdf_text_task': return FileSearch;
       case 'audio_task': return Mic;
+      case PAST_PAPER_TASK_TYPE: return FileCheck2;
       default: return FileText;
     }
   };
@@ -1560,16 +1592,20 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
         })}
       </div>
 
-      {!readOnly && (() => {
-        // Check if all required (non-optional) tasks are completed
-        const requiredTasks = tasks.filter(task => !task.is_optional);
+      {!readOnly && paperOnly && (
+        <p className="pt-4 text-right text-sm text-muted-foreground">{t('pastPapers.card.selfSubmits')}</p>
+      )}
+
+      {!readOnly && !paperOnly && (() => {
+        // Check if all required (non-optional) tasks are completed. A past paper never blocks Submit.
+        const requiredTasks = tasks.filter(task => !task.is_optional && !isPastPaperTask(task));
         const optionalTasks = tasks.filter(task => task.is_optional);
         
         const completedRequiredCount = requiredTasks.filter(checkTaskCompletion).length;
         const completedOptionalCount = optionalTasks.filter(checkTaskCompletion).length;
         
         const allRequiredCompleted = requiredTasks.length === 0 || completedRequiredCount === requiredTasks.length;
-        const hasOnlyOptionalTasks = requiredTasks.length === 0 && optionalTasks.length > 0;
+        const hasOnlyOptionalTasks = requiredTasks.length === 0 && optionalTasks.length > 0 && !tasks.some(task => !task.is_optional);
         const unitsBlocked = unitGate ? unitGate.ready === false : false;
         const canSubmit = allRequiredCompleted && !unitsBlocked;
 
