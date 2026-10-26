@@ -18,7 +18,8 @@ const STAFF_COMMON = (third: string, fourth: string) =>
   spots(['/dashboard', 0.62], ['/calendar', 0.34], [third, 0.71], [fourth, 0.45], ['/chat', 0.56]);
 
 const SPOTS: Record<string, HuntSpot[]> = {
-  student: spots(['/dashboard', 0.62], ['/courses', 0.38], ['/achievements', 0.7], ['/chat', 0.47], ['/profile', 0.31]),
+  // Not /courses: a student's «My Courses» in the sidebar only expands a list (2026-10-27).
+  student: spots(['/dashboard', 0.62], ['/favorites', 0.38], ['/achievements', 0.7], ['/chat', 0.47], ['/profile', 0.31]),
   parent: spots(['/dashboard', 0.62], ['/calendar', 0.34], ['/chat', 0.56], ['/profile', 0.42], ['/settings', 0.68]),
   teacher: STAFF_COMMON('/homework', '/teacher/class'),
   curator: STAFF_COMMON('/curator/students', '/curator/leaderboard'),
@@ -63,5 +64,6 @@ export function markFound(storage: Storage | null, userId: number | string, path
       // Private mode or a full quota: the find still counts for this visit.
     }
   }
-  return { found: after.length, isNew, complete: isNew && after.length >= HUNT_SIZE };
+  // Exactly the fifth: someone who found a pumpkin before it moved may pick up a sixth.
+  return { found: after.length, isNew, complete: isNew && after.length === HUNT_SIZE };
 }

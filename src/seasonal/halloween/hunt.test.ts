@@ -17,7 +17,7 @@ describe('spotFor — five pumpkins per role, on pages that role really opens', 
   it.each(['student', 'parent', 'teacher', 'curator', 'head_curator', 'head_teacher', 'admin'])(
     'gives %s exactly five distinct pages',
     (role) => {
-      const pages = ['/dashboard', '/courses', '/calendar', '/achievements', '/chat', '/profile', '/settings',
+      const pages = ['/dashboard', '/courses', '/calendar', '/achievements', '/favorites', '/chat', '/profile', '/settings',
         '/homework', '/teacher/class', '/curator/students', '/curator/leaderboard', '/curator/homeworks',
         '/analytics', '/admin/users', '/materials', '/recordings']
         .filter((p) => spotFor(role, p));
@@ -31,8 +31,12 @@ describe('spotFor — five pumpkins per role, on pages that role really opens', 
   });
 
   it('matches the page itself, not pages under it', () => {
-    expect(spotFor('student', '/courses')).not.toBeNull();
-    expect(spotFor('student', '/courses/12')).toBeNull();
+    expect(spotFor('student', '/favorites')).not.toBeNull();
+    expect(spotFor('student', '/favorites/12')).toBeNull();
+  });
+
+  it('never hides a student pumpkin on /courses: the sidebar\'s «My Courses» only expands a list there', () => {
+    expect(spotFor('student', '/courses')).toBeNull();
   });
 
   it('has no spots for a missing role', () => {
@@ -49,8 +53,15 @@ describe('hunt progress on this device', () => {
     const storage = memoryStorage();
     expect(markFound(storage, 7, '/dashboard')).toEqual({ found: 1, isNew: true, complete: false });
     expect(markFound(storage, 7, '/dashboard')).toEqual({ found: 1, isNew: false, complete: false });
-    ['/courses', '/achievements', '/chat'].forEach((p) => markFound(storage, 7, p));
+    ['/favorites', '/achievements', '/chat'].forEach((p) => markFound(storage, 7, p));
     expect(markFound(storage, 7, '/profile')).toEqual({ found: 5, isNew: true, complete: true });
+  });
+
+  it('plays the finale once: a sixth find (a pumpkin moved after one was picked up) is not complete again', () => {
+    const storage = memoryStorage();
+    ['/courses', '/dashboard', '/achievements', '/chat'].forEach((p) => markFound(storage, 7, p));
+    expect(markFound(storage, 7, '/profile').complete).toBe(true);
+    expect(markFound(storage, 7, '/favorites')).toEqual({ found: 6, isNew: true, complete: false });
   });
 
   it('keeps each person on a shared device apart', () => {
