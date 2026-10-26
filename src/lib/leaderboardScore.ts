@@ -101,26 +101,41 @@ function isAttended(status: string): boolean {
   return status === 'attended' || status === 'late';
 }
 
+/** A lesson that has not happened yet: it counts for nothing, neither attendance nor homework. */
+function hasNotHappened(startDatetime: string | undefined, isLocked: (startDatetime: string) => boolean): boolean {
+  // `isLocked` is the register lock (`isAttendanceLockedLesson`): the Almaty day of the lesson is after today.
+  return startDatetime !== undefined && isLocked(startDatetime);
+}
+
 /**
- * Whether a lesson goes into the attendance part. Left out: cancelled, not the student's, an excused
- * absence, and a lesson nobody has marked yet that is not locked.
- *
- * The last clause is the page's long-standing rule, kept as it was. `isLocked` is the register lock
- * (`isAttendanceLockedLesson`: the lesson is still in the future), so an unmarked lesson that has
- * not happened yet does count — as an absence. That is deliberate to keep, but it is this one line
- * that decides it.
+ * Whether a lesson goes into the attendance part. Left out: a lesson that has not happened yet,
+ * cancelled, not the student's, an excused absence, and a past lesson nobody has marked yet (no data).
  */
 export function isCountableForAttendance(
   lesson: ScoreStudentLesson | undefined,
   startDatetime: string | undefined,
   isLocked: (startDatetime: string) => boolean,
 ): boolean {
+  if (hasNotHappened(startDatetime, isLocked)) return false;
   if (!lesson) return true;
   if (lesson.attendance_status === 'cancelled') return false;
   if (isNotTheirs(lesson)) return false;
   if (lesson.excused && displaysAsAbsence(lesson.attendance_status)) return false;
-  if (lesson.marked === false && startDatetime !== undefined && !isLocked(startDatetime)) return false;
+  if (lesson.marked === false) return false;
   return true;
+}
+
+/**
+ * Whether a lesson's homework goes into the homework part. Homework follows the student, not the
+ * register: a cancelled, excused or still-unmarked lesson keeps its homework. Left out: a lesson
+ * that has not happened yet (even if something was already handed in) and one that is not the student's.
+ */
+export function isCountableForHomework(
+  lesson: ScoreStudentLesson | undefined,
+  startDatetime: string | undefined,
+  isLocked: (startDatetime: string) => boolean,
+): boolean {
+  return !hasNotHappened(startDatetime, isLocked) && !isNotTheirs(lesson);
 }
 
 /** One homework as a share of its maximum: score ÷ max, so a 30-point homework weighs like a 10-point one. */
@@ -176,8 +191,7 @@ export function weeklyScore({ lessons, student, testHeld, isLocked }: WeeklyScor
       if (lesson && isAttended(lesson.attendance_status)) attended += 1;
     }
 
-    // Homework follows the student, not the register: a cancelled or excused lesson keeps its homework.
-    if (isNotTheirs(lesson)) continue;
+    if (!isCountableForHomework(lesson, meta.start_datetime, isLocked)) continue;
     const assigned = lessonHomeworkMetas(meta);
     const statuses = lessonHomeworkStatuses(lesson);
     for (const status of statuses) shares.push(homeworkShare(status, assigned));

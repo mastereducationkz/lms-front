@@ -120,7 +120,7 @@ export const attendance = {
   'attendance.score.explainerAttendance': 'Attendance — 40%. Lessons attended ÷ lessons that count. Late counts as present.',
   'attendance.score.explainerHomework': 'Homework — 40%. The average over every assigned homework (score ÷ maximum). Not handed in, or not graded yet, counts as 0.',
   'attendance.score.explainerTest': 'Test — 20%. The student\'s test result for the week. If the group had a test and the student did not take it, it counts as 0%.',
-  'attendance.score.explainerLeftOut': 'Left out of attendance: cancelled lessons, lessons before the student joined, freeze or no access, excused absences, and past lessons nobody has marked yet. Homework of cancelled and excused lessons still counts.',
+  'attendance.score.explainerLeftOut': 'Left out: lessons that have not happened yet (their homework too), lessons before the student joined, freeze or no access, and — from attendance only — cancelled lessons, excused absences and lessons not yet marked. Homework of those lessons still counts.',
   'attendance.score.explainerNoTest': 'If nobody in the group has a test result that week, the test part is left out and the % is worked out from the other two.',
   'attendance.score.explainerNoData': 'When no part has anything to count, the cell shows —.',
   'attendance.score.explainerStar': 'The activity star is not part of the %.',

@@ -13,6 +13,7 @@ import {
 
 const PAST = '2026-06-01T10:00:00';
 const FUTURE = '2099-01-01T10:00:00';
+const TODAY = '2026-10-26T10:00:00';
 const isLocked = (start: string) => start === FUTURE;
 
 const meta = (n: number, opts: { start?: string; hw?: { id: number; max_score?: number }[] } = {}): ScoreLessonMeta => ({
@@ -132,12 +133,22 @@ describe('attendance part', () => {
     expect(result.attendance).toMatchObject({ attended: 1, countable: 1 });
   });
 
-  it('a locked unmarked lesson still counts as an absence, as before', () => {
+  it('a lesson that has not happened yet is left out, marked or not', () => {
     const result = score(
-      [meta(1), meta(2, { start: FUTURE })],
-      student({ '1': att('attended'), '2': { attendance_status: 'missed', marked: false } }),
+      [meta(1), meta(2, { start: FUTURE }), meta(3, { start: FUTURE })],
+      student({
+        '1': att('attended'),
+        '2': { attendance_status: 'missed', marked: false },
+        '3': att('missed'),
+      }),
     );
-    expect(result.attendance).toMatchObject({ attended: 1, countable: 2 });
+    expect(result.attendance).toMatchObject({ attended: 1, countable: 1 });
+    expect(result.percent).toBe(100);
+  });
+
+  it('today\'s lesson counts once it is marked (not locked)', () => {
+    const result = score([meta(1, { start: TODAY })], student({ '1': att('missed') }));
+    expect(result.attendance).toMatchObject({ attended: 0, countable: 1 });
   });
 
   it('a lesson with no row for the student counts as an absence', () => {
@@ -219,6 +230,36 @@ describe('homework part', () => {
         '3': att('missed', { frozen: true, homework_statuses: [hwDone(3, 0)] }),
         '4': att('missed', { blocked: true, homework_statuses: [hwDone(4, 0)] }),
       }),
+    );
+    expect(result.homework).toEqual({ assigned: 1, percent: 100 });
+  });
+
+  it('a lesson that has not happened yet loses its homework, even one already handed in', () => {
+    const lessons = [meta(1, { hw: [{ id: 1, max_score: 10 }] }), meta(2, { start: FUTURE, hw: [{ id: 2, max_score: 10 }] })];
+    const result = score(
+      lessons,
+      student({
+        '1': att('attended', { homework_statuses: [hwDone(1, 10)] }),
+        '2': { attendance_status: 'missed', marked: false, homework_statuses: [hwDone(2, 10)] },
+      }),
+    );
+    expect(result.homework).toEqual({ assigned: 1, percent: 100 });
+  });
+
+  it('a past unmarked lesson counts for homework only', () => {
+    const result = score(
+      [meta(1, { hw: [{ id: 1, max_score: 10 }] })],
+      student({ '1': { attendance_status: 'missed', marked: false, homework_statuses: [hwDone(1, 5)] } }),
+    );
+    expect(result.attendance).toMatchObject({ countable: 0, percent: null });
+    expect(result.homework).toEqual({ assigned: 1, percent: 50 });
+    expect(result.percent).toBe(50);
+  });
+
+  it('today\'s lesson keeps its homework', () => {
+    const result = score(
+      [meta(1, { start: TODAY, hw: [{ id: 1, max_score: 10 }] })],
+      student({ '1': att('attended', { homework_statuses: [hwDone(1, 10)] }) }),
     );
     expect(result.homework).toEqual({ assigned: 1, percent: 100 });
   });
