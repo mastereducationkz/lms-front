@@ -80,7 +80,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="flex">
       <SidebarDesktop isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
-        <main className={`flex-1 bg-gray-50 dark:bg-background h-screen overflow-y-auto overflow-x-hidden transition-all duration-300 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
+        <main className={`flex-1 bg-gray-50 dark:bg-background h-screen supports-[height:100dvh]:h-dvh overflow-y-auto overflow-x-hidden transition-all duration-300 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
         {/* <MaintenanceBanner /> */}
         {/* A student's last 30 days of platform access (renders nothing for anyone else). */}
         <AccessEndingBanner />
