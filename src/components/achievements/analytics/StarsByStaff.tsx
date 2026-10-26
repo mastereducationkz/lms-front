@@ -16,7 +16,7 @@ export default function StarsByStaff({ stars, limit }: { stars: AchievementsAnal
       <table className="w-full min-w-[520px] text-sm">
         <thead>
           <tr className="text-left text-xs text-muted-foreground">
-            <th className="pb-2 font-medium">{t('achievements.staffStars.staff')}</th>
+            <th className="sticky left-0 z-10 bg-card pb-2 font-medium">{t('achievements.staffStars.staff')}</th>
             {stars.weeks.map((w) => (
               <th key={w} className="pb-2 text-center font-medium tabular-nums">{weekLabel(w)}</th>
             ))}
@@ -26,8 +26,8 @@ export default function StarsByStaff({ stars, limit }: { stars: AchievementsAnal
         <tbody className="divide-y divide-border">
           {rows.map((s) => (
             <tr key={s.user_id}>
-              <td className="py-2 pr-3">
-                <p className="font-medium text-foreground">{s.name}</p>
+              <td className="sticky left-0 z-10 max-w-[9rem] bg-card py-2 pr-3 sm:max-w-none">
+                <p className="break-words font-medium text-foreground">{s.name}</p>
                 <p className="text-xs text-muted-foreground">{staffRoleLabel(s.role, locale)}</p>
               </td>
               {s.per_week.map((n, i) => (

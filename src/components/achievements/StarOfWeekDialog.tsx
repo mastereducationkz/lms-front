@@ -26,7 +26,7 @@ export function StarOfWeekButton({ groupId, students }: StarOfWeekButtonProps) {
         type="button"
         variant="outline"
         size="sm"
-        className="h-8 gap-1.5 border-yellow-300 text-xs text-yellow-800 hover:bg-yellow-50 hover:dark:bg-yellow-500/15 dark:border-yellow-800 dark:text-yellow-300 dark:hover:bg-yellow-950/30"
+        className="h-9 sm:h-8 gap-1.5 border-yellow-300 text-xs text-yellow-800 hover:bg-yellow-50 hover:dark:bg-yellow-500/15 dark:border-yellow-800 dark:text-yellow-300 dark:hover:bg-yellow-950/30"
         onClick={() => setOpen(true)}
         disabled={students.length === 0}
         data-tip="star-of-week"
@@ -111,7 +111,7 @@ export function StarOfWeekDialog({ groupId, students, onClose, initialStudentId 
                   <select
                     value={studentId}
                     onChange={(e) => setStudentId(e.target.value ? Number(e.target.value) : '')}
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-base sm:text-sm"
                   >
                     <option value="">{t('achievements.star.chooseStudent')}</option>
                     {students.map((s) => (
@@ -132,7 +132,7 @@ export function StarOfWeekDialog({ groupId, students, onClose, initialStudentId 
                     rows={3}
                     maxLength={STAR_REASON_MAX + 20}
                     placeholder={t('achievements.star.reasonPlaceholder')}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-base sm:text-sm"
                   />
                 </label>
               </>

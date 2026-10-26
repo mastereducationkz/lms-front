@@ -19,8 +19,9 @@ export function MeetMarkPopover({ onApply, onClose, ...form }: Omit<FormProps, '
         <span className="absolute inset-0 pointer-events-none" />
       </PopoverAnchor>
       <PopoverContent
-        className="w-72 p-3"
+        className="w-72 p-3 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto"
         align="start"
+        collisionPadding={8}
         onClick={(e) => e.stopPropagation()}
         onContextMenu={(e) => e.stopPropagation()}
         // Rendered in a portal, but React still bubbles its events to the cell that opened it.

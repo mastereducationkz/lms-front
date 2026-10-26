@@ -154,16 +154,16 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-hidden flex flex-col p-0">
-          <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <ClipboardList className="w-4 h-4 text-brand" />
+        <DialogContent className="sm:max-w-2xl max-h-[85dvh] overflow-hidden flex flex-col p-0">
+          <DialogHeader className="px-5 pt-5 pb-3 pr-12 border-b border-border">
+            <DialogTitle className="flex items-center gap-2 text-base break-words">
+              <ClipboardList className="w-4 h-4 shrink-0 text-brand" />
               {t('attendance.studentHw.title', { name: studentName })}
             </DialogTitle>
           </DialogHeader>
 
           {showProgramTabs && (
-            <div className="flex items-center gap-1 px-5 pt-2 border-b border-border overflow-x-auto shrink-0">
+            <div className="flex flex-wrap items-center gap-x-1 px-5 pt-2 border-b border-border shrink-0">
               {(['all' as const, ...programs]).map((p) => {
                 const active = activeProgram === p;
                 const label = p === 'all' ? t('common.all') : PROGRAM_LABELS[p];
@@ -189,7 +189,7 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
             </div>
           )}
 
-          <div className="overflow-y-auto px-5 py-4">
+          <div className="overflow-y-auto px-4 sm:px-5 py-4">
             {loading ? (
               <div className="flex items-center justify-center py-12 text-muted-foreground">
                 <Loader2 className="w-5 h-5 animate-spin mr-2" /> {t('common.loading')}
@@ -206,8 +206,8 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
                 <thead>
                   <tr className="text-left text-xs text-muted-foreground border-b border-border">
                     <th className="font-medium pb-2 pr-2">{t('attendance.studentHw.assignment')}</th>
-                    {showGroupColumn && <th className="font-medium pb-2 pr-2">{t('attendance.studentHw.group')}</th>}
-                    <th className="font-medium pb-2 pr-2 whitespace-nowrap">{t('attendance.studentHw.deadline')}</th>
+                    {showGroupColumn && <th className="hidden sm:table-cell font-medium pb-2 pr-2">{t('attendance.studentHw.group')}</th>}
+                    <th className="hidden sm:table-cell font-medium pb-2 pr-2 whitespace-nowrap">{t('attendance.studentHw.deadline')}</th>
                     <th className="font-medium pb-2 pl-2 text-right">{t('attendance.studentHw.status')}</th>
                   </tr>
                 </thead>
@@ -226,14 +226,17 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
                         }
                       >
                         <td className="py-2.5 pr-2 font-medium text-foreground dark:text-foreground">
-                          {item.title}
+                          <span className="break-words">{item.title}</span>
+                          <span className="mt-0.5 block text-xs font-normal text-muted-foreground sm:hidden">
+                            {[showGroupColumn ? item.group_name : null, formatDeadline(item.due_date, locale)].filter(Boolean).join(' · ')}
+                          </span>
                         </td>
                         {showGroupColumn && (
-                          <td className="py-2.5 pr-2 text-muted-foreground dark:text-muted-foreground truncate max-w-[160px]" title={item.group_name}>
+                          <td className="hidden sm:table-cell py-2.5 pr-2 text-muted-foreground dark:text-muted-foreground truncate max-w-[160px]" title={item.group_name}>
                             {item.group_name}
                           </td>
                         )}
-                        <td className="py-2.5 pr-2 text-muted-foreground dark:text-muted-foreground whitespace-nowrap">
+                        <td className="hidden sm:table-cell py-2.5 pr-2 text-muted-foreground dark:text-muted-foreground whitespace-nowrap">
                           {formatDeadline(item.due_date, locale)}
                         </td>
                         <td className="py-2.5 pl-2 text-right">
