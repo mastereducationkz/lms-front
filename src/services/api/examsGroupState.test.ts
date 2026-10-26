@@ -42,3 +42,14 @@ describe('group state on the exam calls', () => {
     expect(paramsOfLastCall()).toEqual({});
   });
 });
+
+describe('«Show inactive students» on the exam calls', () => {
+  it('the list and the export send it only when it is on', async () => {
+    await getExamResults({ examType: 'sat', includeInactive: true });
+    expect(paramsOfLastCall()).toMatchObject({ include_inactive: true });
+    await exportExamResults({ examType: 'sat', includeInactive: true });
+    expect(paramsOfLastCall()).toMatchObject({ include_inactive: true });
+    await getExamResults({ examType: 'sat' });
+    expect(paramsOfLastCall()).not.toHaveProperty('include_inactive');
+  });
+});

@@ -63,6 +63,10 @@ export const exams: RuTable<typeof en> = {
   'exams.empty': 'Нет учеников по этим фильтрам.',
 
   'exams.columns.student': 'Ученик',
+  'exams.filters.showInactive': 'Показать неактивных учеников',
+  'exams.filters.showInactiveHint': 'Деактивированные аккаунты (доступ закрыт, дубли) по умолчанию скрыты.',
+  'exams.inactive.tag': 'неактивен',
+  'exams.inactive.hint': 'Аккаунт деактивирован.',
   'exams.groupState.label': 'Группы',
   'exams.groupState.running': 'Идут',
   'exams.groupState.finished': 'Завершённые',

@@ -63,6 +63,10 @@ export const exams = {
   'exams.empty': 'No students match these filters.',
 
   'exams.columns.student': 'Student',
+  'exams.filters.showInactive': 'Show inactive students',
+  'exams.filters.showInactiveHint': 'Deactivated accounts (closed access, retired duplicates) are hidden by default.',
+  'exams.inactive.tag': 'inactive',
+  'exams.inactive.hint': 'This account is deactivated.',
   'exams.groupState.label': 'Groups',
   'exams.groupState.running': 'Running',
   'exams.groupState.finished': 'Finished',
