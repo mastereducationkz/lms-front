@@ -336,6 +336,30 @@ describe('test part', () => {
   });
 });
 
+describe('a group with no weekly test (testsOff)', () => {
+  const lessons = [meta(1)];
+  const present = { '1': att('attended') };
+
+  it('a student with a score gets no test part — the score does not enter the %', () => {
+    const r = weeklyScore({ lessons, student: student(present, 40), testHeld: false, testsOff: true, isFuture });
+    expect(r.test).toEqual({ state: 'none', percent: null });
+    expect(r.parts.map((p) => p.part)).toEqual(['attendance']);
+    expect(r.percent).toBe(100);
+  });
+
+  it('is not charged a skipped test even if testHeld is true', () => {
+    const r = weeklyScore({ lessons, student: student(present), testHeld: true, testsOff: true, isFuture });
+    expect(r.test.state).toBe('none');
+    expect(r.percent).toBe(100);
+  });
+
+  it('testsOff false keeps the usual rule', () => {
+    const r = weeklyScore({ lessons, student: student(present, 40), testHeld: true, testsOff: false, isFuture });
+    expect(r.test).toEqual({ state: 'scored', percent: 40 });
+    expect(r.percent).toBe(Math.round((100 * 40 + 40 * 20) / 60));
+  });
+});
+
 describe('no part exists', () => {
   it('a week without lessons, homework or test is «—», not 0', () => {
     expect(score([], student({})).percent).toBeNull();

@@ -2686,6 +2686,257 @@
     ],
     "percent": 100
    }
+  },
+  {
+   "name": "tests off (Pre-SAT / switch off): a student with a score still has no test part",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 6
+      }
+     ]
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 3,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 5,
+        "max_score": 6
+       }
+      ]
+     },
+     "2": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     },
+     "3": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": 90
+   },
+   "testHeld": true,
+   "expected": {
+    "attendance": {
+     "attended": 3,
+     "countable": 3,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "pending": 0,
+     "percent": 83.33333333333333
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 83.33333333333333
+     }
+    ],
+    "percent": 92
+   },
+   "testsOff": true
+  },
+  {
+   "name": "tests off: a student without a score is not charged a skipped test",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 6
+      }
+     ]
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 3,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 5,
+        "max_score": 6
+       }
+      ]
+     },
+     "2": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     },
+     "3": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": true,
+   "expected": {
+    "attendance": {
+     "attended": 3,
+     "countable": 3,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "pending": 0,
+     "percent": 83.33333333333333
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 83.33333333333333
+     }
+    ],
+    "percent": 92
+   },
+   "testsOff": true
+  },
+  {
+   "name": "tests off is false: the score counts as usual",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 6
+      }
+     ]
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 3,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "score": 5,
+        "max_score": 6
+       }
+      ]
+     },
+     "2": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     },
+     "3": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": 90
+   },
+   "testHeld": true,
+   "expected": {
+    "attendance": {
+     "attended": 3,
+     "countable": 3,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "pending": 0,
+     "percent": 83.33333333333333
+    },
+    "test": {
+     "state": "scored",
+     "percent": 90
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 83.33333333333333
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 90
+     }
+    ],
+    "percent": 91
+   },
+   "testsOff": false
   }
  ],
  "groupHasTest": [

@@ -197,6 +197,9 @@ interface LeaderboardData {
     week_start: string;
     lessons: LessonMeta[];
     students: StudentRow[];
+    /** The server's decision on the test part; absent on an older backend. */
+    test_held?: boolean;
+    tests_off?: boolean;
     config: {
         curator_hour_enabled: boolean;
         study_buddy_enabled: boolean;
@@ -962,10 +965,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     ls?.homework_statuses ?? (ls?.homework_status ? [ls.homework_status] : []);
 
   // Weekly % = Attendance 40 / Homework 40 / Test 20 (see lib/leaderboardScore.ts). A test "exists"
-  // for the whole group once any one student has a score.
-  const testHeld = data ? groupHasTest(data.students) : false;
+  // for the whole group once any one student has a score — unless the group has no weekly test at all
+  // (Pre-SAT / platform tests off), which the server says. An older backend sends neither field.
+  const testHeld = data ? (data.test_held ?? groupHasTest(data.students)) : false;
+  const testsOff = data?.tests_off === true;
   const scoreOf = (student: StudentRow) =>
-    weeklyScore({ lessons: data?.lessons ?? [], student, testHeld, isFuture: isAttendanceLockedLesson });
+    weeklyScore({ lessons: data?.lessons ?? [], student, testHeld, testsOff, isFuture: isAttendanceLockedLesson });
 
   const getPercentColor = (percent: number) => {
       if (percent >= 90) return "bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300";

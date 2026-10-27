@@ -136,6 +136,7 @@ export function WeeklyScoreExplainer() {
       </ul>
       <p className="mt-2">{t('attendance.score.explainerLeftOut')}</p>
       <p className="mt-1.5">{t('attendance.score.explainerNoTest')}</p>
+      <p className="mt-1.5">{t('attendance.score.explainerPreSat')}</p>
       <p className="mt-1.5 text-muted-foreground">{t('attendance.score.explainerNoData')}</p>
       <p className="mt-1.5 text-muted-foreground">{t('attendance.score.explainerStar')}</p>
     </HoverPopover>
