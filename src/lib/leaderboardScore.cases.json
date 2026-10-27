@@ -60,11 +60,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 83.33333333333333
     },
     "test": {
      "state": "skipped",
-     "percent": 0
+     "percent": 0,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -146,11 +148,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 83.33333333333333
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -227,11 +231,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 83.33333333333333
     },
     "test": {
      "state": "scored",
-     "percent": 90
+     "percent": 90,
+     "raw_percent": 90
     },
     "parts": [
      {
@@ -313,11 +319,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 83.33333333333333
     },
     "test": {
      "state": "scored",
-     "percent": 0
+     "percent": 0,
+     "raw_percent": 0
     },
     "parts": [
      {
@@ -377,11 +385,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -441,11 +451,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -507,11 +519,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -590,11 +604,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -643,11 +659,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -705,11 +723,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -750,11 +770,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -813,11 +835,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -862,11 +886,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -911,11 +937,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -991,11 +1019,13 @@
     "homework": {
      "assigned": 2,
      "pending": 0,
+     "not_due": 0,
      "percent": 75
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -1076,11 +1106,13 @@
     "homework": {
      "assigned": 2,
      "pending": 0,
+     "not_due": 0,
      "percent": 75
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -1139,11 +1171,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 50
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -1201,11 +1235,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 50
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -1272,11 +1308,13 @@
     "homework": {
      "assigned": 2,
      "pending": 0,
+     "not_due": 0,
      "percent": 75
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -1361,11 +1399,13 @@
     "homework": {
      "assigned": 3,
      "pending": 1,
+     "not_due": 0,
      "percent": 33.33333333333333
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -1424,11 +1464,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 0
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -1480,11 +1522,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 0
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -1566,11 +1610,13 @@
     "homework": {
      "assigned": 2,
      "pending": 0,
+     "not_due": 0,
      "percent": 50
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -1692,11 +1738,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 100
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -1776,11 +1824,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 100
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -1838,11 +1888,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 50
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -1896,11 +1948,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 100
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -1955,11 +2009,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 50
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -1994,11 +2050,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "scored",
-     "percent": 64
+     "percent": 64,
+     "raw_percent": 64
     },
     "parts": [
      {
@@ -2028,11 +2086,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "skipped",
-     "percent": 0
+     "percent": 0,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -2062,11 +2122,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "scored",
-     "percent": 64
+     "percent": 64,
+     "raw_percent": 64
     },
     "parts": [
      {
@@ -2096,11 +2158,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [],
     "percent": null
@@ -2124,11 +2188,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [],
     "percent": null
@@ -2163,11 +2229,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [],
     "percent": null
@@ -2202,11 +2270,13 @@
     "homework": {
      "assigned": 0,
      "pending": 0,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -2271,11 +2341,13 @@
     "homework": {
      "assigned": 1,
      "pending": 1,
+     "not_due": 0,
      "percent": 80
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -2345,11 +2417,13 @@
     "homework": {
      "assigned": 1,
      "pending": 1,
+     "not_due": 0,
      "percent": 0
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -2419,11 +2493,13 @@
     "homework": {
      "assigned": 0,
      "pending": 2,
+     "not_due": 0,
      "percent": null
     },
     "test": {
      "state": "scored",
-     "percent": 60
+     "percent": 60,
+     "raw_percent": 60
     },
     "parts": [
      {
@@ -2506,11 +2582,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 50
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -2578,11 +2656,13 @@
     "homework": {
      "assigned": 1,
      "pending": 1,
+     "not_due": 0,
      "percent": 100
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -2666,11 +2746,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 100
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -2747,11 +2829,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 83.33333333333333
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -2829,11 +2913,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 83.33333333333333
     },
     "test": {
      "state": "none",
-     "percent": null
+     "percent": null,
+     "raw_percent": null
     },
     "parts": [
      {
@@ -2911,11 +2997,13 @@
     "homework": {
      "assigned": 1,
      "pending": 0,
+     "not_due": 0,
      "percent": 83.33333333333333
     },
     "test": {
      "state": "scored",
-     "percent": 90
+     "percent": 90,
+     "raw_percent": 90
     },
     "parts": [
      {
@@ -2937,6 +3025,1577 @@
     "percent": 91
    },
    "testsOff": false
+  },
+  {
+   "name": "a test finished after the close counts half: 80% -> 40%",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": 80,
+    "test_late": true
+   },
+   "testHeld": true,
+   "now": "2026-10-27T09:00:00Z",
+   "testClosesAt": "2026-10-25T19:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "late",
+     "percent": 40,
+     "raw_percent": 80
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 40
+     }
+    ],
+    "percent": 80
+   }
+  },
+  {
+   "name": "a late 75% is 37.5% and the total is rounded once at the end",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": 75,
+    "test_late": true
+   },
+   "testHeld": true,
+   "now": "2026-10-27T09:00:00Z",
+   "testClosesAt": "2026-10-25T19:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "late",
+     "percent": 37.5,
+     "raw_percent": 75
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 37.5
+     }
+    ],
+    "percent": 79
+   }
+  },
+  {
+   "name": "a late 0% is a score of 0, not a skip",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": 0,
+    "test_late": true
+   },
+   "testHeld": true,
+   "now": "2026-10-27T09:00:00Z",
+   "testClosesAt": "2026-10-25T19:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "late",
+     "percent": 0,
+     "raw_percent": 0
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 0
+     }
+    ],
+    "percent": 67
+   }
+  },
+  {
+   "name": "a test finished before the close counts in full",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": 80,
+    "test_late": false
+   },
+   "testHeld": true,
+   "now": "2026-10-27T09:00:00Z",
+   "testClosesAt": "2026-10-25T19:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "scored",
+     "percent": 80,
+     "raw_percent": 80
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 80
+     }
+    ],
+    "percent": 93
+   }
+  },
+  {
+   "name": "test still open, student already has a score: counts normally",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": 60,
+    "test_late": false
+   },
+   "testHeld": true,
+   "now": "2026-10-24T09:00:00Z",
+   "testClosesAt": "2026-10-25T19:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "scored",
+     "percent": 60,
+     "raw_percent": 60
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 60
+     }
+    ],
+    "percent": 87
+   }
+  },
+  {
+   "name": "test still open, no score yet: no test part (not a 0)",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": true,
+   "now": "2026-10-24T09:00:00Z",
+   "testClosesAt": "2026-10-25T19:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "open",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "test closed, no score, the group had a test: skipped = 0",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": true,
+   "now": "2026-10-27T09:00:00Z",
+   "testClosesAt": "2026-10-25T19:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "skipped",
+     "percent": 0,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 0
+     }
+    ],
+    "percent": 67
+   }
+  },
+  {
+   "name": "a set exists on the platform but nobody in the group has a result, after the close: no test part",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null,
+    "mock_exam": 0
+   },
+   "testHeld": false,
+   "now": "2026-10-27T09:00:00Z",
+   "testClosesAt": "2026-10-25T19:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "at the very close the test is closed",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": true,
+   "now": "2026-10-25T19:00:00Z",
+   "testClosesAt": "2026-10-25T19:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "skipped",
+     "percent": 0,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 0
+     }
+    ],
+    "percent": 67
+   }
+  },
+  {
+   "name": "no close known: a missing score is a skip, as before",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": true,
+   "now": "2026-10-27T09:00:00Z",
+   "testClosesAt": null,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "skipped",
+     "percent": 0,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 0
+     }
+    ],
+    "percent": 67
+   }
+  },
+  {
+   "name": "no set and no scores: no test part",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "now": "2026-10-27T09:00:00Z",
+   "testClosesAt": null,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "tests off: an open test is no test part",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "testsOff": true,
+   "now": "2026-10-24T09:00:00Z",
+   "testClosesAt": "2026-10-25T19:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "tests off: a late score is not halved into the % either, there is no test part",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": 80,
+    "test_late": true
+   },
+   "testHeld": false,
+   "testsOff": true,
+   "now": "2026-10-27T09:00:00Z",
+   "testClosesAt": "2026-10-25T19:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "without now the test is treated as closed",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": true,
+   "now": null,
+   "testClosesAt": "2026-10-25T19:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "skipped",
+     "percent": 0,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 0
+     }
+    ],
+    "percent": 67
+   }
+  },
+  {
+   "name": "homework not handed in before its due date is left out and counted as not due",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10,
+       "due_date": "2026-10-28T10:00:00Z"
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": false,
+        "score": null,
+        "max_score": 10,
+        "due_date": "2026-10-28T10:00:00Z"
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "now": "2026-10-27T10:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 1,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "homework not handed in after its due date counts 0",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10,
+       "due_date": "2026-10-20T10:00:00Z"
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": false,
+        "score": null,
+        "max_score": 10,
+        "due_date": "2026-10-20T10:00:00Z"
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "now": "2026-10-27T10:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "pending": 0,
+     "not_due": 0,
+     "percent": 0
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 0
+     }
+    ],
+    "percent": 50
+   }
+  },
+  {
+   "name": "a homework due this very instant is not missed yet",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10,
+       "due_date": "2026-10-27T10:00:00Z"
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": false,
+        "score": null,
+        "max_score": 10,
+        "due_date": "2026-10-27T10:00:00Z"
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "now": "2026-10-27T10:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 1,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "a homework handed in before its due date is scored at once",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10,
+       "due_date": "2026-10-28T10:00:00Z"
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": true,
+        "score": 8,
+        "max_score": 10,
+        "due_date": "2026-10-28T10:00:00Z"
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "now": "2026-10-27T10:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "pending": 0,
+     "not_due": 0,
+     "percent": 80
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 80
+     }
+    ],
+    "percent": 90
+   }
+  },
+  {
+   "name": "handed in but not graded before the due date is pending, not 'not due'",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10,
+       "due_date": "2026-10-28T10:00:00Z"
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": true,
+        "score": null,
+        "max_score": 10,
+        "due_date": "2026-10-28T10:00:00Z"
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "now": "2026-10-27T10:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 1,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "done, missed and not due together: only the not-due one is left out",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10,
+       "due_date": "2026-10-20T10:00:00Z"
+      },
+      {
+       "id": 2,
+       "max_score": 10,
+       "due_date": "2026-10-28T10:00:00Z"
+      },
+      {
+       "id": 3,
+       "max_score": 10,
+       "due_date": "2026-10-20T10:00:00Z"
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": true,
+        "score": 10,
+        "max_score": 10,
+        "due_date": "2026-10-20T10:00:00Z"
+       },
+       {
+        "assignment_id": 2,
+        "submitted": false,
+        "score": null,
+        "max_score": 10,
+        "due_date": "2026-10-28T10:00:00Z"
+       },
+       {
+        "assignment_id": 3,
+        "submitted": false,
+        "score": null,
+        "max_score": 10,
+        "due_date": "2026-10-20T10:00:00Z"
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "now": "2026-10-27T10:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 2,
+     "pending": 0,
+     "not_due": 1,
+     "percent": 50
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 50
+     }
+    ],
+    "percent": 75
+   }
+  },
+  {
+   "name": "a homework without a due date counts 0 as before",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": false,
+        "score": null,
+        "max_score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "now": "2026-10-27T10:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "pending": 0,
+     "not_due": 0,
+     "percent": 0
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 0
+     }
+    ],
+    "percent": 50
+   }
+  },
+  {
+   "name": "a student's extended deadline beats the assignment's due date",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10,
+       "due_date": "2026-10-20T10:00:00Z"
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": false,
+        "score": null,
+        "max_score": 10,
+        "due_date": "2026-10-28T10:00:00Z"
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "now": "2026-10-27T10:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 1,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "assigned without a status row: the due date decides for each",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10,
+       "due_date": "2026-10-28T10:00:00Z"
+      },
+      {
+       "id": 2,
+       "max_score": 10,
+       "due_date": "2026-10-20T10:00:00Z"
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "now": "2026-10-27T10:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "pending": 0,
+     "not_due": 1,
+     "percent": 0
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 0
+     }
+    ],
+    "percent": 50
+   }
+  },
+  {
+   "name": "without now a homework before its due date still counts 0 (older caller)",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10,
+       "due_date": "2026-10-28T10:00:00Z"
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": false,
+        "score": null,
+        "max_score": 10,
+        "due_date": "2026-10-28T10:00:00Z"
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "pending": 0,
+     "not_due": 0,
+     "percent": 0
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 0
+     }
+    ],
+    "percent": 50
+   }
+  },
+  {
+   "name": "a lesson that has not happened yet: its homework is neither counted nor 'not due'",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z"
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-10-28T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 9,
+       "max_score": 10,
+       "due_date": "2026-10-28T10:00:00Z"
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true
+     },
+     "2": {
+      "attendance_status": "registered",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 9,
+        "submitted": false,
+        "score": null,
+        "max_score": 10,
+        "due_date": "2026-10-28T10:00:00Z"
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "now": "2026-10-27T10:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 0,
+     "percent": null
+    },
+    "test": {
+     "state": "none",
+     "percent": null,
+     "raw_percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "late test, homework not due and full attendance together",
+   "today": "2026-10-27",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10,
+       "due_date": "2026-10-28T10:00:00Z"
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": false,
+        "score": null,
+        "max_score": 10,
+        "due_date": "2026-10-28T10:00:00Z"
+       }
+      ]
+     }
+    },
+    "test_percent": 70,
+    "test_late": true
+   },
+   "testHeld": true,
+   "now": "2026-10-27T10:00:00Z",
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 0,
+     "not_due": 1,
+     "percent": null
+    },
+    "test": {
+     "state": "late",
+     "percent": 35,
+     "raw_percent": 70
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 35
+     }
+    ],
+    "percent": 78
+   },
+   "testClosesAt": "2026-10-25T19:00:00Z"
   }
  ],
  "groupHasTest": [

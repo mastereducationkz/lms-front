@@ -3,6 +3,7 @@ import {
   RETIRED_LEADERBOARD_COLUMNS,
   groupHasTest,
   isRetiredColumn,
+  parseInstant,
   studentTestPercent,
   weeklyScore,
   withoutRetiredColumns,
@@ -67,7 +68,7 @@ describe('the weighted examples', () => {
   it('attendance 100 + homework 83 + a test held but skipped = 73 %', () => {
     const result = score(lessons, student(row), true);
     expect(result.attendance).toMatchObject({ attended: 3, countable: 3 });
-    expect(result.test).toEqual({ state: 'skipped', percent: 0 });
+    expect(result.test).toEqual({ state: 'skipped', percent: 0, raw_percent: null });
     expect(result.percent).toBe(73);
   });
 
@@ -80,7 +81,7 @@ describe('the weighted examples', () => {
 
   it('a student who took the test is scored on it', () => {
     const result = score(lessons, student(row, 90), true);
-    expect(result.test).toEqual({ state: 'scored', percent: 90 });
+    expect(result.test).toEqual({ state: 'scored', percent: 90, raw_percent: 90 });
     // (100·40 + 83.33·40 + 90·20) / 100
     expect(result.percent).toBe(91);
   });
@@ -210,12 +211,12 @@ describe('homework part', () => {
       { ...hwDone(1, 8), submitted: true },
       { assignment_id: 2, submitted: true, score: null, max_score: 10 },
     ] }) }));
-    expect(pending.homework).toEqual({ assigned: 1, pending: 1, percent: 80 });
+    expect(pending.homework).toEqual({ assigned: 1, pending: 1, not_due: 0, percent: 80 });
     const graded = score(lessons, student({ '1': att('attended', { homework_statuses: [
       { ...hwDone(1, 8), submitted: true },
       { ...hwDone(2, 2), submitted: true },
     ] }) }));
-    expect(graded.homework).toEqual({ assigned: 2, pending: 0, percent: 50 });
+    expect(graded.homework).toEqual({ assigned: 2, pending: 0, not_due: 0, percent: 50 });
   });
 
   it('when every homework is pending the part does not exist and nothing else is re-weighted', () => {
@@ -228,7 +229,7 @@ describe('homework part', () => {
       ] }) }, 60),
       true,
     );
-    expect(result.homework).toEqual({ assigned: 0, pending: 2, percent: null });
+    expect(result.homework).toEqual({ assigned: 0, pending: 2, not_due: 0, percent: null });
     expect(result.parts.map((p) => p.part)).toEqual(['attendance', 'test']);
     expect(result.percent).toBe(87);
   });
@@ -244,12 +245,12 @@ describe('homework part', () => {
         '3': att('missed', { frozen: true, homework_statuses: [pendingStatus(3)] }),
       }),
     );
-    expect(result.homework).toEqual({ assigned: 1, pending: 0, percent: 100 });
+    expect(result.homework).toEqual({ assigned: 1, pending: 0, not_due: 0, percent: 100 });
   });
 
   it('an assigned homework with no status row counts 0', () => {
     const result = score([meta(1, { hw: [{ id: 1, max_score: 10 }] })], student({ '1': att('attended') }));
-    expect(result.homework).toEqual({ assigned: 1, pending: 0, percent: 0 });
+    expect(result.homework).toEqual({ assigned: 1, pending: 0, not_due: 0, percent: 0 });
   });
 
   it('cancelled and excused lessons keep their homework', () => {
@@ -261,7 +262,7 @@ describe('homework part', () => {
         '2': att('missed', { excused: true, homework_statuses: [hwDone(2, 0)] }),
       }),
     );
-    expect(result.homework).toEqual({ assigned: 2, pending: 0, percent: 50 });
+    expect(result.homework).toEqual({ assigned: 2, pending: 0, not_due: 0, percent: 50 });
   });
 
   it('lessons that are not the student\'s lose their homework too', () => {
@@ -280,7 +281,7 @@ describe('homework part', () => {
         '4': att('missed', { blocked: true, homework_statuses: [hwDone(4, 0)] }),
       }),
     );
-    expect(result.homework).toEqual({ assigned: 1, pending: 0, percent: 100 });
+    expect(result.homework).toEqual({ assigned: 1, pending: 0, not_due: 0, percent: 100 });
   });
 
   it('a lesson that has not happened yet loses its homework, even one already handed in', () => {
@@ -292,7 +293,7 @@ describe('homework part', () => {
         '2': { attendance_status: 'missed', marked: false, homework_statuses: [hwDone(2, 10)] },
       }),
     );
-    expect(result.homework).toEqual({ assigned: 1, pending: 0, percent: 100 });
+    expect(result.homework).toEqual({ assigned: 1, pending: 0, not_due: 0, percent: 100 });
   });
 
   it('a past unmarked lesson counts for homework only', () => {
@@ -301,7 +302,7 @@ describe('homework part', () => {
       student({ '1': { attendance_status: 'missed', marked: false, homework_statuses: [hwDone(1, 5)] } }),
     );
     expect(result.attendance).toMatchObject({ countable: 0, percent: null });
-    expect(result.homework).toEqual({ assigned: 1, pending: 0, percent: 50 });
+    expect(result.homework).toEqual({ assigned: 1, pending: 0, not_due: 0, percent: 50 });
     expect(result.percent).toBe(50);
   });
 
@@ -310,7 +311,7 @@ describe('homework part', () => {
       [meta(1, { start: TODAY, hw: [{ id: 1, max_score: 10 }] })],
       student({ '1': att('attended', { homework_statuses: [hwDone(1, 10)] }) }),
     );
-    expect(result.homework).toEqual({ assigned: 1, pending: 0, percent: 100 });
+    expect(result.homework).toEqual({ assigned: 1, pending: 0, not_due: 0, percent: 100 });
   });
 
   it('reads the legacy single homework fields', () => {
@@ -342,7 +343,7 @@ describe('a group with no weekly test (testsOff)', () => {
 
   it('a student with a score gets no test part — the score does not enter the %', () => {
     const r = weeklyScore({ lessons, student: student(present, 40), testHeld: false, testsOff: true, isFuture });
-    expect(r.test).toEqual({ state: 'none', percent: null });
+    expect(r.test).toEqual({ state: 'none', percent: null, raw_percent: null });
     expect(r.parts.map((p) => p.part)).toEqual(['attendance']);
     expect(r.percent).toBe(100);
   });
@@ -355,7 +356,7 @@ describe('a group with no weekly test (testsOff)', () => {
 
   it('testsOff false keeps the usual rule', () => {
     const r = weeklyScore({ lessons, student: student(present, 40), testHeld: true, testsOff: false, isFuture });
-    expect(r.test).toEqual({ state: 'scored', percent: 40 });
+    expect(r.test).toEqual({ state: 'scored', percent: 40, raw_percent: 40 });
     expect(r.percent).toBe(Math.round((100 * 40 + 40 * 20) / 60));
   });
 });
@@ -374,5 +375,28 @@ describe('no part exists', () => {
   it('a single part stands alone at its own percentage', () => {
     expect(score([], student({}, 64), true).percent).toBe(64);
     expect(score([meta(1)], student({ '1': att('attended') })).percent).toBe(100);
+  });
+});
+
+// The rule itself is covered case by case in leaderboardScore.parity.test.ts; these are the reading details.
+describe('deadlines', () => {
+  it('reads an offset-less stamp as UTC, like the server', () => {
+    expect(parseInstant('2026-10-21T15:41:37')).toBe(Date.parse('2026-10-21T15:41:37Z'));
+    expect(parseInstant('2026-10-21T15:41:37.0994819Z')).toBe(Date.parse('2026-10-21T15:41:37.099Z'));
+    expect(parseInstant('2026-10-25T19:00:00+00:00')).toBe(Date.parse('2026-10-25T19:00:00Z'));
+    expect(parseInstant('2026-10-25')).toBe(Date.parse('2026-10-25T00:00:00Z'));
+    expect(parseInstant('not a date')).toBeNull();
+    expect(parseInstant(null)).toBeNull();
+  });
+
+  it('a late score counts half, an open test without a score is left out', () => {
+    const lessons = [meta(1)];
+    const present = { '1': att('attended') };
+    const closes = '2026-10-25T19:00:00Z';
+    const late = weeklyScore({ lessons, student: { ...student(present, 80), test_late: true }, testHeld: true, now: '2026-10-27T00:00:00Z', testClosesAt: closes, isFuture });
+    expect(late.test).toEqual({ state: 'late', percent: 40, raw_percent: 80 });
+    const open = weeklyScore({ lessons, student: student(present), testHeld: true, now: '2026-10-24T00:00:00Z', testClosesAt: closes, isFuture });
+    expect(open.test).toEqual({ state: 'open', percent: null, raw_percent: null });
+    expect(open.percent).toBe(100);
   });
 });

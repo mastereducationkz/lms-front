@@ -52,13 +52,15 @@ import { useLocale, useT } from '../lib/i18n/react';
 import ExamSectionCell from '../components/curator/ExamSectionCell';
 import { NUET_SECTION_MAX } from '../lib/examSection';
 import '@/lib/i18n/catalogs/attendance';
-import { WeeklyScoreButton, WeeklyScoreExplainer } from '../components/leaderboard/WeeklyScore';
+import { LateTestBadge, WeeklyScoreButton, WeeklyScoreExplainer } from '../components/leaderboard/WeeklyScore';
 import { groupHasTest, isRetiredColumn, weeklyScore, withoutRetiredColumns } from '../lib/leaderboardScore';
 
 interface HomeworkMeta {
     id: number;
     title: string;
     max_score?: number | null;
+    /** When the homework is due (UTC, ISO); the weekly % counts it 0 only after that. */
+    due_date?: string | null;
 }
 
 interface LessonMeta {
@@ -87,6 +89,8 @@ interface HomeworkStatus {
     submitted_at?: string | null;
     graded_at?: string | null;
     late?: boolean;
+    /** The student's own deadline (an extension), else the assignment's (UTC, ISO). */
+    due_date?: string | null;
 }
 
 interface StudentLessonStatus {
@@ -148,6 +152,10 @@ interface StudentRow {
     mock_exam: number;
     /** The test part of the weekly %: platform score, else a manual one above 0, else null. */
     test_percent?: number | null;
+    /** The platform result came in at or after the close of its set: it counts half. */
+    test_late?: boolean;
+    /** When that result was completed (UTC, ISO). */
+    test_completed_at?: string | null;
     sat_math_correct_count?: number | null;
     sat_math_total_count?: number | null;
     sat_math_scaled_score?: number | null;
@@ -200,6 +208,11 @@ interface LeaderboardData {
     /** The server's decision on the test part; absent on an older backend. */
     test_held?: boolean;
     tests_off?: boolean;
+    /** When the week's test closes (ISO), and whether it already has; absent on an older backend. */
+    test_closes_at?: string | null;
+    test_closed?: boolean;
+    /** The server's clock when the response was built (UTC, ISO); the % judges deadlines by it. */
+    server_now?: string;
     config: {
         curator_hour_enabled: boolean;
         study_buddy_enabled: boolean;
@@ -970,7 +983,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const testHeld = data ? (data.test_held ?? groupHasTest(data.students)) : false;
   const testsOff = data?.tests_off === true;
   const scoreOf = (student: StudentRow) =>
-    weeklyScore({ lessons: data?.lessons ?? [], student, testHeld, testsOff, isFuture: isAttendanceLockedLesson });
+    weeklyScore({
+      lessons: data?.lessons ?? [], student, testHeld, testsOff, isFuture: isAttendanceLockedLesson,
+      // The server's clock (the browser's only for an older backend that sends none).
+      now: data?.server_now ?? new Date().toISOString(),
+      testClosesAt: data?.test_closes_at,
+    });
 
   const getPercentColor = (percent: number) => {
       if (percent >= 90) return "bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300";
@@ -1883,17 +1901,17 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     )}
                     {showExamSections ? (
                         <>
-                            <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">
+                            <TableHead className="text-center font-semibold p-2 w-28 min-w-[6.5rem] text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">
                                 {examLabel} Math
                             </TableHead>
-                            <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">
+                            <TableHead className="text-center font-semibold p-2 w-28 min-w-[6.5rem] text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">
                                 {examLabel} Verbal
                             </TableHead>
                         </>
                     ) : isIeltsGroup ? (
-                        <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">IELTS</TableHead>
+                        <TableHead className="text-center font-semibold p-2 w-28 min-w-[6.5rem] text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">IELTS</TableHead>
                     ) : (
-                        <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight"><span className="whitespace-pre-line">{t('attendance.columns.mockExam')}</span></TableHead>
+                        <TableHead className="text-center font-semibold p-2 w-28 min-w-[6.5rem] text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight"><span className="whitespace-pre-line">{t('attendance.columns.mockExam')}</span></TableHead>
                     )}
                     {!isTeacher && (<>
                     {!isRetiredColumn('study_buddy') && (<TableHead
@@ -2283,10 +2301,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     const verbalHasData = student.sat_verbal_correct_count != null;
                                     return (
                                         <>
-                                            <TableCell className="p-0 border-r border-border h-16">
+                                            <TableCell className="p-0 border-r border-border h-16 min-w-[6.5rem]">
                                                 <div
                                                     className={cn(
                                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
+                                                        mathHasData && student.test_late && "flex-col gap-0.5",
                                                         mathHasData ? "cursor-pointer hover:bg-brand-surface" : ""
                                                     )}
                                                     onClick={() => {
@@ -2308,12 +2327,14 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     title={mathHasData ? t('attendance.exam.mathTitle') : undefined}
                                                 >
                                                     {renderExamSectionContent(student.sat_math_correct_count, student.sat_math_total_count, student.sat_math_scaled_score)}
+                                                    {mathHasData && student.test_late && <LateTestBadge />}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="p-0 border-r border-border h-16">
+                                            <TableCell className="p-0 border-r border-border h-16 min-w-[6.5rem]">
                                                 <div
                                                     className={cn(
                                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
+                                                        verbalHasData && student.test_late && "flex-col gap-0.5",
                                                         verbalHasData ? "cursor-pointer hover:bg-brand-surface" : ""
                                                     )}
                                                     onClick={() => {
@@ -2335,6 +2356,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     title={verbalHasData ? t('attendance.exam.verbalTitle') : undefined}
                                                 >
                                                     {renderExamSectionContent(student.sat_verbal_correct_count, student.sat_verbal_total_count, student.sat_verbal_scaled_score)}
+                                                    {verbalHasData && student.test_late && <LateTestBadge />}
                                                 </div>
                                             </TableCell>
                                         </>
@@ -2342,10 +2364,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 })()}
                             </>
                         ) : isIeltsGroup ? (
-                            <TableCell className="p-0 border-r border-border h-16">
+                            <TableCell className="p-0 border-r border-border h-16 min-w-[6.5rem]">
                                 <div
                                     className={cn(
                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
+                                        student.test_late && student.ielts_overall_band != null && "flex-col gap-0.5",
                                         hasIeltsData(student)
                                             ? "cursor-pointer hover:bg-emerald-50 hover:dark:bg-emerald-500/15 dark:hover:bg-emerald-900/20"
                                             : ""
@@ -2358,7 +2381,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     title={hasIeltsData(student) ? t('attendance.exam.ieltsTitle') : undefined}
                                 >
                                     {student.ielts_overall_band != null ? (
-                                        <span className="text-foreground dark:text-foreground">{formatBand(student.ielts_overall_band)}</span>
+                                        <>
+                                            <span className="text-foreground dark:text-foreground">{formatBand(student.ielts_overall_band)}</span>
+                                            {student.test_late && <LateTestBadge />}
+                                        </>
                                     ) : (student.ielts_speaking_status && student.ielts_speaking_status !== 'completed') ? (
                                         (() => {
                                             const meta = SPEAKING_STATUS_META[student.ielts_speaking_status!];
@@ -2381,7 +2407,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 </div>
                             </TableCell>
                         ) : (
-                            <TableCell className="p-0 border-r border-border h-16">
+                            <TableCell className="p-0 border-r border-border h-16 min-w-[6.5rem]">
                                 <div className="w-full h-full flex items-center justify-center text-xs font-medium">
                                     {student.mock_exam > 0 ? (
                                         <span className="text-foreground dark:text-foreground">{student.mock_exam}%</span>
@@ -2416,7 +2442,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                              "p-2 text-center font-bold md:sticky md:right-0 z-30 md:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]",
                              score.percent === null ? "bg-muted text-muted-foreground" : getPercentColor(score.percent)
                          )}>
-                            <WeeklyScoreButton score={score} studentName={student.student_name} />
+                            <WeeklyScoreButton score={score} studentName={student.student_name} testClosesAt={data?.test_closes_at} />
                         </TableCell>
                     </TableRow>
                     );

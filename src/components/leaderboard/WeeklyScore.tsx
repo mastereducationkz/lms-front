@@ -2,12 +2,14 @@ import { useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } 
 import { Info } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '../../lib/utils';
-import { useT } from '../../lib/i18n/react';
-import { SCORE_WEIGHTS, type WeeklyScore } from '../../lib/leaderboardScore';
+import { useLocale, useT } from '../../lib/i18n/react';
+import { formatDate } from '../../lib/i18n';
+import { SCORE_WEIGHTS, parseInstant, type WeeklyScore } from '../../lib/leaderboardScore';
 import '@/lib/i18n/catalogs/attendance';
 
 // A phone is 360 px wide: never wider than the screen minus the gutters.
-const CONTENT_CLASS = 'w-[min(20rem,calc(100vw-1.5rem))] max-h-[70vh] overflow-y-auto p-3 text-xs leading-snug';
+// Never taller than the room Radix has on the side it opened to (the explainer is long and would be cut off at the screen's top).
+const CONTENT_CLASS = 'w-[min(20rem,calc(100vw-1.5rem))] max-h-[min(70vh,var(--radix-popover-content-available-height))] overflow-y-auto p-3 text-xs leading-snug';
 
 /**
  * A popover that opens on tap and, for a mouse, on hover. A click while it is open from hover pins it
@@ -39,13 +41,36 @@ function HoverPopover({ trigger, children, align = 'end' }: {
 
 const roundPercent = (value: number) => Math.round(value);
 
+/** «поздно» beside a platform test result that came in after its set closed (it counts half in the %). */
+export function LateTestBadge() {
+  const t = useT();
+  return (
+    <span
+      className="inline-flex items-center rounded px-1 py-0.5 text-[9px] font-semibold leading-none bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300"
+      title={t('attendance.exam.lateTitle')}
+    >
+      {t('attendance.exam.late')}
+    </span>
+  );
+}
+
+/** The last day an open test can still be handed in, in the viewer's language («31 окт»): the close is a midnight, so the day before it. */
+function closingDay(testClosesAt: string | null | undefined, locale: Parameters<typeof formatDate>[2]): string {
+  const closesMs = parseInstant(testClosesAt);
+  if (closesMs === null) return '';
+  return formatDate(new Date(closesMs - 1), { day: 'numeric', month: 'short' }, locale).replace('.', '');
+}
+
 /** The percent cell's content: the number (or «—») as a button that shows the student's own sum. */
-export function WeeklyScoreButton({ score, studentName, className }: {
+export function WeeklyScoreButton({ score, studentName, testClosesAt, className }: {
   score: WeeklyScore;
   studentName: string;
+  /** When the week's test closes (ISO), for the «open until» line. */
+  testClosesAt?: string | null;
   className?: string;
 }) {
   const t = useT();
+  const locale = useLocale();
   const { attendance, homework, test, parts, percent } = score;
   const weight = (part: keyof typeof SCORE_WEIGHTS) => SCORE_WEIGHTS[part];
 
@@ -78,19 +103,32 @@ export function WeeklyScoreButton({ score, studentName, className }: {
         <li className={cn(homework.percent === null && 'text-muted-foreground')}>
           {homework.percent !== null
             ? t('attendance.score.homework', { percent: roundPercent(homework.percent), weight: weight('homework') })
-            : homework.pending > 0
-              ? t('attendance.score.homeworkAllPending', { count: homework.pending })
+            : homework.pending > 0 || homework.not_due > 0
+              ? null
               : t('attendance.score.homeworkNone')}
+          {homework.percent === null && homework.pending > 0 && (
+            <div>{t('attendance.score.homeworkAllPending', { count: homework.pending })}</div>
+          )}
+          {homework.percent === null && homework.not_due > 0 && (
+            <div>{t('attendance.score.homeworkAllNotDue', { count: homework.not_due })}</div>
+          )}
           {homework.percent !== null && homework.pending > 0 && (
             <div className="mt-0.5 text-muted-foreground">{t('attendance.score.homeworkPending', { count: homework.pending })}</div>
           )}
+          {homework.percent !== null && homework.not_due > 0 && (
+            <div className="mt-0.5 text-muted-foreground">{t('attendance.score.homeworkNotDue', { count: homework.not_due })}</div>
+          )}
         </li>
-        <li className={cn(test.state === 'none' && 'text-muted-foreground')}>
+        <li className={cn((test.state === 'none' || test.state === 'open') && 'text-muted-foreground')}>
           {test.state === 'scored'
             ? t('attendance.score.testScored', { percent: roundPercent(test.percent ?? 0), weight: weight('test') })
-            : test.state === 'skipped'
-              ? t('attendance.score.testSkipped', { weight: weight('test') })
-              : t('attendance.score.testNone')}
+            : test.state === 'late'
+              ? t('attendance.score.testLate', { raw: roundPercent(test.raw_percent ?? 0), percent: roundPercent(test.percent ?? 0) })
+              : test.state === 'open'
+                ? t('attendance.score.testOpen', { date: closingDay(testClosesAt, locale) })
+                : test.state === 'skipped'
+                  ? t('attendance.score.testSkipped', { weight: weight('test') })
+                  : t('attendance.score.testNone')}
         </li>
       </ul>
       <div className="mt-2 border-t border-border pt-2">
@@ -134,6 +172,7 @@ export function WeeklyScoreExplainer() {
         <li>{t('attendance.score.explainerHomework')}</li>
         <li>{t('attendance.score.explainerTest')}</li>
       </ul>
+      <p className="mt-2">{t('attendance.score.explainerNotYet')}</p>
       <p className="mt-2">{t('attendance.score.explainerLeftOut')}</p>
       <p className="mt-1.5">{t('attendance.score.explainerNoTest')}</p>
       <p className="mt-1.5">{t('attendance.score.explainerPreSat')}</p>
