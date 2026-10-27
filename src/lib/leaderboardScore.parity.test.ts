@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { getAlmatyDateKey } from './attendance';
 import { groupHasTest, weeklyScore, type ScoreLessonMeta, type ScoreStudent, type WeeklyScore } from './leaderboardScore';
 
-const CASES_SHA256 = 'e921218bf9cfbfbe5f829b671f2483846a0a944e27df50550cbe48519752b666';
+const CASES_SHA256 = '8da176885ee973a12b0118dd41f18ce019d4295b08c9756d95afcacf48f9e778';
 const casesPath = new URL('./leaderboardScore.cases.json', import.meta.url);
 
 interface ParityCase {
@@ -22,6 +22,8 @@ interface ParityCase {
   student: ScoreStudent;
   testHeld: boolean;
   testsOff?: boolean;
+  now?: string | null;
+  testClosesAt?: string | null;
   expected: WeeklyScore;
 }
 interface GroupHasTestCase {
@@ -63,6 +65,8 @@ describe('weekly % parity with the server', () => {
       student: c.student,
       testHeld: c.testHeld,
       testsOff: c.testsOff,
+      now: c.now,
+      testClosesAt: c.testClosesAt,
       // The web's isAttendanceLockedLesson, with the case's day standing in for «now».
       isFuture: (start) => getAlmatyDateKey(start) > c.today,
     });
