@@ -660,7 +660,7 @@ export default function HeadTeacherTeacherDetailsPage() {
                   <Table className="border-collapse text-left">
                     <TableHeader>
                       <TableRow className="bg-slate-50/80 dark:bg-muted/40 hover:bg-muted/60">
-                        <TableHead className="sticky left-0 z-40 bg-slate-50 dark:bg-muted border-r border-border px-3 py-3 min-w-[140px]">
+                        <TableHead className="sticky left-0 z-[3] bg-slate-50 dark:bg-muted border-r border-border px-3 py-3 min-w-[140px]">
                           <span className="text-sm font-semibold text-muted-foreground">{t('teacherInsights.teacherDetails.col.student')}</span>
                         </TableHead>
                         {attendanceData.lessons.map((lesson) => (
@@ -686,7 +686,7 @@ export default function HeadTeacherTeacherDetailsPage() {
                     <TableBody className="divide-y divide-border">
                       {attendanceData.students.map((student) => (
                         <TableRow key={student.student_id} className="hover:bg-muted/60">
-                          <TableCell className="sticky left-0 z-30 bg-card border-r border-border px-3 py-3">
+                          <TableCell className="sticky left-0 z-[2] bg-card border-r border-border px-3 py-3">
                             <span className="text-sm font-medium text-foreground truncate block max-w-[140px]">
                               {student.student_name}
                             </span>

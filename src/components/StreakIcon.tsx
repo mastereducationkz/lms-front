@@ -210,8 +210,8 @@ const StreakIcon: React.FC = () => {
         </PopoverTrigger>
         {hasCount && <StreakFlame state={flame} solo={false} />}
 
-        {/* Portalled to <body> (Radix): the Topbar's sticky z-10 layer no longer caps it, so later
-            z-10 blocks and the countdown's 3D flip tiles can't paint over the calendar, and
+        {/* Portalled to <body> (Radix): the Topbar's sticky z-30 layer no longer caps it, so later
+            page blocks and the countdown's 3D flip tiles can't paint over the calendar, and
             collision padding keeps it on screen at every width. */}
         <PopoverContent
           align="end"

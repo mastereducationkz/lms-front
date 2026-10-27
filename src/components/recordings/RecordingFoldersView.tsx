@@ -220,7 +220,7 @@ export default function RecordingFoldersView({ filters, locale, onOpen }: Props)
         <div className="space-y-7">
           {days.map((day) => (
             <section key={day.key} aria-labelledby={`folder-day-${day.key}`}>
-              <h2 id={`folder-day-${day.key}`} className="sticky top-0 z-10 -mx-1 mb-3 flex items-baseline gap-2 bg-background/90 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+              <h2 id={`folder-day-${day.key}`} style={{ top: 'var(--topbar-h, 0px)' }} className="sticky z-10 -mx-1 mb-3 flex items-baseline gap-2 bg-background/90 px-1 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/75">
                 <span className="text-[15px] font-semibold text-foreground">{dayHeading(day.key, now, locale)}</span>
                 <span className="text-[13px] tabular-nums text-muted-foreground">{day.items.length}</span>
               </h2>
