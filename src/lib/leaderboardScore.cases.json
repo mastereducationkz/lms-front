@@ -3405,7 +3405,7 @@
    }
   },
   {
-   "name": "the platform has a set but nobody scored, after the close: everyone 0",
+   "name": "a set exists on the platform but nobody in the group has a result, after the close: no test part",
    "today": "2026-10-27",
    "lessons": [
     {
@@ -3424,7 +3424,7 @@
     "test_percent": null,
     "mock_exam": 0
    },
-   "testHeld": true,
+   "testHeld": false,
    "now": "2026-10-27T09:00:00Z",
    "testClosesAt": "2026-10-25T19:00:00Z",
    "expected": {
@@ -3440,8 +3440,8 @@
      "percent": null
     },
     "test": {
-     "state": "skipped",
-     "percent": 0,
+     "state": "none",
+     "percent": null,
      "raw_percent": null
     },
     "parts": [
@@ -3449,14 +3449,9 @@
       "part": "attendance",
       "weight": 40,
       "percent": 100
-     },
-     {
-      "part": "test",
-      "weight": 20,
-      "percent": 0
      }
     ],
-    "percent": 67
+    "percent": 100
    }
   },
   {

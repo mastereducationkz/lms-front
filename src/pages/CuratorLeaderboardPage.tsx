@@ -211,6 +211,8 @@ interface LeaderboardData {
     /** When the week's test closes (ISO), and whether it already has; absent on an older backend. */
     test_closes_at?: string | null;
     test_closed?: boolean;
+    /** The server's clock when the response was built (UTC, ISO); the % judges deadlines by it. */
+    server_now?: string;
     config: {
         curator_hour_enabled: boolean;
         study_buddy_enabled: boolean;
@@ -983,8 +985,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const scoreOf = (student: StudentRow) =>
     weeklyScore({
       lessons: data?.lessons ?? [], student, testHeld, testsOff, isFuture: isAttendanceLockedLesson,
-      // An older backend sends no close: every deadline then counts as passed, as before.
-      now: data?.test_closes_at !== undefined ? new Date().toISOString() : undefined,
+      // The server's clock (the browser's only for an older backend that sends none).
+      now: data?.server_now ?? new Date().toISOString(),
       testClosesAt: data?.test_closes_at,
     });
 

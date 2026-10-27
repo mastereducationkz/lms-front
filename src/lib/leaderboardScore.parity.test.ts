@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { getAlmatyDateKey } from './attendance';
 import { groupHasTest, weeklyScore, type ScoreLessonMeta, type ScoreStudent, type WeeklyScore } from './leaderboardScore';
 
-const CASES_SHA256 = '8da176885ee973a12b0118dd41f18ce019d4295b08c9756d95afcacf48f9e778';
+const CASES_SHA256 = '79cb719b557e2392a0a0c00ca74082f4724d819809db7f1175ec5b997c50537a';
 const casesPath = new URL('./leaderboardScore.cases.json', import.meta.url);
 
 interface ParityCase {
