@@ -31,6 +31,7 @@
   import { useT } from '../../lib/i18n/react';
   import '@/lib/i18n/catalogs/homeworkStaff';
   import type { AssignmentExtension } from '../../types/index';
+  import { formatScore, gradeProblem, gradeProblemKey, parseGradeInput, sanitizeGradeTyping } from '../../lib/gradeScore';
 
   // A submission file reference is untrusted (student-supplied); this resolves it to a
   // safe URL on the API host, or null when it isn't one (hostile scheme, foreign host,
@@ -210,7 +211,7 @@
         }
 
         setSelectedSubmission(sub);
-        setScoreInput(sub?.score != null ? String(sub.score) : '');
+        setScoreInput(formatScore(sub?.score));
         setFeedbackInput(sub?.feedback || '');
       } catch (e) {
         console.error('Failed to load submission:', e);
@@ -221,16 +222,22 @@
 
     const submitGrade = async () => {
       if (!gradingDialog.submissionId) return;
+      // Halves only (7.5), 0..max — the server checks the same.
+      const maxScore = data?.assignment.max_score ?? selectedSubmission?.max_score ?? 100;
+      const problem = gradeProblem(scoreInput, maxScore);
+      if (problem) {
+        alert(t(gradeProblemKey(problem), { max: maxScore }));
+        return;
+      }
       try {
         setSavingGrade(true);
-        const parsedScore = Number(scoreInput);
-        await apiClient.gradeSubmission(id!, String(gradingDialog.submissionId), parsedScore, feedbackInput);
+        await apiClient.gradeSubmission(id!, String(gradingDialog.submissionId), parseGradeInput(scoreInput)!, feedbackInput);
         await loadAssignmentProgress();
         setGradingDialog({ open: false, submissionId: null });
         setSelectedSubmission(null);
       } catch (e: any) {
         console.error('Failed to save grade:', e);
-        alert(e?.message || t('homeworkStaff.grade.saveFailed'));
+        alert(e?.response?.data?.detail || e?.message || t('homeworkStaff.grade.saveFailed'));
       } finally {
         setSavingGrade(false);
       }
@@ -610,7 +617,7 @@
                               <div className="flex items-center gap-2">
                                 <Award className="w-4 h-4 text-green-600 dark:text-green-400" />
                                 <span className="font-medium">
-                                  {student.score}/{student.max_score}
+                                  {formatScore(student.score)}/{student.max_score}
                                 </span>
                               </div>
                             ) : (
@@ -911,11 +918,11 @@
                       <div>
                         <label className="text-sm text-muted-foreground">{t('homeworkStaff.grade.score')}</label>
                         <Input
-                          type="number"
-                          min={0}
-                          max={data?.assignment.max_score || 100}
+                          type="text"
+                          inputMode="decimal"
+                          autoComplete="off"
                           value={scoreInput}
-                          onChange={(e) => setScoreInput(e.target.value)}
+                          onChange={(e) => setScoreInput(sanitizeGradeTyping(e.target.value))}
                           className="mt-1"
                         />
                         <div className="text-xs text-muted-foreground mt-1">{t('homeworkStaff.progress.maxScoreLine', { max: data?.assignment.max_score ?? '' })}</div>

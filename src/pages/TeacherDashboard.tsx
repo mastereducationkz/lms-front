@@ -60,6 +60,7 @@ import { CompletionMeta } from '../components/progress/CompletionMeta';
 import type { CheckpointSummary } from '../lib/completion';
 import '@/lib/i18n/catalogs/teacher';
 import '@/lib/i18n/catalogs/teacherDesk';
+import { gradeProblem, gradeProblemKey, parseGradeInput, sanitizeGradeTyping } from '@/lib/gradeScore';
 
 interface TeacherStats {
   total_courses: number;
@@ -322,7 +323,7 @@ export default function TeacherDashboard() {
       setGradingScore('');
       return;
     }
-    const current = gradingScore === '' ? 0 : Number(gradingScore);
+    const current = parseGradeInput(gradingScore) ?? 0;
     const step = Math.max(1, Math.round(maxScore * 0.1));
     const next = action === 'plus10' ? current + step : current - step;
     setGradingScore(clampAssignmentScore(next, maxScore));
@@ -586,18 +587,24 @@ export default function TeacherDashboard() {
   const handleSubmitGrade = async () => {
     if (!selectedSubmission || !currentAssignment) return;
 
-    // Validation
+    // Validation: halves only (7.5), 0..max — the server checks the same.
     if (gradingScore === '' || gradingScore === null || gradingScore === undefined) {
       toast(t('teacherDesk.dashboard.enterGradeScore'), 'error');
       return;
     }
+    const gradeIssue = gradeProblem(gradingScore, getAssignmentMaxScore());
+    if (gradeIssue) {
+      toast(t(gradeProblemKey(gradeIssue), { max: getAssignmentMaxScore() }), 'error');
+      return;
+    }
+    const score = parseGradeInput(gradingScore)!;
 
     setIsSubmitting(true);
     try {
       await apiClient.gradeSubmission(
         String(selectedSubmission.assignment_id), 
         String(selectedSubmission.id), 
-        Number(gradingScore), 
+        score, 
         gradingFeedback
       );
       
@@ -605,7 +612,7 @@ export default function TeacherDashboard() {
       const draftKey = getAssignmentAutoSaveKey(selectedSubmission.id);
       localStorage.removeItem(draftKey);
       
-      applyAssignmentGradeLocally(selectedSubmission.id, Number(gradingScore), gradingFeedback);
+      applyAssignmentGradeLocally(selectedSubmission.id, score, gradingFeedback);
       toast(t('teacherDesk.dashboard.submissionGraded'), 'success');
       handleCloseGradingModal();
     } catch (error) {
@@ -1940,18 +1947,11 @@ export default function TeacherDashboard() {
                     </button>
                     <Input
                       id="gradeScore"
-                      type="number"
-                      min="0"
-                      max={currentAssignment?.max_score || 100}
+                      type="text"
+                      inputMode="decimal"
+                      autoComplete="off"
                       value={gradingScore}
-                      onChange={(e) => {
-                        const val = e.target.value
-                        if (val === '') {
-                          setGradingScore('')
-                        } else {
-                          setGradingScore(clampAssignmentScore(Number(val)))
-                        }
-                      }}
+                      onChange={(e) => setGradingScore(sanitizeGradeTyping(e.target.value))}
                       placeholder="—"
                       className="text-center font-semibold text-base h-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
@@ -1970,11 +1970,11 @@ export default function TeacherDashboard() {
                     <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full bg-foreground/30 rounded-full transition-all duration-150"
-                        style={{ width: gradingScore === '' ? '0%' : `${Math.min(100, (Number(gradingScore) / (currentAssignment?.max_score || 100)) * 100)}%` }}
+                        style={{ width: gradingScore === '' ? '0%' : `${Math.min(100, ((parseGradeInput(gradingScore) ?? 0) / (currentAssignment?.max_score || 100)) * 100)}%` }}
                       />
                     </div>
                     <span className="text-xs tabular-nums text-muted-foreground w-8 text-right">
-                      {gradingScore === '' ? '—' : `${Math.round((Number(gradingScore) / (currentAssignment?.max_score || 100)) * 100)}%`}
+                      {gradingScore === '' ? '—' : `${Math.round(((parseGradeInput(gradingScore) ?? 0) / (currentAssignment?.max_score || 100)) * 100)}%`}
                     </span>
                   </div>
 

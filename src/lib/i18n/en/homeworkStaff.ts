@@ -236,6 +236,8 @@ export const homeworkStaff = {
   'homeworkStaff.grade.score': 'Score',
   'homeworkStaff.grade.feedback': 'Feedback',
   'homeworkStaff.grade.enterScore': 'Please enter a grade score',
+  'homeworkStaff.grade.halfStep': 'Use whole or half points, e.g. 7 or 7.5',
+  'homeworkStaff.grade.outOfRange': 'The grade must be between 0 and {max}',
   'homeworkStaff.grade.saved': 'Submission graded successfully',
   'homeworkStaff.grade.failed': 'Failed to grade submission',
   'homeworkStaff.grade.saveFailed': 'Failed to save grade',
