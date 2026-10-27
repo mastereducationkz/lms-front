@@ -1736,9 +1736,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 </div>
             ) : loading || !data ? (
                 <Table className="border-collapse w-full text-xs">
-                    <TableHeader className="bg-muted dark:bg-secondary sticky top-0 z-30">
+                    <TableHeader className="bg-muted dark:bg-secondary sticky top-0 z-[3]">
                         <TableRow className="h-auto border-b border-border hover:bg-muted dark:hover:bg-secondary">
-                             <TableHead className="w-48 sticky left-0 z-40 bg-muted dark:bg-secondary p-2 border-r border-border"><Skeleton className="h-4 w-20 bg-gray-200 dark:bg-muted" /></TableHead>
+                             <TableHead className="w-48 sticky left-0 z-[4] bg-muted dark:bg-secondary p-2 border-r border-border"><Skeleton className="h-4 w-20 bg-gray-200 dark:bg-muted" /></TableHead>
                              {/* Skeleton columns */}
                              {[1, 2, 3].map(i => (
                                 <TableHead key={i} className="p-0 border-r border-border h-12 min-w-[100px] align-middle bg-muted dark:bg-secondary">
@@ -1750,7 +1750,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     <TableBody>
                         {Array.from({ length: 5 }).map((_, idx) => (
                             <TableRow key={idx} className="border-b border-border h-8">
-                                <TableCell className="p-2 sticky left-0 z-30 bg-card dark:bg-card border-r border-border">
+                                <TableCell className="p-2 sticky left-0 z-[2] bg-card dark:bg-card border-r border-border">
                                     <Skeleton className="h-3 w-32 bg-muted" />
                                 </TableCell>
                             </TableRow>
@@ -1759,9 +1759,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 </Table>
             ) : (
             <Table className="border-collapse w-full text-xs">
-              <TableHeader className="bg-muted dark:bg-secondary sticky top-0 z-30">
+              <TableHeader className="bg-muted dark:bg-secondary sticky top-0 z-[3]">
                 <TableRow className="h-auto border-b border-border hover:bg-muted dark:hover:bg-secondary">
-                    <TableHead className="w-28 md:w-48 sticky left-0 z-40 bg-muted dark:bg-secondary font-semibold text-foreground p-2 border-r border-border text-left align-middle text-center">
+                    <TableHead className="w-28 md:w-48 sticky left-0 z-[4] bg-muted dark:bg-secondary font-semibold text-foreground p-2 border-r border-border text-left align-middle text-center">
                         {t('attendance.grid.student')}
                     </TableHead>
                     {/* Dynamic Lesson Columns */}
@@ -1968,7 +1968,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     </TableHead>)}
                     </>)}
 
-                    <TableHead className="text-center font-bold p-2 w-16 md:sticky md:right-0 z-40 bg-muted dark:bg-secondary align-middle md:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]"><span className="inline-flex items-center gap-0.5">%<WeeklyScoreExplainer /></span></TableHead>
+                    <TableHead className="text-center font-bold p-2 w-16 md:sticky md:right-0 z-[4] bg-muted dark:bg-secondary align-middle md:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]"><span className="inline-flex items-center gap-0.5">%<WeeklyScoreExplainer /></span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1976,7 +1976,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     const score = scoreOf(student);
                     return (
                     <TableRow key={student.student_id} className="hover:bg-brand-surface/50 dark:hover:bg-secondary/50 border-b border-border h-16">
-                        <TableCell className="p-2 sticky left-0 z-30 bg-card dark:bg-card border-r border-border">
+                        <TableCell className="p-2 sticky left-0 z-[2] bg-card dark:bg-card border-r border-border">
                              <div className="flex items-center gap-2">
                                 <span className="text-[10px] text-muted-foreground w-4 text-right font-mono">{index + 1}</span>
                                 <UserAvatar userId={student.student_id} name={student.student_name} avatarUrl={student.avatar_url} mascot={student.mascot} isStudent size={26} className="hidden md:block" />
@@ -2439,7 +2439,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         </>)}
 
                          <TableCell className={cn(
-                             "p-2 text-center font-bold md:sticky md:right-0 z-30 md:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]",
+                             "p-2 text-center font-bold md:sticky md:right-0 z-[2] md:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]",
                              score.percent === null ? "bg-muted text-muted-foreground" : getPercentColor(score.percent)
                          )}>
                             <WeeklyScoreButton score={score} studentName={student.student_name} testClosesAt={data?.test_closes_at} />

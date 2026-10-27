@@ -29,8 +29,8 @@ import '@/lib/i18n/catalogs/exams';
  * (assigned, student didn't do it) or "not assigned" (no homework exists) - because
  * a blank cell cannot tell those apart.
  *
- * Stacking: the app Topbar is `sticky top-0 z-10`, so every sticky cell here stays
- * BELOW z-10. Sticky cells only need to out-rank sibling cells, not the app chrome;
+ * Stacking: the app Topbar is `sticky top-0 z-30`, so every sticky cell here stays
+ * BELOW z-30. Sticky cells only need to out-rank sibling cells, not the app chrome;
  * using z-30/z-40 made the table scroll over the page header.
  */
 

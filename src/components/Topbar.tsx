@@ -22,6 +22,8 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
   const t = useT();
   const [unreadCount, setUnreadCount] = useState(0);
   // Sticky page headers (the lesson page's) sit just below this bar: publish its height.
+  // Layers: page content stays below z-30, this bar is z-30, scrims/side panels are z-40
+  // and menus/dialogs z-50 - so nothing that scrolls in a page can paint over the bar.
   const bar = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const node = bar.current;
@@ -75,7 +77,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
   };
 
   return (
-    <div ref={bar} className="sticky top-0 z-10 bg-gray-50/80 dark:bg-card/80 backdrop-blur border-b border-border px-4 sm:px-5 md:px-6 py-3 sm:py-3.5 flex items-center justify-between gap-3">
+    <div ref={bar} className="sticky top-0 z-30 bg-gray-50/80 dark:bg-card/80 backdrop-blur border-b border-border px-4 sm:px-5 md:px-6 py-3 sm:py-3.5 flex items-center justify-between gap-3">
       <div className="min-w-0">
         <div className="truncate text-sm sm:text-[14px] text-muted-foreground">{t('shell.topbar.welcomeBack')}</div>
         <div className="truncate text-[16px] sm:text-xl font-semibold text-foreground">{user?.name}!</div>
