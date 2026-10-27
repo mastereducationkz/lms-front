@@ -76,9 +76,14 @@ export function WeeklyScoreButton({ score, studentName, className }: {
               })}
         </li>
         <li className={cn(homework.percent === null && 'text-muted-foreground')}>
-          {homework.percent === null
-            ? t('attendance.score.homeworkNone')
-            : t('attendance.score.homework', { percent: roundPercent(homework.percent), weight: weight('homework') })}
+          {homework.percent !== null
+            ? t('attendance.score.homework', { percent: roundPercent(homework.percent), weight: weight('homework') })
+            : homework.pending > 0
+              ? t('attendance.score.homeworkAllPending', { count: homework.pending })
+              : t('attendance.score.homeworkNone')}
+          {homework.percent !== null && homework.pending > 0 && (
+            <div className="mt-0.5 text-muted-foreground">{t('attendance.score.homeworkPending', { count: homework.pending })}</div>
+          )}
         </li>
         <li className={cn(test.state === 'none' && 'text-muted-foreground')}>
           {test.state === 'scored'

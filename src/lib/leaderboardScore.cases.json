@@ -59,6 +59,7 @@
     },
     "homework": {
      "assigned": 1,
+     "pending": 0,
      "percent": 83.33333333333333
     },
     "test": {
@@ -144,6 +145,7 @@
     },
     "homework": {
      "assigned": 1,
+     "pending": 0,
      "percent": 83.33333333333333
     },
     "test": {
@@ -224,6 +226,7 @@
     },
     "homework": {
      "assigned": 1,
+     "pending": 0,
      "percent": 83.33333333333333
     },
     "test": {
@@ -309,6 +312,7 @@
     },
     "homework": {
      "assigned": 1,
+     "pending": 0,
      "percent": 83.33333333333333
     },
     "test": {
@@ -372,6 +376,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -435,6 +440,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -500,6 +506,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -582,6 +589,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -634,6 +642,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -695,6 +704,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -739,6 +749,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -801,6 +812,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -849,6 +861,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -897,6 +910,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -976,6 +990,7 @@
     },
     "homework": {
      "assigned": 2,
+     "pending": 0,
      "percent": 75
     },
     "test": {
@@ -1060,6 +1075,7 @@
     },
     "homework": {
      "assigned": 2,
+     "pending": 0,
      "percent": 75
     },
     "test": {
@@ -1122,6 +1138,7 @@
     },
     "homework": {
      "assigned": 1,
+     "pending": 0,
      "percent": 50
     },
     "test": {
@@ -1183,6 +1200,7 @@
     },
     "homework": {
      "assigned": 1,
+     "pending": 0,
      "percent": 50
     },
     "test": {
@@ -1253,6 +1271,7 @@
     },
     "homework": {
      "assigned": 2,
+     "pending": 0,
      "percent": 75
     },
     "test": {
@@ -1275,7 +1294,7 @@
    }
   },
   {
-   "name": "unsubmitted, ungraded and max-less homework count 0 but stay in the average",
+   "name": "unsubmitted and max-less homework count 0 but stay in the average; a submitted ungraded one is left out",
    "today": "2026-10-26",
    "lessons": [
     {
@@ -1307,21 +1326,25 @@
        {
         "assignment_id": 1,
         "score": 10,
-        "max_score": 10
+        "max_score": 10,
+        "submitted": true
        },
        {
         "assignment_id": 2,
         "score": null,
-        "max_score": 10
+        "max_score": 10,
+        "submitted": false
        },
        {
         "assignment_id": 3,
-        "score": 5
+        "score": 5,
+        "submitted": true
        },
        {
         "assignment_id": 4,
         "score": null,
-        "max_score": 10
+        "max_score": 10,
+        "submitted": true
        }
       ]
      }
@@ -1336,8 +1359,9 @@
      "percent": 100
     },
     "homework": {
-     "assigned": 4,
-     "percent": 25
+     "assigned": 3,
+     "pending": 1,
+     "percent": 33.33333333333333
     },
     "test": {
      "state": "none",
@@ -1352,10 +1376,10 @@
      {
       "part": "homework",
       "weight": 40,
-      "percent": 25
+      "percent": 33.33333333333333
      }
     ],
-    "percent": 63
+    "percent": 67
    }
   },
   {
@@ -1399,6 +1423,7 @@
     },
     "homework": {
      "assigned": 1,
+     "pending": 0,
      "percent": 0
     },
     "test": {
@@ -1454,6 +1479,7 @@
     },
     "homework": {
      "assigned": 1,
+     "pending": 0,
      "percent": 0
     },
     "test": {
@@ -1539,6 +1565,7 @@
     },
     "homework": {
      "assigned": 2,
+     "pending": 0,
      "percent": 50
     },
     "test": {
@@ -1664,6 +1691,7 @@
     },
     "homework": {
      "assigned": 1,
+     "pending": 0,
      "percent": 100
     },
     "test": {
@@ -1747,6 +1775,7 @@
     },
     "homework": {
      "assigned": 1,
+     "pending": 0,
      "percent": 100
     },
     "test": {
@@ -1808,6 +1837,7 @@
     },
     "homework": {
      "assigned": 1,
+     "pending": 0,
      "percent": 50
     },
     "test": {
@@ -1865,6 +1895,7 @@
     },
     "homework": {
      "assigned": 1,
+     "pending": 0,
      "percent": 100
     },
     "test": {
@@ -1923,6 +1954,7 @@
     },
     "homework": {
      "assigned": 1,
+     "pending": 0,
      "percent": 50
     },
     "test": {
@@ -1961,6 +1993,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -1994,6 +2027,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -2027,6 +2061,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -2060,6 +2095,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -2087,6 +2123,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -2125,6 +2162,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -2163,6 +2201,7 @@
     },
     "homework": {
      "assigned": 0,
+     "pending": 0,
      "percent": null
     },
     "test": {
@@ -2172,6 +2211,475 @@
     "parts": [
      {
       "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "a submitted ungraded homework is left out while the graded ones stay in the average",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10
+      },
+      {
+       "id": 2,
+       "max_score": 10
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": true,
+        "score": 8,
+        "max_score": 10
+       },
+       {
+        "assignment_id": 2,
+        "submitted": true,
+        "score": null,
+        "max_score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "pending": 1,
+     "percent": 80
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 80
+     }
+    ],
+    "percent": 90
+   }
+  },
+  {
+   "name": "a pending homework is left out, an unsubmitted one still counts 0",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10
+      },
+      {
+       "id": 2,
+       "max_score": 10
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": false,
+        "score": null,
+        "max_score": 10
+       },
+       {
+        "assignment_id": 2,
+        "submitted": true,
+        "score": null,
+        "max_score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "pending": 1,
+     "percent": 0
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 0
+     }
+    ],
+    "percent": 50
+   }
+  },
+  {
+   "name": "when every homework is pending the homework part does not exist, and nothing else is re-weighted",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10
+      },
+      {
+       "id": 2,
+       "max_score": 10
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": true,
+        "score": null,
+        "max_score": 10
+       },
+       {
+        "assignment_id": 2,
+        "submitted": true,
+        "score": null,
+        "max_score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": 60
+   },
+   "testHeld": true,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 0,
+     "pending": 2,
+     "percent": null
+    },
+    "test": {
+     "state": "scored",
+     "percent": 60
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "test",
+      "weight": 20,
+      "percent": 60
+     }
+    ],
+    "percent": 87
+   }
+  },
+  {
+   "name": "a pending homework in a lesson that has not happened yet is out as a future lesson, not counted as pending",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10
+      }
+     ]
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-12-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 2,
+       "max_score": 10
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": true,
+        "score": 5,
+        "max_score": 10
+       }
+      ]
+     },
+     "2": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 2,
+        "submitted": true,
+        "score": null,
+        "max_score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "pending": 0,
+     "percent": 50
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 50
+     }
+    ],
+    "percent": 75
+   }
+  },
+  {
+   "name": "a pending homework whose maximum is missing is still pending, not a 0",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1
+      },
+      {
+       "id": 2,
+       "max_score": 4
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": true,
+        "score": null
+       },
+       {
+        "assignment_id": 2,
+        "submitted": true,
+        "score": 4,
+        "max_score": 4
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "pending": 1,
+     "percent": 100
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
+      "weight": 40,
+      "percent": 100
+     }
+    ],
+    "percent": 100
+   }
+  },
+  {
+   "name": "a pending homework in a lesson that is not the student's is not counted at all",
+   "today": "2026-10-26",
+   "lessons": [
+    {
+     "lesson_number": 1,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 1,
+       "max_score": 10
+      }
+     ]
+    },
+    {
+     "lesson_number": 2,
+     "start_datetime": "2026-06-01T10:00:00Z",
+     "homeworks": [
+      {
+       "id": 2,
+       "max_score": 10
+      }
+     ]
+    }
+   ],
+   "student": {
+    "lessons": {
+     "1": {
+      "attendance_status": "attended",
+      "marked": true,
+      "enrolled": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 1,
+        "submitted": true,
+        "score": 10,
+        "max_score": 10
+       }
+      ]
+     },
+     "2": {
+      "attendance_status": "registered",
+      "marked": true,
+      "enrolled": true,
+      "frozen": true,
+      "homework_statuses": [
+       {
+        "assignment_id": 2,
+        "submitted": true,
+        "score": null,
+        "max_score": 10
+       }
+      ]
+     }
+    },
+    "test_percent": null
+   },
+   "testHeld": false,
+   "expected": {
+    "attendance": {
+     "attended": 1,
+     "countable": 1,
+     "percent": 100
+    },
+    "homework": {
+     "assigned": 1,
+     "pending": 0,
+     "percent": 100
+    },
+    "test": {
+     "state": "none",
+     "percent": null
+    },
+    "parts": [
+     {
+      "part": "attendance",
+      "weight": 40,
+      "percent": 100
+     },
+     {
+      "part": "homework",
       "weight": 40,
       "percent": 100
      }

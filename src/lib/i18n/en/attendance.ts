@@ -110,6 +110,14 @@ export const attendance = {
   'attendance.score.attendanceNone': 'Attendance: no lessons to count — not included',
   'attendance.score.homework': 'Homework: average {percent}% × {weight}',
   'attendance.score.homeworkNone': 'Homework: none assigned — not included',
+  'attendance.score.homeworkPending': {
+    one: '{count} homework awaiting grading — not counted until graded',
+    other: '{count} homework awaiting grading — not counted until graded',
+  },
+  'attendance.score.homeworkAllPending': {
+    one: 'Homework: {count} awaiting grading — not included until graded',
+    other: 'Homework: {count} awaiting grading — not included until graded',
+  },
   'attendance.score.testScored': 'Test: {percent}% × {weight}',
   'attendance.score.testSkipped': 'Test: not taken = 0% × {weight}',
   'attendance.score.testNone': 'Test: none this week — not included',
@@ -120,7 +128,7 @@ export const attendance = {
   'attendance.score.explainerTitle': 'How the % is calculated',
   'attendance.score.explainerIntro': 'The week\'s % is built from three parts:',
   'attendance.score.explainerAttendance': 'Attendance — 40%. Lessons attended ÷ lessons that count. Late counts as present.',
-  'attendance.score.explainerHomework': 'Homework — 40%. The average over every assigned homework (score ÷ maximum). Not handed in, or not graded yet, counts as 0.',
+  'attendance.score.explainerHomework': 'Homework — 40%. The average over every assigned homework (score ÷ maximum). Not handed in counts as 0. Handed in but not graded yet is left out until it is graded; then its real score counts.',
   'attendance.score.explainerTest': 'Test — 20%. The student\'s test result for the week. If the group had a test and the student did not take it, it counts as 0%.',
   'attendance.score.explainerLeftOut': 'Left out: lessons that have not happened yet (their homework too), lessons before the student joined, freeze or no access, and — from attendance only — cancelled lessons, excused absences and lessons not yet marked. Homework of those lessons still counts.',
   'attendance.score.explainerNoTest': 'If nobody in the group has a test result that week, the test part is left out and the % is worked out from the other two.',
