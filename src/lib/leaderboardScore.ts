@@ -5,6 +5,8 @@
  * Attendance 40, Homework 40, Test 20. A part that does not exist for a student that week is left
  * out of both sums — nothing else is re-weighted. A homework that was handed in but is not graded yet
  * is left out until it is graded (it is counted in `homework.pending`). The activity star is not part of it.
+ * A group with no weekly test at all (Pre-SAT, or its platform-tests switch off) has no test part, even
+ * for a student who happens to have a score (`testsOff`).
  *
  * Kept here because the maths is the one thing on that screen worth unit-testing (there are no
  * component tests), and because the popover that shows a student their own sum must read the very
@@ -172,6 +174,8 @@ export interface WeeklyScoreInput {
   student: ScoreStudent;
   /** Whether the group had a test that week — see {@link groupHasTest}. */
   testHeld: boolean;
+  /** The group has no weekly test (Pre-SAT / platform tests off): never a test part, scored or not. */
+  testsOff?: boolean;
   isFuture: (startDatetime: string) => boolean;
 }
 
@@ -187,7 +191,7 @@ export interface WeeklyScore {
   percent: number | null;
 }
 
-export function weeklyScore({ lessons, student, testHeld, isFuture }: WeeklyScoreInput): WeeklyScore {
+export function weeklyScore({ lessons, student, testHeld, testsOff = false, isFuture }: WeeklyScoreInput): WeeklyScore {
   let attended = 0;
   let countable = 0;
   const shares: number[] = [];
@@ -216,8 +220,9 @@ export function weeklyScore({ lessons, student, testHeld, isFuture }: WeeklyScor
   const homeworkPercent = shares.length > 0 ? (shares.reduce((a, b) => a + b, 0) / shares.length) * 100 : null;
 
   const testPercent = studentTestPercent(student);
-  const test: WeeklyScore['test'] =
-    testPercent !== null
+  const test: WeeklyScore['test'] = testsOff
+    ? { state: 'none', percent: null }
+    : testPercent !== null
       ? { state: 'scored', percent: testPercent }
       : testHeld
         ? { state: 'skipped', percent: 0 }
