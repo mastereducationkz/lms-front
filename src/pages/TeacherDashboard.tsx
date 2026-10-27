@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState, useMemo, useRef, type ReactNode } from '
 import { sanitizeHtml } from '../lib/safeHtml';
 import { Link, useNavigate } from 'react-router-dom';
 import { WebinarPayCard, type WebinarPay } from '../components/teacher/WebinarPayCard';
+import { PlannedPayCard, type PlannedPayItem } from '../components/teacher/PlannedPayCard';
 import { lessonPath } from '../lib/lessonLinks';
 import { AttendanceOwedCard } from '../components/dashboard/AttendanceOwedCard';
 import { useAttendanceOwed } from '../hooks/useAttendanceOwed';
@@ -165,20 +166,12 @@ interface SalaryBreakdownResult {
   total_lessons: number
   total_amount_tenge: number
   /**
-   * The discipline register's deduction for the same days. Kept beside the pay, never inside
-   * it: `total_amount_tenge` is what the lessons were worth and does not move because of a
-   * fine a head teacher may waive tomorrow. `net_amount_tenge` is what is paid.
+   * The early statement (owner, 2026-10-27): what the period's last days still hold, not taught yet
+   * or waiting for the register. Beside the pay, never in `total_amount_tenge`.
    */
-  fines_tenge?: number
-  fines_late_minutes?: number
-  fines_early_minutes?: number
-  fines_made_up_minutes?: number
-  fines_misses?: number
-  /** Findings nobody has priced yet — a missed lesson waits for a head teacher. */
-  fines_unpriced?: number
-  /** False while the half-month is open: the figure can still move. */
-  fines_final?: boolean
-  net_amount_tenge?: number
+  planned_items?: PlannedPayItem[]
+  planned_amount_tenge?: number
+  total_with_planned_tenge?: number
   /** Webinars and office hours: paid lines (inside `total_amount_tenge`) and unpaid ones with why. */
   webinars?: WebinarPay
   groups: SalaryBreakdownGroup[]
@@ -2123,54 +2116,15 @@ export default function TeacherDashboard() {
             <div className="space-y-3">
               <div className="text-sm text-muted-foreground">
                 {t('teacher.payslip.lessons')} <span className="font-semibold">{salaryResult.total_lessons}</span> ·{' '}
-                {(salaryResult.fines_tenge ?? 0) > 0 ? t('teacher.payslip.accrued') : t('teacher.payslip.total')}{' '}
+                {t('teacher.payslip.total')}{' '}
                 <span className="font-semibold">{t('teacher.payslip.amount', { amount: formatNumber(salaryResult.total_amount_tenge) })}</span>
               </div>
               <WebinarPayCard webinars={salaryResult.webinars} />
-              {/* The deduction is its own line under the pay, never folded into it. A teacher
-                  who sees only a smaller number has to ask somebody what happened, and this
-                  card exists so that they do not have to. */}
-              {(salaryResult.fines_tenge ?? 0) > 0 && (
-                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900/50 dark:bg-amber-950/30">
-                  <div className="text-amber-900 dark:text-amber-300">
-                    {t('teacher.payslip.finesWithheld')}{' '}
-                    <span className="font-semibold">−{t('teacher.payslip.amount', { amount: formatNumber(salaryResult.fines_tenge ?? 0) })}</span>
-                    {salaryResult.fines_final === false && (
-                      <span className="ml-2 text-xs font-normal text-amber-700 dark:text-amber-400">
-                        {t('teacher.payslip.finesNotFinal')}
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-1 text-xs text-amber-800 dark:text-amber-400">
-                    {[
-                      salaryResult.fines_late_minutes
-                        ? salaryResult.fines_made_up_minutes
-                          ? t('teacher.payslip.finesLateMadeUp', {
-                              minutes: salaryResult.fines_late_minutes,
-                              madeUp: salaryResult.fines_made_up_minutes,
-                            })
-                          : t('teacher.payslip.finesLate', { minutes: salaryResult.fines_late_minutes })
-                        : null,
-                      salaryResult.fines_early_minutes
-                        ? t('teacher.payslip.finesEarly', { minutes: salaryResult.fines_early_minutes })
-                        : null,
-                      salaryResult.fines_misses ? t('teacher.payslip.finesMisses', { count: salaryResult.fines_misses }) : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ') || t('teacher.payslip.finesByHeadTeacher')}
-                    {' · '}{t('teacher.payslip.finesRate')}
-                  </div>
-                  <div className="mt-2 font-semibold text-foreground">
-                    {t('teacher.payslip.netPay', { amount: formatNumber(salaryResult.net_amount_tenge ?? salaryResult.total_amount_tenge) })}
-                  </div>
-                </div>
-              )}
-              {/* A miss nobody has priced is not a zero — say it is still being decided. */}
-              {(salaryResult.fines_unpriced ?? 0) > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {t('teacher.payslip.finesUnpriced', { count: salaryResult.fines_unpriced ?? 0 })}
-                </p>
-              )}
+              <PlannedPayCard
+                items={salaryResult.planned_items}
+                plannedAmount={salaryResult.planned_amount_tenge}
+                totalWithPlanned={salaryResult.total_with_planned_tenge}
+              />
               <div className="rounded-md border border-border bg-muted/40 p-3 text-sm space-y-1">
                 <div>
                   {t('teacher.payslip.individualRate', { rate: salaryResult.individual_rate ?? '' })}
