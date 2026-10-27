@@ -18,6 +18,7 @@ import { safeUploadUrl } from '../../lib/mediaUrl';
 import { formatDate, formatDateTime } from '../../lib/i18n';
 import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/homeworkStaff';
+import { formatScore, gradeProblem, gradeProblemKey, parseGradeInput, sanitizeGradeTyping, stepGrade } from '../../lib/gradeScore';
 
 const AUDIO_FILE_EXTENSIONS = ['webm', 'ogg', 'mp4', 'm4a', 'mp3', 'mpeg', 'wav', 'x-m4a', 'aac'];
 
@@ -56,7 +57,7 @@ export default function AssignmentGradingPage() {
   const [isGradingModalOpen, setIsGradingModalOpen] = useState(false);
   const [isViewingPreviousAttempt, setIsViewingPreviousAttempt] = useState(false);
   const [expandedPreviousAttempts, setExpandedPreviousAttempts] = useState<Record<string, boolean>>({});
-  const [gradingScore, setGradingScore] = useState<number | string>(''); // Allow empty string for better UX
+  const [gradingScore, setGradingScore] = useState<string>(''); // As typed: «7,5» is 7.5 (lib/gradeScore)
   const [gradingFeedback, setGradingFeedback] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -176,15 +177,17 @@ export default function AssignmentGradingPage() {
   const handleGradeSubmission = async () => {
     if (!selectedSubmission || !id) return;
     
-    // Validation: Score must be present
-    if (gradingScore === '' || gradingScore === null || gradingScore === undefined) {
-      toast(t('homeworkStaff.grade.enterScore'), 'error');
+    // Halves only (7.5), 0..max — the server checks the same.
+    const maxScore = assignment?.max_score ?? selectedSubmission.max_score;
+    const problem = gradeProblem(gradingScore, maxScore);
+    if (problem) {
+      toast(t(gradeProblemKey(problem), { max: maxScore }), 'error');
       return;
     }
     
     setIsSubmitting(true);
     try {
-      await apiClient.gradeSubmission(id, selectedSubmission.id.toString(), Number(gradingScore), gradingFeedback);
+      await apiClient.gradeSubmission(id, selectedSubmission.id.toString(), parseGradeInput(gradingScore)!, gradingFeedback);
       toast(t('homeworkStaff.grade.saved'), 'success');
       setIsGradingModalOpen(false);
       await loadData();
@@ -204,7 +207,7 @@ export default function AssignmentGradingPage() {
     setIsViewingPreviousAttempt(false);
     // Use nullish coalescing to strictly check for null/undefined, preserving 0 as a valid score
     // If score is null/undefined, set to '' (empty) so input is empty
-    setGradingScore(submission.score ?? '');
+    setGradingScore(formatScore(submission.score));
     setGradingFeedback(submission.feedback || '');
     setIsGradingModalOpen(true);
   };
@@ -281,7 +284,7 @@ export default function AssignmentGradingPage() {
                 {visibleAttempts.map((submission) => (
                   <div key={submission.id} className="rounded-md border border-border p-3 flex items-center justify-between gap-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2"><Badge variant={submission.is_current ? 'default' : 'secondary'}>{t(submission.is_current ? 'homeworkStaff.grading.attemptCurrent' : 'homeworkStaff.grading.attemptPrevious', { number: submission.attempt_number || 1 })}</Badge>{submission.is_graded ? <Badge variant={(submission.score || 0) >= (submission.max_score * 0.6) ? 'default' : 'destructive'}>{t(submission.is_grade_superseded ? 'homeworkStaff.grading.supersededScore' : 'homeworkStaff.grading.score', { score: submission.score || 0, max: submission.max_score })}</Badge> : <Badge variant="secondary">{t('homeworkStaff.grading.pending')}</Badge>}</div>
+                      <div className="flex items-center gap-2"><Badge variant={submission.is_current ? 'default' : 'secondary'}>{t(submission.is_current ? 'homeworkStaff.grading.attemptCurrent' : 'homeworkStaff.grading.attemptPrevious', { number: submission.attempt_number || 1 })}</Badge>{submission.is_graded ? <Badge variant={(submission.score || 0) >= (submission.max_score * 0.6) ? 'default' : 'destructive'}>{t(submission.is_grade_superseded ? 'homeworkStaff.grading.supersededScore' : 'homeworkStaff.grading.score', { score: formatScore(submission.score || 0), max: submission.max_score })}</Badge> : <Badge variant="secondary">{t('homeworkStaff.grading.pending')}</Badge>}</div>
                       <div className="text-sm text-muted-foreground  flex items-center mt-2"><Clock className="w-3 h-3 mr-1" />{t('homeworkStaff.grade.submittedAt', { date: formatDateTime(new Date(submission.submitted_at)) })}</div>
                       {submission.is_late && <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center mt-1 font-medium"><AlertCircle className="w-3 h-3 mr-1" />{t('homeworkStaff.grading.lateSubmission')}</div>}
                     </div>
@@ -405,17 +408,16 @@ export default function AssignmentGradingPage() {
                 <Label htmlFor="score">{t('homeworkStaff.grading.scoreMax', { max: assignment?.max_score ?? '' })}</Label>
                 <Input
                   id="score"
-                  type="number"
-                  min="0"
-                  max={assignment?.max_score || 100}
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete="off"
                   value={gradingScore}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '') {
-                      setGradingScore('');
-                    } else {
-                      setGradingScore(Math.min(parseInt(val) || 0, assignment?.max_score || 100));
-                    }
+                  onChange={(e) => setGradingScore(sanitizeGradeTyping(e.target.value))}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+                    e.preventDefault();
+                    const max = assignment?.max_score ?? selectedSubmission?.max_score ?? 100;
+                    setGradingScore(formatScore(stepGrade(gradingScore, max, e.key === 'ArrowUp' ? 0.5 : -0.5)));
                   }}
                   placeholder={t('homeworkStaff.grading.scorePlaceholder')}
                 />

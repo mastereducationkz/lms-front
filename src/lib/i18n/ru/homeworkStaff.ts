@@ -262,6 +262,8 @@ export const homeworkStaff: RuTable<typeof en> = {
   'homeworkStaff.grade.score': 'Оценка',
   'homeworkStaff.grade.feedback': 'Отзыв',
   'homeworkStaff.grade.enterScore': 'Введите оценку',
+  'homeworkStaff.grade.halfStep': 'Оценка — целое число или с половиной, например 7 или 7,5',
+  'homeworkStaff.grade.outOfRange': 'Оценка должна быть от 0 до {max}',
   'homeworkStaff.grade.saved': 'Оценка сохранена',
   'homeworkStaff.grade.failed': 'Не удалось сохранить оценку',
   'homeworkStaff.grade.saveFailed': 'Не удалось сохранить оценку',

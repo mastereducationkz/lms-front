@@ -106,4 +106,6 @@ export const serverErrors: RuTable<typeof en> = {
   'serverErrors.too_many': 'Слишком много попыток, попробуйте позже.',
   'serverErrors.access_expired': 'Ваш доступ к платформе закончился {date}. Чтобы продлить, напишите менеджеру в Telegram: @master_education_manager',
   'serverErrors.child_access_ended': 'Доступ ребёнка к платформе закончился, поэтому его данные больше не показываются.',
+  'serverErrors.grade_half_step': 'Оценка — целое число или с половиной, например 7 или 7,5',
+  'serverErrors.grade_out_of_range': 'Оценка должна быть от 0 до {max}',
 };

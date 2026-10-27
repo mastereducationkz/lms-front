@@ -113,4 +113,7 @@ export const serverErrors = {
   // Platform access that ends on a date (2026-10-22). {date} arrives as an ISO day; localizeServerError writes it in the reader's language.
   'serverErrors.access_expired': 'Your access to the platform ended on {date}. To renew it, message the manager on Telegram: @master_education_manager',
   'serverErrors.child_access_ended': 'This child’s access to the platform has ended, so their data is no longer shown.',
+  // Half-point homework grades (2026-10-27): steps of 0.5, 0..max_score.
+  'serverErrors.grade_half_step': 'Use whole or half points, e.g. 7 or 7.5',
+  'serverErrors.grade_out_of_range': 'The grade must be between 0 and {max}',
 } as const satisfies MessageTable;
