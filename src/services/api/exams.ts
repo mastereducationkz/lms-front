@@ -341,6 +341,8 @@ export interface RecordResultPayload {
   writing_band?: number;
   speaking_band?: number;
   notes?: string;
+  /** Sent again after the server asked whether an old date is right (409 confirm_old_date). */
+  confirm_old_date?: boolean;
 }
 
 /** Record a new attempt. Retakes accumulate; nothing is overwritten. */

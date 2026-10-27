@@ -37,10 +37,12 @@ interface AttemptForm {
   key: number; testDate: string; verbal: string; math: string; overall: string;
   listening: string; reading: string; writing: string; speaking: string;
   proof: File | null; error: string | null;
+  /** The server asked whether an old date is right (see the 409 below); ticked = send again with it. */
+  askConfirm: boolean; confirmed: boolean;
 }
 const blank = (key: number, testDate = ''): AttemptForm => ({
   key, testDate, verbal: '', math: '', overall: '', listening: '', reading: '',
-  writing: '', speaking: '', proof: null, error: null,
+  writing: '', speaking: '', proof: null, error: null, askConfirm: false, confirmed: false,
 });
 const MAX_ATTEMPTS = 5;
 
@@ -57,7 +59,10 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
   const isIelts = examType === 'ielts';
 
   const patch = (key: number, p: Partial<AttemptForm>) =>
-    setBlocks((bs) => bs.map((b) => (b.key === key ? { ...b, ...p, error: null } : b)));
+    // A new date is a new question: the «date is right» tick belongs to the date it was asked about.
+    setBlocks((bs) => bs.map((b) => (b.key === key
+      ? { ...b, ...p, error: null, ...('testDate' in p ? { askConfirm: false, confirmed: false } : {}) }
+      : b)));
 
   const satTotal = (b: AttemptForm) => {
     const v = Number(b.verbal), m = Number(b.math);
@@ -75,6 +80,9 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
     const out: string[] = [];
     if (!b.testDate) out.push(t('teacherInsights.recordResult.dateRequired'));
     if (b.testDate && b.testDate > today) out.push(t('teacherInsights.recordResult.dateFuture'));
+    if (isSat && b.testDate && officialDates.length > 0 && !officialDates.some((d) => d.test_date === b.testDate)) {
+      out.push(t('teacherInsights.recordResult.officialOnly'));
+    }
     if (isSat) {
       if (!b.verbal || !b.math) out.push(t('teacherInsights.recordResult.bothSections'));
       if (sectionInvalid(b.verbal)) out.push(t('teacherInsights.recordResult.verbalRange'));
@@ -103,7 +111,14 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
     ...(isIelts && b.writing ? { writing_band: Number(b.writing) } : {}),
     ...(isIelts && b.speaking ? { speaking_band: Number(b.speaking) } : {}),
     ...(notes.trim() ? { notes: notes.trim() } : {}),
+    ...(b.confirmed ? { confirm_old_date: true } : {}),
   });
+
+  // The server's «is this date right?» (409, code confirm_old_date): a year typed wrong is the usual cause.
+  const confirmQuestion = (detail: any): string =>
+    detail?.reason === 'before_first_lesson'
+      ? t('teacherInsights.recordResult.beforeFirstLesson', { date: detail.test_date, first: detail.first_lesson })
+      : t('teacherInsights.recordResult.olderThanSixMonths', { date: detail?.test_date ?? '' });
 
   // Sequential: a failed attempt stays in the form (with its reason) while the ones that
   // saved are gone, so a retry never re-submits what already went through.
@@ -125,6 +140,10 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
         }
       } catch (e: any) {
         const detail = e?.response?.data?.detail;
+        if (e?.response?.status === 409 && detail?.code === 'confirm_old_date') {
+          failed.push({ ...b, error: confirmQuestion(detail), askConfirm: true, confirmed: false });
+          continue;
+        }
         failed.push({
           ...b,
           error: e?.response?.status === 409
@@ -202,8 +221,11 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
                     ))}
                   </select>
                 )}
-                <Input id={`rr-date-${b.key}`} type="date" max={today} value={b.testDate}
-                       onChange={(e) => patch(b.key, { testDate: e.target.value })} />
+                {/* SAT is official sittings only; the free date stays for IELTS/NUET, or if the list failed to load. */}
+                {!(isSat && officialDates.length > 0) && (
+                  <Input id={`rr-date-${b.key}`} type="date" max={today} value={b.testDate}
+                         onChange={(e) => patch(b.key, { testDate: e.target.value })} />
+                )}
               </div>
 
               {isSat && (
@@ -277,6 +299,13 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
               </div>
             </div>
             {b.error && <p className="mt-2 text-xs text-red-600 dark:text-red-400" role="alert">{b.error}</p>}
+            {b.askConfirm && (
+              <label className="mt-1 flex items-center gap-2 text-xs">
+                <input type="checkbox" checked={b.confirmed}
+                       onChange={(e) => setBlocks((bs) => bs.map((x) => (x.key === b.key ? { ...x, confirmed: e.target.checked } : x)))} />
+                {t('teacherInsights.recordResult.confirmDate')}
+              </label>
+            )}
           </fieldset>
         ))}
 
