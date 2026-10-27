@@ -43,10 +43,70 @@ jobs:
           python3 scripts/ci/pick_deploy_sha.py --repo "${{ github.repository }}" --branch master \
             --ci-workflow frontend-ci.yml --trigger-sha "${{ github.event.workflow_run.head_sha }}" | tee -a "$GITHUB_OUTPUT"
 
-  deploy:
+  # The image is built HERE, on the runner, for exactly the sha `pick` chose, and pushed to GHCR; the
+  # production host only pulls it (2026-10-27: `docker compose build` on the shared 8 GB host took
+  # ~1.5 GB for the vite build, the box swapped, the kernel OOM-killed an LMS backend process and
+  # every service on it failed for ~3 minutes). Built in this workflow rather than in Frontend CI
+  # because only here is the sha known: `pick` may ship an older commit than the one whose CI just
+  # finished, or one whose CI never ran (paths filter), so a CI-built image could not be matched to
+  # the shipped sha. A job of its own so the token that goes to the host (deploy job) can only read.
+  build:
     needs: pick
     if: ${{ needs.pick.outputs.deploy == 'true' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    env:
+      SHA: ${{ needs.pick.outputs.sha }}
+    steps:
+      - name: Checkout the verified commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.pick.outputs.sha }}
+
+      - name: Check the checkout is the picked sha
+        run: |
+          set -euo pipefail
+          case "$SHA" in *[!0-9a-f]*|'') echo "bad sha '$SHA'"; exit 1;; esac
+          [ "${#SHA}" -eq 40 ] || { echo "bad sha '$SHA'"; exit 1; }
+          [ "$(git rev-parse HEAD)" = "$SHA" ] || { echo "checked out $(git rev-parse HEAD), expected $SHA"; exit 1; }
+
+      - name: Compute the image name
+        id: image
+        run: |
+          # ghcr.io requires a lowercase path; github.repository preserves the org's casing.
+          REPO_LOWER="$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"
+          echo "image=ghcr.io/${REPO_LOWER}/lms-frontend" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the frontend image
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+        run: |
+          set -euo pipefail
+          # docker-compose.yml stays the one place with the build args (Sentry DSN, environment,
+          # Turnstile key, release = LMS_FRONT_GIT_COMMIT), so this build is the one the server
+          # used to make. It tags the result lms-frontend:latest, as the compose file says.
+          LMS_FRONT_GIT_COMMIT="$SHA" docker compose build lms-frontend
+          docker tag lms-frontend:latest "$IMAGE:$SHA"
+          docker push "$IMAGE:$SHA"
+
+  deploy:
+    needs: [pick, build]
+    if: ${{ needs.pick.outputs.deploy == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     env:
       # A step-level `if: env.SENTRY_AUTH_TOKEN != ''` was tried first and was ALWAYS skipped
       # (the SAT lesson: `secrets` isn't usable that way in a step `if:`). Resolve it once here,
@@ -56,11 +116,19 @@ jobs:
     steps:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          # Read-only and dies with this job (permissions: packages: read above). Reaches the host
+          # as an exported variable of the script and goes into `docker login` on stdin, never as
+          # an argument, so it is not in the host's `ps`.
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_ACTOR: ${{ github.actor }}
+          IMAGE: ${{ needs.build.outputs.image }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # The build plus two container handovers (15 s settles each); the default is 10 min.
+          envs: GHCR_TOKEN,GHCR_ACTOR,IMAGE
+          # The image pull plus two container handovers (15 s settles each); the default is 10 min.
           command_timeout: 20m
           script: |
             set -e
@@ -70,20 +138,32 @@ jobs:
             # The production host cannot reach GitHub over SSH (port 22); use the public
             # repository's HTTPS endpoint for deployment fetches.
             git remote set-url origin https://github.com/mastereducationkz/lms-front.git
-            # Build exactly the commit the pick job verified (never master's tip, which may still
+            # Check out exactly the commit the pick job verified (never master's tip, which may still
             # be in CI); checkout -B refuses, like pull did, if the server has local edits in the way.
+            # The checkout only supplies docker-compose.yml and scripts/: the image is not built here.
             SHA='${{ needs.pick.outputs.sha }}'
             case "$SHA" in *[!0-9a-f]*|'') echo "❌ bad sha '$SHA'"; exit 1;; esac
             [ "${#SHA}" -eq 40 ] || { echo "❌ bad sha '$SHA'"; exit 1; }
+            case "$IMAGE" in ghcr.io/*) ;; *) echo "❌ bad image '$IMAGE'"; exit 1;; esac
             git fetch origin master
             git checkout -B master "$SHA"
-            # The commit being built, as the Sentry release (the image has no .git to ask).
-            LMS_FRONT_GIT_COMMIT="$(git rev-parse HEAD)" docker compose build lms-frontend
+            # Never `docker compose build` on this host (2026-10-27 OOM, see the build job): pull the
+            # image the build job pushed for $SHA and give it the tag the compose file and
+            # scripts/deploy_frontend.sh run. A throwaway DOCKER_CONFIG keeps the login out of the
+            # host's own ~/.docker and gone when the script ends.
+            DOCKER_CONFIG_DIR="$(mktemp -d)"
+            trap 'rm -rf "$DOCKER_CONFIG_DIR"' EXIT
+            printf '%s' "$GHCR_TOKEN" | DOCKER_CONFIG="$DOCKER_CONFIG_DIR" docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
+            echo "⬇️  Pulling $IMAGE:$SHA..."
+            DOCKER_CONFIG="$DOCKER_CONFIG_DIR" docker pull "$IMAGE:$SHA"
+            docker tag "$IMAGE:$SHA" lms-frontend:latest
+            docker image inspect lms-frontend:latest >/dev/null
             # `up -d lms-frontend` stopped the container before the new one served (1-5 failed
             # requests per deploy) and dropped the previous build's /assets (open tabs 404'd on
             # their next lazy route). The script serves the new build from lms-frontend-standby
-            # first and keeps old assets for 14 days; see its header.
-            bash scripts/deploy_frontend.sh
+            # first and keeps old assets for 14 days; see its header. </dev/null: nothing in it may
+            # read the rest of this script from stdin.
+            bash scripts/deploy_frontend.sh </dev/null
             echo "✅ Frontend replaced without downtime"
 
       - name: Health check
@@ -139,8 +219,8 @@ jobs:
           capture_stdout: true
           script: |
             cd ~/projects/lms-frontend
-            # The exact sha the build above used (same checkout, nothing has touched it since —
-            # see the "Deploy to server" step's own LMS_FRONT_GIT_COMMIT line). Printed behind an
+            # The exact sha the deployed image was built for (the "Deploy to server" step checked out
+            # $SHA and pulled the image tagged $SHA; nothing has touched the checkout since). Printed behind an
             # explicit "SENTRY_SHA=" marker, not bare (fix round 3): appleboy/ssh-action's
             # entrypoint runs drone-ssh, which always appends its own success banner to the SAME
             # stdout stream capture_stdout reads — a bare `git rev-parse HEAD` arrives as

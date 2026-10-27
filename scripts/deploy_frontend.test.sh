@@ -180,6 +180,23 @@ run keep_fails "$TODAY" FAKE_RUN_FAIL=1
 [ "$RC" -eq 0 ] && grep -q "assets were not kept" <<<"$OUT" && pass "a failed asset copy warns and the deploy goes on" \
   || fail "exit $RC: $OUT"
 
+# 7 -- the production host never builds the image (2026-10-27: the vite build in `docker compose
+# build` on the shared 8 GB host swapped it and the OOM killer took an LMS backend process)
+WORKFLOW="$HERE/../.github/workflows/deploy-frontend.yml"
+builds="$(grep -v '^[[:space:]]*#' "$WORKFLOW" | grep -c 'docker compose build')"
+[ "$builds" -eq 1 ] && pass "the deploy workflow has exactly one image build" || fail "docker compose build appears $builds times in $WORKFLOW"
+python3 - "$WORKFLOW" <<'PY' && pass "that build runs in the runner job, not in an ssh step" || fail "docker compose build is not in the build job's run step"
+import sys
+lines = open(sys.argv[1]).read().splitlines()
+job = None
+for line in lines:
+    if line.startswith("  ") and not line.startswith("   ") and line.strip().endswith(":") and not line.strip().startswith("#"):
+        job = line.strip()[:-1]
+    if "docker compose build" in line and not line.lstrip().startswith("#"):
+        sys.exit(0 if job == "build" else 1)
+sys.exit(1)
+PY
+
 if [ "$FAILED" -ne 0 ]; then
   echo "deploy_frontend.test.sh: FAILED"
   exit 1
