@@ -1901,17 +1901,17 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     )}
                     {showExamSections ? (
                         <>
-                            <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">
+                            <TableHead className="text-center font-semibold p-2 w-28 min-w-[6.5rem] text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">
                                 {examLabel} Math
                             </TableHead>
-                            <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">
+                            <TableHead className="text-center font-semibold p-2 w-28 min-w-[6.5rem] text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">
                                 {examLabel} Verbal
                             </TableHead>
                         </>
                     ) : isIeltsGroup ? (
-                        <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">IELTS</TableHead>
+                        <TableHead className="text-center font-semibold p-2 w-28 min-w-[6.5rem] text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">IELTS</TableHead>
                     ) : (
-                        <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight"><span className="whitespace-pre-line">{t('attendance.columns.mockExam')}</span></TableHead>
+                        <TableHead className="text-center font-semibold p-2 w-28 min-w-[6.5rem] text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight"><span className="whitespace-pre-line">{t('attendance.columns.mockExam')}</span></TableHead>
                     )}
                     {!isTeacher && (<>
                     {!isRetiredColumn('study_buddy') && (<TableHead
@@ -2301,7 +2301,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     const verbalHasData = student.sat_verbal_correct_count != null;
                                     return (
                                         <>
-                                            <TableCell className="p-0 border-r border-border h-16">
+                                            <TableCell className="p-0 border-r border-border h-16 min-w-[6.5rem]">
                                                 <div
                                                     className={cn(
                                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
@@ -2330,7 +2330,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     {mathHasData && student.test_late && <LateTestBadge />}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="p-0 border-r border-border h-16">
+                                            <TableCell className="p-0 border-r border-border h-16 min-w-[6.5rem]">
                                                 <div
                                                     className={cn(
                                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
@@ -2364,7 +2364,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 })()}
                             </>
                         ) : isIeltsGroup ? (
-                            <TableCell className="p-0 border-r border-border h-16">
+                            <TableCell className="p-0 border-r border-border h-16 min-w-[6.5rem]">
                                 <div
                                     className={cn(
                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
@@ -2407,7 +2407,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 </div>
                             </TableCell>
                         ) : (
-                            <TableCell className="p-0 border-r border-border h-16">
+                            <TableCell className="p-0 border-r border-border h-16 min-w-[6.5rem]">
                                 <div className="w-full h-full flex items-center justify-center text-xs font-medium">
                                     {student.mock_exam > 0 ? (
                                         <span className="text-foreground dark:text-foreground">{student.mock_exam}%</span>
