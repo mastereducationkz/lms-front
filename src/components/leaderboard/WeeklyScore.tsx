@@ -8,7 +8,8 @@ import { SCORE_WEIGHTS, parseInstant, type WeeklyScore } from '../../lib/leaderb
 import '@/lib/i18n/catalogs/attendance';
 
 // A phone is 360 px wide: never wider than the screen minus the gutters.
-const CONTENT_CLASS = 'w-[min(20rem,calc(100vw-1.5rem))] max-h-[70vh] overflow-y-auto p-3 text-xs leading-snug';
+// Never taller than the room Radix has on the side it opened to (the explainer is long and would be cut off at the screen's top).
+const CONTENT_CLASS = 'w-[min(20rem,calc(100vw-1.5rem))] max-h-[min(70vh,var(--radix-popover-content-available-height))] overflow-y-auto p-3 text-xs leading-snug';
 
 /**
  * A popover that opens on tap and, for a mouse, on hover. A click while it is open from hover pins it
