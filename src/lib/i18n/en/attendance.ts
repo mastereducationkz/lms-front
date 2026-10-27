@@ -139,7 +139,7 @@ export const attendance = {
   'attendance.score.explainerIntro': 'The week\'s % is built from three parts:',
   'attendance.score.explainerAttendance': 'Attendance — 40%. Lessons attended ÷ lessons that count. Late counts as present.',
   'attendance.score.explainerHomework': 'Homework — 40%. The average over every assigned homework (score ÷ maximum). Not handed in counts as 0 once its due date has passed; before that it is not counted yet. Handed in but not graded yet is left out until it is graded; then its real score counts.',
-  'attendance.score.explainerTest': 'Test — 20%. The weekly test that opens in this week (mock exams do not count). Finished after the set closes, it counts at half. If the group had a test and the student did not take it before it closed, it counts as 0%.',
+  'attendance.score.explainerTest': 'Test — 20%. The weekly test that opens in this week (mock exams do not count). Finished after the set closes, it counts at half (NUET: in full). If the group had a test and the student did not take it before it closed, it counts as 0%.',
   'attendance.score.explainerNotYet': 'Not counted yet: a test that is still open (a missing score is left out until it closes) and a homework before its due date.',
   'attendance.score.explainerLeftOut': 'Left out: lessons that have not happened yet (their homework too), lessons before the student joined, freeze or no access, and — from attendance only — cancelled lessons, excused absences and lessons not yet marked. Homework of those lessons still counts.',
   'attendance.score.explainerNoTest': 'If nobody in the group has a test result that week, the test part is left out and the % is worked out from the other two.',
