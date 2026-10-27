@@ -18,7 +18,8 @@
 # A standby that never serves is removed and lms-frontend (the previous build) never stopped; the
 # script exits non-zero. Each container lingers 5 s after nginx stops (scripts/nginx-entrypoint.sh).
 #
-# Usage, from ~/projects/lms-frontend once `docker compose build lms-frontend` built the new image:
+# Usage, from ~/projects/lms-frontend once the new image is tagged lms-frontend:latest (the deploy
+# workflow pulls the image its runner built; the host never builds it):
 #   bash scripts/deploy_frontend.sh
 # DEPLOY_HEALTH_TIMEOUT (seconds, default 60) bounds each wait.
 set -euo pipefail
