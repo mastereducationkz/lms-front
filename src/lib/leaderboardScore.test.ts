@@ -184,28 +184,72 @@ describe('homework part', () => {
     expect(result.homework.percent).toBe(50);
   });
 
-  it('unsubmitted, ungraded and max-less homework count 0 but stay in the average', () => {
+  it('unsubmitted and max-less homework count 0 but stay in the average; a submitted ungraded one is left out', () => {
     const lessons = [meta(1, { hw: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }] })];
     const result = score(
       lessons,
       student({
         '1': att('attended', {
           homework_statuses: [
-            hwDone(1, 10),
-            { assignment_id: 2, score: null, max_score: 10 },
-            { assignment_id: 3, score: 5 },
-            hwDone(4, null),
+            { ...hwDone(1, 10), submitted: true },
+            { assignment_id: 2, submitted: false, score: null, max_score: 10 },
+            { assignment_id: 3, submitted: true, score: 5 },
+            { ...hwDone(4, null), submitted: true },
           ],
         }),
       }),
     );
-    expect(result.homework.assigned).toBe(4);
-    expect(result.homework.percent).toBe(25);
+    expect(result.homework.assigned).toBe(3);
+    expect(result.homework.pending).toBe(1);
+    expect(result.homework.percent).toBeCloseTo(100 / 3, 9);
+  });
+
+  it('a pending homework is out of the average until it is graded, then its real score counts', () => {
+    const lessons = [meta(1, { hw: [{ id: 1, max_score: 10 }, { id: 2, max_score: 10 }] })];
+    const pending = score(lessons, student({ '1': att('attended', { homework_statuses: [
+      { ...hwDone(1, 8), submitted: true },
+      { assignment_id: 2, submitted: true, score: null, max_score: 10 },
+    ] }) }));
+    expect(pending.homework).toEqual({ assigned: 1, pending: 1, percent: 80 });
+    const graded = score(lessons, student({ '1': att('attended', { homework_statuses: [
+      { ...hwDone(1, 8), submitted: true },
+      { ...hwDone(2, 2), submitted: true },
+    ] }) }));
+    expect(graded.homework).toEqual({ assigned: 2, pending: 0, percent: 50 });
+  });
+
+  it('when every homework is pending the part does not exist and nothing else is re-weighted', () => {
+    const lessons = [meta(1, { hw: [{ id: 1, max_score: 10 }, { id: 2, max_score: 10 }] })];
+    const result = score(
+      lessons,
+      student({ '1': att('attended', { homework_statuses: [
+        { assignment_id: 1, submitted: true, score: null, max_score: 10 },
+        { assignment_id: 2, submitted: true, score: null, max_score: 10 },
+      ] }) }, 60),
+      true,
+    );
+    expect(result.homework).toEqual({ assigned: 0, pending: 2, percent: null });
+    expect(result.parts.map((p) => p.part)).toEqual(['attendance', 'test']);
+    expect(result.percent).toBe(87);
+  });
+
+  it('a pending homework in a future or foreign lesson is not counted at all', () => {
+    const lessons = [meta(1, { hw: [{ id: 1 }] }), meta(2, { start: FUTURE, hw: [{ id: 2 }] }), meta(3, { hw: [{ id: 3 }] })];
+    const pendingStatus = (id: number) => ({ assignment_id: id, submitted: true, score: null, max_score: 10 });
+    const result = score(
+      lessons,
+      student({
+        '1': att('attended', { homework_statuses: [{ ...hwDone(1, 10), submitted: true }] }),
+        '2': att('attended', { homework_statuses: [pendingStatus(2)] }),
+        '3': att('missed', { frozen: true, homework_statuses: [pendingStatus(3)] }),
+      }),
+    );
+    expect(result.homework).toEqual({ assigned: 1, pending: 0, percent: 100 });
   });
 
   it('an assigned homework with no status row counts 0', () => {
     const result = score([meta(1, { hw: [{ id: 1, max_score: 10 }] })], student({ '1': att('attended') }));
-    expect(result.homework).toEqual({ assigned: 1, percent: 0 });
+    expect(result.homework).toEqual({ assigned: 1, pending: 0, percent: 0 });
   });
 
   it('cancelled and excused lessons keep their homework', () => {
@@ -217,7 +261,7 @@ describe('homework part', () => {
         '2': att('missed', { excused: true, homework_statuses: [hwDone(2, 0)] }),
       }),
     );
-    expect(result.homework).toEqual({ assigned: 2, percent: 50 });
+    expect(result.homework).toEqual({ assigned: 2, pending: 0, percent: 50 });
   });
 
   it('lessons that are not the student\'s lose their homework too', () => {
@@ -236,7 +280,7 @@ describe('homework part', () => {
         '4': att('missed', { blocked: true, homework_statuses: [hwDone(4, 0)] }),
       }),
     );
-    expect(result.homework).toEqual({ assigned: 1, percent: 100 });
+    expect(result.homework).toEqual({ assigned: 1, pending: 0, percent: 100 });
   });
 
   it('a lesson that has not happened yet loses its homework, even one already handed in', () => {
@@ -248,7 +292,7 @@ describe('homework part', () => {
         '2': { attendance_status: 'missed', marked: false, homework_statuses: [hwDone(2, 10)] },
       }),
     );
-    expect(result.homework).toEqual({ assigned: 1, percent: 100 });
+    expect(result.homework).toEqual({ assigned: 1, pending: 0, percent: 100 });
   });
 
   it('a past unmarked lesson counts for homework only', () => {
@@ -257,7 +301,7 @@ describe('homework part', () => {
       student({ '1': { attendance_status: 'missed', marked: false, homework_statuses: [hwDone(1, 5)] } }),
     );
     expect(result.attendance).toMatchObject({ countable: 0, percent: null });
-    expect(result.homework).toEqual({ assigned: 1, percent: 50 });
+    expect(result.homework).toEqual({ assigned: 1, pending: 0, percent: 50 });
     expect(result.percent).toBe(50);
   });
 
@@ -266,7 +310,7 @@ describe('homework part', () => {
       [meta(1, { start: TODAY, hw: [{ id: 1, max_score: 10 }] })],
       student({ '1': att('attended', { homework_statuses: [hwDone(1, 10)] }) }),
     );
-    expect(result.homework).toEqual({ assigned: 1, percent: 100 });
+    expect(result.homework).toEqual({ assigned: 1, pending: 0, percent: 100 });
   });
 
   it('reads the legacy single homework fields', () => {

@@ -3,7 +3,8 @@
  *
  * % = Σ(weight × part%) ÷ Σ(weights of the parts that exist), over three parts:
  * Attendance 40, Homework 40, Test 20. A part that does not exist for a student that week is left
- * out of both sums — nothing else is re-weighted. The activity star is not part of it.
+ * out of both sums — nothing else is re-weighted. A homework that was handed in but is not graded yet
+ * is left out until it is graded (it is counted in `homework.pending`). The activity star is not part of it.
  *
  * Kept here because the maths is the one thing on that screen worth unit-testing (there are no
  * component tests), and because the popover that shows a student their own sum must read the very
@@ -59,6 +60,8 @@ export interface ScoreLessonMeta {
 
 export interface ScoreHomeworkStatus {
   assignment_id?: number;
+  /** Handed in. With no score yet it is «pending» — left out of the average until it is graded. */
+  submitted?: boolean;
   score: number | null;
   max_score?: number | null;
 }
@@ -138,6 +141,11 @@ export function isCountableForHomework(
   return !hasNotHappened(startDatetime, isFuture) && !isNotTheirs(lesson);
 }
 
+/** Handed in and not graded yet. It stays out of the homework part until a score exists. */
+function isPendingHomework(status: ScoreHomeworkStatus): boolean {
+  return status.submitted === true && (status.score === null || status.score === undefined);
+}
+
 /** One homework as a share of its maximum: score ÷ max, so a 30-point homework weighs like a 10-point one. */
 function homeworkShare(status: ScoreHomeworkStatus, assigned: ScoreHomeworkMeta[]): number {
   if (status.score === null || status.score === undefined) return 0;
@@ -169,7 +177,8 @@ export interface WeeklyScoreInput {
 
 export interface WeeklyScore {
   attendance: { attended: number; countable: number; percent: number | null };
-  homework: { assigned: number; percent: number | null };
+  /** `assigned` = homeworks in the average; `pending` = handed in, waiting for a grade, left out. */
+  homework: { assigned: number; pending: number; percent: number | null };
   /** `skipped` = the group had a test and this student has no score (counts 0); `none` = nobody had one. */
   test: { state: 'scored' | 'skipped' | 'none'; percent: number | null };
   /** The parts that exist, in display order, with the percentage each contributes. */
@@ -182,6 +191,7 @@ export function weeklyScore({ lessons, student, testHeld, isFuture }: WeeklyScor
   let attended = 0;
   let countable = 0;
   const shares: number[] = [];
+  let pending = 0;
 
   for (const meta of lessons) {
     const lesson = student.lessons[meta.lesson_number.toString()];
@@ -194,7 +204,10 @@ export function weeklyScore({ lessons, student, testHeld, isFuture }: WeeklyScor
     if (!isCountableForHomework(lesson, meta.start_datetime, isFuture)) continue;
     const assigned = lessonHomeworkMetas(meta);
     const statuses = lessonHomeworkStatuses(lesson);
-    for (const status of statuses) shares.push(homeworkShare(status, assigned));
+    for (const status of statuses) {
+      if (isPendingHomework(status)) pending += 1;
+      else shares.push(homeworkShare(status, assigned));
+    }
     // Assigned but without a status row: unsubmitted, so it counts as 0.
     for (let i = statuses.length; i < assigned.length; i += 1) shares.push(0);
   }
@@ -220,7 +233,7 @@ export function weeklyScore({ lessons, student, testHeld, isFuture }: WeeklyScor
 
   return {
     attendance: { attended, countable, percent: attendancePercent },
-    homework: { assigned: shares.length, percent: homeworkPercent },
+    homework: { assigned: shares.length, pending, percent: homeworkPercent },
     test,
     parts,
     percent,
