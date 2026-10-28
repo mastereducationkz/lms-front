@@ -1,6 +1,7 @@
 import type { StepProgress, CourseStepsProgress, StudentProgressOverview, DailyStreakInfo, CourseCompletion } from '../../types';
 import { api } from './client';
 import { apiError } from './apiError';
+import type { CourseResume } from '../../lib/courseResume';
 
 export async function markLessonComplete(lessonId: string, timeSpent: number = 0) {
   try {
@@ -47,6 +48,20 @@ export async function isLessonCompleted(lectureId: string): Promise<boolean> {
     return progress.some((p: any) => p.lesson_id === lectureId && p.status === 'completed');
   } catch {
     return false;
+  }
+}
+
+/**
+ * Where the student left off in a course (lib/courseResume.ts), or null — nothing opened yet,
+ * a staff/parent session, or a server without the route. Never throws: callers fall back to
+ * the course page.
+ */
+export async function getCourseResume(courseId: string | number): Promise<CourseResume | null> {
+  try {
+    const response = await api.get(`/progress/course/${courseId}/resume`);
+    return response.data ?? null;
+  } catch {
+    return null;
   }
 }
 

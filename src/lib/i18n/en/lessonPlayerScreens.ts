@@ -56,6 +56,8 @@ export const lessonPlayerScreens = {
   'lessonPlayer.overview.checkpointLate': '{questions} · the deadline has passed, but you can still take it — it’ll just be marked late.',
   'lessonPlayer.overview.checkpointDue': '{questions} · due {deadline} (in {left}). It’s optional — your course keeps going either way.',
   'lessonPlayer.overview.takeCheckpoint': 'Take Checkpoint {number}',
+  'lessonPlayer.overview.resumeLabel': 'Continue where you left off',
+  'lessonPlayer.overview.resumeAction': 'Continue',
   'lessonPlayer.overview.moduleCompleted': 'Completed',
   'lessonPlayer.overview.noLessons': 'No lessons in this module yet.',
   'lessonPlayer.progress.loadFailed': 'Failed to load progress data',

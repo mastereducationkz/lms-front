@@ -32,6 +32,7 @@ import { useT } from '../lib/i18n/react';
 import type { MessageKey } from '../lib/i18n';
 import '@/lib/i18n/catalogs/learning';
 import '@/lib/i18n/catalogs/lessonPlayer';
+import { resumeStepIndex } from '../lib/courseResume';
 
 // Utility function to extract correct answers from gap text
 // If an option ends with *, it's the correct answer (without the *)
@@ -798,6 +799,24 @@ export default function LessonPage() {
       setSteps(stepsData);
       setStepsProgress(progressData || []);
       setQuizCompleted(new Map());
+
+      // No step in the URL: reopen at the step this student opened last in the lesson (where
+      // they left off) instead of step 1. Written into the URL, because the URL→step sync effect
+      // treats a missing param as step 1. Same order as orderedSteps.
+      if (!searchParams.get('stepId') && !searchParams.get('step')) {
+        const ordered = [...(stepsData as Step[])].sort((a, b) => {
+          const orderA = a.order_index || 0;
+          const orderB = b.order_index || 0;
+          if (orderA === orderB) return Number(a.id) - Number(b.id);
+          return orderA - orderB;
+        });
+        const resumeIdx = resumeStepIndex(ordered, progressData);
+        if (resumeIdx != null && resumeIdx > 0) {
+          const next = new URLSearchParams(searchParams);
+          next.set('stepId', String(ordered[resumeIdx].id));
+          setSearchParams(next, { replace: true });
+        }
+      }
 
       const optionalQuizSteps = (stepsData as Step[]).filter(
         (step) => step.is_optional && step.content_type === 'quiz',
