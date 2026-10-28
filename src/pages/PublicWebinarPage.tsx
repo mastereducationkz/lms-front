@@ -132,7 +132,7 @@ export default function PublicWebinarPage() {
             )}
           </section>
 
-          {(data.access_mode === 'open' || data.state === 'ended') && (
+          {(data.access_mode === 'open' || data.state === 'ended') && data.consultation_open !== false && (
             <ConsultationCard t={t} locale={locale} webinarSlug={data.slug} consent={data.consent} />
           )}
         </div>

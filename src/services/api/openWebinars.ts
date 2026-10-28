@@ -17,6 +17,8 @@ export interface OpenSettings {
   consent_text_ru: string;
   consent_text_en: string;
   pipelines: Pipeline[];
+  /** Registrations and call-back requests go to amoCRM. Off: kept in the LMS only, never sent later. Absent on an older server = on. */
+  leads_enabled?: boolean;
 }
 
 export interface GuestSpeaker {
@@ -153,7 +155,8 @@ export interface RegistrationRow {
   email: string | null;
   registered_at: string;
   joined: boolean;
-  lead_state: 'pending' | 'sent' | 'failed' | 'skipped_student';
+  /** `off`: kept in the LMS only, sending to amoCRM was switched off when they registered. */
+  lead_state: 'pending' | 'sent' | 'failed' | 'skipped_student' | 'off';
   /** `created`, `tagged_existing` or `existing_client` once the lead was handled. */
   lead_outcome: string | null;
   lead_error: string | null;
@@ -189,7 +192,7 @@ async function run<T>(request: Promise<{ data: T }>, fallback: string): Promise<
 }
 
 export const getOpenSettings = () => run<OpenSettings>(api.get(`${base}/settings`), 'Failed to load the settings');
-export const saveOpenSettings = (body: Partial<Pick<OpenSettings, 'policy_text' | 'consent_text_ru' | 'consent_text_en'>>) =>
+export const saveOpenSettings = (body: Partial<Pick<OpenSettings, 'policy_text' | 'consent_text_ru' | 'consent_text_en' | 'leads_enabled'>>) =>
   run<OpenSettings>(api.put(`${base}/settings`, body), 'Failed to save the settings');
 
 /** Active speakers; `includeId` keeps a webinar's own speaker in the list even after they were removed. */

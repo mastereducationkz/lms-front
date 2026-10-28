@@ -243,6 +243,27 @@ describe('Admin → Open webinars: who may change the settings', () => {
     expect(button('Save')).toBeTruthy();
   });
 
+  it('an admin stops sending to amoCRM and turns it back on; the card says what off means', async () => {
+    await show('admin');
+    expect(document.querySelector('[data-leads-state]')?.textContent).toBe('Registrations and call-back requests are sent to amoCRM.');
+    api.saveOpenSettings.mockResolvedValueOnce(settings({ policy_text: 'We keep your data safe.', leads_enabled: false }));
+    await click(button('Stop sending to amoCRM'));
+    await settle();
+    expect(api.saveOpenSettings).toHaveBeenLastCalledWith({ leads_enabled: false });
+    expect(document.querySelector('[data-leads-state]')?.textContent).toContain('stay in the LMS only');
+    api.saveOpenSettings.mockResolvedValueOnce(settings({ policy_text: 'We keep your data safe.', leads_enabled: true }));
+    await click(button('Send to amoCRM again'));
+    await settle();
+    expect(api.saveOpenSettings).toHaveBeenLastCalledWith({ leads_enabled: true });
+  });
+
+  it('a head teacher sees the state but has no switch', async () => {
+    api.getOpenSettings.mockResolvedValue(settings({ policy_text: 'We keep your data safe.', leads_enabled: false }));
+    await show('head_teacher');
+    expect(document.querySelector('[data-leads-state]')?.textContent).toContain('stay in the LMS only');
+    expect(button('Send to amoCRM again')).toBeUndefined();
+  });
+
   it.each(['head_teacher', 'head_curator'])('a %s reads them, cannot save, and still manages the guest speakers', async (role) => {
     await show(role);
     expect(document.querySelector('[data-settings-readonly]')?.textContent).toContain('Only an admin can change');
