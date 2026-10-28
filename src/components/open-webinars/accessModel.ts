@@ -28,9 +28,11 @@ export interface AccessDraft {
   descriptionEn: string;
   /** Create form only: the webinar has no group or course, just the public page. */
   noAudience: boolean;
+  /** Registration only: the form also asks who is registering, the grade, city, intake year, SAT/IELTS, … */
+  askProfile: boolean;
 }
 
-export const emptyDraft = (): AccessDraft => ({ mode: 'students', pipelineId: null, slug: '', presenter: null, speakerId: null, bannerUrl: null, titleEn: '', descriptionEn: '', noAudience: false });
+export const emptyDraft = (): AccessDraft => ({ mode: 'students', pipelineId: null, slug: '', presenter: null, speakerId: null, bannerUrl: null, titleEn: '', descriptionEn: '', noAudience: false, askProfile: false });
 
 export const draftOf = (access: OpenAccess): AccessDraft => ({
   mode: access.access_mode,
@@ -42,6 +44,7 @@ export const draftOf = (access: OpenAccess): AccessDraft => ({
   titleEn: access.title_en ?? '',
   descriptionEn: access.description_en ?? '',
   noAudience: false,
+  askProfile: access.ask_profile ?? false,
 });
 
 /** Public access is on for this draft (it is not «students only»). */
@@ -88,6 +91,8 @@ export function accessBody(draft: AccessDraft & { mode: 'open' | 'registration';
     lead_pipeline_id: draft.pipelineId,
     banner_url: draft.bannerUrl,
     ...englishFields(draft, clearEmpty),
+    // The questions belong to a registration form; an open-link webinar has none, so switching to it turns them off.
+    ask_profile: draft.mode === 'registration' && draft.askProfile,
   };
 }
 

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PublicWebinarPage from './PublicWebinarPage';
 import { act } from 'react';
 import { backendBase } from '../lib/mediaUrl';
-import { click, fakeBackend, memoryStorage, mount, settle, submit, text, type, unmount, webinar } from './publicWebinarsTestKit';
+import { click, fakeBackend, memoryStorage, mount, pick, settle, submit, text, type, unmount, webinar } from './publicWebinarsTestKit';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -444,5 +444,70 @@ describe('the webinar’s own text in English', () => {
   it('keeps showing no description when neither language has one', async () => {
     await open({ [PAGE]: { body: webinar({ description: null, description_en: null }) } });
     expect(document.querySelector('article p.whitespace-pre-line')).toBeNull();
+  });
+});
+
+describe('the extra questions (owner, 2026-10-28)', () => {
+  it('are not on the form of a webinar that does not ask them', async () => {
+    await open({ [PAGE]: { body: webinar() } });
+    expect(document.querySelector('input[name="ow-role"]')).toBeNull();
+    expect(document.querySelector('#ow-grade')).toBeNull();
+  });
+
+  it('ask who is registering first, then the grade, and send nothing until both are answered', async () => {
+    const backend = await open({ [PAGE]: { body: webinar({ ask_profile: true }) } });
+    expect(text()).toContain('Who is registering?');
+    await fill();
+    await click(document.querySelector('#ow-consent'));
+    await submit();
+    expect(text()).toContain('Choose who is registering: a student or a parent.');
+    await click(document.querySelector('input[name="ow-role"][value="student"]'));
+    await submit();
+    expect(text()).toContain('Choose the grade.');
+    expect(backend.calls.filter((c) => c.method === 'POST')).toEqual([]);
+  });
+
+  it('a parent is asked for the child’s name and the student’s phone, and everything filled in is sent', async () => {
+    const backend = await open({ [PAGE]: { body: webinar({ ask_profile: true }) }, [REGISTER]: { body: { join_code: 'C', join_path: '/w/j/C' } } });
+    await click(document.querySelector('input[name="ow-role"][value="parent"]'));
+    expect(text()).toContain('Your first and last name (parent)');
+    expect(text()).toContain('Student’s phone');
+    await fill();
+    await type('#ow-child', 'Erlan B');
+    await type('#ow-other-phone', '8 701 222 33 44');
+    await pick('#ow-grade', '10');
+    await type('#ow-city', 'Almaty');
+    await pick('#ow-year', 'undecided');
+    await type('#ow-sat', '1450');
+    await click(document.querySelector('#ow-consent'));
+    await submit();
+    const post = backend.calls.find((c) => c.method === 'POST')!;
+    expect(post.body!.answers).toEqual({ role: 'parent', grade: '10', city: 'Almaty', intake_year: 'undecided', sat_score: '1450', other_phone: '8 701 222 33 44', child_name: 'Erlan B' });
+    expect(text()).toContain('JOIN PAGE');
+  });
+
+  it('a student who typed a child’s name as a parent and switched back does not send it', async () => {
+    const backend = await open({ [PAGE]: { body: webinar({ ask_profile: true }) }, [REGISTER]: { body: { join_code: 'C', join_path: '/w/j/C' } } });
+    await click(document.querySelector('input[name="ow-role"][value="parent"]'));
+    await type('#ow-child', 'Someone');
+    await click(document.querySelector('input[name="ow-role"][value="student"]'));
+    expect(document.querySelector('#ow-child')).toBeNull();
+    expect(text()).toContain('Parent’s phone');
+    await fill();
+    await pick('#ow-grade', 'graduated');
+    await click(document.querySelector('#ow-consent'));
+    await submit();
+    expect(backend.calls.find((c) => c.method === 'POST')!.body!.answers).toEqual({ role: 'student', grade: 'graduated' });
+  });
+
+  it('say a refused score in the visitor’s language', async () => {
+    await open({ [PAGE]: { body: webinar({ ask_profile: true }) }, [REGISTER]: { status: 400, body: { detail: 'x', reason_code: 'profile_sat_invalid' } } });
+    await click(document.querySelector('input[name="ow-role"][value="student"]'));
+    await fill();
+    await pick('#ow-grade', '11');
+    await type('#ow-sat', '1700');
+    await click(document.querySelector('#ow-consent'));
+    await submit();
+    expect(text()).toContain('The SAT score is a number from 400 to 1600.');
   });
 });

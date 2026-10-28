@@ -102,6 +102,7 @@ export default function PublicWebinarPage() {
                   t={t}
                   locale={locale}
                   withEmail
+                  askProfile={data.ask_profile === true}
                   consentText={locale === 'ru' ? data.consent.text_ru : data.consent.text_en}
                   submitLabel={t('openWebinars.form.submit')}
                   onSubmit={async (body) => {

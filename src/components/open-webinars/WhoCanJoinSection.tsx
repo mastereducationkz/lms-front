@@ -72,6 +72,16 @@ export default function WhoCanJoinSection({
         })}
       </fieldset>
 
+      {draft.mode === 'registration' && (
+        <div data-ask-profile className="flex items-start gap-2.5">
+          <Checkbox id="ow-ask-profile" checked={draft.askProfile} disabled={disabled} onCheckedChange={(next) => set({ askProfile: next === true })} className="mt-0.5" />
+          <Label htmlFor="ow-ask-profile" className="font-normal leading-snug">
+            {t('openWebinars.admin.access.askProfile')}
+            <span className="block text-xs text-muted-foreground">{t('openWebinars.admin.access.askProfileHint')}</span>
+          </Label>
+        </div>
+      )}
+
       {draft.mode !== 'students' && (
         <div className="space-y-4">
           <div className="space-y-1.5">
