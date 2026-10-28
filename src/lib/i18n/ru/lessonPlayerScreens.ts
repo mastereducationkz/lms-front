@@ -56,6 +56,8 @@ export const lessonPlayerScreens: RuTable<typeof en> = {
   'lessonPlayer.overview.checkpointLate': '{questions} · срок прошёл, но пройти его ещё можно — просто с пометкой об опоздании.',
   'lessonPlayer.overview.checkpointDue': '{questions} · срок: {deadline} (осталось {left}). Он необязательный — курс в любом случае идёт дальше.',
   'lessonPlayer.overview.takeCheckpoint': 'Пройти чекпоинт {number}',
+  'lessonPlayer.overview.resumeLabel': 'Продолжить с места остановки',
+  'lessonPlayer.overview.resumeAction': 'Продолжить',
   'lessonPlayer.overview.moduleCompleted': 'Пройден',
   'lessonPlayer.overview.noLessons': 'В этом модуле пока нет уроков.',
   'lessonPlayer.progress.loadFailed': 'Не удалось загрузить прогресс',

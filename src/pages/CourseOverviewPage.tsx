@@ -8,6 +8,7 @@ import type { Course, Lesson } from '../types';
 import { formatDeadline, formatDuration as formatTimeLeft, getMyCheckpoints, type StudentCheckpointItem } from '../services/api/checkpoints';
 import { buildCheckpointHints, firstOpenCheckpoint, type CheckpointHints } from '../lib/checkpointHints';
 import { unitStepProgress } from '../lib/unitProgress';
+import { resumeLessonPath, type CourseResume } from '../lib/courseResume';
 
 import { Progress } from '../components/ui/progress';
 import { CompletionMeta } from '../components/progress/CompletionMeta';
@@ -68,6 +69,15 @@ export default function CourseOverviewPage() {
     return () => { cancelled = true; };
   }, [courseId]);
   const courseProgress = completion?.completion_percentage ?? 0;
+
+  // Where the student left off (lib/courseResume.ts); null for staff, parents and a fresh course.
+  const [resume, setResume] = useState<CourseResume | null>(null);
+  useEffect(() => {
+    if (!courseId) return;
+    let cancelled = false;
+    apiClient.getCourseResume(courseId).then((data) => { if (!cancelled) setResume(data); });
+    return () => { cancelled = true; };
+  }, [courseId]);
 
   useEffect(() => {
     if (courseId) {
@@ -206,6 +216,25 @@ export default function CourseOverviewPage() {
       {/* Course Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
+          {resume && (
+            <div className="flex flex-col gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-blue-800 dark:bg-blue-950/30">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
+                  <Play className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                    {t('lessonPlayer.overview.resumeLabel')}
+                  </p>
+                  <p className="truncate font-semibold text-foreground">{resume.lesson_title}</p>
+                </div>
+              </div>
+              <Button onClick={() => navigate(resumeLessonPath(courseId!, resume))} className="shrink-0">
+                {t('lessonPlayer.overview.resumeAction')}
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          )}
           {openCheckpoint && (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-800 dark:bg-emerald-950/30" role="status">
               <p className="font-semibold text-foreground">
