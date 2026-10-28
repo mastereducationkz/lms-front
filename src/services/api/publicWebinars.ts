@@ -36,6 +36,8 @@ export interface PublicWebinar {
   state: WebinarState;
   join_url: string | null;
   registration_open: boolean;
+  /** The registration form also asks the extra questions (who, grade, city, …). Absent on an older server. */
+  ask_profile?: boolean;
   speaker: PublicSpeaker | null;
   recording_slug: string | null;
   /** A relative `/uploads/…` path: show it through `mediaUrl`. */
@@ -59,6 +61,21 @@ export interface JoinInfo {
   recording_slug: string | null;
 }
 
+export type ProfileRole = 'student' | 'parent';
+
+/** The extra questions' answers; only «role» and «grade» are required (lms-backend src/public_webinars/profile.py). */
+export interface ProfileAnswers {
+  role: ProfileRole;
+  grade: string;
+  city?: string;
+  intake_year?: string;
+  /** Sent as typed; the server stores numbers. */
+  sat_score?: string | number;
+  ielts_score?: string | number;
+  other_phone?: string;
+  child_name?: string;
+}
+
 export interface ContactBody {
   name: string;
   phone: string;
@@ -70,6 +87,8 @@ export interface ContactBody {
   captcha_token?: string;
   utm?: Record<string, string>;
   referer?: string;
+  /** Only when the webinar asks the extra questions. */
+  answers?: ProfileAnswers;
   /** The hidden honeypot: a person never fills it. Named so that no browser autofill or password manager knows it. */
   ow_extra?: string;
 }

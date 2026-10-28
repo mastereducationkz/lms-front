@@ -1,4 +1,5 @@
 /** The admin side of open webinars (lms-backend src/public_webinars/routes/admin.py). */
+import type { ProfileAnswers } from './publicWebinars';
 import { api } from './client';
 import { apiError } from './apiError';
 
@@ -72,6 +73,8 @@ export interface OpenAccess {
   /** The English title and description of the public page; null/absent = the page shows the original. */
   title_en?: string | null;
   description_en?: string | null;
+  /** The registration form also asks the extra questions. Absent on an older server. */
+  ask_profile?: boolean;
   /** Registrations exist: the address can no longer change. */
   slug_locked: boolean;
   can_close: boolean;
@@ -128,6 +131,8 @@ export interface AccessBody {
   banner_url?: string | null;
   title_en?: string | null;
   description_en?: string | null;
+  /** Ask the extra questions on the registration form; left out = unchanged on the server. */
+  ask_profile?: boolean;
 }
 
 /** What the host teacher or curator sees on their event: no personal data. */
@@ -155,6 +160,8 @@ export interface RegistrationRow {
   lead_attempts: number;
   amo_lead_id: number | null;
   utm: Record<string, string>;
+  /** The extra questions' answers; null when the webinar did not ask them. */
+  answers?: ProfileAnswers | null;
 }
 
 export interface RecordingStatus {

@@ -74,7 +74,7 @@ describe('a webinar’s public access card', () => {
     await click(saveButton());
     await settle();
     expect(api.saveOpenAccess).toHaveBeenCalledWith(7, {
-      access_mode: 'registration', slug: 'my-webinar', speaker_id: 3, presenter: 'speaker', lead_pipeline_id: 10520038, banner_url: null, title_en: '', description_en: '',
+      access_mode: 'registration', slug: 'my-webinar', speaker_id: 3, presenter: 'speaker', lead_pipeline_id: 10520038, banner_url: null, title_en: '', description_en: '', ask_profile: false,
     });
     expect(text()).toContain('Saved');
     expect(text()).toContain('Registered 12 · joined 5');
@@ -452,5 +452,31 @@ describe('the English version of the public page', () => {
     await click(saveButton());
     await settle();
     expect((document.querySelector('#ow-title-en') as HTMLInputElement).value).toBe('IELTS Writing consultation');
+  });
+});
+
+describe('the extra questions switch', () => {
+  it('is offered only for registration, and saving it on sends ask_profile', async () => {
+    await show();
+    expect(document.querySelector('#ow-ask-profile')).toBeNull();
+    await click(radio('open'));
+    expect(document.querySelector('#ow-ask-profile')).toBeNull();
+    await click(radio('registration'));
+    expect(text()).toContain('Ask extra questions');
+    await click(document.querySelector('#ow-ask-profile'));
+    await choosePipeline();
+    await click(saveButton());
+    await settle();
+    expect(api.saveOpenAccess).toHaveBeenCalledWith(7, expect.objectContaining({ access_mode: 'registration', ask_profile: true }));
+  });
+
+  it('shows a saved webinar’s switch as on, and an open-link save turns it off', async () => {
+    api.getOpenAccess.mockResolvedValue({ ...opened, ask_profile: true });
+    await show();
+    expect((document.querySelector('#ow-ask-profile') as HTMLElement).getAttribute('data-state')).toBe('checked');
+    await click(radio('open'));
+    await click(saveButton());
+    await settle();
+    expect(api.saveOpenAccess).toHaveBeenCalledWith(7, expect.objectContaining({ access_mode: 'open', ask_profile: false }));
   });
 });

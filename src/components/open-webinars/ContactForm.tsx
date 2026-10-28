@@ -5,6 +5,8 @@ import { Checkbox } from '../ui/checkbox';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import TurnstileWidget, { turnstileSiteKey, type TurnstileHandle } from './TurnstileWidget';
+import { ChildNameField, OtherPhoneField, RolePicker, SchoolFields } from './ProfileFields';
+import { answersOf, emptyProfile, missingProfile } from './profileQuestions';
 import { PublicApiError, type ContactBody } from '../../services/api/publicWebinars';
 import { captureAttribution } from '../../lib/utm';
 import { hasMessage, type TFunction } from '../../lib/i18n/translate';
@@ -18,6 +20,8 @@ interface Props {
   locale: Locale;
   /** A seat needs an e-mail (the link and reminders go there); a call-back request does not. */
   withEmail: boolean;
+  /** The webinar asks the extra questions (who, grade, city, …): a seat only, never a call-back request. */
+  askProfile?: boolean;
   consentText: string;
   submitLabel: string;
   onSubmit: (body: ContactBody) => Promise<void>;
@@ -36,13 +40,14 @@ export function errorText(error: unknown, t: TFunction): string {
 /**
  * Name, phone, (e-mail), consent. Used for a seat at a webinar and for «leave your number». With a Turnstile site key
  * in the build, the Cloudflare check sits above the button, which waits for its token and sends it as `captcha_token`;
- * without one the form is exactly as it was.
+ * without one the form is exactly as it was. `askProfile` adds the extra questions around those fields.
  */
-export default function ContactForm({ t, locale, withEmail, consentText, submitLabel, onSubmit }: Props) {
+export default function ContactForm({ t, locale, withEmail, askProfile = false, consentText, submitLabel, onSubmit }: Props) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [consent, setConsent] = useState(false);
+  const [answers, setAnswers] = useState(emptyProfile);
   const [trap, setTrap] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +58,11 @@ export default function ContactForm({ t, locale, withEmail, consentText, submitL
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    const missing = askProfile ? missingProfile(answers) : null;
+    if (missing) {
+      setError(t(`openWebinars.error.${missing}`));
+      return;
+    }
     if (!consent) {
       setError(t('openWebinars.error.consent_required'));
       return;
@@ -64,6 +74,7 @@ export default function ContactForm({ t, locale, withEmail, consentText, submitL
     try {
       await onSubmit({
         name: name.trim(), phone: phone.trim(), email: email.trim() || undefined, consent, lang: locale, utm, referer, ow_extra: trap,
+        ...(askProfile ? { answers: answersOf(answers) } : {}),
         ...(siteKey && token ? { captcha_token: token } : {}),
       });
     } catch (failure) {
@@ -75,14 +86,18 @@ export default function ContactForm({ t, locale, withEmail, consentText, submitL
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
+      {askProfile && <RolePicker t={t} value={answers} onChange={setAnswers} />}
       <div className="space-y-1.5">
-        <Label htmlFor="ow-name">{t('openWebinars.form.name')}</Label>
+        <Label htmlFor="ow-name">{t(!askProfile ? 'openWebinars.form.name'
+          : answers.role === 'parent' ? 'openWebinars.form.profile.nameParent' : 'openWebinars.form.profile.nameStudent')}</Label>
         <Input id="ow-name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" maxLength={120} required />
       </div>
+      {askProfile && <ChildNameField t={t} value={answers} onChange={setAnswers} />}
       <div className="space-y-1.5">
         <Label htmlFor="ow-phone">{t('openWebinars.form.phone')}</Label>
         <Input id="ow-phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" placeholder="+7 700 000 00 00" required />
       </div>
+      {askProfile && <OtherPhoneField t={t} value={answers} onChange={setAnswers} />}
       {withEmail && (
         <div className="space-y-1.5">
           <Label htmlFor="ow-email">{t('openWebinars.form.email')}</Label>
@@ -90,6 +105,7 @@ export default function ContactForm({ t, locale, withEmail, consentText, submitL
           <p className="text-xs text-muted-foreground">{t('openWebinars.form.emailHint')}</p>
         </div>
       )}
+      {askProfile && <SchoolFields t={t} value={answers} onChange={setAnswers} />}
       {/* A person never sees this field; a bot fills every field it finds. */}
       <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, overflow: 'hidden' }}>
         <input name="ow_extra" tabIndex={-1} autoComplete="off" value={trap} onChange={(e) => setTrap(e.target.value)} />

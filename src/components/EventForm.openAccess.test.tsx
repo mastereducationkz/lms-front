@@ -175,7 +175,7 @@ describe('create form: Save for a webinar that opens to everyone', () => {
     order.length = 0;                        // the preview's own check is not the one under test
     await submit();
     expect(order).toEqual(['preflight', 'create', 'put']);
-    expect(open.saveOpenAccess).toHaveBeenCalledWith(501, { access_mode: 'registration', slug: null, speaker_id: 3, presenter: 'speaker', lead_pipeline_id: 10520038, banner_url: null });
+    expect(open.saveOpenAccess).toHaveBeenCalledWith(501, { access_mode: 'registration', slug: null, speaker_id: 3, presenter: 'speaker', lead_pipeline_id: 10520038, banner_url: null, ask_profile: false });
     expect(events.createEvent.mock.calls[0][0]).toMatchObject({ title: 'Open day', event_type: 'webinar', group_ids: [1] });
     expect(onSave).toHaveBeenCalledWith(CREATED);
     expect(onAccessFailed).not.toHaveBeenCalled();

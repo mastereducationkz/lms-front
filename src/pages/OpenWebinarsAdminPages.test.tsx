@@ -286,6 +286,17 @@ describe('a webinar’s registrations', () => {
     expect(document.querySelector('[data-row="3"]')?.textContent).toContain('Call-back');
   });
 
+  it('shows the extra questions’ answers under the person’s name', async () => {
+    api.listRegistrations.mockResolvedValue([
+      row(1, { answers: { role: 'parent', grade: '10', city: 'Almaty', intake_year: 'later', sat_score: 1450, ielts_score: 6.5, other_phone: '+77012223344', child_name: 'Erlan B' } }),
+      row(2, { answers: null }),
+    ]);
+    await show();
+    expect(document.querySelector('[data-row="1"] [data-answers]')?.textContent).toBe(
+      'A parent · Child: Erlan B · Grade 10 · Almaty · Admission: Later · SAT 1450 · IELTS 6.5 · Student’s phone: +77012223344');
+    expect(document.querySelector('[data-row="2"] [data-answers]')).toBeNull();
+  });
+
   it('retries a failed lead from the row and reloads', async () => {
     api.listRegistrations.mockResolvedValueOnce([row(3, { lead_state: 'failed', lead_error: 'boom' })]).mockResolvedValue([row(3, { lead_state: 'pending', lead_outcome: null })]);
     api.retryLead.mockResolvedValue({ id: 3, lead_state: 'pending' });

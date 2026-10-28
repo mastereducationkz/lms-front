@@ -4,6 +4,7 @@ import { ArrowLeft, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import RecordingPanel from '../components/open-webinars/RecordingPanel';
+import { answersSummary } from '../components/open-webinars/profileQuestions';
 import { getOpenAccess, listRegistrations, retryFailedLeads, retryLead, type OpenAccess, type RegistrationRow } from '../services/api/openWebinars';
 import { getEventDetails } from '../services/api/events';
 import { LMS_ORIGIN } from '../lib/lessonLinks';
@@ -145,7 +146,10 @@ export default function OpenWebinarRegistrationsPage() {
             <tbody className="divide-y divide-border">
               {rows.map((r) => (
                 <tr key={r.id} data-row={r.id}>
-                  <td className="px-3 py-2.5 font-medium">{r.name}</td>
+                  <td className="px-3 py-2.5">
+                    <span className="font-medium">{r.name}</span>
+                    {r.answers && <span data-answers className="mt-0.5 block text-xs text-muted-foreground">{answersSummary(r.answers, t).join(' · ')}</span>}
+                  </td>
                   <td className="px-3 py-2.5 text-muted-foreground">{r.phone}{r.email && <><br />{r.email}</>}</td>
                   <td className="px-3 py-2.5">{t(`openWebinars.admin.regs.kind.${r.kind}` as 'openWebinars.admin.regs.kind.registration')}</td>
                   <td className="px-3 py-2.5 whitespace-nowrap">{formatDateTime(r.registered_at, undefined, locale)}</td>
