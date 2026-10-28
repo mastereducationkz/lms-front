@@ -69,7 +69,7 @@ export default function PublicRecordingPage() {
               {description && <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{description}</p>}
             </div>
           </article>
-          <ConsultationCard t={t} locale={locale} webinarSlug={data.slug} consent={data.consent} />
+          {data.consultation_open !== false && <ConsultationCard t={t} locale={locale} webinarSlug={data.slug} consent={data.consent} />}
         </div>
       )}
     </PublicShell>

@@ -40,6 +40,8 @@ export interface PublicWebinar {
   ask_profile?: boolean;
   speaker: PublicSpeaker | null;
   recording_slug: string | null;
+  /** «Leave your number» is offered only while numbers reach sales; false = hide the card. Absent on an older server = offered. */
+  consultation_open?: boolean;
   /** A relative `/uploads/…` path: show it through `mediaUrl`. */
   banner_url?: string | null;
   /** Seats still free; null = no limit. */
@@ -154,6 +156,7 @@ export interface PublicRecording {
   speaker: PublicSpeaker | null;
   url: string;
   poster_url: string | null;
+  consultation_open?: boolean;
   consent: PublicWebinar['consent'];
 }
 

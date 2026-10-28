@@ -120,6 +120,11 @@ describe('a webinar page anyone can open', () => {
     expect(text()).toContain('The webinar is on now');
   });
 
+  it('offers no call-back card while sending to amoCRM is off', async () => {
+    await open({ [PAGE]: { body: webinar({ access_mode: 'open', registration_open: false, consultation_open: false }) } });
+    expect(text()).not.toContain('Want a free consultation?');
+  });
+
   it('says the room is being opened when an open-link webinar is on but has no link yet', async () => {
     await open({ [PAGE]: { body: webinar({ access_mode: 'open', registration_open: false, state: 'live', join_url: null }) } });
     expect(text()).toContain('the room is being opened');

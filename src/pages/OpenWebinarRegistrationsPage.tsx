@@ -16,7 +16,7 @@ import '@/lib/i18n/catalogs/openWebinars';
 const PAGE = 100;
 
 type Tile = { key: 'registered' | 'joined' | 'callbacks' | 'sent' | 'waiting' | 'failed' | 'students'; value: number };
-type LeadKey = 'created' | 'tagged_existing' | 'existing_client' | 'pending' | 'failed' | 'skipped_student';
+type LeadKey = 'created' | 'tagged_existing' | 'existing_client' | 'pending' | 'failed' | 'skipped_student' | 'off';
 
 /** Where a person's lead stands, as one of the plain-language labels: a lead that was sent says what the CRM did with it. */
 function leadKey(row: RegistrationRow): LeadKey {

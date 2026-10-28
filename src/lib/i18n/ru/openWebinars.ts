@@ -284,4 +284,11 @@ export const openWebinars: RuTable<typeof en> = {
   'openWebinars.admin.regs.profile.year': 'Поступление: {value}',
   'openWebinars.admin.regs.profile.otherPhoneOfParent': 'Телефон родителя: {value}',
   'openWebinars.admin.regs.profile.otherPhoneOfStudent': 'Телефон ученика: {value}',
+  // --- переключатель «Отправлять в amoCRM» (владелец, 2026-10-28) ---
+  'openWebinars.admin.regs.lead.off': 'Не отправлено: отправка в amoCRM была выключена',
+  'openWebinars.admin.leads.title': 'amoCRM',
+  'openWebinars.admin.leads.on': 'Регистрации и заявки на звонок отправляются в amoCRM.',
+  'openWebinars.admin.leads.off': 'Выключено: регистрации и заявки на звонок остаются только в LMS и не отправляются в amoCRM — ни сейчас, ни потом. Карточка «Оставьте номер» на публичных страницах скрыта.',
+  'openWebinars.admin.leads.turnOff': 'Не отправлять в amoCRM',
+  'openWebinars.admin.leads.turnOn': 'Снова отправлять в amoCRM',
 };

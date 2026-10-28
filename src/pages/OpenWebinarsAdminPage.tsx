@@ -61,6 +61,12 @@ export default function OpenWebinarsAdminPage() {
     catch (failure) { fail(failure); } finally { setBusy(false); }
   };
 
+  const setLeads = async (enabled: boolean) => {
+    setBusy(true); setNote(null);
+    try { show(await saveOpenSettings({ leads_enabled: enabled })); setNote({ kind: 'ok', text: t('openWebinars.admin.saved') }); }
+    catch (failure) { fail(failure); } finally { setBusy(false); }
+  };
+
   const saveSpeaker = async () => {
     setBusy(true); setNote(null);
     try {
@@ -93,6 +99,20 @@ export default function OpenWebinarsAdminPage() {
       </div>
 
       <OverviewCard />
+
+      <Card data-leads-switch>
+        <CardHeader><CardTitle>{t('openWebinars.admin.leads.title')}</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <p data-leads-state className={`text-sm ${settings.leads_enabled === false ? 'text-amber-800 dark:text-amber-300' : 'text-muted-foreground'}`}>
+            {t(settings.leads_enabled === false ? 'openWebinars.admin.leads.off' : 'openWebinars.admin.leads.on')}
+          </p>
+          {canEditSettings && (
+            <Button type="button" variant="outline" onClick={() => setLeads(settings.leads_enabled === false)} disabled={busy}>
+              {t(settings.leads_enabled === false ? 'openWebinars.admin.leads.turnOn' : 'openWebinars.admin.leads.turnOff')}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader><CardTitle>{t('openWebinars.admin.policy.title')}</CardTitle><p className="text-sm text-muted-foreground">{t('openWebinars.admin.policy.help')}</p></CardHeader>

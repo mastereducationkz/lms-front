@@ -284,4 +284,11 @@ export const openWebinars = {
   'openWebinars.admin.regs.profile.year': 'Admission: {value}',
   'openWebinars.admin.regs.profile.otherPhoneOfParent': 'Parent’s phone: {value}',
   'openWebinars.admin.regs.profile.otherPhoneOfStudent': 'Student’s phone: {value}',
+  // --- «Send to amoCRM» switch (owner, 2026-10-28) ---
+  'openWebinars.admin.regs.lead.off': 'Not sent: amoCRM sending was off',
+  'openWebinars.admin.leads.title': 'amoCRM',
+  'openWebinars.admin.leads.on': 'Registrations and call-back requests are sent to amoCRM.',
+  'openWebinars.admin.leads.off': 'Off: registrations and call-back requests stay in the LMS only and are not sent to amoCRM, now or later. The «leave your number» card is hidden on the public pages.',
+  'openWebinars.admin.leads.turnOff': 'Stop sending to amoCRM',
+  'openWebinars.admin.leads.turnOn': 'Send to amoCRM again',
 } as const satisfies MessageTable;
