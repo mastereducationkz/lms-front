@@ -285,6 +285,8 @@ export const attendance = {
   // The register lock (2026-10-17): Meet takes the register; a person changes its marks with a reason.
   'attendance.lock.pendingCell': 'Meet will mark after the lesson',
   'attendance.lock.pendingTitle': 'Meet marks attendance after the lesson. Until then you can only add an excused absence.',
+  'attendance.notStarted.hint': 'The lesson has not started yet — attendance can be marked from {time}',
+  'attendance.notStarted.hintOn': 'The lesson has not started yet — attendance can be marked from {time} {date}',
   'attendance.lock.handedBack': 'Meet could not mark',
   'attendance.lock.handedBackTitle': 'Meet could not mark — click to mark',
   'attendance.lock.meetMarked': 'Marked by Meet: {mark}{evidence} — click to correct',

@@ -275,6 +275,8 @@ export const attendance: RuTable<typeof en> = {
 
   'attendance.lock.pendingCell': 'Meet отметит после урока',
   'attendance.lock.pendingTitle': 'Посещаемость отметит Meet после урока. До этого можно только отметить уважительный пропуск.',
+  'attendance.notStarted.hint': 'Урок ещё не начался — отметить посещаемость можно с {time}',
+  'attendance.notStarted.hintOn': 'Урок ещё не начался — отметить посещаемость можно с {time} {date}',
   'attendance.lock.handedBack': 'Meet не смог отметить',
   'attendance.lock.handedBackTitle': 'Meet не смог отметить — нажмите, чтобы отметить',
   'attendance.lock.meetMarked': 'Отметил Meet: {mark}{evidence} — нажмите, чтобы исправить',

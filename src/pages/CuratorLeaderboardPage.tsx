@@ -24,6 +24,8 @@ import { Label } from '../components/ui/label';
 import { parseAsUTC } from '../lib/datetime';
 import { formatGroupCloseDate } from '../lib/groupList';
 import { cellsToSave, isAttendanceLockedLesson } from '../lib/attendance';
+import { attendanceOpen, EXCUSE_BEFORE_START, notStartedHint as notStartedHintFor, writeAllowed } from '../lib/attendanceStart';
+import { useAttendanceClock } from '../hooks/useAttendanceClock';
 import { canBeExcused, displaysAsAbsence, excuseAwareStatus, excusePayload, isAbsenceStatus } from '../lib/excusedAbsence';
 import { ExcusePopover } from '../components/attendance/ExcusePopover';
 import { MeetMarkPopover } from '../components/attendance/MeetMarkPopover';
@@ -281,6 +283,7 @@ const AttendanceToggle = ({
     lock = 'open',
     lockTitle = null,
     meetEdit,
+    notStartedHint = null,
 }: {
     initialStatus: string,
     onChange: (status: string) => void,
@@ -304,6 +307,9 @@ const AttendanceToggle = ({
     lock?: CellLock,
     lockTitle?: string | null,
     meetEdit?: Omit<ComponentProps<typeof MeetMarkPopover>, 'onClose'>,
+    // The lesson has not started (2026-10-30): no mark yet — the cycle does nothing and the hover says
+    // from when. An advance excuse still works while EXCUSE_BEFORE_START allows it.
+    notStartedHint?: string | null,
 }) => {
   const t = useT();
   const [excusePopoverOpen, setExcusePopoverOpen] = useState(false);
@@ -316,7 +322,7 @@ const AttendanceToggle = ({
   // fourth step here — a fourth click on the cycle would tax every ordinary
   // correction, and marking a group fast is the point of this screen.
   const handleCycle = () => {
-    if (disabled || isFuture || initialStatus === 'cancelled') return;
+    if (disabled || isFuture || notStartedHint || initialStatus === 'cancelled') return;
     if (lock === 'meet') { if (meetEdit) setMeetPopoverOpen(true); return; }
     if (lock === 'pending') return;
     if (initialStatus === 'attended') onChange('late');
@@ -358,7 +364,8 @@ const AttendanceToggle = ({
   // Only offered on an actual "Не был" (never future/cancelled/frozen/blocked — those
   // never reach this component with initialStatus indicating a real absence while
   // interactive), and only for a caller that wired up onExcuseChange in the first place.
-  const showExcuseAffordance = Boolean(onExcuseChange) && !nonInteractive && lock !== 'meet' && canBeExcused(normalizedStatus, isFuture);
+  const showExcuseAffordance = Boolean(onExcuseChange) && !nonInteractive && lock !== 'meet' && canBeExcused(normalizedStatus, isFuture)
+    && (EXCUSE_BEFORE_START || !notStartedHint);
 
   return (
     <div
@@ -366,9 +373,9 @@ const AttendanceToggle = ({
         className={cn(
             "relative flex items-center justify-center w-full h-full text-[11px] font-bold transition-all select-none",
             config.color,
-            nonInteractive ? "cursor-default brightness-[0.9] grayscale-[0.2]" : lock === 'pending' ? "cursor-default" : "cursor-pointer active:brightness-95 hover:brightness-105"
+            nonInteractive ? "cursor-default brightness-[0.9] grayscale-[0.2]" : lock === 'pending' || notStartedHint ? "cursor-default" : "cursor-pointer active:brightness-95 hover:brightness-105"
         )}
-        title={(isFuture ? config.title : (lockTitle ?? (disabled ? t('attendance.toggle.viewOnly', { status: config.title }) : t('attendance.toggle.clickToCycle', { status: config.title })))) + (note ? `\n${note}` : '')}
+        title={(isFuture ? config.title : notStartedHint ? `${config.title}\n${notStartedHint}` : (lockTitle ?? (disabled ? t('attendance.toggle.viewOnly', { status: config.title }) : t('attendance.toggle.clickToCycle', { status: config.title })))) + (note ? `\n${note}` : '')}
     >
         <span className="flex items-center gap-1">
             <span className="text-[10px] uppercase">{config.label}</span>
@@ -746,6 +753,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const [meetLocks, setMeetLocks] = useState<Map<number, RegisterLock>>(new Map());
   const [lessonLengths, setLessonLengths] = useState<Map<number, number>>(new Map());
   const lessonLocks = useMemo(() => mergeLocks(lockIndex(data?.lessons ?? []), meetLocks), [data, meetLocks]);
+  // No mark before a lesson starts (2026-10-30); the cells open at the start minute without a reload.
+  const attendanceClock = useAttendanceClock(canMarkAttendance ? (data?.lessons ?? []).map(l => l.start_datetime) : []);
   const [reviewOptions, setReviewOptions] = useState<MeetReviewOptions>({});
   // Lessons whose register Meet decided: every present student there owes a балл за активность (the star).
   const meetDecidedLessons = useMemo(() => decidedLessons(meetRegister), [meetRegister]);
@@ -1020,6 +1029,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       // A frozen or blocked lesson is not editable: the student was not expected, so
       // marking them present or absent would be recording something that did not happen.
       if (guarded?.frozen || guarded?.blocked) return;
+      // Not before the lesson starts: the server refuses it (409) and the cells are closed anyway.
+      const startsAt = data?.lessons.find(l => l.lesson_number.toString() === lessonNumber)?.start_datetime;
+      if (!writeAllowed(startsAt, status)) return;
       
       // Status: "attended" or "absent" (from toggles)
       // Map to 10 or 0
@@ -1086,8 +1098,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       if (!guarded) return;
       // Before Meet decides, an advance excuse is the only mark a person may write; taking it back leaves
       // the cell unmarked (the server refuses a plain absence there), so it goes back as «registered».
-      const eventId = data?.lessons.find(l => l.lesson_number.toString() === lessonNumber)?.event_id;
-      const withdrawsAdvanceExcuse = !excused && lessonLocks.get(eventId ?? -1)?.state === 'pending';
+      // The same before the lesson starts: a plain absence is a mark and waits for the start.
+      const meta = data?.lessons.find(l => l.lesson_number.toString() === lessonNumber);
+      const eventId = meta?.event_id;
+      const withdrawsAdvanceExcuse = !excused && (lessonLocks.get(eventId ?? -1)?.state === 'pending' || !attendanceOpen(meta?.start_datetime));
       setData(prev => {
           if (!prev) return null;
           return {
@@ -1120,7 +1134,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
 
   const markAllPresentForLesson = (lesson: LessonMeta) => {
     if (!canMarkAttendance || !data) return;
-    if (isAttendanceLockedLesson(lesson.start_datetime)) return;
+    if (isAttendanceLockedLesson(lesson.start_datetime) || !attendanceOpen(lesson.start_datetime)) return;
     const lessonKey = lesson.lesson_number.toString();
     const lock = lessonLocks.get(lesson.event_id);
     // Only the cells Meet left to a person: what Meet marked, or will mark, stays Meet's.
@@ -1769,8 +1783,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         const lessonIsFuture = isAttendanceLockedLesson(lesson.start_datetime);
                         // «Отметить всех» touches the cells Meet left open; none left, nothing to offer.
                         const lessonLock = lessonLocks.get(lesson.event_id);
-                        const canMarkAll = canMarkAttendance && !lessonIsFuture
-                            && data.students.some(st => cellIsOpen(lessonLock, meetRegister.get(`${lesson.event_id}:${st.student_id}`)));
+                        const markAllHint = canMarkAttendance ? notStartedHintFor(lesson.start_datetime, attendanceClock, locale) : null;
+                        const anyOpenCell = data.students.some(st => cellIsOpen(lessonLock, meetRegister.get(`${lesson.event_id}:${st.student_id}`)));
+                        const canMarkAll = canMarkAttendance && !lessonIsFuture && !markAllHint && anyOpenCell;
+                        // Before the start it stays in view, greyed, with the hint saying from when.
+                        const markAllWaits = Boolean(markAllHint) && anyOpenCell;
                         return (
                         <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-border h-auto min-w-[168px] md:min-w-[196px] align-top bg-muted dark:bg-secondary">
                             <div className="flex flex-col h-full">
@@ -1780,7 +1797,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                         canMarkAll && "cursor-pointer hover:bg-gray-300/50 dark:hover:bg-muted"
                                     )}
                                     onClick={() => markAllPresentForLesson(lesson)}
-                                    title={canMarkAll ? t(lessonLock ? 'attendance.grid.markAllOpenTitle' : 'attendance.grid.markAllTitle') : undefined}
+                                    title={canMarkAll ? t(lessonLock ? 'attendance.grid.markAllOpenTitle' : 'attendance.grid.markAllTitle') : markAllHint ?? undefined}
                                 >
                                     <span className="text-sm">{formatDateParts(lesson.start_datetime).date}</span>
                                     <span className="text-[10px] font-normal text-muted-foreground leading-tight uppercase">{formatDateParts(lesson.start_datetime).dayTime}</span>
@@ -1795,7 +1812,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     </span>
                                     {canMarkAttendance && (
                                         <span className={cn("mt-0.5 flex items-center gap-1.5 leading-tight", lessonIsFuture && "invisible")}>
-                                            <span className={cn("text-[9px] font-bold uppercase tracking-tight text-brand", !canMarkAll && "invisible")}>
+                                            <span className={cn("text-[9px] font-bold uppercase tracking-tight", markAllWaits ? "text-muted-foreground/60" : "text-brand", !canMarkAll && !markAllWaits && "invisible")}>
                                                 {t('attendance.grid.markAll')}
                                             </span>
                                             {/* «Баллы за урок» (2026-09-28): the whole lesson's scores on one screen, from its start. */}
@@ -2014,6 +2031,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             // Handle cases where lesson data might not be populated for student yet
                             const status = lessonStatus ? lessonStatus.attendance_status : 'absent';
                             const cellIsFuture = isAttendanceLockedLesson(lessonInfo.start_datetime);
+                            const markHint = canMarkAttendance ? notStartedHintFor(lessonInfo.start_datetime, attendanceClock, locale) : null;
                             // Lesson predates the student's join date: not theirs, so
                             // show a neutral blank cell (both halves) and skip editing.
                             const preEnroll = lessonStatus?.enrolled === false;
@@ -2055,14 +2073,15 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                         <div
                                             className={cn(
                                                 "relative w-1/2 border-r border-border flex items-center justify-center p-1",
-                                                !canMarkAttendance || lockState === 'pending' ? "cursor-default"
+                                                !canMarkAttendance || lockState === 'pending' || markHint ? "cursor-default"
                                                     : handedBackCell ? "cursor-pointer bg-amber-50 ring-1 ring-inset ring-amber-300 hover:bg-amber-100/70 dark:bg-amber-950/30 dark:ring-amber-700 transition-colors"
                                                     : "cursor-pointer hover:bg-muted/60 transition-colors"
                                             )}
-                                            onClick={() => { if (canMarkAttendance && lockState === 'open') handleAttendanceChange(student.student_id, lessonKey, 'attended'); }}
+                                            onClick={() => { if (canMarkAttendance && lockState === 'open' && !markHint) handleAttendanceChange(student.student_id, lessonKey, 'attended'); }}
                                             title={(!canMarkAttendance
                                                 ? t('attendance.cell.unmarkedView')
                                                 : lockState === 'pending' ? t('attendance.lock.pendingTitle')
+                                                : markHint ? markHint
                                                 : handedBackCell ? t('attendance.lock.handedBackTitle')
                                                 : t('attendance.cell.unmarkedClick'))
                                                 + (meetVerdicts.has(`${lessonInfo.event_id}:${student.student_id}`)
@@ -2080,7 +2099,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     ? t('attendance.cell.meetWillMark')
                                                     : t('attendance.cell.notMarked')}
                                             </span>
-                                            {lockState === 'pending' && (
+                                            {lockState === 'pending' && (EXCUSE_BEFORE_START || !markHint) && (
                                                 <PendingExcuseDot onExcuse={(excused, note) => handleExcuseChange(student.student_id, lessonKey, excused, note)} />
                                             )}
                                             {handedBackCell && heldBack(cellReg) && lessonInfo.event_id && (
@@ -2120,6 +2139,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                 onChange={(newStatus) => handleAttendanceChange(student.student_id, lessonKey, newStatus)}
                                                 disabled={user?.role === 'curator'}
                                                 isFuture={cellIsFuture}
+                                                notStartedHint={markHint}
                                                 note={[
                                                     verdictNote(meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`), locale),
                                                     registerNote(meetRegister.get(`${lessonInfo.event_id}:${student.student_id}`), locale),
