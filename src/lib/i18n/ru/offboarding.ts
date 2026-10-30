@@ -218,7 +218,7 @@ export const offboarding: RuTable<typeof en> = {
   'offboarding.record.retry': 'Повторить',
   'offboarding.record.retried': 'Запускаем ещё раз.',
 
-  'offboarding.checklist.workspace': 'Приостановить аккаунт Google Workspace {email}',
+  'offboarding.checklist.workspace': 'Удалить аккаунт Google Workspace {email}, перенеся его Drive преемнику (Admin console → Пользователи → Удалить → перенести данные)',
   'offboarding.checklist.amocrm': 'Передать сделки и отключить пользователя amoCRM, если он есть',
   'offboarding.checklist.telegram_chat': 'Удалить из Telegram-чата «{chat_title}»',
   'offboarding.checklist.sat': 'SAT не отключил аккаунт ({reason}) — отключите в админке SAT, если нужно',
