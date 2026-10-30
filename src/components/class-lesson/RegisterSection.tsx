@@ -11,6 +11,8 @@ import { OverrideReasonsDialog } from '../meetAttendance/OverrideReasonsDialog';
 import { MeetMarkForm } from '../attendance/MeetMarkForm';
 import { HeldBackButton, PendingExcuseDot } from '../attendance/CellLockParts';
 import { cellLock, handedBack, heldBack, lessonLock, lessonMinutes, lockedTitle, type MarkChange } from '../../lib/registerLock';
+import { notStartedHint } from '../../lib/attendanceStart';
+import { useAttendanceClock } from '../../hooks/useAttendanceClock';
 import { getMeetRecord, type MeetReviewOptions } from '../../services/api/meetAttendance';
 import { saveActivityScores, updateEventAttendance } from '../../services/api/events';
 import type { StudentRegister } from '../../services/api/meetRegister';
@@ -50,7 +52,8 @@ interface Props {
  * lock (2026-10-17) a row is Meet's — `pending` until it decides (only an advance excuse), `meet` once it
  * has («Исправить» opens its evidence, the new mark and a reason) — and the teacher's where Meet handed
  * the student back. Without a lock (an older server) a change that contradicts Meet asks for a reason once,
- * at «Сохранить». Scores go separately and never onto an absence. Curators read.
+ * at «Сохранить». Scores go separately and never onto an absence. Curators read. Before the lesson starts
+ * (2026-10-30) Был / Опоздал / Не был stay closed; the advance excuse of a pending row still works.
  */
 export default function RegisterSection({ view, groupId, onSaved }: Props) {
   const t = useT();
@@ -84,6 +87,8 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
   // The live page's suggestions (two or more questions ran); shown faded until confirmed.
   const suggestions = useScoreSuggestions(live, view.id,
     Boolean(view.viewer.can_score && (view.live_lesson?.activities ?? 0) >= 2), register);
+  // No mark before the lesson starts; the controls open at the start minute by themselves.
+  const clock = useAttendanceClock([view.start]);
 
   const students = useMemo(() => {
     const all = register?.students ?? [];
@@ -99,6 +104,7 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
   const changes = registerChanges(students, { status, score, excuse });
   const length = lessonMinutes(view.start, view.end);
   const dirty = changes.marks.length + changes.scores.length > 0;
+  const notStarted = canMark ? notStartedHint(view.start, clock, locale) : null;
   const summary = registerSummary(students.map((s) => ({ status: current(s), activity_score: currentScore(s), state: s.state })));
 
   const setMark = (s: RegisterStudent, mark: UiMark) => setStatus((prev) => {
@@ -190,6 +196,9 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
         <p className="mb-3 rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
           {t(lock ? 'classLesson.register.meetDecided' : 'classLesson.register.meetDecidedAsked')}
         </p>
+      )}
+      {notStarted && students.some((s) => markEditable(s, canMark) && cellLock(lock, s.meet?.register) === 'open') && (
+        <p className="mb-3 rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">{notStarted}</p>
       )}
       {canMark && students.some((s) => markEditable(s, canMark) && !s.marked && handedBack(lock, s.meet?.register)) && (
         <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
@@ -287,15 +296,16 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
                       )}
                     </div>
                   ) : editable ? (
-                    <div className="flex flex-none overflow-hidden rounded-lg border border-border" role="radiogroup" aria-label={s.name}>
+                    <div className="flex flex-none overflow-hidden rounded-lg border border-border" role="radiogroup" aria-label={s.name} title={notStarted ?? undefined}>
                       {MARKS.map((m) => (
                         <button
                           key={m.key}
                           type="button"
                           role="radio"
                           aria-checked={mark === m.key}
+                          disabled={Boolean(notStarted)}
                           onClick={() => setMark(s, m.key)}
-                          className={cn('px-2.5 py-1.5 text-xs font-semibold transition', mark === m.key ? m.tone : 'bg-card text-foreground hover:bg-muted')}
+                          className={cn('px-2.5 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50', mark === m.key ? m.tone : 'bg-card text-foreground enabled:hover:bg-muted')}
                         >
                           {t(LABEL[m.key])}
                         </button>
