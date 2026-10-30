@@ -15,6 +15,9 @@ export default function LoginPage() {
   const location = useLocation();
 
   // Keep the query too: a Telegram deep link like /materials?lesson=12 must survive the login.
+  // `?method=password` (the trial invite's link): prospects have no Master Education account, so
+  // the page opens on the email/password form instead of behind «Other ways to sign in».
+  const passwordFirst = new URLSearchParams(location.search).get('method') === 'password';
   const fromLocation = location.state?.from;
   const from = fromLocation?.pathname ? `${fromLocation.pathname}${fromLocation.search || ''}` : '/dashboard';
 
@@ -56,6 +59,7 @@ export default function LoginPage() {
         onBackToHome={handleBackToHome}
         error={error}
         loading={loading}
+        passwordFirst={passwordFirst}
       />
     </div>
   );

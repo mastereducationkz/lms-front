@@ -65,6 +65,7 @@ export const dashboard = {
   'studentHome.dashboard.courses.loadingTitle': 'Loading progress...',
   'studentHome.dashboard.courses.loadingText': 'Loading your course progress information.',
   'studentHome.dashboard.courses.completed': 'Course completed',
+  'studentHome.dashboard.courses.trialDone': 'Trial lessons done',
   'studentHome.dashboard.courses.continue': 'Continue learning',
   'studentHome.dashboard.courses.emptyTitle': 'No available courses',
   'studentHome.dashboard.courses.emptyText': "It looks like you don't have any courses yet. Go to the catalog to start learning.",

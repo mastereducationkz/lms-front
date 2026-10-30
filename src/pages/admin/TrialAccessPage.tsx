@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import apiClient from '../../services/api'
-import { parseAsUTC } from '../../lib/datetime'
+import { fromDatetimeLocalKZ, parseAsUTC, toDatetimeLocal } from '../../lib/datetime'
 import { DATE, TIME, activeLocale, formatDateTime, t as tr, type Locale, type MessageKey } from '../../lib/i18n'
 import { useLocale, useT } from '../../lib/i18n/react'
 import '@/lib/i18n/catalogs/adminUsers'
@@ -54,14 +54,10 @@ const STATUS_BADGE_CLASSES: Record<TrialAccess['status'], string> = {
   converted: 'border-transparent bg-brand-subtle text-brand-subtle-foreground hover:bg-brand-subtle',
 }
 
-/** Formats a Date as "YYYY-MM-DDTHH:mm" in the *browser's local* timezone for a datetime-local input. */
-function toLocalInputValue(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
+// The deadline is typed and shown in Almaty time, like the table and the invite e-mail: in the
+// browser's own zone the picker disagreed with the table for anyone working from abroad.
 function defaultDeadline(): string {
-  return toLocalInputValue(new Date(Date.now() + 24 * 3600 * 1000))
+  return toDatetimeLocal(new Date(Date.now() + 24 * 3600 * 1000))
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -321,7 +317,7 @@ export default function TrialAccessPage() {
       name: trial.user_name,
       note: trial.prospect_note || '',
       selections: [makeSelection(String(trial.course_id), trial.lesson_ids)],
-      deadline: toLocalInputValue(parseAsUTC(trial.expires_at)),
+      deadline: toDatetimeLocal(trial.expires_at),
     })
     setCreateResult(null)
     setDialogOpen(true)
@@ -408,10 +404,8 @@ export default function TrialAccessPage() {
 
     setSubmitting(true)
     try {
-      // datetime-local values are interpreted by `new Date()` in the browser's local
-      // timezone; .toISOString() converts to UTC with a trailing Z, which is what the
-      // naive-UTC backend expects.
-      const expiresAt = new Date(form.deadline).toISOString()
+      // The picker holds Almaty wall-clock time; the naive-UTC backend gets UTC with a Z.
+      const expiresAt = fromDatetimeLocalKZ(form.deadline)
       if (editing) {
         const payload: TrialUpdateRequest = {
           expires_at: expiresAt,
@@ -627,16 +621,19 @@ export default function TrialAccessPage() {
                           >
                             <Pencil className="w-3 h-3" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 px-2 text-xs"
-                            disabled={isBusy}
-                            title={t('adminUsers.trial.resend')}
-                            onClick={() => handleResend(trial)}
-                          >
-                            <Mail className="w-3 h-3" />
-                          </Button>
+                          {/* New credentials only for a live trial: the backend refuses the rest. */}
+                          {trial.status === 'active' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-xs"
+                              disabled={isBusy}
+                              title={t('adminUsers.trial.resend')}
+                              onClick={() => handleResend(trial)}
+                            >
+                              <Mail className="w-3 h-3" />
+                            </Button>
+                          )}
                           {!isTerminal && (
                             <Button
                               size="sm"

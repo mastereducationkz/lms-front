@@ -5,6 +5,7 @@ import { Clock } from 'lucide-react';
 import { t as translate, type Locale } from '../../lib/i18n';
 import { useLocale } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/studentHome';
+import { useTrialStatusRefresh } from './useTrialStatusRefresh';
 
 function formatRemaining(ms: number, locale: Locale): string {
   const totalMin = Math.max(0, Math.floor(ms / 60000));
@@ -26,6 +27,8 @@ const TrialBanner: React.FC = () => {
     : null;
 
   const [now, setNow] = useState(() => Date.now());
+  // A revoke or a shortened deadline mid-session: the next refused request re-reads the user.
+  useTrialStatusRefresh(deadline !== null);
 
   useEffect(() => {
     // No active trial deadline for this user: render nothing and set up no timers.

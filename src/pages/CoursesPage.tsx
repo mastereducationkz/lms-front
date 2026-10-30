@@ -209,7 +209,8 @@ export default function CoursesPage() {
                 </>
               ) : undefined}
               actionLabel={user?.role === 'student'
-                ? t(course.progress === 100 ? 'learning.courses.completed' : 'learning.courses.continue')
+                // A trial prospect's 100% is their trial lessons, not the course.
+                ? t(course.progress === 100 ? (user?.is_trial ? 'learning.courses.trialDone' : 'learning.courses.completed') : 'learning.courses.continue')
                 : t('learning.courses.view')}
               actionIcon={user?.role === 'student'
                 ? (course.progress === 100 ? <CheckCircle className="w-4 h-4 mr-2" /> : undefined)

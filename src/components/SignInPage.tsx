@@ -32,6 +32,8 @@ interface SignInPageProps {
   onBackToHome?: () => void;
   error?: string;
   loading?: boolean;
+  /** Open with the email/password form showing (a trial prospect's invite link has no SSO account behind it). */
+  passwordFirst?: boolean;
 }
 
 // --- SUB-COMPONENTS ---
@@ -67,6 +69,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   onBackToHome,
   error,
   loading = false,
+  passwordFirst = false,
 }) => {
   const t = useT();
   const [showPassword, setShowPassword] = useState(false);
@@ -74,7 +77,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   // only path when SSO isn't configured (local dev), otherwise it's revealed on demand as a
   // reversible break-glass fallback — the backend still accepts both.
   const oidcEnabled = isOidcConfigured();
-  const [showPasswordLogin, setShowPasswordLogin] = useState(false);
+  const [showPasswordLogin, setShowPasswordLogin] = useState(passwordFirst);
   const passwordFormVisible = !oidcEnabled || showPasswordLogin;
   // "Continue as X": if the user signed in via Master Education before (on any of our platforms),
   // personalize the primary button and pre-select that account via login_hint.
