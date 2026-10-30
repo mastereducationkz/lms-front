@@ -214,14 +214,14 @@ describe('who sees «Offboard»', () => {
 
 describe('checklist lines', () => {
   const catalog: Record<string, string> = {
-    'offboarding.checklist.workspace': 'Приостановить аккаунт {email}',
+    'offboarding.checklist.workspace': 'Удалить аккаунт {email}',
     'offboarding.checklist.telegram_chat': 'Удалить из чата «{chat_title}»',
   };
   const translate = (key: string, params: Record<string, string | number>) =>
     key in catalog ? catalog[key].replace(/\{(\w+)\}/g, (w, n: string) => (n in params ? String(params[n]) : w)) : null;
 
   it('phrases a known kind from its params', () => {
-    expect(checklistText({ kind: 'workspace', text: 'Suspend aida@x', params: { email: 'aida@x' } }, translate)).toBe('Приостановить аккаунт aida@x');
+    expect(checklistText({ kind: 'workspace', text: 'Delete aida@x', params: { email: 'aida@x' } }, translate)).toBe('Удалить аккаунт aida@x');
   });
 
   it('words a line by its id first (sat_native is kind sat with other params)', () => {

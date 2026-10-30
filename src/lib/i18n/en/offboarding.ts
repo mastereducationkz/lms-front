@@ -204,7 +204,7 @@ export const offboarding = {
   'offboarding.record.retry': 'Try again',
   'offboarding.record.retried': 'Running it again.',
 
-  'offboarding.checklist.workspace': 'Suspend the Google Workspace account {email}',
+  'offboarding.checklist.workspace': 'Delete the Google Workspace account {email} after moving their Drive to the successor (Admin console → Users → Delete → transfer data)',
   'offboarding.checklist.amocrm': 'Deactivate their amoCRM user, if any, after moving their leads',
   'offboarding.checklist.telegram_chat': 'Remove them from the Telegram chat «{chat_title}»',
   'offboarding.checklist.sat': 'SAT refused ({reason}): switch the SAT account off in SAT admin if intended',
