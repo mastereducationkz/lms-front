@@ -1112,7 +1112,9 @@ export default function StudentDashboard({
                     lessonsTotal={course.lessons_total ?? course.total_lessons}
                     checkpoints={course.checkpoints}
                     nextLesson={course.next_lesson}
-                    actionLabel={course.completion_percentage === 100 ? t('studentHome.dashboard.courses.completed') : t('studentHome.dashboard.courses.continue')}
+                    actionLabel={course.completion_percentage === 100
+                      ? t(user?.is_trial ? 'studentHome.dashboard.courses.trialDone' : 'studentHome.dashboard.courses.completed')
+                      : t('studentHome.dashboard.courses.continue')}
                     actionIcon={course.completion_percentage === 100
                       ? <CheckCircle className="w-4 h-4 mr-2" />
                       : undefined}

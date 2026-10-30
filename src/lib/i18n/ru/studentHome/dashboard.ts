@@ -70,6 +70,7 @@ export const dashboard: RuTable<typeof en> = {
   'studentHome.dashboard.courses.loadingTitle': 'Загружаем прогресс…',
   'studentHome.dashboard.courses.loadingText': 'Загружаем ваш прогресс по курсам.',
   'studentHome.dashboard.courses.completed': 'Курс пройден',
+  'studentHome.dashboard.courses.trialDone': 'Пробные уроки пройдены',
   'studentHome.dashboard.courses.continue': 'Продолжить обучение',
   'studentHome.dashboard.courses.emptyTitle': 'Нет доступных курсов',
   'studentHome.dashboard.courses.emptyText': 'Похоже, у вас пока нет курсов. Загляните в каталог, чтобы начать учиться.',

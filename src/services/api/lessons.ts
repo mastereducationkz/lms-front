@@ -31,7 +31,7 @@ export interface LessonLock {
   steps: string[];
 }
 
-export async function checkLessonAccess(lessonId: string): Promise<{ accessible: boolean; reason?: string; lock?: LessonLock | null }> {
+export async function checkLessonAccess(lessonId: string): Promise<{ accessible: boolean; reason?: string; reason_code?: string; lock?: LessonLock | null }> {
   try {
     const response = await api.get(`/courses/lessons/${lessonId}/check-access`);
     return response.data;

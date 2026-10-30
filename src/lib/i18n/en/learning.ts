@@ -18,6 +18,7 @@ export const learning = {
   'learning.courses.yourGroups': 'Your groups',
   'learning.courses.draft': 'Draft',
   'learning.courses.completed': 'Course completed',
+  'learning.courses.trialDone': 'Trial lessons done',
   'learning.courses.continue': 'Continue learning',
   'learning.courses.view': 'View course',
 

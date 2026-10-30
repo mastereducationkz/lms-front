@@ -5,6 +5,7 @@ import {
   CHECKPOINT_WINDOW_HOURS, formatDeadline, lateLabel, type CheckpointUnit,
 } from '../../services/api/checkpoints';
 import type { LessonLock } from '../../services/api/lessons';
+import { TRIAL_CONTACT_HREF } from '../trial/salesContact';
 import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/learning';
 import '@/lib/i18n/catalogs/lessonPlayer';
@@ -24,6 +25,8 @@ interface CheckpointLockGuideProps {
    * give us the richer, interactive checkpoint rendering.
    */
   serverLock?: LessonLock | null;
+  /** The gate that fired (lms-backend src/utils/lesson_access_errors.py), when the server said. */
+  reasonCode?: string | null;
   onNavigate: (path: string) => void;
 }
 
@@ -79,7 +82,7 @@ const UnitChecklist = ({
 };
 
 export default function CheckpointLockGuide({
-  lock, unitTitle, courseId, detail, serverLock, onNavigate,
+  lock, unitTitle, courseId, detail, serverLock, reasonCode, onNavigate,
 }: CheckpointLockGuideProps) {
   const t = useT();
   // The server's title wins: it can name a unit whose course the client can't even list.
@@ -111,7 +114,24 @@ export default function CheckpointLockGuide({
     </>
   );
 
-  if (lock?.kind === 'checkpoint-shut') {
+  // A trial prospect: the lesson is simply not in their trial. Checkpoints and curators mean
+  // nothing to them, and this is the moment to offer the rest of the course.
+  const trialLocked = reasonCode === 'trial_locked';
+  if (trialLocked) {
+    lede = t('lessonPlayer.guide.trialLede');
+    steps = (
+      <>
+        <GuideStep n={1} title={t('lessonPlayer.guide.why')}>
+          <p className="font-medium text-amber-700 dark:text-amber-400">
+            {serverReason || t('lessonPlayer.guide.trialLede')}
+          </p>
+        </GuideStep>
+        <GuideStep n={2} title={t('lessonPlayer.guide.whatToDo')}>
+          <p>{t('lessonPlayer.guide.trialWhatToDo')}</p>
+        </GuideStep>
+      </>
+    );
+  } else if (lock?.kind === 'checkpoint-shut') {
     const cp = lock.item;
 
     if (cp.status === 'completed') {
@@ -164,7 +184,13 @@ export default function CheckpointLockGuide({
 
       <div className="mt-8 flex flex-wrap justify-center gap-2">
         <Button variant="outline" onClick={() => onNavigate(`/course/${courseId}`)}>{t('learning.lesson.back')}</Button>
-        <Button variant="ghost" onClick={() => onNavigate('/checkpoints')}>{t('lessonPlayer.guide.myCheckpoints')}</Button>
+        {trialLocked ? (
+          <Button asChild>
+            <a href={TRIAL_CONTACT_HREF} target="_blank" rel="noreferrer">{t('lessonPlayer.guide.trialContact')}</a>
+          </Button>
+        ) : (
+          <Button variant="ghost" onClick={() => onNavigate('/checkpoints')}>{t('lessonPlayer.guide.myCheckpoints')}</Button>
+        )}
       </div>
     </div>
   );

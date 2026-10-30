@@ -4,14 +4,14 @@ import { clearCache } from '../../services/api';
 import { Clock } from 'lucide-react';
 import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/studentHome';
-
-// Sales-team WhatsApp: expired trial prospects reach out here to be set up with full access.
-// wa.me click-to-chat wants the number in international format with no "+", spaces, or dashes.
-const CONTACT_HREF = 'https://wa.me/77071064065';
+import { TRIAL_CONTACT_HREF } from './salesContact';
+import { useTrialStatusRefresh } from './useTrialStatusRefresh';
 
 const TrialExpiredPanel: React.FC = () => {
   const { logout } = useAuth();
   const t = useT();
+  // An admin may extend the deadline while this panel is up: coming back to the tab re-reads it.
+  useTrialStatusRefresh(true);
 
   // Trial has ended: drop any cached course/lesson data so nothing stale lingers
   // once access is restored later (fresh grant, etc.).
@@ -30,7 +30,7 @@ const TrialExpiredPanel: React.FC = () => {
           {t('studentHome.trial.endedBody')}
         </p>
         <a
-          href={CONTACT_HREF}
+          href={TRIAL_CONTACT_HREF}
           target="_blank"
           rel="noreferrer"
           className="inline-block w-full px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 mb-3"

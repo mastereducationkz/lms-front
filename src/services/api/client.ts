@@ -402,6 +402,13 @@ api.interceptors.response.use(
   }
 );
 
+/**
+ * Fired on window for every 403 the API answers. A trial prospect's access can be revoked or
+ * shortened by an admin at any moment, and the app only learns it from /auth/me: the trial
+ * banner listens and re-reads the user (components/trial/useTrialStatusRefresh.ts).
+ */
+export const ACCESS_REFUSED_EVENT = 'lms:access-refused';
+
 // Registered last so it runs after a token-refresh retry has settled: the upload watchdog of a
 // finished request must never fire.
 api.interceptors.response.use(
@@ -413,6 +420,9 @@ api.interceptors.response.use(
     (error?.config as UploadRequestConfig | undefined)?.stopUploadWatch?.();
     // A refusal the backend names with a reason_code reads in the user's language.
     localizeServerError(error?.response?.data);
+    if (error?.response?.status === 403 && typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(ACCESS_REFUSED_EVENT));
+    }
     return Promise.reject(error);
   }
 );

@@ -24,6 +24,7 @@ export const learning: RuTable<typeof en> = {
   'learning.courses.yourGroups': 'Ваши группы',
   'learning.courses.draft': 'Черновик',
   'learning.courses.completed': 'Курс пройден',
+  'learning.courses.trialDone': 'Пробные уроки пройдены',
   'learning.courses.continue': 'Продолжить обучение',
   'learning.courses.view': 'Открыть курс',
 

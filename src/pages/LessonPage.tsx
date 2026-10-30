@@ -428,7 +428,8 @@ export default function LessonPage() {
   // Rendered as CheckpointLockGuide rather than as an error, with `detail` (the server's own
   // reason, when it survives the envelope) kept only as a fallback for locks that checkpoint
   // data can't explain.
-  const [accessDenied, setAccessDenied] = useState<{ detail: string | null; lock: LessonLock | null } | null>(null);
+  // `reasonCode` is the gate that fired (lms-backend src/utils/lesson_access_errors.py).
+  const [accessDenied, setAccessDenied] = useState<{ detail: string | null; lock: LessonLock | null; reasonCode?: string | null } | null>(null);
   // Whether /checkpoints/me has settled (resolved OR failed). The guide waits for this so a
   // refusal can't flash the wrong explanation before the checkpoint rows arrive.
   const [checkpointsSettled, setCheckpointsSettled] = useState(false);
@@ -790,7 +791,7 @@ export default function LessonPage() {
       // Handle access check result. A refusal is explained in place rather than bounced back to
       // the course with a toast — the student clicked this unit and deserves to know why.
       if (!accessCheck.accessible) {
-        setAccessDenied({ detail: accessCheck.reason || null, lock: accessCheck.lock || null });
+        setAccessDenied({ detail: accessCheck.reason || null, lock: accessCheck.lock || null, reasonCode: accessCheck.reason_code || null });
         return;
       }
 
@@ -855,6 +856,7 @@ export default function LessonPage() {
       console.error('Failed to load lesson data:', error);
       const status = (error as { response?: { status?: number } })?.response?.status;
       const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+      const reasonCode = (error as { response?: { data?: { reason_code?: unknown } } })?.response?.data?.reason_code;
       if (status === 403) {
         // The server refused this lesson. GET /lessons, /steps and /progress all gate on it and
         // run in one Promise.all, so any of them can land here before the checkLessonAccess
@@ -863,12 +865,13 @@ export default function LessonPage() {
         // which gate fired, what to do, and the unit's title — which the server can name even
         // for a course this student can't list, so the client could never derive it alone.
         const refusal = typeof detail === 'string' ? detail : null;
-        setAccessDenied({ detail: refusal, lock: null });
+        const code = typeof reasonCode === 'string' ? reasonCode : null;
+        setAccessDenied({ detail: refusal, lock: null, reasonCode: code });
         const refusedLessonId = lessonId;
         try {
           const access = await apiClient.checkLessonAccess(refusedLessonId!);
           if (refusedLessonId === lessonId && access?.lock) {
-            setAccessDenied({ detail: access.reason || refusal, lock: access.lock });
+            setAccessDenied({ detail: access.reason || refusal, lock: access.lock, reasonCode: access.reason_code || code });
           }
         } catch {
           // Keep the 403's own reason; the guide still renders with navigation either way.
@@ -2256,6 +2259,7 @@ export default function LessonPage() {
         courseId={courseId!}
         detail={accessDenied.detail}
         serverLock={accessDenied.lock}
+        reasonCode={accessDenied.reasonCode ?? null}
         onNavigate={navigate}
       />
     );

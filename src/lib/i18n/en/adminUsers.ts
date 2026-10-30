@@ -374,7 +374,7 @@ export const adminUsers = {
   'adminUsers.trial.courseAndLessons': 'Course & lessons',
   'adminUsers.trial.coursesAndLessons': 'Courses & lessons',
   'adminUsers.trial.addCourse': 'Add course',
-  'adminUsers.trial.deadline': 'Deadline',
+  'adminUsers.trial.deadline': 'Deadline (Almaty time)',
   'adminUsers.trial.saving': 'Saving...',
   'adminUsers.trial.saveChanges': 'Save changes',
   'adminUsers.trial.grantAccess': 'Grant access',

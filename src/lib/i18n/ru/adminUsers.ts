@@ -386,7 +386,7 @@ export const adminUsers: RuTable<typeof en> = {
   'adminUsers.trial.courseAndLessons': 'Курс и уроки',
   'adminUsers.trial.coursesAndLessons': 'Курсы и уроки',
   'adminUsers.trial.addCourse': 'Добавить курс',
-  'adminUsers.trial.deadline': 'Срок',
+  'adminUsers.trial.deadline': 'Срок (время Алматы)',
   'adminUsers.trial.saving': 'Сохраняем…',
   'adminUsers.trial.saveChanges': 'Сохранить изменения',
   'adminUsers.trial.grantAccess': 'Выдать доступ',
