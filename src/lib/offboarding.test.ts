@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { hasMessage, t } from './i18n/translate';
+import '@/lib/i18n/catalogs/offboarding';
 import {
   allToOptions,
   almatyToday,
@@ -227,6 +229,19 @@ describe('checklist lines', () => {
       key === 'offboarding.checklist.sat_native' ? 'Группы SAT всё ещё за ним' : translate(key, params);
     expect(checklistText({ id: 'sat_native', kind: 'sat', text: 'SAT groups', params: { groups: [] as unknown as string } }, withId)).toBe('Группы SAT всё ещё за ним');
     expect(checklistText({ id: 'telegram:210', kind: 'telegram_chat', text: 'x', params: { chat_title: 'SAT Sep' } }, translate)).toBe('Удалить из чата «SAT Sep»');
+  });
+
+  it('words the Google and Telegram connector lines from the real catalog (HR slice 2)', () => {
+    const real = (key: string, params: Record<string, string | number>) => (hasMessage(key) ? t(key, params, 'ru') : null);
+    expect(checklistText({ id: 'telegram_no_rights:-1005', kind: 'telegram_no_rights', text: 'x', params: { chat_id: -1005, chat_title: 'Curators', missing: 'can_restrict_members' } }, real))
+      .toBe('Telegram: у бота Support нет права банить в «Curators» — удалите там вручную');
+    expect(checklistText({ id: 'telegram_error:-1004', kind: 'telegram_error', text: 'x', params: { chat_title: 'Flaky', detail: 'CHAT_ADMIN_REQUIRED' } }, real))
+      .toBe('Telegram: не удалось удалить из «Flaky» (CHAT_ADMIN_REQUIRED) — удалите вручную');
+    expect(checklistText({ id: 'google_protected', kind: 'google_protected', text: 'x', params: { email: 'a@m.kz', why: 'OU /Leadership' } }, real))
+      .toBe('Google Workspace: a@m.kz защищён (OU /Leadership) — робот его не трогает, решите в Admin console');
+    for (const id of ['google', 'google_no_successor', 'telegram', 'telegram_not_linked']) {
+      expect(checklistText({ id, kind: id, text: 'server text', params: { email: 'a@m.kz' } }, real)).not.toBe('server text');
+    }
   });
 
   it('falls back to the server’s text for a new kind or a missing blank', () => {
