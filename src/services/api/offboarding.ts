@@ -26,8 +26,9 @@ export type OffboardingMode = 'scheduled' | 'immediate' | 'emergency';
 export type ReasonCode = 'resigned' | 'dismissed' | 'contract_ended' | 'test_or_duplicate' | 'other';
 export const REASON_CODES: readonly ReasonCode[] = ['resigned', 'dismissed', 'contract_ended', 'test_or_duplicate', 'other'];
 
-export type StepName = 'lms' | 'zitadel_ielts' | 'sat' | 'support' | 'crm' | 'notify';
-export const STEP_NAMES: readonly StepName[] = ['lms', 'zitadel_ielts', 'sat', 'support', 'crm', 'notify'];
+/** `google` and `telegram` (HR slice 2) show «до подключения» (skipped) on records made before they existed. */
+export type StepName = 'lms' | 'zitadel_ielts' | 'sat' | 'support' | 'crm' | 'google' | 'telegram' | 'notify';
+export const STEP_NAMES: readonly StepName[] = ['lms', 'zitadel_ielts', 'sat', 'support', 'crm', 'google', 'telegram', 'notify'];
 export type StepStatus = 'pending' | 'done' | 'failed' | 'refused' | 'skipped';
 
 export interface OffboardingConfig {
@@ -138,7 +139,10 @@ export interface StepResult {
   reason?: string | null;
 }
 
-export type ChecklistKind = 'workspace' | 'amocrm' | 'telegram_chat' | 'sat' | 'support' | 'crm' | 'zitadel_ielts';
+export type ChecklistKind =
+  | 'workspace' | 'amocrm' | 'telegram_chat' | 'sat' | 'support' | 'crm' | 'zitadel_ielts'
+  | 'google' | 'google_protected' | 'google_no_successor'
+  | 'telegram' | 'telegram_not_linked' | 'telegram_no_rights' | 'telegram_error';
 
 export interface ChecklistItem {
   id: string;
@@ -193,6 +197,13 @@ export interface RecordPermissions {
   retry_steps?: StepName[];
 }
 
+/** The optional create fields the CRM sends (cut time, Workspace successor and mail choice). */
+export interface OffboardingOptions {
+  /** Almaty HH:MM of the last day; scheduled only. */
+  cut_at?: string | null;
+  google?: { successor_email?: string | null; mail?: 'alias' | 'bounce' } | null;
+}
+
 export interface OffboardingRecord {
   id: number;
   lms_user_id: number | null;
@@ -208,6 +219,8 @@ export interface OffboardingRecord {
   requested_by: Actor | null;
   confirmed_by?: Actor | null;
   status: OffboardingStatus;
+  /** HR slice 2 create options; null on records created without them. */
+  options?: OffboardingOptions | null;
   steps: Partial<Record<StepName, StepResult>>;
   reactivation_steps?: Partial<Record<StepName, StepResult>> | null;
   checklist: ChecklistItem[];

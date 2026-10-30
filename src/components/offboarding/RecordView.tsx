@@ -120,6 +120,24 @@ export default function RecordView({ record, viewerId, onChanged, onReload }: Re
               <dd className="whitespace-pre-wrap text-foreground">{record.note}</dd>
             </>
           )}
+          {record.options?.cut_at && (
+            <>
+              <dt className="text-muted-foreground">{t('offboarding.record.cutAt')}</dt>
+              <dd className="text-foreground">{record.options.cut_at}</dd>
+            </>
+          )}
+          {record.options?.google?.successor_email && (
+            <>
+              <dt className="text-muted-foreground">{t('offboarding.record.successor')}</dt>
+              <dd className="break-all text-foreground">{record.options.google.successor_email}</dd>
+            </>
+          )}
+          {record.options?.google?.mail && (
+            <>
+              <dt className="text-muted-foreground">{t('offboarding.record.mail')}</dt>
+              <dd className="text-foreground">{t(`offboarding.record.mail.${record.options.google.mail}`)}</dd>
+            </>
+          )}
         </dl>
         <ul className="text-sm text-muted-foreground">
           <li>{t('offboarding.record.requested', { name: record.requested_by?.name ?? '—', date: formatDateTime(record.created_at) })}</li>
