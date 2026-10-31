@@ -647,11 +647,15 @@
   #root {
     @apply h-full;
   }
-  /* AppLayout's shell: <main> scrolls, the window never does (layouts/AppLayout.tsx). */
-  html.app-shell,
-  html.app-shell body {
-    overflow: hidden;
-    overscroll-behavior: none;
+  /* AppLayout's shell: <main> scrolls, the window never does (layouts/AppLayout.tsx).
+     On computers only: on a phone the window's own scroll is what pull-to-refresh and the hiding
+     address bar ride on, and the trackpad overscroll this fixes is a computer thing. */
+  @media (min-width: 1024px) {
+    html.app-shell,
+    html.app-shell body {
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
   }
 }
 
