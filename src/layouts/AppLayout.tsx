@@ -78,10 +78,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
     if (referralVisible) queue.noteNudgeShown('referral');
   }, [referralVisible, queue]);
 
+  // Inside the app the page scrolls in <main>, never the window: a window that could scroll slid the
+  // whole app up past its end and showed blank page under it (CRM, owner 2026-10-31; same shell here).
+  // Pages outside this layout keep ordinary window scrolling.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add('app-shell');
+    return () => root.classList.remove('app-shell');
+  }, []);
+
   return (
     <div className="flex">
       <SidebarDesktop isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
-        <main className={`flex-1 bg-gray-50 dark:bg-background h-screen supports-[height:100dvh]:h-dvh overflow-y-auto overflow-x-hidden transition-all duration-300 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
+        <main className={`flex-1 bg-gray-50 dark:bg-background h-screen supports-[height:100dvh]:h-dvh overflow-y-auto overscroll-y-contain overflow-x-hidden transition-all duration-300 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
         {/* <MaintenanceBanner /> */}
         {/* A student's last 30 days of platform access (renders nothing for anyone else). */}
         <AccessEndingBanner />
