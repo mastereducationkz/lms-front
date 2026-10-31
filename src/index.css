@@ -647,6 +647,12 @@
   #root {
     @apply h-full;
   }
+  /* AppLayout's shell: <main> scrolls, the window never does (layouts/AppLayout.tsx). */
+  html.app-shell,
+  html.app-shell body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
 }
 
 @theme inline {
