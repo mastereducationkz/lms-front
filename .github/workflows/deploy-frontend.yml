@@ -153,6 +153,10 @@ jobs:
             # host's own ~/.docker and gone when the script ends.
             DOCKER_CONFIG_DIR="$(mktemp -d)"
             trap 'rm -rf "$DOCKER_CONFIG_DIR"' EXIT
+            # Shared lock with the other deploys on this host (lms-backend's deploy-backend.yml has
+            # the why): held through the pull so no other deploy's `image prune` eats its layers.
+            exec 9>/var/lock/docker-content.lock
+            flock -s -w 300 9
             printf '%s' "$GHCR_TOKEN" | DOCKER_CONFIG="$DOCKER_CONFIG_DIR" docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
             echo "⬇️  Pulling $IMAGE:$SHA..."
             DOCKER_CONFIG="$DOCKER_CONFIG_DIR" docker pull "$IMAGE:$SHA"
