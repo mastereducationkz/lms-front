@@ -62,8 +62,8 @@ export const teacher: RuTable<typeof en> = {
   'teacher.payslip.plannedNote': 'Запланированные занятия оплачиваются только после проведения и отметки посещаемости.',
   'teacher.payslip.individualRate': 'Индивидуальный урок — {rate} ₸/час',
   'teacher.payslip.groupRate': 'Групповой урок — {rate} ₸/час',
-  'teacher.payslip.referenceRates': 'Вебинар — {webinar} ₸/час · Office Hours — {officeHours} ₸/час · Пробный урок — {trial} ₸/час',
-  'teacher.payslip.referenceNote': 'Вебинары и Office Hours считаются автоматически; пробные уроки добавляются менеджером вручную.',
+  'teacher.payslip.referenceRates': 'Вебинар — {webinar} ₸/час · Office Hours — {officeHours} ₸/час онлайн, {officeHoursOffline} ₸/час офлайн · Пробный урок — {trial} ₸/час',
+  'teacher.payslip.referenceNote': 'Вебинары, Office Hours и пробные уроки считаются автоматически, по этим ставкам при любом уровне.',
   'teacher.payslip.openTelegram': 'Открыть чат в Telegram',
 
   'teacher.webinars.label': 'Вебинары и office hours:',

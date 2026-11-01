@@ -56,8 +56,8 @@ export const teacher = {
   'teacher.payslip.plannedNote': 'Planned lessons are paid only once they are taught and attendance is marked.',
   'teacher.payslip.individualRate': 'Individual lesson — {rate} ₸/hour',
   'teacher.payslip.groupRate': 'Group lesson — {rate} ₸/hour',
-  'teacher.payslip.referenceRates': 'Webinar — {webinar} ₸/hour · Office hours — {officeHours} ₸/hour · Trial lesson — {trial} ₸/hour',
-  'teacher.payslip.referenceNote': 'Webinars and office hours are counted automatically; a manager adds trial lessons by hand.',
+  'teacher.payslip.referenceRates': 'Webinar — {webinar} ₸/hour · Office hours — {officeHours} ₸/hour online, {officeHoursOffline} ₸/hour offline · Trial lesson — {trial} ₸/hour',
+  'teacher.payslip.referenceNote': 'Webinars, office hours and trial lessons are counted automatically, at these rates whatever the level.',
   'teacher.payslip.openTelegram': 'Open chat in Telegram',
 
   'teacher.webinars.label': 'Webinars and office hours:',

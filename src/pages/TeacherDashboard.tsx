@@ -162,6 +162,8 @@ interface SalaryBreakdownResult {
   reference_rates?: {
     webinar_hourly: number
     office_hours_hourly: number
+    /** An office hour held offline (owner's table, 2026-11-01). Older backends omit it. */
+    office_hours_offline_hourly?: number
     trial_hourly: number
   }
   total_lessons: number
@@ -2140,6 +2142,7 @@ export default function TeacherDashboard() {
                       {t('teacher.payslip.referenceRates', {
                         webinar: salaryResult.reference_rates.webinar_hourly,
                         officeHours: salaryResult.reference_rates.office_hours_hourly,
+                        officeHoursOffline: salaryResult.reference_rates.office_hours_offline_hourly ?? 5000,
                         trial: salaryResult.reference_rates.trial_hourly,
                       })}
                     </div>
