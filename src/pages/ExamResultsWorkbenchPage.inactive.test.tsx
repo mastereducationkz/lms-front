@@ -13,7 +13,7 @@ vi.mock('../contexts/AuthContext', async () => {
 const getExamResults = vi.fn();
 const getExamGroups = vi.fn();
 vi.mock('../services/api/exams', () => ({
-  getExamResults: (...a: unknown[]) => getExamResults(...a),
+  getAllExamResults: (...a: unknown[]) => getExamResults(...a),
   getExamGroups: (...a: unknown[]) => getExamGroups(...a),
   getSatOfficialDates: vi.fn().mockResolvedValue({ dates: [] }),
   listTestimonials: vi.fn().mockResolvedValue([]),

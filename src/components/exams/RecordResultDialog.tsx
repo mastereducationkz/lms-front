@@ -16,8 +16,12 @@ import '@/lib/i18n/catalogs/exams';
  * Record a new exam attempt for one student, optionally with the score report attached.
  *
  * Recording never overwrites: each save is a new attempt, so a retake sits alongside
- * the earlier sitting rather than destroying it. The total is derived server-side from
- * the section scores, so it is shown read-only here and never sent.
+ * the earlier sitting rather than destroying it. A SAT total is derived server-side from
+ * the section scores; with no sections, the total alone is sent (owner, 2026-11-02) under a
+ * loud warning - the breakdown is added later from the row («+ разбивка»).
+ *
+ * The date starts EMPTY. It used to start on the planned date, and in October 2026 ten
+ * 03.10 scores were saved under a stale «22.08» / «12.09» plan nobody changed.
  */
 
 type ExamType = 'sat' | 'ielts' | 'nuet';
@@ -50,7 +54,7 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
   const t = useT();
   const today = new Date().toISOString().slice(0, 10);
 
-  const [blocks, setBlocks] = useState<AttemptForm[]>([blank(0, row.planned_test_date ?? '')]);
+  const [blocks, setBlocks] = useState<AttemptForm[]>([blank(0)]);
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +72,13 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
     const v = Number(b.verbal), m = Number(b.math);
     return b.verbal && b.math && !Number.isNaN(v) && !Number.isNaN(m) ? v + m : null;
   };
+  /** A SAT attempt typed as a total only: no section filled, a total given. */
+  const totalOnly = (b: AttemptForm) => isSat && !b.verbal && !b.math && !!b.overall;
+  const satTotalInvalid = (raw: string) => {
+    if (!raw) return false;
+    const n = Number(raw);
+    return Number.isNaN(n) || n < 400 || n > 1600 || n % 10 !== 0;
+  };
 
   // Mirrors the server rules exactly, so the user is told before the round trip.
   const sectionInvalid = (raw: string) => {
@@ -84,9 +95,15 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
       out.push(t('teacherInsights.recordResult.officialOnly'));
     }
     if (isSat) {
-      if (!b.verbal || !b.math) out.push(t('teacherInsights.recordResult.bothSections'));
-      if (sectionInvalid(b.verbal)) out.push(t('teacherInsights.recordResult.verbalRange'));
-      if (sectionInvalid(b.math)) out.push(t('teacherInsights.recordResult.mathRange'));
+      if (b.verbal || b.math) {
+        if (!b.verbal || !b.math) out.push(t('teacherInsights.recordResult.bothSections'));
+        if (sectionInvalid(b.verbal)) out.push(t('teacherInsights.recordResult.verbalRange'));
+        if (sectionInvalid(b.math)) out.push(t('teacherInsights.recordResult.mathRange'));
+      } else if (!b.overall) {
+        out.push(t('teacherInsights.recordResult.satScoreRequired'));
+      } else if (satTotalInvalid(b.overall)) {
+        out.push(t('teacherInsights.recordResult.satTotalRange'));
+      }
     } else if (!b.overall) {
       out.push(isIelts ? t('teacherInsights.recordResult.overallRequired') : t('teacherInsights.recordResult.totalRequired'));
     }
@@ -104,8 +121,8 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
     student_id: row.student.student_id,
     exam_type: examType,
     test_date: b.testDate,
-    ...(isSat ? { verbal_score: Number(b.verbal), math_score: Number(b.math) } : {}),
-    ...(!isSat ? { total_score: Number(b.overall) } : {}),
+    ...(isSat && !totalOnly(b) ? { verbal_score: Number(b.verbal), math_score: Number(b.math) } : {}),
+    ...(!isSat || totalOnly(b) ? { total_score: Number(b.overall) } : {}),
     ...(isIelts && b.listening ? { listening_band: Number(b.listening) } : {}),
     ...(isIelts && b.reading ? { reading_band: Number(b.reading) } : {}),
     ...(isIelts && b.writing ? { writing_band: Number(b.writing) } : {}),
@@ -226,6 +243,11 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
                   <Input id={`rr-date-${b.key}`} type="date" max={today} value={b.testDate}
                          onChange={(e) => patch(b.key, { testDate: e.target.value })} />
                 )}
+                {row.planned_test_date && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {t('teacherInsights.recordResult.plannedHint', { date: row.planned_test_date })}
+                  </p>
+                )}
               </div>
 
               {isSat && (
@@ -243,12 +265,30 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
                            onChange={(e) => patch(b.key, { math: e.target.value })} className="mt-1" />
                   </div>
                   <div>
-                    <span className="text-xs font-medium">{t('teacherInsights.shared.total')}</span>
-                    <output className="mt-1 block w-full rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold"
-                            aria-live="polite">
-                      {satTotal(b) ?? '—'}
-                    </output>
+                    {b.verbal || b.math ? (
+                      <>
+                        <span className="text-xs font-medium">{t('teacherInsights.shared.total')}</span>
+                        <output className="mt-1 block w-full rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold"
+                                aria-live="polite">
+                          {satTotal(b) ?? '—'}
+                        </output>
+                      </>
+                    ) : (
+                      <>
+                        <label htmlFor={`rr-t-${b.key}`} className="text-xs font-medium">{t('teacherInsights.recordResult.satTotalOnlyLabel')}</label>
+                        <Input id={`rr-t-${b.key}`} type="number" min={400} max={1600} step={10} value={b.overall}
+                               aria-invalid={satTotalInvalid(b.overall)}
+                               onChange={(e) => patch(b.key, { overall: e.target.value })} className="mt-1" />
+                      </>
+                    )}
                   </div>
+                </div>
+              )}
+              {totalOnly(b) && (
+                <div role="alert" data-testid={`rr-total-only-${b.key}`}
+                     className="rounded-md border-2 border-amber-500 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                  <p className="font-semibold">{t('teacherInsights.recordResult.totalOnlyTitle')}</p>
+                  <p className="mt-1">{t('teacherInsights.recordResult.totalOnlyBody')}</p>
                 </div>
               )}
 

@@ -13,7 +13,7 @@ vi.mock('../contexts/AuthContext', async () => {
 const getExamResults = vi.fn();
 const getExamGroups = vi.fn();
 vi.mock('../services/api/exams', () => ({
-  getExamResults: (...a: unknown[]) => getExamResults(...a),
+  getAllExamResults: (...a: unknown[]) => getExamResults(...a),
   getExamGroups: (...a: unknown[]) => getExamGroups(...a),
   getSatOfficialDates: vi.fn().mockResolvedValue({ dates: [] }),
   listTestimonials: vi.fn().mockResolvedValue([]),
@@ -60,6 +60,13 @@ describe('exam-results page group state', () => {
     expect(pressed()).toEqual(['Running']);
     expect(getExamResults).toHaveBeenLastCalledWith(expect.objectContaining({ groupState: 'running' }));
     expect(getExamGroups).toHaveBeenLastCalledWith({ program: 'sat', groupState: 'running' });
+  });
+
+  it('a curator starts on every group: results come in after the course (owner, 2026-11-02)', async () => {
+    role = 'curator';
+    await show();
+    expect(pressed()).toEqual(['All']);
+    expect(getExamResults).toHaveBeenLastCalledWith(expect.objectContaining({ groupState: 'all' }));
   });
 
   it('an admin starts on everything, as before', async () => {

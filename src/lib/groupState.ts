@@ -14,6 +14,15 @@ export function defaultGroupState(role: string | null | undefined): GroupState {
   return normal === 'admin' || normal === 'head_curator' ? 'all' : 'running';
 }
 
+/**
+ * The exam-results page's starting view. A curator collects results AFTER the course: the 03.10 SAT
+ * sitters sat in finished groups, so «running» showed Раушан 6 of her 37 results (owner, 2026-11-02:
+ * curators start on «All»). Every other role keeps {@link defaultGroupState}.
+ */
+export function examResultsDefaultGroupState(role: string | null | undefined): GroupState {
+  return (role ?? '').trim().toLowerCase() === 'curator' ? 'all' : defaultGroupState(role);
+}
+
 /** «Name — Teacher», with « · finished» after a group that is over or archived. */
 export function groupOptionLabel(
   group: { name: string; teacher_name: string | null; is_finished?: boolean },
