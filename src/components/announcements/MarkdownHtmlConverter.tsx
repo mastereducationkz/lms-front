@@ -64,8 +64,8 @@ export function MarkdownHtmlConverter({ onUse }: MarkdownHtmlConverterProps) {
           {t('announcements.converter.introRich')}
         </p>
       </CardHeader>
-      <CardContent className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-2">
+      <CardContent className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="min-w-0 space-y-2">
           <Label htmlFor="markdown-source">{t('announcements.converter.sourceLabel')}</Label>
           <p className="text-xs text-muted-foreground">
             {t('announcements.converter.linksHint')} <code>{t('announcements.converter.exampleTextLink')}</code>.
@@ -82,7 +82,7 @@ export function MarkdownHtmlConverter({ onUse }: MarkdownHtmlConverterProps) {
             className="min-h-[180px] text-sm"
           />
         </div>
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <Label>{t('announcements.editor.preview')}</Label>
           <div className="min-h-[180px] whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-3 text-sm leading-relaxed [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono">
             {html ? <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderPreviewHtml(html)) }} /> : <span className="text-muted-foreground">{t('announcements.editor.nothingToPreview')}</span>}

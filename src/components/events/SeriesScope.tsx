@@ -88,12 +88,12 @@ export function SeriesRow({ title, total, upcoming, next, cancelled = 0, restora
   const [open, setOpen] = useState(false);
   return (
     <div>
-      <div className="flex items-center gap-3 p-4 hover:bg-muted dark:hover:bg-secondary transition-colors">
-        <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+      <div className="flex flex-wrap items-center gap-3 p-4 hover:bg-muted dark:hover:bg-secondary transition-colors">
+        <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)} className="flex min-w-0 basis-full sm:basis-0 flex-1 items-center gap-3 text-left">
           {open ? <ChevronDown className="h-4 w-4 shrink-0" aria-hidden /> : <ChevronRight className="h-4 w-4 shrink-0" aria-hidden />}
           <span className="min-w-0">
             <span className="flex flex-wrap items-center gap-2">
-              <span className="truncate text-lg font-semibold text-foreground">{title}</span>
+              <span data-series-title className="min-w-0 break-words text-lg font-semibold text-foreground">{title}</span>
               <Badge variant="outline" className="text-brand border-brand-border"><Repeat className="mr-1 h-3 w-3" aria-hidden />{t('adminPages.events.series.badge')}</Badge>
             </span>
             <span className="block text-sm text-muted-foreground">

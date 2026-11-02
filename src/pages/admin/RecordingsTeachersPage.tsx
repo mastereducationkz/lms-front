@@ -276,11 +276,11 @@ export default function RecordingsTeachersPage() {
       <DirectoryCard directory={directory} canWrite={canWrite} onUploaded={load} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex gap-1 rounded-md border border-border p-1">
+        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-3">
+          <div className="flex max-w-full flex-wrap gap-1 rounded-md border border-border p-1">
             {(['pending', 'connected', 'skipped', 'all'] as Filter[]).map((key) => (
               <button key={key} type="button" onClick={() => setFilter(key)}
-                className={`rounded px-3 py-1 text-sm font-medium capitalize transition-colors ${
+                className={`shrink-0 whitespace-nowrap rounded px-3 py-1 text-sm font-medium capitalize transition-colors ${
                   filter === key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
                 {tr(FILTER_KEYS[key])} ({counts[key]})
               </button>
@@ -288,7 +288,7 @@ export default function RecordingsTeachersPage() {
           </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={tr('adminPages.recordingsRollout.searchPlaceholder')} className="w-64 pl-9" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={tr('adminPages.recordingsRollout.searchPlaceholder')} className="w-64 max-w-full pl-9" />
           </div>
         </div>
         {canWrite && (

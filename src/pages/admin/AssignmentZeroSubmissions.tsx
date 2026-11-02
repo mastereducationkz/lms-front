@@ -661,7 +661,7 @@ const AssignmentZeroSubmissions = () => {
           </div>
 
           {/* Paging */}
-          <div className="mt-4 flex items-center justify-between">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <p className="text-sm text-muted-foreground">
               {t('adminUsers.zero.showing', {
                 from: filteredSubmissions.length === 0 ? 0 : (currentPage - 1) * pageSize + 1,
@@ -669,17 +669,18 @@ const AssignmentZeroSubmissions = () => {
                 total: filteredSubmissions.length,
               })}
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 disabled={currentPage <= 1}
                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                aria-label={t('adminUsers.list.previous')}
               >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                {t('adminUsers.list.previous')}
+                <ChevronLeft className="w-4 h-4 sm:mr-1" />
+                <span className="hidden sm:inline">{t('adminUsers.list.previous')}</span>
               </Button>
-              <span className="text-sm text-muted-foreground">
+              <span className="whitespace-nowrap text-sm text-muted-foreground">
                 {t('adminUsers.zero.page', { page: currentPage, total: totalPages })}
               </span>
               <Button
@@ -687,9 +688,10 @@ const AssignmentZeroSubmissions = () => {
                 size="sm"
                 disabled={currentPage >= totalPages}
                 onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                aria-label={t('adminUsers.list.next')}
               >
-                {t('adminUsers.list.next')}
-                <ChevronRight className="w-4 h-4 ml-1" />
+                <span className="hidden sm:inline">{t('adminUsers.list.next')}</span>
+                <ChevronRight className="w-4 h-4 sm:ml-1" />
               </Button>
             </div>
           </div>

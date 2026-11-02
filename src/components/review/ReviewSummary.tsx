@@ -90,7 +90,7 @@ export const ReviewSummary: React.FC<Props> = ({ summary, namesVisible, onRestar
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* Top results is always named — praising who did well publicly is not the privacy
             concern this fix addresses. "Needs attention" singles out who struggled, which
             is exactly the kind of thing namesVisible exists to gate. */}

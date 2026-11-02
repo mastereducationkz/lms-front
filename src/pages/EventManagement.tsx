@@ -265,7 +265,7 @@ export default function EventManagement() {
     : filteredEvents.map((event): EventListItem => ({ kind: 'event', event }));
 
   const renderEventRow = (event: Event) => (
-              <div key={event.id} className={`p-6 hover:bg-muted dark:hover:bg-secondary transition-colors flex items-start gap-4 ${isCancelled(event) ? 'opacity-60' : ''}`}>
+              <div key={event.id} data-event-row className={`p-4 sm:p-6 hover:bg-muted dark:hover:bg-secondary transition-colors flex items-start gap-3 sm:gap-4 ${isCancelled(event) ? 'opacity-60' : ''}`}>
                 <div className="pt-1 w-4">
                   {!isCancelled(event) && (
                     <input
@@ -276,11 +276,11 @@ export default function EventManagement() {
                     />
                   )}
                 </div>
-                <div className="flex-1 min-w-0 flex items-start justify-between">
+                <div className="flex-1 min-w-0 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex-1 min-w-0">
-                    {/* Event Header */}
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-foreground dark:text-foreground truncate">
+                    {/* Event Header: on phones the title takes its own line, badges wrap under it */}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-2">
+                      <h3 className="min-w-0 basis-full sm:basis-auto line-clamp-2 break-words text-lg font-semibold text-foreground dark:text-foreground">
                         {event.title}
                       </h3>
                       <Badge className={`${getEventTypeColor(event.event_type)} border`}>
@@ -309,36 +309,36 @@ export default function EventManagement() {
                     </div>
 
                     {/* Event Details */}
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-3">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mb-3 break-words">
                       <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
+                        <Clock className="w-4 h-4 shrink-0" />
                         {formatDateTime(event.start_datetime)} - {formatDateTime(event.end_datetime)}
                       </div>
                       
                       {event.location && (
                         <div className="flex items-center gap-1">
-                          {event.is_online ? <Video className="w-4 h-4" /> : <MapPin className="w-4 h-4" />}
+                          {event.is_online ? <Video className="w-4 h-4 shrink-0" /> : <MapPin className="w-4 h-4 shrink-0" />}
                           {event.location}
                         </div>
                       )}
 
                       {event.groups && event.groups.length > 0 && (
                         <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
+                          <Users className="w-4 h-4 shrink-0" />
                           {event.groups.join(', ')}
                         </div>
                       )}
 
                       {event.teacher_name && (
                         <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4 text-brand" />
+                          <Users className="w-4 h-4 shrink-0 text-brand" />
                           <span className="font-medium">{t('adminPages.events.list.teacher', { name: event.teacher_name })}</span>
                         </div>
                       )}
 
                       {event.max_participants && (
                         <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
+                          <Users className="w-4 h-4 shrink-0" />
                           {event.participant_count || 0}/{event.max_participants}
                         </div>
                       )}
@@ -352,7 +352,7 @@ export default function EventManagement() {
                     )}
 
                     {/* Event Meta */}
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
                       <span>{t('adminPages.events.list.createdBy', { name: event.creator_name || t('adminPages.events.list.unknownCreator') })}</span>
                       <span>•</span>
                       <span>{formatDate(event.created_at)}</span>
@@ -361,7 +361,7 @@ export default function EventManagement() {
 
                   {/* Actions */}
                   {isCancelled(event) ? (
-                    <div className="flex items-center gap-2 ml-4">
+                    <div className="flex items-center gap-2 sm:ml-4">
                       {canRestore(event) && (
                         <Button variant="outline" size="sm" onClick={() => handleRestore(event.id, 'this')}>
                           <RotateCcw className="w-4 h-4 mr-1.5" />
@@ -370,7 +370,7 @@ export default function EventManagement() {
                       )}
                     </div>
                   ) : (
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-2 sm:ml-4">
                     <Button
                       variant="outline"
                       size="sm"

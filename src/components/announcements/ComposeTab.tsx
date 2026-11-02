@@ -122,8 +122,8 @@ export function ComposeTab({ approvedGroups, summary, recipientSelection, onSent
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <div className="space-y-6 lg:col-span-2">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="min-w-0 space-y-6 lg:col-span-2">
         <MessageEditor
           body={body}
           onBodyChange={setBody}
@@ -141,7 +141,7 @@ export function ComposeTab({ approvedGroups, summary, recipientSelection, onSent
         />
       </div>
 
-      <div className="space-y-6">
+      <div className="min-w-0 space-y-6">
         <SendOptions
           pin={pin}
           onPinChange={setPin}

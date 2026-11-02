@@ -353,7 +353,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex rounded-md shadow-sm w-fit">
+      <div className="flex w-full rounded-md shadow-sm sm:w-fit">
         {([
           ['requests', t('lessonRequests.tabs.requests')],
           ['holds', holdCount ? `${t('lessonRequests.tabs.holds')} · ${holdCount}` : t('lessonRequests.tabs.holds')],
@@ -364,7 +364,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
             <button
               key={value}
               onClick={() => setParam('tab', value)}
-              className={`px-4 py-2 text-sm font-medium border transition-colors
+              className={`flex-1 sm:flex-none px-2 sm:px-4 py-2 text-sm font-medium leading-tight border transition-colors
                 ${idx === 0 ? 'rounded-l-md' : ''}
                 ${idx === arr.length - 1 ? 'rounded-r-md' : ''}
                 ${idx !== 0 ? '-ml-px' : ''}
@@ -394,7 +394,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
               : t('lessonRequests.subtitle.admin')}
           </p>
         </div>
-        <div className="flex rounded-md shadow-sm">
+        <div className="flex max-w-full overflow-x-auto rounded-md shadow-sm">
           {([
             ['pending,pending_teacher', t('lessonRequests.filter.pending')],
             ['approved', t('lessonRequests.filter.approved')],
@@ -406,7 +406,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
               <button
                 key={value || 'all'}
                 onClick={() => setParam('status', value)}
-                className={`px-4 py-2 text-sm font-medium border transition-colors
+                className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-2 text-sm font-medium border transition-colors
                   ${idx === 0 ? 'rounded-l-md' : ''}
                   ${idx === arr.length - 1 ? 'rounded-r-md' : ''}
                   ${idx !== 0 ? '-ml-px' : ''}

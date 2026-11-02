@@ -68,7 +68,7 @@ afterEach(async () => {
   document.body.innerHTML = '';
 });
 
-const titles = (text: string) => Array.from(host.querySelectorAll('h3, span.truncate')).filter((n) => n.textContent === text).length;
+const titles = (text: string) => Array.from(host.querySelectorAll('h3, [data-series-title]')).filter((n) => n.textContent === text).length;
 const button = (name: string) => Array.from(document.body.querySelectorAll('button')).find((b) => b.textContent?.includes(name));
 
 describe('events list: weekly series', () => {
@@ -171,7 +171,7 @@ describe('events list: finished and cancelled events', () => {
     await show();
     const rows = Array.from(host.querySelectorAll('h3')).filter((n) => n.textContent === 'One-off webinar');
     expect(rows).toHaveLength(1);
-    expect(rows[0].closest('div.p-6')!.querySelector('input[type="checkbox"]')).toBeNull();
+    expect(rows[0].closest('[data-event-row]')!.querySelector('input[type="checkbox"]')).toBeNull();
   });
 });
 

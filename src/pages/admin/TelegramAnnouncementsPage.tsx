@@ -118,7 +118,9 @@ export default function TelegramAnnouncementsPage() {
         </div>
       )}
 
-      <div className="flex gap-2 border-b border-border" role="tablist">
+      {/* Five tabs are wider than a phone: the strip scrolls sideways instead of being clipped.
+          The baseline is an inset shadow (not border-b + -mb-px) so the scroller has no 1px vertical overflow. */}
+      <div className="flex gap-2 overflow-x-auto shadow-[inset_0_-1px_0_hsl(var(--border))]" role="tablist">
         {TABS.map((entry) => (
           <button
             key={entry.key}
@@ -126,7 +128,7 @@ export default function TelegramAnnouncementsPage() {
             role="tab"
             aria-selected={tab === entry.key}
             onClick={() => setTab(entry.key)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+            className={`shrink-0 whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
               tab === entry.key
                 ? 'border-primary text-foreground'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
