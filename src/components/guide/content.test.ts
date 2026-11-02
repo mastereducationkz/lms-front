@@ -61,7 +61,7 @@ describe('tips', () => {
   });
 
   it('are about ten, one variant per role and page', () => {
-    expect(new Set(TIPS.map((t) => t.key)).size).toBe(10);
+    expect(new Set(TIPS.map((t) => t.key)).size).toBe(11);
     const seen = new Set<string>();
     for (const t of TIPS) for (const role of t.roles) {
       const id = `${t.key}|${role}`;
@@ -74,6 +74,9 @@ describe('tips', () => {
     const none = () => false;
     expect(tipsFor('student', '/homework/12', none).map((t) => t.key)).toEqual(['homework.late']);
     expect(tipsFor('student', '/homework/12/grade', none)).toEqual([]);
+    expect(tipsFor('student', '/course/3/lesson/41', none).map((t) => t.key)).toEqual(['quiz.highlight']);
+    expect(tipsFor('teacher', '/course/3/lesson/41', none)).toEqual([]);
+    expect(tipsFor('student', '/course/3/lesson/41/edit', none)).toEqual([]);
     expect(tipsFor('teacher', '/homework/12/grade', none).map((t) => t.key)).toEqual(['homework.allow-attempt']);
     expect(tipsFor('teacher', '/lessons/5', none).map((t) => t.key)).toEqual(['lesson.register']);
     expect(tipsFor('student', '/lessons/5', none).map((t) => t.key)).toEqual(['lesson.sections']);

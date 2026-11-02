@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, useContext } from 'react';
 import { reportErrorMessage } from '../../lib/questionReport';
 import { Button } from '../ui/button';
 import {
@@ -23,6 +23,10 @@ import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, HelpCircle, Lock a
 import { renderTextWithLatex } from '../../utils/latex';
 import { sanitizeHtml } from '../../lib/safeHtml';
 import { applyHighlightsToHtml as applyHighlightsToHtmlShared } from '../../utils/highlightUtils';
+import { useSelectionSettle, type SettledSelection } from './lookup/useSelectionSettle';
+import { HIGHLIGHTABLE_ATTR, highlightQuestionOf, paletteOffsetY } from './quiz/highlightSelection';
+import { reportUsage } from '../../services/api/usage';
+import AuthContext from '../../contexts/AuthContext';
 import type { Step } from '../../types';
 import { DEFAULT_QUIZ_PASSING_SCORE_REQUIRED } from '../../utils/quizPassingScore';
 import { LongTextQuestion } from './quiz/LongTextQuestion';
@@ -262,6 +266,18 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
   const quizTextHighlightsStorageKey = currentStep ? `quiz_text_highlights_${currentStep.id}` : null;
 
+  // Usage of the highlighter (owner 2026-11-02): students only, so staff previews don't count.
+  const isStudentViewer = useContext(AuthContext)?.user?.role === 'student';
+  const countHighlight = useCallback((action: 'exposed' | 'offered' | 'add' | 'remove') => {
+    if (isStudentViewer) reportUsage('quiz.highlight', action);
+  }, [isStudentViewer]);
+  const exposedSteps = useRef(new Set<number>());
+  useEffect(() => {
+    if (!currentStep || questions.length === 0 || exposedSteps.current.has(currentStep.id)) return;
+    exposedSteps.current.add(currentStep.id);
+    countHighlight('exposed');
+  }, [currentStep, questions.length, countHighlight]);
+
   useEffect(() => {
     setAreHighlightsHydrated(false);
 
@@ -350,6 +366,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
       next.set(questionId, [...current, { text: normalizedText, color }]);
       return next;
     });
+    countHighlight('add');
   };
 
   const removeTextHighlight = (questionId: string, highlightText: string) => {
@@ -369,6 +386,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
       return next;
     });
+    countHighlight('remove');
   };
 
   const submitQuizForReview = () => {
@@ -390,34 +408,23 @@ const QuizRenderer = (props: QuizRendererProps) => {
     submitQuizForReview()
   }
 
-  const handleTextSelection = (questionId: string) => {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-
-    const selectedText = selection.toString().replace(/\s+/g, ' ').trim();
+  // A settled selection (mouse, keyboard or touch) inside one question opens the palette. A
+  // cleared selection leaves it open: on a phone, tapping a colour clears the selection first.
+  const documentRoot = useRef<HTMLElement>(typeof document !== 'undefined' ? document.body : null);
+  const handleSettledSelection = (selection: SettledSelection | null) => {
+    if (!selection) return;
+    const selectedText = selection.text.replace(/\s+/g, ' ').trim();
     if (selectedText.length < 2) return;
-
-    const anchorElement = selection.anchorNode instanceof Element
-      ? selection.anchorNode
-      : selection.anchorNode?.parentElement;
-    if (anchorElement?.closest('input, textarea, [contenteditable="true"]')) return;
-
-    const range = selection.getRangeAt(0);
-    const selectionRect = range.getBoundingClientRect();
-    if (!selectionRect.width && !selectionRect.height) return;
-
-    const questionElement = document.getElementById(`question-${questionId}`);
-    const questionRect = questionElement?.getBoundingClientRect();
-    const selectionOffsetY = questionRect
-      ? Math.max(8, selectionRect.top - questionRect.top)
-      : Math.max(8, selectionRect.top);
-
-    setHighlightPalette({
-      questionId,
-      selectedText,
-      selectionOffsetY
-    });
+    const questionId = highlightQuestionOf(selection.range);
+    if (!questionId) return;
+    const rect = selection.range.getBoundingClientRect();
+    if (!rect.width && !rect.height) return;
+    const selectionOffsetY = paletteOffsetY(selection.range, questionId);
+    const prev = highlightPalette;
+    if (!prev || prev.questionId !== questionId || prev.selectedText !== selectedText) countHighlight('offered');
+    setHighlightPalette({ questionId, selectedText, selectionOffsetY });
   };
+  useSelectionSettle(documentRoot, [], true, handleSettledSelection);
 
   const handleHighlightColorPick = (color: HighlightColor) => {
     if (!highlightPalette) return;
@@ -429,7 +436,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
   useEffect(() => {
     if (!highlightPalette) return;
 
-    const handlePointerDown = (event: MouseEvent) => {
+    const handlePointerDown = (event: PointerEvent) => {
       const target = event.target as HTMLElement | null;
       if (target?.closest('[data-highlight-palette="true"]')) return;
       setHighlightPalette(null);
@@ -441,11 +448,11 @@ const QuizRenderer = (props: QuizRendererProps) => {
       window.getSelection()?.removeAllRanges();
     };
 
-    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('pointerdown', handlePointerDown);
     window.addEventListener('keydown', handleEscape);
 
     return () => {
-      window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('keydown', handleEscape);
     };
   }, [highlightPalette]);
@@ -739,7 +746,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 className={`relative overflow-visible bg-transparent rounded-xl transition-all ${
                   showUnansweredError ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-background' : ''
                 }`}
-                onMouseUp={() => handleTextSelection(q.id.toString())}
+                {...{ [HIGHLIGHTABLE_ATTR]: q.id.toString() }}
+                data-tip="quiz-highlight"
                 onClick={handleHighlightedTextClick}
               >
                 {renderHighlightPalette(q.id.toString())}
@@ -1466,7 +1474,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
         <div
           id={`question-${q.id}`}
           className="relative overflow-visible bg-transparent"
-          onMouseUp={() => handleTextSelection(q.id.toString())}
+          {...{ [HIGHLIGHTABLE_ATTR]: q.id.toString() }}
+          data-tip="quiz-highlight"
           onClick={handleHighlightedTextClick}
         >
           {renderHighlightPalette(q.id.toString())}

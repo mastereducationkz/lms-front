@@ -64,6 +64,15 @@ export const TIPS: readonly TipDefinition[] = [
     body: 'guide.tips.checkpoint.body',
   },
   {
+    key: 'quiz.highlight',
+    roles: STUDENT,
+    path: /^\/course\/\d+\/lesson\/\d+\/?$/,
+    target: tip('quiz-highlight'),
+    placement: 'top-start',
+    title: 'guide.tips.quizHighlight.title',
+    body: 'guide.tips.quizHighlight.body',
+  },
+  {
     key: 'lesson.register',
     roles: TEACHER,
     path: /^\/lessons\/\d+\/?$/,

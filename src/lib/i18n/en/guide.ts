@@ -86,6 +86,8 @@ export const guide = {
   'guide.tips.tryOn.body': 'Every badge unlocks something for your Kasatik. Try it on to see your orca wearing it now; once you earn it, it’s yours to keep.',
   'guide.tips.checkpoint.title': 'Checkpoints',
   'guide.tips.checkpoint.body': 'A checkpoint opens once you finish the units before it. Take it within a day to see where you stand. It’s optional and never holds your course back.',
+  'guide.tips.quizHighlight.title': 'Highlight as you read',
+  'guide.tips.quizHighlight.body': 'Select words in a passage or question and pick a colour to mark what matters, like the key facts in research notes. Tap a highlight to remove it.',
 
   // Page tips: teachers.
   'guide.tips.lessonRegister.title': 'Meet takes the register',
