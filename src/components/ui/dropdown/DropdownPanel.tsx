@@ -42,13 +42,21 @@ export function DropdownPanel({ className, side = 'bottom', align = 'start', sid
         className={cn(PANEL_BASE, className)}
         onOpenAutoFocus={(event) => {
           event.preventDefault();
-          (inputRef.current ?? listRef.current)?.focus({ preventScroll: true });
+          // On touch screens the search box waits for a tap: focusing it would pop the phone keyboard
+          // up over the list (the public sign-up form is filled in on phones). The list takes focus.
+          const target = finePointer() ? inputRef.current ?? listRef.current : listRef.current;
+          target?.focus({ preventScroll: true });
         }}
       >
         <PanelBody inputRef={inputRef} listRef={listRef} />
       </PopoverPrimitive.Content>
     </PopoverPrimitive.Portal>
   );
+}
+
+/** A mouse or trackpad (not a finger): only then does the search box take focus on open. */
+function finePointer(): boolean {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: fine)').matches;
 }
 
 /** Where the list starts: on the chosen option when it is listed and pickable, else the first pickable one. */
@@ -146,6 +154,13 @@ function PanelBody({ inputRef, listRef }: {
       default:
     }
     if (inInput || !isPrintableKey(event)) return;
+    if (searchable && !(event.key === ' ' && !query)) {
+      // The list has focus (a touch screen with a keyboard attached): typing goes to the search box.
+      event.preventDefault();
+      onSearch(query + event.key);
+      inputRef.current?.focus({ preventScroll: true });
+      return;
+    }
     // No search box: letters jump to the next row starting with what was typed.
     const now = Date.now();
     const recent = now - buffer.current.at < TYPEAHEAD_MS;
@@ -194,9 +209,9 @@ function PanelBody({ inputRef, listRef }: {
         ref={listRef}
         id={listId}
         role="listbox"
-        tabIndex={searchable ? undefined : -1}
-        aria-activedescendant={searchable ? undefined : activeId}
-        onKeyDown={searchable ? undefined : onKeyDown}
+        tabIndex={-1}
+        aria-activedescendant={activeId}
+        onKeyDown={onKeyDown}
         className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain p-1 outline-none"
       >
         {view.options.length === 0 ? (

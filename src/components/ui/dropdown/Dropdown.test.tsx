@@ -228,6 +228,38 @@ describe('NativeSelect (drop-in for <select>)', () => {
   });
 });
 
+describe('focus on open: the search box only under a mouse', () => {
+  const pointer = (fine: boolean) => vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => ({
+    matches: query === '(pointer: fine)' ? fine : !fine, media: query, onchange: null,
+    addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false,
+  }) as MediaQueryList);
+  const list = () => <NativeSelect id="many">{['a', 'b', 'c', 'd', 'e', 'f'].map((v) => <option key={v} value={v}>{v.toUpperCase()}</option>)}</NativeSelect>;
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('a fine pointer (mouse, trackpad): the search box takes focus', async () => {
+    pointer(true);
+    await show(list());
+    const listbox = await openDropdown('#many');
+    expect(document.activeElement).toBe(document.querySelector(`input[aria-controls="${listbox.id}"]`));
+  });
+
+  it('a touch screen: the list takes focus, no phone keyboard; arrows work and typing reaches the search box', async () => {
+    pointer(false);
+    await show(list());
+    const listbox = await openDropdown('#many');
+    const input = document.querySelector<HTMLInputElement>(`input[aria-controls="${listbox.id}"]`)!;
+    expect(input).not.toBeNull();
+    expect(document.activeElement).toBe(listbox);
+    await key(listbox, 'ArrowDown');
+    expect(listbox.querySelector('[data-active]')?.textContent).toBe('B');
+    expect(listbox.getAttribute('aria-activedescendant')).toBe(listbox.querySelector('[data-active]')?.id);
+    await key(listbox, 'e');
+    expect(document.activeElement).toBe(input);
+    expect(input.value).toBe('e');
+    expect(optionRows('#many').map((r) => r.textContent)).toEqual(['E']);
+  });
+});
+
 describe('SearchableSelect (its API on the engine)', () => {
   const people = ['Aidana', 'Bolat', 'Dana', 'Erlan', 'Gulzada', 'Madi', 'Nurlan'].map((name, i) => ({ value: String(i), label: name, hint: i === 4 ? 'teacher' : undefined }));
 

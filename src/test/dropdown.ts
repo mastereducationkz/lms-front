@@ -97,12 +97,13 @@ export async function optionLabels(target: Target): Promise<string[]> {
   return labels;
 }
 
-/** Types into the search box of the open list (opens it first). */
+/** Focuses the search box of the open list and types into it (opens it first). */
 export async function typeInDropdown(target: Target, text: string): Promise<void> {
   const list = await openDropdown(target);
   const input = document.querySelector<HTMLInputElement>(`input[aria-controls="${list.id}"]`);
   if (!input) throw new Error('dropdown: this list has no search box (it shows from 6 options)');
   await act(async () => {
+    input.focus(); // as a tap would: on touch screens the box does not take focus by itself
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, text);
     input.dispatchEvent(new Event('input', { bubbles: true }));
   });
