@@ -1,3 +1,4 @@
+import { NativeSelect } from '@/components/ui/native-select';
 import { useEffect, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
@@ -122,9 +123,9 @@ export default function PastPaperGroupGridPage() {
             />
           </div>
           <label htmlFor="pp-group" className="sr-only">{t('teacherInsights.bluebook.group')}</label>
-          <select
+          <NativeSelect
             id="pp-group"
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm max-w-[22rem]"
+            className="max-w-[22rem]"
             value={groupId ?? ''}
             onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : null)}
             disabled={groupsLoading || groups.length === 0}
@@ -133,7 +134,7 @@ export default function PastPaperGroupGridPage() {
             {groups.map((g) => (
               <option key={g.id} value={g.id}>{groupOptionLabel(g, t('exams.groupState.tag'))}</option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
       </div>
 

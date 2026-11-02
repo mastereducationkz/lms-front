@@ -1,3 +1,4 @@
+import { NativeSelect } from '@/components/ui/native-select';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
@@ -2061,15 +2062,15 @@ export default function CourseBuilderPage() {
             </div>
             <div>
               <label className="block text-sm text-muted-foreground mb-1">{t('courseAuthoring.builder.lessonType')}</label>
-              <select 
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand" 
-                value={lecForm.type} 
-                onChange={(e) => setLecForm(f => ({ ...f, type: (e.target as HTMLSelectElement).value as any }))}
+              <NativeSelect
+                className="h-auto w-full rounded-lg text-base focus:ring-2 focus:ring-brand data-[state=open]:ring-2 data-[state=open]:ring-brand"
+                value={lecForm.type}
+                onChange={(e) => setLecForm(f => ({ ...f, type: e.target.value as any }))}
               >
                 <option value="text">{t('courseAuthoring.lesson.typeText')}</option>
                 <option value="video">{t('courseAuthoring.builder.typeVideo')}</option>
                 <option value="quiz">{t('courseAuthoring.lesson.typeQuiz')}</option>
-              </select>
+              </NativeSelect>
             </div>
             {lecForm.type === 'video' && (
               <div>

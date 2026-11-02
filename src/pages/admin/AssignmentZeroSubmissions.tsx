@@ -1,3 +1,4 @@
+import { NativeSelect } from '@/components/ui/native-select';
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -552,10 +553,9 @@ const AssignmentZeroSubmissions = () => {
                 <Button variant={filterTrack === 'ielts' ? 'default' : 'outline'} size="sm" onClick={() => setFilterTrack('ielts')}>
                   IELTS
                 </Button>
-                <select
+                <NativeSelect
                   value={filterGroup}
                   onChange={(e) => setFilterGroup(e.target.value)}
-                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
                 >
                   <option value="all">{t('adminUsers.zero.allGroups')}</option>
                   {uniqueGroups.map((groupName) => (
@@ -563,7 +563,7 @@ const AssignmentZeroSubmissions = () => {
                       {groupName}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
                 {(searchQuery || filterTrack !== 'all' || filterGroup !== 'all' || filterDraft !== 'submitted') && (
                   <Button
                     variant="ghost"

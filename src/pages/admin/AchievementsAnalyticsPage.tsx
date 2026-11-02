@@ -3,6 +3,7 @@
  * earn their Kasatik rewards across the school, or one group. Teachers and curators see their own
  * groups through the same endpoint (scoped on the server) in the leaderboard's group panel.
  */
+import { NativeSelect } from '@/components/ui/native-select';
 import { useEffect, useState } from 'react';
 import { Loader2, Trophy } from 'lucide-react';
 import {
@@ -63,15 +64,15 @@ export default function AchievementsAnalyticsPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <select
+          <NativeSelect
             value={groupId ?? ''}
             onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : null)}
-            className="h-9 max-w-[260px] rounded-lg border border-border dark:border-border bg-card dark:bg-card px-3 text-sm"
+            className="max-w-[260px] rounded-lg border-border bg-card"
             aria-label={t('achievements.analytics.group')}
           >
             <option value="">{t('achievements.analytics.allGroups')}</option>
             {(data?.scope.groups ?? []).map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
-          </select>
+          </NativeSelect>
           <div className="flex rounded-lg border border-border dark:border-border p-0.5">
             {WEEK_OPTIONS.map((w) => (
               <button key={w} type="button" onClick={() => setWeeks(w)}
