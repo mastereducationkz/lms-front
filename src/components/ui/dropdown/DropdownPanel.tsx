@@ -44,7 +44,9 @@ export function DropdownPanel({ className, side = 'bottom', align = 'start', sid
           event.preventDefault();
           // On touch screens the search box waits for a tap: focusing it would pop the phone keyboard
           // up over the list (the public sign-up form is filled in on phones). The list takes focus.
-          const target = finePointer() ? inputRef.current ?? listRef.current : listRef.current;
+          // A list opened by typing a letter has a keyboard at hand: the search box takes focus there too.
+          const typed = !!inputRef.current?.value;
+          const target = finePointer() || typed ? inputRef.current ?? listRef.current : listRef.current;
           target?.focus({ preventScroll: true });
         }}
       >

@@ -258,6 +258,19 @@ describe('focus on open: the search box only under a mouse', () => {
     expect(input.value).toBe('e');
     expect(optionRows('#many').map((r) => r.textContent)).toEqual(['E']);
   });
+
+  it('a touch screen, list opened by typing a letter on the trigger: the search box takes focus with that letter', async () => {
+    pointer(false);
+    await show(list());
+    const trigger = dropdownTrigger('#many');
+    trigger.focus();
+    await key(trigger, 'c');
+    const listbox = dropdownList(trigger)!;
+    const input = document.querySelector<HTMLInputElement>(`input[aria-controls="${listbox.id}"]`)!;
+    expect(document.activeElement).toBe(input);
+    expect(input.value).toBe('c');
+    expect(optionRows('#many').map((r) => r.textContent)).toEqual(['C']);
+  });
 });
 
 describe('SearchableSelect (its API on the engine)', () => {
