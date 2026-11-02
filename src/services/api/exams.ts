@@ -170,6 +170,26 @@ export async function getExamResults(filters: ExamResultFilters = {}): Promise<E
   return response.data;
 }
 
+/** The server's page cap on GET /exams/results (``le=1000``). */
+export const EXAM_RESULTS_PAGE = 1000;
+/** A runaway guard: 20 pages is far beyond any scope today (≈2 400 students on 2026-11-02). */
+const MAX_PAGES = 20;
+
+/**
+ * Every row the filters match, page by page. The workbench counts and filters its triage presets
+ * in the browser, so it needs them all: a single 500-row page hid 79 of the 98 «03.10» sitters
+ * from a head curator in November 2026.
+ */
+export async function getAllExamResults(filters: ExamResultFilters = {}): Promise<ExamResultRow[]> {
+  const all: ExamResultRow[] = [];
+  for (let page = 0; page < MAX_PAGES; page += 1) {
+    const batch = await getExamResults({ ...filters, limit: EXAM_RESULTS_PAGE, offset: page * EXAM_RESULTS_PAGE });
+    all.push(...batch);
+    if (batch.length < EXAM_RESULTS_PAGE) break;
+  }
+  return all;
+}
+
 /**
  * Download the XLSX for the current filters.
  *
@@ -334,7 +354,7 @@ export interface RecordResultPayload {
   /** SAT only - the total is derived server-side from these. */
   verbal_score?: number;
   math_score?: number;
-  /** IELTS overall, and NUET total. */
+  /** IELTS overall, NUET total, and a SAT total sent WITHOUT sections (total-only result). */
   total_score?: number;
   listening_band?: number;
   reading_band?: number;
@@ -370,6 +390,19 @@ export async function updateExamResult(
   payload: { status?: 'reported' | 'verified' | 'rejected'; notes?: string; is_superseded?: boolean },
 ): Promise<ExamResultDetail> {
   const response = await api.patch(`/exams/results/${resultId}`, payload);
+  return response.data;
+}
+
+/**
+ * Add Reading & Writing and Math to a SAT result saved as a total only. The sections win: a
+ * different sum corrects the total (noted on the row) and sends a verified row back to «reported».
+ * 409 when the row already has its sections.
+ */
+export async function addResultSections(
+  resultId: number,
+  payload: { verbal_score: number; math_score: number },
+): Promise<ExamResultDetail> {
+  const response = await api.put(`/exams/results/${resultId}/sections`, payload);
   return response.data;
 }
 

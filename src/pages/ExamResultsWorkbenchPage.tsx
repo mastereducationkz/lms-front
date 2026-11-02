@@ -7,18 +7,19 @@ import { Badge } from '../components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { useAuth } from '../contexts/AuthContext';
 import { FinishedTag, GroupStateFilter } from '../components/exams/GroupStateFilter';
-import { defaultGroupState, groupOptionLabel, type GroupState } from '../lib/groupState';
+import { examResultsDefaultGroupState, groupOptionLabel, type GroupState } from '../lib/groupState';
 import { useT } from '../lib/i18n/react';
 import { RecordResultDialog } from '../components/exams/RecordResultDialog';
 import { attemptsSummary } from '../components/exams/attemptsSummary';
 import { OutcomeMenu } from '../components/exams/OutcomeMenu';
 import { AttemptsDialog } from '../components/exams/AttemptsDialog';
+import { AddSectionsDialog } from '../components/exams/AddSectionsDialog';
 import { TestimonialDialog } from '../components/exams/TestimonialDialog';
 import {
   exportExamResults,
   listTestimonials,
   getExamGroups,
-  getExamResults,
+  getAllExamResults,
   getSatOfficialDates,
   openResultProof,
   updatePlannedDate,
@@ -136,7 +137,7 @@ export default function ExamResultsWorkbenchPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [groupId, setGroupId] = useState<number | ''>('');
-  const [groupState, setGroupState] = useState<GroupState>(() => defaultGroupState(user?.role));
+  const [groupState, setGroupState] = useState<GroupState>(() => examResultsDefaultGroupState(user?.role));
   const [search, setSearch] = useState('');
 
   const [officialDates, setOfficialDates] = useState<SatOfficialDate[]>([]);
@@ -148,6 +149,7 @@ export default function ExamResultsWorkbenchPage() {
   const [exporting, setExporting] = useState(false);
   const [historyFor, setHistoryFor] = useState<ExamResultRow | null>(null);
   const [recording, setRecording] = useState<ExamResultRow | null>(null);
+  const [breakdownFor, setBreakdownFor] = useState<ExamResultRow | null>(null);
   const [testimonialFor, setTestimonialFor] = useState<ExamResultRow | null>(null);
   const [testimonials, setTestimonials] = useState<Record<number, Testimonial>>({});
   const [marketingOnly, setMarketingOnly] = useState(false);
@@ -189,14 +191,13 @@ export default function ExamResultsWorkbenchPage() {
     // Server-side as well as client-side (see `visible`): the export takes these same
     // filters, so an XLSX of marketing-ready rows matches the screen exactly.
     ...(marketingOnly ? { marketingOnly: true } : {}),
-    limit: 500,
   }), [examType, dateField, groupId, groupState, showInactive, exactDate, dateFrom, dateTo, search, marketingOnly]);
 
   const load = useCallback(async (f: ExamResultFilters) => {
     setLoading(true);
     setError(null);
     try {
-      setRows(await getExamResults(f));
+      setRows(await getAllExamResults(f));
     } catch (e: any) {
       setRows([]);
       setError(e?.response?.status === 403
@@ -437,7 +438,7 @@ export default function ExamResultsWorkbenchPage() {
                      aria-label={t('exams.filters.searchLabel')} className="pl-8" />
             </div>
             <Button size="sm" variant="ghost" onClick={() => {
-              setExactDate(''); setDateFrom(''); setDateTo(''); setGroupId(''); setGroupState(defaultGroupState(user?.role)); setSearch(''); setPreset('all');
+              setExactDate(''); setDateFrom(''); setDateTo(''); setGroupId(''); setGroupState(examResultsDefaultGroupState(user?.role)); setSearch(''); setPreset('all');
             }}>{t('exams.filters.reset')}</Button>
             <span className="text-xs text-muted-foreground">
               {loading ? t('common.loading') : `${visible.length} / ${rows.length}`}
@@ -532,7 +533,14 @@ export default function ExamResultsWorkbenchPage() {
                             <InitialScoreCell initial={row.initial} examType={examType} />
                           </TableCell>
                           {isSat && <>
-                            <TableCell className="text-center">{r?.verbal_score ?? '—'}</TableCell>
+                            <TableCell className="text-center">
+                              {r && r.verbal_score == null && canWrite ? (
+                                <button type="button" onClick={() => setBreakdownFor(row)} title={t('exams.sections.addHint')}
+                                        className="rounded border border-amber-500 px-1 text-[10px] text-amber-700 hover:bg-amber-50 dark:text-amber-400">
+                                  {t('exams.sections.add')}
+                                </button>
+                              ) : (r?.verbal_score ?? '—')}
+                            </TableCell>
                             <TableCell className="text-center">{r?.math_score ?? '—'}</TableCell>
                           </>}
                           <TableCell className="text-center font-semibold">
@@ -644,6 +652,11 @@ export default function ExamResultsWorkbenchPage() {
       {historyFor && (
         <AttemptsDialog row={historyFor} examType={examType}
                         onClose={() => setHistoryFor(null)} onError={setError} />
+      )}
+
+      {breakdownFor && (
+        <AddSectionsDialog row={breakdownFor} onClose={() => setBreakdownFor(null)}
+                           onSaved={() => { setNotice(t('exams.sections.saved')); load(filters); }} />
       )}
 
       {recording && (

@@ -48,6 +48,10 @@ async function type(id: string, value: string) {
   await act(async () => { setter.call(el, value); el.dispatchEvent(new Event('input', { bubbles: true })); });
 }
 const saveButton = () => { const all = document.querySelectorAll('button'); return all[all.length - 1] as HTMLButtonElement; };
+async function pickDate(value: string) {
+  const select = document.querySelector('select[aria-label]') as HTMLSelectElement;
+  await act(async () => { select.value = value; select.dispatchEvent(new Event('change', { bubbles: true })); });
+}
 
 describe('RecordResultDialog date guard', () => {
   it('offers SAT official dates only — no free date field', async () => {
@@ -61,6 +65,7 @@ describe('RecordResultDialog date guard', () => {
         code: 'confirm_old_date', reason: 'older_than_6_months', test_date: '2025-10-04' } } } })
       .mockResolvedValueOnce({ id: 1 });
     await open();
+    await pickDate('2025-10-04');
     await type('rr-v-0', '560');
     await type('rr-m-0', '600');
 
@@ -73,5 +78,40 @@ describe('RecordResultDialog date guard', () => {
     await act(async () => { tick.click(); });
     await act(async () => { saveButton().click(); });
     expect(createExamResult.mock.calls[1][0]).toMatchObject({ test_date: '2025-10-04', confirm_old_date: true });
+  });
+});
+
+describe('RecordResultDialog, October 2026 recheck', () => {
+  it('starts with NO date: a stale plan used to be saved as the sitting', async () => {
+    await open();
+    expect((document.querySelector('select[aria-label]') as HTMLSelectElement).value).toBe('');
+    expect(document.body.textContent).toContain('2025-10-04');   // shown as a hint only
+    expect(saveButton().disabled).toBe(true);
+  });
+
+  it('a SAT total without sections is sent as a total, under a loud warning', async () => {
+    createExamResult.mockResolvedValueOnce({ id: 1 });
+    await open();
+    await pickDate('2026-10-03');
+    expect(document.querySelector('[data-testid="rr-total-only-0"]')).toBeNull();
+    await type('rr-t-0', '1450');
+    expect(document.querySelector('[data-testid="rr-total-only-0"]')).not.toBeNull();
+
+    await act(async () => { saveButton().click(); });
+    const sent = createExamResult.mock.calls[0][0];
+    expect(sent).toMatchObject({ exam_type: 'sat', test_date: '2026-10-03', total_score: 1450 });
+    expect(sent).not.toHaveProperty('verbal_score');
+  });
+
+  it('refuses a total off the SAT scale and one section without the other', async () => {
+    await open();
+    await pickDate('2026-10-03');
+    await type('rr-t-0', '1455');
+    expect(saveButton().disabled).toBe(true);
+    await type('rr-t-0', '');
+    await type('rr-v-0', '700');
+    expect(saveButton().disabled).toBe(true);
+    await type('rr-m-0', '650');
+    expect(saveButton().disabled).toBe(false);
   });
 });
