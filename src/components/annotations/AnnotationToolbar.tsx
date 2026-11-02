@@ -9,6 +9,7 @@ import { createPortal } from 'react-dom';
 import { autoUpdate, flip, offset, shift, useFloating, type Placement } from '@floating-ui/react-dom';
 import { StickyNote, Trash2, Underline } from 'lucide-react';
 import { EDGE } from '../../lib/guide/geometry';
+import { isSelectionChrome } from '../lesson/lookup/useSelectionSettle';
 import { ANNOTATION_COLORS, type AnnotationColor } from '../../lib/annotations/paint';
 import { t } from '../../lib/i18n';
 import '@/lib/i18n/catalogs/lessonPlayer';
@@ -36,6 +37,8 @@ export interface ToolbarProps {
   startInNote?: boolean;
   touch: boolean;
   lookupBelow?: boolean;
+  /** Look Up's card is open under the selection: stay above it, whatever the pointer. */
+  lookupOpen?: boolean;
   onColor: (color: AnnotationColor) => void;
   onNote: (note: string) => void;
   onDelete?: () => void;
@@ -43,7 +46,7 @@ export interface ToolbarProps {
 }
 
 export const AnnotationToolbar = React.forwardRef<HTMLDivElement, ToolbarProps>(function AnnotationToolbar(
-  { getRect, mode, color, note, startInNote, touch, lookupBelow, onColor, onNote, onDelete, onClose },
+  { getRect, mode, color, note, startInNote, touch, lookupBelow, lookupOpen, onColor, onNote, onDelete, onClose },
   forwardedRef,
 ) {
   const [editing, setEditing] = useState(Boolean(startInNote));
@@ -53,18 +56,26 @@ export const AnnotationToolbar = React.forwardRef<HTMLDivElement, ToolbarProps>(
   const reference = useMemo(() => ({
     getBoundingClientRect: () => getRect() ?? new DOMRect(-9999, -9999, 0, 0),
   }), [getRect]);
-  const placement: Placement = touch ? 'bottom' : 'top';
+  // Touch: under the selection (the OS menu is above), below Look Up's chip where there is one.
+  // Once Look Up's card is open there, above it instead. Where Look Up shares the selection the
+  // toolbar never flips down onto its card.
+  const placement: Placement = touch && !lookupOpen ? 'bottom' : 'top';
   const { refs, floatingStyles } = useFloating({
     strategy: 'fixed',
     placement,
     elements: { reference },
     whileElementsMounted: autoUpdate,
-    middleware: [offset(touch && lookupBelow ? 56 : 10), flip({ padding: EDGE }), shift({ padding: EDGE })],
+    middleware: [
+      offset(placement === 'bottom' && lookupBelow ? 56 : 10),
+      ...(lookupBelow ? [] : [flip({ padding: EDGE })]),
+      shift({ padding: EDGE }),
+    ],
   });
 
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
-      if (!own.current?.contains(event.target as Node)) onClose();
+      // Look Up works on the same selection: using its chip or card isn't «elsewhere».
+      if (!own.current?.contains(event.target as Node) && !isSelectionChrome(event.target)) onClose();
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -95,6 +106,8 @@ export const AnnotationToolbar = React.forwardRef<HTMLDivElement, ToolbarProps>(
       ref={setNode}
       style={floatingStyles}
       data-annotation-toolbar="true"
+      data-selection-chrome=""
+      data-placement={placement}
       role={editing ? 'dialog' : 'toolbar'}
       aria-label={t('lessonPlayer.annotate.toolbar')}
       className="z-50 rounded-lg border border-border bg-popover text-popover-foreground shadow-lg"

@@ -18,7 +18,7 @@ import { LookupCard, type SaveState } from './lookup/LookupCard';
 import { useLookupLang } from './lookup/lookupLang';
 import { cleanSelection, selectionKind } from './lookup/selection';
 import { useLookupStream } from './lookup/useLookupStream';
-import { useSelectionSettle, type SettledSelection } from './lookup/useSelectionSettle';
+import { isSelectionChrome, useSelectionSettle, type SettledSelection } from './lookup/useSelectionSettle';
 import { t } from '../../lib/i18n';
 import '@/lib/i18n/catalogs/lessonPlayer';
 
@@ -127,7 +127,8 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
   useEffect(() => {
     if (!target) return;
     const onPointerDown = (event: PointerEvent) => {
-      if (!floatingEl.current?.contains(event.target as Node)) close();
+      // The highlight toolbar works on the same selection: using it isn't «elsewhere».
+      if (!floatingEl.current?.contains(event.target as Node) && !isSelectionChrome(event.target)) close();
     };
     const onKeyDown = (event: KeyboardEvent) => {
       const card = floatingEl.current;
@@ -192,6 +193,7 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
       }}
       style={{ ...floatingStyles, visibility: hidden ? 'hidden' : undefined }}
       className="z-50 flex"
+      data-selection-chrome=""
     >
       {target.armed ? (
         <div
