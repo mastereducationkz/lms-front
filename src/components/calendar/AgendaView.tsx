@@ -113,7 +113,7 @@ export default function AgendaView({ events, user, onEventClick }: Props) {
                   </span>
                   <span className={cx('h-2 w-2 flex-none rounded-full ring-4', s.dot, s.ring)} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[14px] font-medium text-foreground">
+                    <span className="line-clamp-2 break-words text-[14px] font-medium leading-snug text-foreground" title={eventTitle(event)}>
                       {eventTitle(event)}
                       {sub && <span className={cx('ml-2 text-[10px] font-bold', s.time)}>{t('chatLive.calendar.substitute')}</span>}
                       <RecordingMark event={event} role={user?.role} className="h-3 w-3 text-muted-foreground"

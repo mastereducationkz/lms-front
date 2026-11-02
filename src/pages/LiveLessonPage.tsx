@@ -42,7 +42,7 @@ export default function LiveLessonPage() {
     return (
       <Centered icon={<MonitorPlay className="h-8 w-8 text-muted-foreground" aria-hidden />} title={t('chatLive.live.page.forStudents')}>
         {t('chatLive.live.page.forStudentsHint')}
-        <Link to="/calendar" className="mt-3 inline-block font-semibold text-primary underline underline-offset-2">{t('chatLive.live.page.openCalendar')}</Link>
+        <Link to="/calendar" className="mx-auto mt-3 block w-fit font-semibold text-primary underline underline-offset-2">{t('chatLive.live.page.openCalendar')}</Link>
       </Centered>
     );
   }

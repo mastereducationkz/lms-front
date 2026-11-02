@@ -1,6 +1,7 @@
 import { Edit, Trash2, Eye, EyeOff, UploadCloud, GraduationCap, UserCog, UserMinus } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
+import { HScroll } from '../ui/h-scroll';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -91,7 +92,7 @@ export function UsersTable({
   const th = 'px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider';
 
   return (
-    <div className="overflow-x-auto">
+    <HScroll>
       <table className="w-full">
         <thead className="bg-muted dark:bg-secondary">
           <tr>
@@ -198,6 +199,6 @@ export function UsersTable({
           })}
         </tbody>
       </table>
-    </div>
+    </HScroll>
   );
 }
