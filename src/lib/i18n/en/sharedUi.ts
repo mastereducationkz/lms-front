@@ -77,6 +77,11 @@ export const sharedUi = {
   'sharedUi.shareCard.proud.ml_full_squad': 'The whole squad showed up, me included.',
   'sharedUi.shareCard.proud.ml_ever_present': 'Showed up for the whole Master League season.',
   'sharedUi.shareCard.proud.ml_no_loose_ends': 'Every Master League homework in on time.',
+  // Master League season 2, «Studio» (src/lib/leagueTheme.ts picks these for a studio student)
+  'sharedUi.shareCard.proud.studio.ml_signed': 'Signed to the Master League lineup.',
+  'sharedUi.shareCard.proud.studio.ml_first_whistle': 'Recorded my first Master League session.',
+  'sharedUi.shareCard.proud.studio.ml_full_squad': 'The whole lineup showed up, me included.',
+  'sharedUi.shareCard.proud.studio.ml_ever_present': 'Showed up for the Master League season, session after session.',
   'sharedUi.shareCard.proud.nauryz': 'Kept learning right through Nauryz.',
   'sharedUi.shareCard.proud.winter_lights': 'Kept learning through the winter holidays.',
   'sharedUi.shareCard.proud.test_day_ready': 'Showed up right before test day.',

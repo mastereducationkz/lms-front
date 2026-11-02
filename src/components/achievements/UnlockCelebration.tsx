@@ -11,7 +11,7 @@ import { useTourActive } from '@/components/guide/tourStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { parseMascot, rewardLabel } from '@/components/mascot/config';
 import { leagueKitCode } from '@/components/mascot/leagueKit';
-import LeagueMilestoneHeader, { GOLDEN_CONFETTI } from '@/components/masterLeague/LeagueMilestone';
+import LeagueMilestoneHeader, { GOLDEN_CONFETTI, STUDIO_GOLDEN_CONFETTI } from '@/components/masterLeague/LeagueMilestone';
 import LeagueWelcome from '@/components/masterLeague/LeagueWelcome';
 import { onboardingPending } from '@/components/mascot/spotlight';
 import { Button } from '@/components/ui/button';
@@ -146,6 +146,8 @@ export default function UnlockCelebration() {
 
   // «Signed to the League» opens the league's own welcome scene instead of the generic one.
   const welcome = items.some((a) => a.key === 'ml_signed');
+  // The student's season (football unless the server says studio): the welcome, the kit and the golden header follow it.
+  const season = data.league_theme ?? 'football';
 
   const saveLook = (code: string, message: string) => {
     setSaving(true);
@@ -164,14 +166,14 @@ export default function UnlockCelebration() {
     attention.declare('celebration', 'none');
     if (!wear) return;
     if (welcome) {
-      const kit = leagueKitCode(user.mascot, user.id);
+      const kit = leagueKitCode(user.mascot, user.id, season);
       if (parseMascot(kit) !== null) saveLook(kit, t('studentHome.league.welcome.wearing'));
     } else if (pick && wearable) {
       saveLook(withReward(user.mascot, user.id, pick.reward), t('studentHome.achievements.celebration.wearing', { part: rewardLabel(pick.reward, locale) }));
     }
   };
 
-  if (welcome) return <LeagueWelcome items={items} saving={saving} onClose={close} />;
+  if (welcome) return <LeagueWelcome items={items} saving={saving} onClose={close} theme={season} />;
 
   // «1500 Club» and «Perfect», the rarest league unlocks, open with a golden header and more confetti.
   const golden = items.find(isGoldenMoment) ?? null;
@@ -179,11 +181,11 @@ export default function UnlockCelebration() {
 
   return (
     <>
-      {golden ? <Confetti pieces={240} durationMs={3800} colors={GOLDEN_CONFETTI} /> : <Confetti />}
+      {golden ? <Confetti pieces={240} durationMs={3800} colors={season === 'studio' ? STUDIO_GOLDEN_CONFETTI : GOLDEN_CONFETTI} /> : <Confetti />}
       <Dialog open onOpenChange={(o) => { if (!o) close(false); }}>
         <DialogContent className="max-w-md overflow-hidden rounded-3xl border-0 p-0">
           {golden ? (
-            <LeagueMilestoneHeader code={user.mascot} userId={user.id} achievement={golden} reward={goldenReward} />
+            <LeagueMilestoneHeader code={user.mascot} userId={user.id} achievement={golden} reward={goldenReward} theme={season} />
           ) : (
             <div className="relative bg-gradient-to-br from-brand-solid via-brand-solid-hover to-blue-900 px-6 pb-6 pt-8 text-center text-white dark:from-brand-subtle dark:via-brand-surface dark:to-brand-surface dark:text-brand-surface-foreground">
               <div aria-hidden className="pointer-events-none absolute -left-8 -top-8 h-32 w-32 rounded-full bg-white/10" />

@@ -33,7 +33,13 @@ describe('asInvitation', () => {
       id: 5, state: 'open', cohort_name: 'Ноябрь 2026', exam_date: '2026-11-07', expires_at: '2026-10-16T11:00:00Z',
       responded_at: null, server_now: '2026-10-14T12:00:00Z', chosen_group_id: null, member_status: null,
       options: [{ group_id: 376, label: 'Master League Dreamville', schedule_text: 'Пн, Ср 18:00; Сб 11:00', seats_left: null }],
+      theme: 'football', // no `theme` from the server: football
     });
+  });
+
+  it('reads the season theme strictly: only «studio» is studio', () => {
+    expect(asInvitation(raw({ theme: 'studio' }))?.theme).toBe('studio');
+    expect(asInvitation(raw({ theme: 'disco' }))?.theme).toBe('football');
   });
 
   it('keeps what an accepted student needs', () => {

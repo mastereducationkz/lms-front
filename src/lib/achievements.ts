@@ -6,6 +6,7 @@
 import { applyPart } from '../components/mascot/config';
 import { activeLocale, hasMessage, t, type Locale, type MessageKey } from './i18n';
 import type { Achievement, AchievementReward, AchievementTier, GroupStars, StarAward } from '../services/api/achievementsUi';
+import { achievementTheme, themedKey, type LeagueTheme } from './leagueTheme';
 import '@/lib/i18n/catalogs/achievements';
 import '@/lib/i18n/catalogs/studentHome';
 
@@ -50,14 +51,19 @@ type AchievementCopySource = { key: string; title: string; description?: string 
  * the source of truth for English; Russian comes from the catalog by the achievement's key, and an
  * achievement the catalog doesn't know yet keeps the server's words. What the server left out
  * (a secret's rules, an unlocked one's hint) stays out.
+ *
+ * A Master League achievement is worded for the student's season (owner, 2026-11-02): the server's
+ * English title says which (src/lib/leagueTheme.ts achievementTheme), or the caller names the theme,
+ * and the Russian follows it, falling back to the shared wording.
  */
-export function achievementField(a: AchievementCopySource, field: 'title', locale?: Locale): string;
-export function achievementField(a: AchievementCopySource, field: Exclude<CopyField, 'title'>, locale?: Locale): string | null;
-export function achievementField(a: AchievementCopySource, field: CopyField, locale: Locale = activeLocale()): string | null {
+export function achievementField(a: AchievementCopySource, field: 'title', locale?: Locale, theme?: LeagueTheme): string;
+export function achievementField(a: AchievementCopySource, field: Exclude<CopyField, 'title'>, locale?: Locale, theme?: LeagueTheme): string | null;
+export function achievementField(a: AchievementCopySource, field: CopyField, locale: Locale = activeLocale(), theme?: LeagueTheme): string | null {
   const server = a[field] ?? null;
   if (server === null || locale === 'en') return server;
   const key = `studentHome.achievement.${a.key}.${COPY_SUFFIX[field]}`;
-  return hasMessage(key) ? t(key, undefined, locale) : server;
+  if (!hasMessage(key)) return server;
+  return t(themedKey(key, theme ?? achievementTheme(a)), undefined, locale);
 }
 
 /** How exciting a tier is — the celebration dresses the orca in the most exciting reward first. */

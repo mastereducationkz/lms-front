@@ -5,8 +5,10 @@
  */
 import { useId } from 'react';
 import { Loader2 } from 'lucide-react';
-import { LeagueCrestSvg } from '@/components/mascot/art/LeagueCrest';
 import { scheduleChips, squadName } from '@/lib/leagueInvitation';
+import { withTheme, type LeagueTheme } from '@/lib/leagueTheme';
+import { SeasonEmblem } from '../LeagueArt';
+import { leagueLook } from '../leagueLook';
 import { useLeagueT } from '../useLeagueLocale';
 import type { Locale } from '@/lib/i18n';
 import type { InvitationOption } from '@/services/api/leagueInvitation';
@@ -20,24 +22,27 @@ interface SlotProps {
   /** Some answer is being saved, so nothing else may be sent. */
   disabled: boolean;
   onChoose: (groupId: number) => void;
+  theme?: LeagueTheme;
 }
 
-function Slot({ option, locale, saving, disabled, onChoose }: SlotProps) {
+function Slot({ option, locale, saving, disabled, onChoose, theme }: SlotProps) {
   const t = useLeagueT();
   const name = squadName(option);
+  const look = leagueLook(theme, option.label);
+  const [fill, ink] = look.solid.split(' ');
   return (
     <li className="min-w-0">
       <article
         aria-label={name}
-        className="flex h-full flex-col gap-4 rounded-3xl bg-[linear-gradient(145deg,#0B1B4D_0%,#14307A_100%)] p-5 text-white shadow-[0_18px_36px_-24px_rgba(11,27,77,0.95)] ring-1 ring-amber-300/30"
+        className={`flex h-full flex-col gap-4 rounded-3xl ${look.slot}`}
       >
         <div className="flex items-center gap-3">
-          <LeagueCrestSvg size={30} />
+          <SeasonEmblem look={look} size={30} />
           <h3 className="min-w-0 truncate text-xl font-extrabold leading-tight">{name}</h3>
         </div>
         <ul className="flex flex-wrap gap-2">
           {scheduleChips(option.schedule_text, locale).map((chip) => (
-            <li key={chip} className="rounded-full bg-white/10 px-3 py-1 text-sm font-medium tabular-nums text-blue-50 ring-1 ring-white/15">
+            <li key={chip} className={`rounded-full bg-white/10 px-3 py-1 text-sm font-medium tabular-nums ${look.faint} ring-1 ring-white/15`}>
               {chip}
             </li>
           ))}
@@ -48,7 +53,7 @@ function Slot({ option, locale, saving, disabled, onChoose }: SlotProps) {
           aria-busy={saving}
           aria-label={saving ? undefined : t('studentHome.leagueInvite.inFor', { squad: name })}
           onClick={() => onChoose(option.group_id)}
-          className={`mt-auto flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-amber-300 px-4 text-base font-extrabold text-blue-950 transition-colors hover:bg-amber-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed ${saving ? '' : 'disabled:opacity-50'}`}
+          className={`mt-auto flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl ${fill} px-4 text-base font-extrabold ${ink} transition-colors ${look.solidHover} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed ${saving ? '' : 'disabled:opacity-50'}`}
         >
           {saving ? (
             <>
@@ -72,10 +77,12 @@ interface SlotsProps {
   /** An answer of any kind is being saved. */
   busy: boolean;
   onChoose: (groupId: number) => void;
+  /** The season: a studio squad wears its own group's colours. */
+  theme?: LeagueTheme;
 }
 
-export default function SlotCards({ options, locale, savingGroup, busy, onChoose }: SlotsProps) {
-  const t = useLeagueT();
+export default function SlotCards({ options, locale, savingGroup, busy, onChoose, theme }: SlotsProps) {
+  const t = withTheme(useLeagueT(), theme);
   const one = options.length === 1;
   const headingId = `${useId()}slots`;
   return (
@@ -93,7 +100,7 @@ export default function SlotCards({ options, locale, savingGroup, busy, onChoose
       ) : (
         <ul className="grid gap-3 @lg:grid-cols-2">
           {options.map((o) => (
-            <Slot key={o.group_id} option={o} locale={locale} saving={savingGroup === o.group_id} disabled={busy} onChoose={onChoose} />
+            <Slot key={o.group_id} option={o} locale={locale} saving={savingGroup === o.group_id} disabled={busy} onChoose={onChoose} theme={theme} />
           ))}
         </ul>
       )}

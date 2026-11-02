@@ -2,6 +2,7 @@
 import type { ReactNode } from 'react';
 import { BRAND_BLUE, MasterMark } from './MasterMark';
 import { LEAGUE_BACKGROUNDS } from './leagueBackgrounds';
+import { STUDIO_BACKGROUNDS } from './studioBackgrounds';
 import { REWARD_BACKGROUNDS } from './rewardBackgrounds';
 
 type Bg = (uid: string) => ReactNode;
@@ -125,4 +126,6 @@ export const BACKGROUND_ART: Bg[] = [
   ...REWARD_BACKGROUNDS,
   // Master League reward: b14 Stadium Lights
   ...LEAGUE_BACKGROUNDS,
+  // Master League season 2 «Studio»: b16 Studio Booth, b17 Stage Spotlight
+  ...STUDIO_BACKGROUNDS,
 ];

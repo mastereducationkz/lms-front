@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import AchievementCard, { formatUnlockDate } from '@/components/achievements/AchievementCard';
 import RewardPreview from '@/components/achievements/RewardPreview';
 import LeagueSectionHeader from '@/components/masterLeague/LeagueSectionHeader';
+import { leagueLook } from '@/components/masterLeague/leagueLook';
 import {
   achievementField,
   almostThere,
@@ -140,9 +141,14 @@ export default function AchievementsPage() {
       {leagueGroup && (
         <section
           aria-labelledby="ml-section"
-          className="space-y-4 rounded-3xl border border-amber-300/30 bg-[linear-gradient(135deg,#07122E_0%,#0B1B4D_45%,#14307A_100%)] p-4 shadow-[0_18px_40px_-26px_rgba(11,27,77,0.9)] sm:p-5"
+          className={`space-y-4 rounded-3xl border ${leagueLook(data?.league_theme).band} sm:p-5`}
         >
-          <LeagueSectionHeader id="ml-section" unlocked={leagueGroup.items.filter((a) => a.unlocked).length} total={leagueGroup.items.length} />
+          <LeagueSectionHeader
+            id="ml-section"
+            unlocked={leagueGroup.items.filter((a) => a.unlocked).length}
+            total={leagueGroup.items.length}
+            theme={data?.league_theme}
+          />
           <div className="grid gap-4 @lg:grid-cols-2">
             {leagueGroup.items.map((a) => (
               <AchievementCard

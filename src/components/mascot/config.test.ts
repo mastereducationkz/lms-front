@@ -42,7 +42,7 @@ describe('mascot codes', () => {
       p: CATEGORY_PARTS.prop.length,
       b: CATEGORY_PARTS.background.length,
       f: CATEGORY_PARTS.frame.length,
-    }).toEqual({ h: 29, g: 9, e: 8, p: 31, b: 16, f: 7 });
+    }).toEqual({ h: 32, g: 9, e: 8, p: 35, b: 18, f: 9 });
   });
 
   it('writes v2 and still reads v1 codes as frame 0', () => {
@@ -55,7 +55,7 @@ describe('mascot codes', () => {
   it('refuses anything that is not a valid v1 or v2 code', () => {
     for (const bad of [
       '', 'v1.h1.g0.e0.p0', 'v1.h1.g0.e0.p0.b0.f0', 'v2.h1.g0.e0.p0.b0', 'v3.h1.g0.e0.p0.b0.f0',
-      'v1.h29.g0.e0.p0.b0', 'v2.h0.g0.e0.p31.b0.f0', 'v2.h0.g0.e0.p0.b16.f0', 'v2.h0.g0.e0.p0.b0.f7', 'v2.h0.g9.e0.p0.b0.f0',
+      'v1.h32.g0.e0.p0.b0', 'v2.h0.g0.e0.p35.b0.f0', 'v2.h0.g0.e0.p0.b18.f0', 'v2.h0.g0.e0.p0.b0.f9', 'v2.h0.g9.e0.p0.b0.f0',
       'v1.g0.h1.e0.p0.b0', 'v2.h1.g0.e0.p0.b0.f0.x', 'nonsense',
     ]) {
       expect(parseMascot(bad)).toBeNull();
@@ -241,9 +241,20 @@ describe('achievement rewards', () => {
     ['f', 3, 'gold_laurel', 'graduate_gold'], ['f', 4, 'star_ring', 'star_of_week_3'],
     ['f', 5, 'league_crest', 'ml_signed'], ['f', 6, 'club_1500_frame', 'ml_1500'],
   ];
+  // SEASON-STUDIO.md: season 2's parts, appended after season 1's in each layer
+  const STUDIO: [string, number, string, string][] = [
+    ['h', 29, 'studio_headphones', 'ml_signed'], ['h', 30, 'vinyl_snapback', 'ml_hat_trick'], ['h', 31, 'diamond_headphones', 'ml_perfect'],
+    ['p', 31, 'vintage_mic', 'ml_first_whistle'], ['p', 32, 'mixing_fader', 'ml_full_squad'],
+    ['p', 33, 'master_tape', 'ml_no_loose_ends'], ['p', 34, 'chart_arrow', 'ml_mock_climb'],
+    ['b', 16, 'studio_booth', 'ml_ever_present'], ['b', 17, 'stage_spotlight', 'ml_breakthrough'],
+    ['f', 7, 'gold_record', 'ml_signed'], ['f', 8, 'platinum_record', 'ml_1500'],
+  ];
+  const LAYERS = ['h', 'g', 'e', 'p', 'b', 'f'];
+  const byLayer = (rows: [string, number, string, string][]) =>
+    [...rows].sort((a, b) => LAYERS.indexOf(a[0]) - LAYERS.indexOf(b[0]) || a[1] - b[1]);
 
   it('match the contract table exactly', () => {
-    expect(REWARD_PARTS.map((r) => [r.layer, r.index, r.key, r.achievement])).toEqual(CONTRACT);
+    expect(REWARD_PARTS.map((r) => [r.layer, r.index, r.key, r.achievement])).toEqual(byLayer([...CONTRACT, ...STUDIO]));
   });
 
   it('keep every free part free and lock rewards until earned', () => {

@@ -11,11 +11,15 @@ import { DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { achievementField } from '@/lib/achievements';
 import { rewardLabel } from '@/components/mascot/config';
 import { useLocale, useT } from '@/lib/i18n/react';
+import { achievementTheme, withTheme, type LeagueTheme } from '@/lib/leagueTheme';
+import { leagueLook } from './leagueLook';
 import type { Achievement, AchievementReward } from '@/services/api/achievementsUi';
 import '@/lib/i18n/catalogs/studentHome';
 
 /** Gold for the confetti: the League palette, no pink, no green. */
 export const GOLDEN_CONFETTI = ['#F7C948', '#FFE07A', '#FFFFFF', '#E2A300', '#5B8DFF'];
+/** The studio season's: gold, platinum and white. */
+export const STUDIO_GOLDEN_CONFETTI = ['#E8C268', '#F3DCA0', '#FFFFFF', '#A8802A', '#E6ECF2'];
 
 export const MILESTONE_CSS = `
 .ml-gold-rays{position:absolute;left:50%;top:40%;width:190%;aspect-ratio:1;transform:translate(-50%,-50%);
@@ -65,30 +69,34 @@ interface HeaderProps {
   /** The golden unlock this header is for. */
   achievement: Achievement;
   reward?: AchievementReward | null;
+  /** The student's season; missing → what the server's words say. Studio is charcoal and gold (Platinum, Diamond). */
+  theme?: LeagueTheme;
   /** The dialog's own title/description parts; the static review render passes plain elements. */
   Title?: ElementType;
   Description?: ElementType;
 }
 
-export default function LeagueMilestoneHeader({ code, userId, achievement, reward, Title = DialogTitle, Description = DialogDescription }: HeaderProps) {
-  const t = useT();
+export default function LeagueMilestoneHeader({ code, userId, achievement, reward, theme, Title = DialogTitle, Description = DialogDescription }: HeaderProps) {
+  const season = theme ?? achievementTheme(achievement);
+  const t = withTheme(useT(), season);
   const locale = useLocale();
+  const look = leagueLook(season);
   return (
     <>
       <style>{MILESTONE_CSS}</style>
-      <div className="relative isolate overflow-hidden bg-[linear-gradient(160deg,#07122E_0%,#0B1B4D_45%,#14307A_100%)] px-6 pb-7 pt-9 text-center text-white">
+      <div className={`relative isolate overflow-hidden ${look.scene} px-6 pb-7 pt-9 text-center text-white`}>
         <div aria-hidden className="ml-gold-rays -z-10" />
         {SPARKS.map((s) => <Spark key={`${s.left}-${s.top}`} {...s} />)}
         <div className="relative mx-auto w-fit rounded-full bg-white/10 p-2 ring-4 ring-amber-300/80 ml-gold-glow">
           <RewardPreview code={code} userId={userId} reward={reward} size={136} />
         </div>
-        <p className="relative mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-amber-300">{t('studentHome.league.milestone.eyebrow')}</p>
-        <Title className="relative mt-1 text-3xl font-extrabold leading-tight text-white">{achievementField(achievement, 'title', locale)}</Title>
-        <Description className="relative mt-2 text-sm text-blue-100">
-          {achievementField(achievement, 'description', locale)}
+        <p className={`relative mt-4 text-[11px] font-bold uppercase tracking-[0.18em] ${look.accent}`}>{t('studentHome.league.milestone.eyebrow')}</p>
+        <Title className="relative mt-1 text-3xl font-extrabold leading-tight text-white">{achievementField(achievement, 'title', locale, season)}</Title>
+        <Description className={`relative mt-2 text-sm ${look.muted}`}>
+          {achievementField(achievement, 'description', locale, season)}
           {reward && (
             <span className="mt-3 block">
-              <span className="inline-block rounded-2xl bg-white/10 px-3 py-1.5 text-xs font-medium text-amber-200 ring-1 ring-white/15">
+              <span className={`inline-block rounded-2xl bg-white/10 px-3 py-1.5 text-xs font-medium ${look.accentSoft} ring-1 ring-white/15`}>
                 {t('studentHome.achievements.celebration.newToWear', { part: rewardLabel(reward, locale) })}
               </span>
             </span>

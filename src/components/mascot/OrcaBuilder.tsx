@@ -27,6 +27,7 @@ import {
   withUnlistedRewardsLocked,
 } from './config';
 import OrcaPartGrid from './OrcaPartGrid';
+import { asLeagueTheme, type LeagueTheme } from '../../lib/leagueThemeName';
 import { getMyAchievements, type Achievement } from '../../services/api/achievements';
 import { PRESETS } from './presets';
 import { ORCA_SECTION_ID } from './KasatikSpotlight';
@@ -59,6 +60,7 @@ export default function OrcaBuilder() {
   const [locked, setLocked] = useState<LockedParts | null>(null);
   const [locksKnown, setLocksKnown] = useState(false);
   const [leagueAccess, setLeagueAccess] = useState(false);
+  const [leagueTheme, setLeagueTheme] = useState<LeagueTheme>('football');
   const [achievements, setAchievements] = useState<Achievement[] | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const isStudent = user?.role === 'student';
@@ -70,8 +72,10 @@ export default function OrcaBuilder() {
     getMyAchievements()
       .then((data) => {
         if (!alive) return;
-        setLocked(withUnlistedRewardsLocked(data.locked_parts ?? {}, (data.achievements ?? []).map((a) => a.key)));
+        const season = asLeagueTheme(data.league_theme);
+        setLocked(withUnlistedRewardsLocked(data.locked_parts ?? {}, (data.achievements ?? []).map((a) => a.key), season));
         setLeagueAccess(data.league_access === true);
+        setLeagueTheme(season);
         setAchievements(data.achievements ?? []);
         setLocksKnown(true);
       })
@@ -232,7 +236,7 @@ export default function OrcaBuilder() {
               </button>
             ))}
           </div>
-          <OrcaPartGrid tab={tab} config={config} locked={locked} leagueAccess={leagueAccess} onPick={pick} />
+          <OrcaPartGrid tab={tab} config={config} locked={locked} leagueAccess={leagueAccess} leagueTheme={leagueTheme} onPick={pick} />
         </div>
       </div>
 

@@ -9,19 +9,23 @@ import { useEffect, useState, type ElementType } from 'react';
 import { Check } from 'lucide-react';
 import Confetti from '@/components/achievements/Confetti';
 import Orca from '@/components/mascot/Orca';
-import { LeagueCrestSvg } from '@/components/mascot/art/LeagueCrest';
 import { leagueKitConfig } from '@/components/mascot/leagueKit';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { achievementField } from '@/lib/achievements';
 import { groupTail } from '@/lib/leagueSeason';
+import { achievementTheme, unbreakable, withTheme, type LeagueTheme } from '@/lib/leagueTheme';
 import { formatDate } from '@/lib/i18n';
 import { useLocale, useT } from '@/lib/i18n/react';
 import type { Achievement } from '@/services/api/achievementsUi';
 import { getMyLeague, type MyLeague } from '@/services/api/masterLeague';
+import { SeasonEmblem } from './LeagueArt';
+import { leagueLook, type LeagueLook } from './leagueLook';
 import '@/lib/i18n/catalogs/studentHome';
 
-const CONFETTI = ['#F7C948', '#FFE07A', '#2563EB', '#5B8DFF', '#FFFFFF'];
+/** A studio scene's rays in its group's colour (the football rays stay gold, as written in CSS below). */
+const studioRays = (look: LeagueLook) =>
+  `\n.ml-rays{background:repeating-conic-gradient(from 0deg,${look.label}38 0 6deg,transparent 6deg 16deg)}\n`;
 
 const CSS = `
 .ml-rays{position:absolute;left:50%;top:40%;width:170%;aspect-ratio:1;transform:translate(-50%,-50%);
@@ -40,6 +44,8 @@ interface SceneProps {
   league: MyLeague | null;
   saving: boolean;
   onClose: (wear: boolean) => void;
+  /** The student's season (from the achievements payload); missing → the season's own word, then the server's words. */
+  theme?: LeagueTheme;
 }
 
 interface BodyProps extends SceneProps {
@@ -48,33 +54,45 @@ interface BodyProps extends SceneProps {
   Description?: ElementType;
 }
 
+/** The season the welcome is for: the caller's word, else the season's, else what the server's words for «Signed» say. */
+function welcomeTheme(items: Achievement[], league: MyLeague | null, theme?: LeagueTheme): LeagueTheme {
+  if (theme) return theme;
+  if (league?.theme) return league.theme;
+  const signed = items.find((a) => a.key === 'ml_signed');
+  return signed ? achievementTheme(signed) : 'football';
+}
+
 /** The scene itself, without the fetch or the dialog shell: the live component and the static review render both use it. */
-export function LeagueWelcomeBody({ items, league, saving, onClose, Title = DialogTitle, Description = DialogDescription }: BodyProps) {
-  const t = useT();
+export function LeagueWelcomeBody({ items, league, saving, onClose, theme, Title = DialogTitle, Description = DialogDescription }: BodyProps) {
+  const season = welcomeTheme(items, league, theme);
+  const t = withTheme(useT(), season);
   const locale = useLocale();
+  const look = leagueLook(season, league?.group.name);
   const others = items.filter((a) => a.key !== 'ml_signed');
   const total = league?.lessons.total ?? 0;
   const date = league?.exam_date ? formatDate(league.exam_date, { day: 'numeric', month: 'long' }, locale) : '';
-  const group = league ? groupTail(league.group.name) : '';
+  const studio = season === 'studio';
+  const tail = league ? groupTail(league.group.name) : '';
+  const group = studio ? unbreakable(tail) : tail;
   return (
     <>
-      <style>{CSS}</style>
+      <style>{studio ? CSS + studioRays(look) : CSS}</style>
       <div>
-        <div className="relative isolate overflow-hidden bg-[linear-gradient(160deg,#07122E_0%,#0B1B4D_45%,#14307A_100%)] px-6 pb-7 pt-9 text-center text-white">
+        <div className={`relative isolate overflow-hidden ${look.scene} px-6 pb-7 pt-9 text-center text-white`}>
           <div aria-hidden className="ml-rays -z-10" />
           <div className="relative mx-auto w-fit">
             <div className="ml-bob">
-              <Orca config={leagueKitConfig()} size={152} title={t('studentHome.league.kitAlt')} />
+              <Orca config={leagueKitConfig(season)} size={152} title={t('studentHome.league.kitAlt')} />
             </div>
-            <LeagueCrestSvg size={46} className="absolute -right-5 -top-1 drop-shadow-[0_4px_8px_rgba(0,0,0,0.45)]" />
+            <SeasonEmblem look={look} size={46} className="absolute -right-5 -top-1 drop-shadow-[0_4px_8px_rgba(0,0,0,0.45)]" />
           </div>
-          <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-amber-300">{t('studentHome.league.welcome.eyebrow')}</p>
+          <p className={`mt-4 text-[11px] font-bold uppercase tracking-[0.18em] ${look.accent}`}>{t('studentHome.league.welcome.eyebrow')}</p>
           <Title className="mt-1 text-2xl font-extrabold leading-tight text-white">{t('studentHome.league.welcome.title')}</Title>
-          <Description className="mt-2 text-sm text-blue-100">
+          <Description className={`mt-2 text-sm ${look.muted}`}>
             {total > 0 ? t('studentHome.league.welcome.line', { count: total }) : t('studentHome.league.welcome.lineNoCount')}
           </Description>
           {group && (
-            <p className="mt-3 inline-block rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-amber-200 ring-1 ring-white/15">
+            <p className={`mt-3 inline-block rounded-full bg-white/10 px-3 py-1 text-xs font-medium ${look.accentSoft} ring-1 ring-white/15`}>
               {date ? t('studentHome.league.welcome.squad', { group, date }) : t('studentHome.league.welcome.squadNoDate', { group })}
             </p>
           )}
@@ -84,7 +102,7 @@ export function LeagueWelcomeBody({ items, league, saving, onClose, Title = Dial
             <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{t('studentHome.league.welcome.alsoUnlocked')}</p>
             <ul className="mt-2 flex flex-wrap gap-1.5">
               {others.map((a) => (
-                <li key={a.key} className="flex items-center gap-1 rounded-full bg-blue-950 px-2.5 py-1 text-xs font-semibold text-amber-300">
+                <li key={a.key} className={`flex items-center gap-1 rounded-full ${look.chip.split(' ')[0]} px-2.5 py-1 text-xs font-semibold ${look.chip.split(' ')[1]}`}>
                   <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
                   {achievementField(a, 'title', locale)}
                 </li>
@@ -95,7 +113,7 @@ export function LeagueWelcomeBody({ items, league, saving, onClose, Title = Dial
         <div className="flex flex-col gap-2 px-6 py-5 sm:flex-row">
           <Button
             type="button"
-            className="flex-1 bg-amber-300 font-bold text-blue-950 hover:bg-amber-200"
+            className={`flex-1 ${look.solid.split(' ')[0]} font-bold ${look.solid.split(' ')[1]} ${look.solidHover}`}
             disabled={saving}
             onClick={() => onClose(true)}
           >
@@ -110,19 +128,20 @@ export function LeagueWelcomeBody({ items, league, saving, onClose, Title = Dial
   );
 }
 
-export default function LeagueWelcome({ items, saving, onClose }: Omit<SceneProps, 'league'>) {
+export default function LeagueWelcome({ items, saving, onClose, theme }: Omit<SceneProps, 'league'>) {
   const [league, setLeague] = useState<MyLeague | null>(null);
   useEffect(() => {
     let alive = true;
     getMyLeague().then((res) => { if (alive) setLeague(res); });
     return () => { alive = false; };
   }, []);
+  const season = welcomeTheme(items, league, theme);
   return (
     <>
-      <Confetti colors={CONFETTI} />
+      <Confetti colors={leagueLook(season, league?.group.name).confetti} />
       <Dialog open onOpenChange={(o) => { if (!o) onClose(false); }}>
         <DialogContent className="max-w-md overflow-hidden rounded-3xl border-0 p-0">
-          <LeagueWelcomeBody items={items} league={league} saving={saving} onClose={onClose} />
+          <LeagueWelcomeBody items={items} league={league} saving={saving} onClose={onClose} theme={theme} />
         </DialogContent>
       </Dialog>
     </>

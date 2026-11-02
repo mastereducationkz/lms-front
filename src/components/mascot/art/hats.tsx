@@ -4,6 +4,7 @@ import { BRAND_BLUE, MasterMark, MERCH_GOLD } from './MasterMark';
 import { BODY_PATH } from './base';
 import { goldMasterHoodie, masterHoodie } from './hoodie';
 import { LEAGUE_HATS } from './leagueHats';
+import { STUDIO_HATS } from './studioHats';
 import { REWARD_HATS } from './rewardHats';
 
 export interface Piece {
@@ -293,4 +294,6 @@ export const HAT_ART: Piece[] = [
   ...REWARD_HATS,
   // Master League rewards: h26 League Jersey, h27 Hat-trick Topper
   ...LEAGUE_HATS,
+  // Master League season 2 «Studio»: h29 Studio Headphones, h30 Vinyl Snapback, h31 Diamond Headphones
+  ...STUDIO_HATS,
 ];

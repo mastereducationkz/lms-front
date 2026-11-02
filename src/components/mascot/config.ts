@@ -13,6 +13,7 @@
  * use free parts.
  */
 import { activeLocale, t, type Locale, type MessageKey } from '@/lib/i18n';
+import type { LeagueTheme } from '@/lib/leagueThemeName';
 import '@/lib/i18n/catalogs/studentHome';
 
 export type MascotCategory = 'hat' | 'eyewear' | 'expression' | 'prop' | 'background' | 'frame';
@@ -65,6 +66,10 @@ export const HATS: MascotPart[] = [
   { key: 'hat_trick_topper', labelKey: 'studentHome.wardrobe.hat.hatTrickTopper' },
   // ── Master League rewards, phase 2 (score-based) ──
   { key: 'golden_laurel', labelKey: 'studentHome.wardrobe.hat.goldenLaurel' },
+  // ── Master League season 2, «Studio» (h29–h31) ──
+  { key: 'studio_headphones', labelKey: 'studentHome.wardrobe.hat.studioHeadphones' },
+  { key: 'vinyl_snapback', labelKey: 'studentHome.wardrobe.hat.vinylSnapback' },
+  { key: 'diamond_headphones', labelKey: 'studentHome.wardrobe.hat.diamondHeadphones' },
 ];
 
 export const EYEWEAR: MascotPart[] = [
@@ -126,6 +131,11 @@ export const PROPS: MascotPart[] = [
   { key: 'gold_clipboard', labelKey: 'studentHome.wardrobe.prop.goldClipboard' },
   // ── Master League rewards, phase 2 ──
   { key: 'summit_flag', labelKey: 'studentHome.wardrobe.prop.summitFlag' },
+  // ── Master League season 2, «Studio» (p31–p34) ──
+  { key: 'vintage_mic', labelKey: 'studentHome.wardrobe.prop.vintageMic' },
+  { key: 'mixing_fader', labelKey: 'studentHome.wardrobe.prop.mixingFader' },
+  { key: 'master_tape', labelKey: 'studentHome.wardrobe.prop.masterTape' },
+  { key: 'chart_arrow', labelKey: 'studentHome.wardrobe.prop.chartArrow' },
 ];
 
 export const BACKGROUNDS: MascotPart[] = [
@@ -148,6 +158,9 @@ export const BACKGROUNDS: MascotPart[] = [
   { key: 'stadium_lights', labelKey: 'studentHome.wardrobe.background.stadiumLights' },
   // ── Master League rewards, phase 2 ──
   { key: 'breakthrough_dawn', labelKey: 'studentHome.wardrobe.background.breakthroughDawn' },
+  // ── Master League season 2, «Studio» (b16–b17) ──
+  { key: 'studio_booth', labelKey: 'studentHome.wardrobe.background.studioBooth' },
+  { key: 'stage_spotlight', labelKey: 'studentHome.wardrobe.background.stageSpotlight' },
 ];
 
 export const FRAMES: MascotPart[] = [
@@ -161,6 +174,9 @@ export const FRAMES: MascotPart[] = [
   { key: 'league_crest', labelKey: 'studentHome.wardrobe.frame.leagueCrest' },
   // ── Master League rewards, phase 2 ──
   { key: 'club_1500_frame', labelKey: 'studentHome.wardrobe.frame.club1500' },
+  // ── Master League season 2, «Studio» (f7–f8) ──
+  { key: 'gold_record', labelKey: 'studentHome.wardrobe.frame.goldRecord' },
+  { key: 'platinum_record', labelKey: 'studentHome.wardrobe.frame.platinumRecord' },
 ];
 
 export const CATEGORY_PARTS: Record<MascotCategory, MascotPart[]> = {
@@ -284,9 +300,14 @@ export interface RewardPart {
   labelKey: MessageKey;
   /** The achievement that unlocks it (shared contract, backend catalogue). */
   achievement: string;
+  /** A Master League part belongs to one season's theme; only a student of that season can earn it. Absent for every other reward. */
+  theme?: LeagueTheme;
 }
 
-const REWARD_ACHIEVEMENT: Record<string, string> = {
+/** A part → its achievement; a Master League part also names its season's theme. */
+type RewardBinding = string | { achievement: string; theme: LeagueTheme };
+
+const REWARD_ACHIEVEMENT: Record<string, RewardBinding> = {
   gold_master_hoodie: 'graduate_gold', diamond_crown: 'top_score', golden_kalpak: 'nauryz',
   explorer_hat: 'checkpoint_pro', warrior_headband: 'weekly_warrior', quiz_cap: 'live_ace',
   garland_scarf: 'winter_lights', team_scarf: 'team_spirit', star_cape: 'star_of_week',
@@ -297,22 +318,38 @@ const REWARD_ACHIEVEMENT: Record<string, string> = {
   lucky_charm: 'test_day_ready', lightning_badge: 'live_wire',
   sparkle: 'hello_kasatik', sunrise: 'early_bird', aurora: 'streak_100',
   flame: 'streak_7', blue_flame: 'streak_30', gold_laurel: 'graduate_gold', star_ring: 'star_of_week_3',
-  // Master League (owner, 2026-10-13)
-  league_jersey: 'ml_signed', league_crest: 'ml_signed', silver_whistle: 'ml_first_whistle',
-  hat_trick_topper: 'ml_hat_trick', squad_pennant: 'ml_full_squad', stadium_lights: 'ml_ever_present',
-  gold_clipboard: 'ml_no_loose_ends',
+  // Master League, season 1 «Football» (owner, 2026-10-13)
+  league_jersey: football('ml_signed'), league_crest: football('ml_signed'), silver_whistle: football('ml_first_whistle'),
+  hat_trick_topper: football('ml_hat_trick'), squad_pennant: football('ml_full_squad'), stadium_lights: football('ml_ever_present'),
+  gold_clipboard: football('ml_no_loose_ends'),
   // Master League, phase 2 (the official result and the mock climb)
-  summit_flag: 'ml_mock_climb', breakthrough_dawn: 'ml_breakthrough', club_1500_frame: 'ml_1500', golden_laurel: 'ml_perfect',
+  summit_flag: football('ml_mock_climb'), breakthrough_dawn: football('ml_breakthrough'), club_1500_frame: football('ml_1500'),
+  golden_laurel: football('ml_perfect'),
+  // Master League, season 2 «Studio» (owner, 2026-11-02): the same ten achievements, the studio's own parts
+  studio_headphones: studio('ml_signed'), gold_record: studio('ml_signed'), vintage_mic: studio('ml_first_whistle'),
+  vinyl_snapback: studio('ml_hat_trick'), mixing_fader: studio('ml_full_squad'), master_tape: studio('ml_no_loose_ends'),
+  studio_booth: studio('ml_ever_present'), diamond_headphones: studio('ml_perfect'), chart_arrow: studio('ml_mock_climb'),
+  stage_spotlight: studio('ml_breakthrough'), platinum_record: studio('ml_1500'),
 };
 
-/** Every reward part, in layer order: (layer, index) → the achievement that unlocks it. */
+function football(achievement: string): RewardBinding {
+  return { achievement, theme: 'football' };
+}
+
+function studio(achievement: string): RewardBinding {
+  return { achievement, theme: 'studio' };
+}
+
+/** Every reward part, in layer order: (layer, index) → the achievement that unlocks it (and a league part's theme). */
 export const REWARD_PARTS: RewardPart[] = SEGMENTS.flatMap(([category, layer]) =>
   CATEGORY_PARTS[category]
     .map((part, index) => ({ part, index }))
     .filter(({ index }) => index >= FREE_COUNTS[category])
-    .map(({ part, index }) => ({
-      layer, category, index, key: part.key, labelKey: part.labelKey, achievement: REWARD_ACHIEVEMENT[part.key],
-    })),
+    .map(({ part, index }) => {
+      const binding = REWARD_ACHIEVEMENT[part.key];
+      const base = { layer, category, index, key: part.key, labelKey: part.labelKey };
+      return typeof binding === 'string' ? { ...base, achievement: binding } : { ...base, achievement: binding.achievement, theme: binding.theme };
+    }),
 );
 
 /** The achievements that belong to Master League: their parts are hidden from students outside it. */
@@ -325,6 +362,21 @@ export const LEAGUE_ACHIEVEMENTS: ReadonlySet<string> = new Set([
 export function isLeaguePart(category: MascotCategory, index: number): boolean {
   const part = REWARD_PARTS.find((r) => r.category === category && r.index === index);
   return !!part && LEAGUE_ACHIEVEMENTS.has(part.achievement);
+}
+
+/** The season a Master League part belongs to; null for every other part. */
+export function leaguePartTheme(category: MascotCategory, index: number): LeagueTheme | null {
+  return REWARD_PARTS.find((r) => r.category === category && r.index === index)?.theme ?? null;
+}
+
+/**
+ * May a student of `theme` see this part in the wardrobe? Every part that is not a league one, yes;
+ * a league part only with league access, and only their own season's (owner, 2026-11-02: a part of
+ * the other theme is never earnable). Drawing any part anywhere else always works.
+ */
+export function isPartOffered(category: MascotCategory, index: number, leagueAccess: boolean, theme: LeagueTheme = 'football'): boolean {
+  if (!isLeaguePart(category, index)) return true;
+  return leagueAccess && (leaguePartTheme(category, index) ?? 'football') === theme;
 }
 
 /** A part's name in the reader's language ('Crown' / «Корона»); '' for an index this build doesn't know. */
@@ -356,13 +408,18 @@ export function rewardPart(category: MascotCategory, index: number): RewardPart 
  * backend doesn't know, and a part nothing can award yet must read as locked, never as owned (saving
  * it would be refused). A student outside the league gets the league parts locked too, which is
  * harmless: the wardrobe hides those anyway.
+ *
+ * With the student's season `theme`, the other season's league parts are locked too: both seasons
+ * share the ten achievements, so a listed «Signed» must not open the other season's headphones or
+ * jersey, whatever an older backend leaves out of `locked_parts`.
  */
-export function withUnlistedRewardsLocked(locked: LockedParts, listedKeys: Iterable<string>): LockedParts {
+export function withUnlistedRewardsLocked(locked: LockedParts, listedKeys: Iterable<string>, theme?: LeagueTheme): LockedParts {
   const listed = new Set(listedKeys);
   const out: LockedParts = {};
   for (const [layer, indices] of Object.entries(locked) as [LayerTag, number[]][]) out[layer] = [...indices];
   for (const r of REWARD_PARTS) {
-    if (listed.has(r.achievement)) continue;
+    const otherSeason = theme !== undefined && r.theme !== undefined && r.theme !== theme;
+    if (listed.has(r.achievement) && !otherSeason) continue;
     const list = (out[r.layer] ??= []);
     if (!list.includes(r.index)) list.push(r.index);
   }

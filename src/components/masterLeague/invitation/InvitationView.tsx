@@ -8,6 +8,7 @@ import type { Locale } from '@/lib/i18n';
 import { useLeagueT } from '../useLeagueLocale';
 import type { InvitationScene } from '@/lib/leagueInvitation';
 import type { LeagueInvitation } from '@/services/api/leagueInvitation';
+import { invitationLook } from '../leagueLook';
 import Decline from './Decline';
 import Facts from './Facts';
 import Hero from './Hero';
@@ -59,8 +60,9 @@ export default function InvitationView(props: InvitationViewProps) {
           savingGroup={saving?.kind === 'accept' ? saving.groupId : null}
           busy={busy}
           onChoose={props.onChoose ?? none}
+          theme={invitation.theme}
         />
-        <Teaser />
+        <Teaser theme={invitation.theme} look={invitationLook(invitation)} />
         <Decline
           confirming={declining}
           saving={saving?.kind === 'decline'}

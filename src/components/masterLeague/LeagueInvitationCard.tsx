@@ -10,6 +10,8 @@ import Orca from '@/components/mascot/Orca';
 import { leagueKitConfig } from '@/components/mascot/leagueKit';
 import { useAuth } from '@/contexts/AuthContext';
 import { cardKind, deadlineCountdown, LEAGUE_INVITATION_PATH, msLeft, tickEvery } from '@/lib/leagueInvitation';
+import { withTheme } from '@/lib/leagueTheme';
+import { invitationLook } from './leagueLook';
 import { useLeagueLocale, useLeagueT } from './useLeagueLocale';
 import type { Locale } from '@/lib/i18n';
 import type { LeagueInvitation } from '@/services/api/leagueInvitation';
@@ -27,22 +29,24 @@ interface ViewProps {
 
 /** The card's picture (data and clock in); `LeagueInvitationCard` adds the fetch and the clock. */
 export function LeagueInvitationCardView({ kind, invitation, now, offset, locale }: ViewProps) {
-  const t = useLeagueT();
+  const t = withTheme(useLeagueT(), invitation.theme);
   const open = kind === 'open';
+  const look = invitationLook(invitation);
+  const [fill, ink] = look.solid.split(' ');
   return (
     <section
       aria-label={t('studentHome.leagueInvite.page')}
-      className="relative isolate mt-2 overflow-hidden rounded-3xl border border-amber-300/40 bg-[linear-gradient(135deg,#07122E_0%,#0B1B4D_45%,#14307A_100%)] text-white shadow-[0_18px_40px_-22px_rgba(11,27,77,0.9)]"
+      className={`relative isolate mt-2 overflow-hidden rounded-3xl border ${look.card}`}
     >
-      <div aria-hidden className="pointer-events-none absolute -bottom-14 -left-8 h-40 w-40 rounded-full bg-amber-300/15 blur-3xl" />
+      <div aria-hidden className={`pointer-events-none absolute -bottom-14 -left-8 h-40 w-40 rounded-full ${look.glow} blur-3xl`} />
       <div className="relative flex flex-wrap items-center gap-x-4 gap-y-3 p-4 @lg:flex-nowrap @lg:p-5">
-        <Orca config={leagueKitConfig()} size={72} title="" className="h-16 w-16 shrink-0 @lg:h-[72px] @lg:w-[72px]" />
+        <Orca config={leagueKitConfig(look.theme)} size={72} title="" className="h-16 w-16 shrink-0 @lg:h-[72px] @lg:w-[72px]" />
         <div className="min-w-0 flex-1 basis-40">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-amber-300">{t('studentHome.leagueInvite.card.eyebrow')}</p>
+          <p className={`text-[11px] font-bold uppercase tracking-[0.16em] ${look.accent}`}>{t('studentHome.leagueInvite.card.eyebrow')}</p>
           <h2 className="mt-0.5 text-lg font-extrabold leading-tight">
             {t(open ? 'studentHome.leagueInvite.card.title' : 'studentHome.leagueInvite.card.pendingTitle')}
           </h2>
-          <p className="mt-0.5 text-sm text-blue-100">
+          <p className={`mt-0.5 text-sm ${look.muted}`}>
             {open
               ? t('studentHome.leagueInvite.card.sub', { time: deadlineCountdown(msLeft(invitation, now, offset), locale) })
               : t('studentHome.leagueInvite.card.pendingSub')}
@@ -51,7 +55,7 @@ export function LeagueInvitationCardView({ kind, invitation, now, offset, locale
         <Link
           to={LEAGUE_INVITATION_PATH}
           className={`inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-1 rounded-2xl px-5 text-sm font-extrabold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white @lg:w-auto ${
-            open ? 'bg-amber-300 text-blue-950 hover:bg-amber-200' : 'bg-white/10 text-amber-200 ring-1 ring-white/20 hover:bg-white/15'
+            open ? `${fill} ${ink} ${look.solidHover}` : `bg-white/10 ${look.accentSoft} ring-1 ring-white/20 hover:bg-white/15`
           }`}
         >
           {t(open ? 'studentHome.leagueInvite.card.cta' : 'studentHome.leagueInvite.card.pendingCta')}

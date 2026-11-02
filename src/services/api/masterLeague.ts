@@ -4,6 +4,7 @@
  * Anything that isn't a live season (not launched, not in a league, season over, an error, an
  * older backend without the route) is `null`: no banner, never a crash.
  */
+import { asLeagueTheme, type LeagueTheme } from '@/lib/leagueThemeName';
 import { api } from './client';
 
 export type LeaguePhase = 'warmup' | 'season' | 'final_week' | 'eve' | 'exam_day' | 'after' | 'over';
@@ -39,6 +40,8 @@ export interface MyLeague {
   homework: { on_time: number; due: number };
   squad_size: number;
   achievements: LeagueGoal[];
+  /** The season's theme (football for cohort 1, studio for cohort 2); football from a backend that does not send it. */
+  theme?: LeagueTheme;
 }
 
 const PHASES: readonly LeaguePhase[] = ['warmup', 'season', 'final_week', 'eve', 'exam_day', 'after', 'over'];
@@ -73,6 +76,7 @@ export function asMyLeague(data: unknown): MyLeague | null {
     attendance: { attended: num(d.attendance?.attended), marked: num(d.attendance?.marked), percent: num(d.attendance?.percent) },
     homework: { on_time: num(d.homework?.on_time), due: num(d.homework?.due) },
     squad_size: num(d.squad_size),
+    theme: asLeagueTheme(d.theme),
     achievements: Array.isArray(d.achievements)
       ? d.achievements
           .filter((a: any) => a && typeof a.key === 'string')
