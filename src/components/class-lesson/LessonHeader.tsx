@@ -10,6 +10,7 @@ import type { MessageKey } from '../../lib/i18n';
 import { useLocale, useT } from '../../lib/i18n/react';
 import type { LessonGroup, LessonStatus, LessonView } from '../../services/api/classLessons';
 import '@/lib/i18n/catalogs/classLesson';
+import { NativeSelect } from '@/components/ui/native-select';
 
 const STATUS: Record<LessonStatus, { label: MessageKey; tone: string }> = {
   upcoming: { label: 'classLesson.status.upcoming', tone: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200' },
@@ -118,14 +119,14 @@ export default function LessonHeader({ view, group, onGroup, sections, onJump, n
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
         {view.groups.length > 1 && (
-          <select
+          <NativeSelect
             value={group?.id ?? ''}
             onChange={(e) => onGroup(Number(e.target.value))}
             className="h-8 rounded-lg border border-border bg-card px-2 text-xs text-foreground"
             aria-label={t('classLesson.header.group')}
           >
             {view.groups.map((g) => <option key={g.id} value={g.id}>{groupLabel(g.name)}</option>)}
-          </select>
+          </NativeSelect>
         )}
         {group && (
           <div className="flex items-center gap-1">

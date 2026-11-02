@@ -10,6 +10,7 @@ import type { OverrideReason } from '../../lib/meetRegister';
 import type { MeetReviewOptions } from '../../services/api/meetAttendance';
 import type { RegisterLock, StudentRegister } from '../../services/api/meetRegister';
 import '@/lib/i18n/catalogs/attendance';
+import { NativeSelect } from '@/components/ui/native-select';
 
 const MARKS: { key: PickMark; tone: string }[] = [
   { key: 'attended', tone: 'bg-emerald-600 text-white border-emerald-600' },
@@ -106,15 +107,15 @@ export function MeetMarkForm({ current, register, lessonMinutes, lock, options, 
 
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground" htmlFor={reasonId}>{t('attendance.popover.reasonLabel')}</label>
-            <select
+            <NativeSelect
               id={reasonId}
               value={reason.code}
               onChange={(e) => setReason({ code: e.target.value, text: e.target.value === 'other' ? reason.text : null })}
-              className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-base md:text-xs"
+              className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-base md:h-8 md:text-xs"
             >
               <option value="" disabled>{t('attendance.popover.choose')}</option>
               {presets.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
-            </select>
+            </NativeSelect>
             {reason.code === 'other' && (
               <textarea
                 aria-label={t('attendance.popover.describe')}

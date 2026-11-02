@@ -11,6 +11,7 @@ import { STAR_REASON_MAX, starQuota, starQuotaLabel, validStarReason } from '@/l
 import { useLocale, useT } from '@/lib/i18n/react';
 import { awardStar, getGroupStars, type GroupStars } from '@/services/api/achievementsUi';
 import '@/lib/i18n/catalogs/achievements';
+import { NativeSelect } from '@/components/ui/native-select';
 
 interface StarOfWeekButtonProps {
   groupId: number;
@@ -108,7 +109,7 @@ export function StarOfWeekDialog({ groupId, students, onClose, initialStudentId 
               <>
                 <label className="block space-y-1.5">
                   <span className="text-sm font-medium">{t('achievements.star.student')}</span>
-                  <select
+                  <NativeSelect
                     value={studentId}
                     onChange={(e) => setStudentId(e.target.value ? Number(e.target.value) : '')}
                     className="h-9 w-full rounded-md border border-input bg-background px-3 text-base sm:text-sm"
@@ -117,7 +118,7 @@ export function StarOfWeekDialog({ groupId, students, onClose, initialStudentId 
                     {students.map((s) => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 </label>
                 <label className="block space-y-1.5">
                   <span className="flex items-center justify-between text-sm font-medium">

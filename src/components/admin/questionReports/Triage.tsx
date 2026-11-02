@@ -8,6 +8,7 @@ import { correctReportTriage, runReportTriage } from '../../../services/api/aiLa
 import type { MessageKey, TFunction } from '../../../lib/i18n';
 import { useT } from '../../../lib/i18n/react';
 import '@/lib/i18n/catalogs/adminPages';
+import { NativeSelect } from '@/components/ui/native-select';
 
 /** Label names and hints in the reader's language (lib/reportTriage keeps the English originals). */
 const LABEL_TEXT: Record<TriageLabel, { name: MessageKey; hint: MessageKey }> = {
@@ -101,11 +102,11 @@ export function TriageBar({ counts, filter, onFilter, sort, onSort, onLabelled }
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <label className="inline-flex items-center gap-1.5 text-muted-foreground">
           {t('adminPages.questionReports.triage.order')}
-          <select value={sort} onChange={(e) => onSort(e.target.value as SortMode)}
-            className="rounded-lg border px-2 py-1 text-xs dark:border-border dark:bg-card dark:text-foreground">
+          <NativeSelect value={sort} onChange={(e) => onSort(e.target.value as SortMode)}
+            className="h-7 rounded-lg border px-2 py-1 text-xs dark:border-border dark:bg-card dark:text-foreground">
             <option value="newest">{t('adminPages.questionReports.triage.newestFirst')}</option>
             <option value="urgent">{t('adminPages.questionReports.triage.urgentFirst')}</option>
-          </select>
+          </NativeSelect>
         </label>
         <button type="button" onClick={() => void run()} disabled={running}
           className="inline-flex items-center gap-1 rounded-lg border px-2 py-1 font-medium hover:bg-muted disabled:opacity-50 dark:border-border">
@@ -153,12 +154,12 @@ export function TriagePanel({ reportId, triage, onChanged }: {
       )}
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <label className="text-xs text-muted-foreground" htmlFor={`triage-${reportId}`}>{t('adminPages.questionReports.triage.yourLabel')}</label>
-        <select id={`triage-${reportId}`} value={triage?.corrected_label ?? ''} disabled={saving}
+        <NativeSelect id={`triage-${reportId}`} value={triage?.corrected_label ?? ''} disabled={saving}
           onChange={(e) => void save((e.target.value || null) as TriageLabel | null)}
-          className="rounded-lg border px-2 py-1 text-xs dark:border-border dark:bg-card dark:text-foreground">
+          className="h-7 rounded-lg border px-2 py-1 text-xs dark:border-border dark:bg-card dark:text-foreground">
           <option value="">{jev ? t('adminPages.questionReports.triage.agreeWithJev', { label: t(LABEL_TEXT[jev.key].name) }) : t('adminPages.questionReports.triage.none')}</option>
           {TRIAGE_LABELS.map((l) => <option key={l.key} value={l.key}>{t(LABEL_TEXT[l.key].name)}</option>)}
-        </select>
+        </NativeSelect>
         {saving && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
         {error && <span className="text-xs text-rose-600 dark:text-rose-400">{error}</span>}
       </div>

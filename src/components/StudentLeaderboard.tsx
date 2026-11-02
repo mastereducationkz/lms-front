@@ -7,29 +7,7 @@ import apiClient from '../services/api';
 import UserAvatar from '@/components/mascot/UserAvatar';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/studentHome';
-
-interface LeaderboardEntry {
-  rank: number;
-  user_id: number;
-  user_name: string;
-  avatar_url: string | null;
-  mascot?: string | null;
-  steps_completed: number;
-  time_spent_minutes: number;
-  is_current_user: boolean;
-}
-
-interface LeaderboardData {
-  group_id: number | null;
-  group_name: string | null;
-  leaderboard: LeaderboardEntry[];
-  current_user_rank: number;
-  current_user_entry: LeaderboardEntry | null;
-  current_user_title: string;
-  total_participants: number;
-  period: string;
-  steps_to_next_rank: number;
-}
+import { NativeSelect } from '@/components/ui/native-select';
 
 type SelfRankSummary = {
   rank: number;
@@ -202,7 +180,7 @@ export default function StudentLeaderboard() {
         {/* Only show group selector if in group mode and has multiple groups */}
         {scope === 'group' && myGroups.length > 1 && (
           <div className="flex gap-2">
-            <select
+            <NativeSelect
               value={selectedGroupId || ''}
               onChange={(e) => setSelectedGroupId(Number(e.target.value))}
               className="w-full text-sm p-2 border border-gray-200 dark:border-border rounded-lg bg-gray-50 dark:bg-secondary focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-medium text-gray-700 dark:text-gray-300"
@@ -210,7 +188,7 @@ export default function StudentLeaderboard() {
               {myGroups.map(g => (
                 <option key={g.id} value={g.id}>{g.name}</option>
               ))}
-            </select>
+            </NativeSelect>
           </div>
         )}
       </CardHeader>

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiError } from '../../services/api/apiError';
 import { act } from 'react';
 import { button, click, mount, pick, settle, text, type, unmount, upload } from '../../pages/publicWebinarsTestKit';
+import { dropdownText, dropdownValue, optionLabels } from '../../test/dropdown';
 
 vi.mock('../../contexts/AuthContext', async () => {
   const { createContext } = await import('react');
@@ -66,8 +67,7 @@ describe('a webinar’s public access card', () => {
     await click(button('Edit address'));
     await type('#ow-slug', 'my-webinar');
     await click(presenter('speaker'));
-    const speakers = document.querySelector('#ow-speaker') as HTMLSelectElement;
-    expect(Array.from(speakers.options).map((o) => o.textContent)).toEqual(['Choose the guest speaker', 'Dr. Guest, Some University']);
+    expect(await optionLabels('#ow-speaker')).toEqual(['Choose the guest speaker', 'Dr. Guest, Some University']);
     await pick('#ow-speaker', '3');
     await choosePipeline();
     api.getOpenAccess.mockResolvedValue(opened);
@@ -85,9 +85,8 @@ describe('a webinar’s public access card', () => {
     await show();
     for (const mode of ['open', 'registration']) {
       await click(radio(mode));
-      const select = document.querySelector('#ow-pipeline') as HTMLSelectElement;
-      expect(select.value).toBe('');
-      expect(select.options[0].textContent).toBe('Choose the pipeline');
+      expect(dropdownValue('#ow-pipeline')).toBe('');
+      expect(dropdownText('#ow-pipeline')).toBe('Choose the pipeline');
       expect(saveButton().disabled).toBe(true);
     }
     await choosePipeline('10736538');
@@ -97,7 +96,7 @@ describe('a webinar’s public access card', () => {
   it('keeps the saved pipeline of a webinar that is already open', async () => {
     api.getOpenAccess.mockResolvedValue(opened);
     await show();
-    expect((document.querySelector('#ow-pipeline') as HTMLSelectElement).value).toBe('10736538');
+    expect(dropdownValue('#ow-pipeline')).toBe('10736538');
   });
 
   it('will not offer registration until a privacy policy is published, and says where to publish it', async () => {
@@ -318,9 +317,8 @@ describe('the guest speaker', () => {
     api.listGuestSpeakers.mockResolvedValue([speaker, { ...speaker, id: 9, name: 'Dr. Gone', organisation: null, is_active: false }]);
     await show();
     expect(api.listGuestSpeakers).toHaveBeenCalledWith(9);
-    const select = document.querySelector('#ow-speaker') as HTMLSelectElement;
-    expect(select.value).toBe('9');
-    expect(Array.from(select.options).map((o) => o.textContent)).toContain('Dr. Gone (removed)');
+    expect(dropdownValue('#ow-speaker')).toBe('9');
+    expect(await optionLabels('#ow-speaker')).toContain('Dr. Gone (removed)');
   });
 });
 

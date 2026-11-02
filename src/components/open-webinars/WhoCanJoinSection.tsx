@@ -11,6 +11,7 @@ import type { AccessMode, GuestSpeaker, Pipeline, Presenter } from '../../servic
 import { LMS_ORIGIN } from '../../lib/lessonLinks';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/openWebinars';
+import { NativeSelect } from '@/components/ui/native-select';
 
 const MODES: AccessMode[] = ['students', 'open', 'registration'];
 const PRESENTERS: Presenter[] = ['speaker', 'host', 'none'];
@@ -127,14 +128,14 @@ export default function WhoCanJoinSection({
           {presenterOf(draft) === 'speaker' && (
             <div className="space-y-1.5">
               <Label htmlFor="ow-speaker">{t('openWebinars.admin.access.speaker')}</Label>
-              <select id="ow-speaker" className={FIELD} disabled={disabled} value={draft.speakerId ?? ''} onChange={(e) => set({ speakerId: e.target.value ? Number(e.target.value) : null })}>
+              <NativeSelect id="ow-speaker" className={FIELD} disabled={disabled} value={draft.speakerId ?? ''} onChange={(e) => set({ speakerId: e.target.value ? Number(e.target.value) : null })}>
                 <option value="" disabled>{t('openWebinars.admin.access.presenter.speakerPlaceholder')}</option>
                 {speakers.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}{s.organisation ? `, ${s.organisation}` : ''}{s.is_active === false ? ` (${t('openWebinars.admin.access.speakerRemoved')})` : ''}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
               {draft.speakerId === null && <p role="alert" data-speaker-required className="text-xs text-amber-800 dark:text-amber-300">{t('openWebinars.admin.access.presenter.speakerRequired')}</p>}
               <Link to="/admin/open-webinars" className="text-xs text-primary underline-offset-4 hover:underline">{t('openWebinars.admin.access.manageSpeakers')}</Link>
             </div>
@@ -142,10 +143,10 @@ export default function WhoCanJoinSection({
 
           <div className="space-y-1.5">
             <Label htmlFor="ow-pipeline">{t('openWebinars.admin.access.pipeline')}</Label>
-            <select id="ow-pipeline" className={FIELD} disabled={disabled} value={draft.pipelineId ?? ''} onChange={(e) => set({ pipelineId: e.target.value ? Number(e.target.value) : null })}>
+            <NativeSelect id="ow-pipeline" className={FIELD} disabled={disabled} value={draft.pipelineId ?? ''} onChange={(e) => set({ pipelineId: e.target.value ? Number(e.target.value) : null })}>
               <option value="" disabled>{t('openWebinars.admin.access.pipelinePlaceholder')}</option>
               {pipelines.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
+            </NativeSelect>
           </div>
 
           <BannerField value={draft.bannerUrl} onChange={(bannerUrl) => set({ bannerUrl })} disabled={disabled} />

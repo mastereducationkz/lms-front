@@ -2,6 +2,7 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { pickValue } from '../../test/dropdown';
 
 // useT() reads AuthContext, whose module pulls the API client in (localStorage at module scope).
 vi.mock('../../contexts/AuthContext', async () => {
@@ -45,8 +46,7 @@ afterEach(async () => {
 });
 
 const setSelect = async (id: string, value: string) => {
-  const el = host.querySelector(`#${id}`) as HTMLSelectElement;
-  await act(async () => { el.value = value; el.dispatchEvent(new Event('change', { bubbles: true })); });
+  await pickValue(host.querySelector(`#${id}`), value);
   await settle();
 };
 

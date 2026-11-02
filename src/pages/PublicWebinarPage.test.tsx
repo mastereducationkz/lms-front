@@ -1,6 +1,20 @@
 // @vitest-environment jsdom
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// The dropdown reads the signed-in user's locale, which pulls in the API client; it reads stored tokens on import.
+vi.hoisted(() => {
+  const data = new Map<string, string>();
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem: (k: string) => data.get(k) ?? null,
+      setItem: (k: string, v: string) => void data.set(k, v),
+      removeItem: (k: string) => void data.delete(k),
+      clear: () => data.clear(),
+    },
+  });
+});
 import PublicWebinarPage from './PublicWebinarPage';
 import { act } from 'react';
 import { backendBase } from '../lib/mediaUrl';

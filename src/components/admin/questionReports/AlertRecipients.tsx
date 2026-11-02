@@ -6,6 +6,7 @@ import { getAlertState, sendAlertTest, setAlertRecipients, type AlertState } fro
 import { roleLabel } from '@/lib/roleLabel';
 import { useT } from '../../../lib/i18n/react';
 import '@/lib/i18n/catalogs/adminPages';
+import { NativeSelect } from '@/components/ui/native-select';
 
 /**
  * «Telegram alerts» on the question-reports page: who is told about a new report as a personal Telegram message,
@@ -72,10 +73,10 @@ export default function AlertRecipients() {
             </ul>
             {waiting > 0 && <p className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">{t('adminPages.questionReports.alerts.connectHint')}</p>}
             <div className="flex flex-wrap items-center gap-2">
-              <select aria-label={t('adminPages.questionReports.alerts.addLabel')} value={pick} onChange={(e) => setPick(e.target.value)} className="h-9 min-w-[14rem] rounded-md border border-input bg-background px-3 text-sm">
+              <NativeSelect aria-label={t('adminPages.questionReports.alerts.addLabel')} value={pick} onChange={(e) => setPick(e.target.value)} className="h-9 min-w-[14rem] rounded-md border border-input bg-background px-3 text-sm">
                 <option value="">{t('adminPages.questionReports.alerts.addPlaceholder')}</option>
                 {state.candidates.map((c) => <option key={c.user_id} value={c.user_id}>{c.name} ({roleLabel(c.role)}){c.linked ? ' ✓' : ''}</option>)}
-              </select>
+              </NativeSelect>
               <Button type="button" size="sm" disabled={busy || !pick} onClick={() => change([...ids, Number(pick)])}>{t('adminPages.questionReports.alerts.add')}</Button>
             </div>
             {note && <p role={note.kind === 'error' ? 'alert' : 'status'} className={note.kind === 'error' ? 'text-sm text-red-600 dark:text-red-400' : 'text-sm text-green-700 dark:text-green-400'}>{note.text}</p>}
