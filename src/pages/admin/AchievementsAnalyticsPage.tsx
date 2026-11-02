@@ -107,7 +107,7 @@ export default function AchievementsAnalyticsPage() {
             </p>
           )}
 
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
             <Section className="lg:col-span-2" title={t('achievements.analytics.trendTitle')}
               subtitle={t('achievements.analytics.trendSubtitle')}>
               <TrendChart trend={data.trend} />
@@ -133,7 +133,7 @@ export default function AchievementsAnalyticsPage() {
             <RarityTable items={data.achievements} />
           </Section>
 
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <Section title={data.scope.kind === 'group' ? t('achievements.analytics.group') : t('achievements.analytics.groups')}
               subtitle={t('achievements.analytics.groupsSubtitle')}>
               <GroupsTable groups={data.groups} onPick={data.scope.kind === 'school' ? setGroupId : undefined} />
@@ -149,7 +149,7 @@ export default function AchievementsAnalyticsPage() {
             <StarsByStaff stars={data.stars} />
           </Section>
 
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <Section title={t('achievements.analytics.streaksTitle')}
               subtitle={t('achievements.analytics.streaksSubtitle', {
                 onStreak: data.streaks.students_on_a_streak, avg: data.streaks.avg_current, best: data.streaks.best_longest,

@@ -68,7 +68,7 @@ afterEach(async () => {
 const NOTE = 'Everyone who registered is told it is cancelled.';
 /** Opens the ⋯ menu of the row titled `title` and clicks Delete. */
 async function deleteRow(title: string) {
-  const row = Array.from(host.querySelectorAll('h3')).find((h) => h.textContent === title)!.closest('div.p-6') as HTMLElement;
+  const row = Array.from(host.querySelectorAll('h3')).find((h) => h.textContent === title)!.closest('[data-event-row]') as HTMLElement;
   const trigger = Array.from(row.querySelectorAll('button')).pop() as HTMLButtonElement;
   await act(async () => { trigger.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true, button: 0 })); });
   const item = Array.from(document.body.querySelectorAll('[role="menuitem"]')).find((i) => i.textContent?.includes('Delete')) as HTMLElement;
@@ -132,7 +132,7 @@ describe('Manage events: deleting a webinar that is open to everyone', () => {
     getPublicSummary.mockImplementation(async (id: number) => ({ open: id === 20 }));
     api.bulkDeleteEvents.mockRejectedValue(apiError({ response: { data: { detail: 'It stays as history.', reason_code: 'webinar_public_delete' } } }, 'Failed to delete events'));
     await show();
-    for (const box of Array.from(host.querySelectorAll('div.p-6 input[type="checkbox"]'))) await act(async () => { (box as HTMLInputElement).click(); });
+    for (const box of Array.from(host.querySelectorAll('[data-event-row] input[type="checkbox"]'))) await act(async () => { (box as HTMLInputElement).click(); });
     const bulk = Array.from(document.body.querySelectorAll('button')).find((b) => b.textContent?.includes('Delete')) as HTMLButtonElement;
     await act(async () => { bulk.click(); });
     await settle();

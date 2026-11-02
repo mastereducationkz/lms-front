@@ -154,7 +154,7 @@ export default function WeeklyTopStudentsPage() {
   const needsAttention = data?.needs_attention ?? [];
 
   return (
-    <div className="max-w-[100rem] mx-auto px-6 sm:px-8 py-8 space-y-6">
+    <div className="max-w-[100rem] mx-auto px-0 sm:px-8 py-2 sm:py-8 space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-1">
@@ -174,11 +174,11 @@ export default function WeeklyTopStudentsPage() {
           {/* Week navigation */}
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">{t('adminPages.weeklyTop.week')}</Label>
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               <Button variant="outline" size="icon" onClick={() => setWeekStart(toISO(addDays(new Date(weekStart), -7)))}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <div className="min-w-[150px] text-center text-sm font-medium tabular-nums px-2">
+              <div className="sm:min-w-[150px] text-center text-sm font-medium tabular-nums px-1 sm:px-2">
                 {fmtRange(weekStart)}
               </div>
               <Button
@@ -200,7 +200,7 @@ export default function WeeklyTopStudentsPage() {
           {/* Top-N */}
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">{t('adminPages.weeklyTop.topN')}</Label>
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               <Input
                 type="number"
                 min={1}
@@ -209,7 +209,7 @@ export default function WeeklyTopStudentsPage() {
                 onChange={(e) => setLimitInput(e.target.value)}
                 onBlur={commitLimit}
                 onKeyDown={(e) => e.key === 'Enter' && commitLimit()}
-                className="w-24"
+                className="w-16 sm:w-24"
               />
               {PRESETS.map((p) => (
                 <Button

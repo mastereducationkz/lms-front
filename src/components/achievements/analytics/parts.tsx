@@ -31,7 +31,7 @@ export function Section({ title, subtitle, action, children, className = '' }: {
   title: string; subtitle?: string; action?: ReactNode; children: ReactNode; className?: string;
 }) {
   return (
-    <section className={`rounded-2xl border border-border bg-card p-5 shadow-sm ${className}`}>
+    <section className={`min-w-0 rounded-2xl border border-border bg-card p-5 shadow-sm ${className}`}>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-base font-semibold text-foreground">{title}</h2>

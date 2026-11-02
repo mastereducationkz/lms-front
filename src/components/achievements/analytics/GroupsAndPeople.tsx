@@ -40,7 +40,7 @@ export function GroupsTable({ groups, onPick }: { groups: AnalyticsGroup[]; onPi
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">{g.name}</p>
                 <div className="mt-1 flex items-center gap-2">
-                  <div className="h-1.5 w-28 rounded-full bg-muted dark:bg-secondary">
+                  <div className="h-1.5 w-20 shrink-0 rounded-full bg-muted dark:bg-secondary sm:w-28">
                     <div className="h-1.5 rounded-full bg-brand-solid" style={{ width: `${Math.round((g.avg_achievements / best) * 100)}%` }} />
                   </div>
                   <span className="text-xs text-muted-foreground tabular-nums">

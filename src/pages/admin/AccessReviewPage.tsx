@@ -108,7 +108,7 @@ export default function AccessReviewPage() {
   const review = data?.review ?? null;
   const rows = filterRows(data?.rows ?? [], filter);
   const tabClass = (active: boolean) =>
-    `rounded-md px-3 py-1.5 text-sm font-medium ${active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`;
+    `shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ${active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`;
 
   return (
     <div className="mx-auto max-w-[96rem] space-y-5">
@@ -181,7 +181,7 @@ export default function AccessReviewPage() {
 
       {review?.status === 'ready' && (
         <>
-          <div role="tablist" className="inline-flex gap-1 rounded-lg bg-muted p-1">
+          <div role="tablist" className="inline-flex max-w-full flex-wrap gap-1 rounded-lg bg-muted p-1">
             {FILTERS.map((f) => (
               <button key={f} role="tab" aria-selected={filter === f} className={tabClass(filter === f)} onClick={() => setFilter(f)}>
                 {t(`offboarding.review.filter.${f}`)}

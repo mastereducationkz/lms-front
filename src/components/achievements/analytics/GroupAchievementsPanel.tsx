@@ -79,7 +79,7 @@ export default function GroupAchievementsPanel({ groupId }: { groupId: number })
                 <StatCard label={t('achievements.group.onStreak')} value={data.streaks.students_on_a_streak}
                   hint={t('achievements.group.record', { days: data.streaks.best_longest })} accent="text-orange-600 dark:text-orange-400" />
               </div>
-              <div className="grid gap-5 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div>
                   <p className="mb-1 text-xs font-medium text-muted-foreground">{t('achievements.mostAchievements')}</p>
                   {top.length ? (
