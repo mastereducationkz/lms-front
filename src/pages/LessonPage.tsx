@@ -23,6 +23,7 @@ import FlashcardViewer from '../components/lesson/FlashcardViewer';
 import QuizRenderer from '../components/lesson/QuizRenderer';
 import SummaryStepRenderer from '../components/lesson/SummaryStepRenderer';
 import TextLookupPopover from '../components/lesson/TextLookupPopover';
+import { AnnotationLayer, annotationBlock } from '../components/annotations/AnnotationLayer';
 import { lookupAllowed } from '../components/lesson/lookup/selection';
 import { toast } from '../components/Toast';
 import { getAnswerKey, scoreQuiz } from '../components/lesson/quiz/scoring';
@@ -1967,6 +1968,7 @@ export default function LessonPage() {
             <div ref={textContentRef} className="relative">
               {/* Text Lookup Popover */}
               <TextLookupPopover containerRef={textContentRef} enabled={lookupAllowed('text', lesson?.kind)} />
+              <AnnotationLayer surface="lesson" targetId={currentStep.id} scope={`lesson:${currentStep.id}`} lookupBelow={lookupAllowed('text', lesson?.kind)} />
               
               {/* Special "Read explanation" text above everything */}
               {currentStep.content_text && currentStep.content_text.includes("Read the explanation and make notes.") && (
@@ -1977,7 +1979,7 @@ export default function LessonPage() {
   
               {renderAttachments(currentStep.attachments)}
               <div className="prose dark:prose-invert max-w-none">
-                <div dangerouslySetInnerHTML={{ 
+                <div {...annotationBlock(`lesson:${currentStep.id}`, 'body')} dangerouslySetInnerHTML={{ 
                   __html: sanitizeHtml(renderTextWithLatex(
                     (currentStep.content_text || '').replace(/<p><strong>Read the explanation and make notes.<\/strong><\/p>/g, '')
                   )) 
@@ -2020,6 +2022,7 @@ export default function LessonPage() {
             <div ref={textContentRef} className="space-y-4 relative">
               {/* Text Lookup Popover */}
               <TextLookupPopover containerRef={textContentRef} enabled={lookupAllowed('video_text', lesson?.kind)} />
+              <AnnotationLayer surface="lesson" targetId={currentStep.id} scope={`lesson:${currentStep.id}`} lookupBelow={lookupAllowed('video_text', lesson?.kind)} />
   
               {/* Special "Watch explanations" text above video */}
               {currentStep.content_text && currentStep.content_text.includes("Watch the explanations for the previous questions") && (
@@ -2085,7 +2088,7 @@ export default function LessonPage() {
   
               {currentStep.content_text && (
                 <div className="prose dark:prose-invert max-w-none">
-                  <div dangerouslySetInnerHTML={{ 
+                  <div {...annotationBlock(`lesson:${currentStep.id}`, 'body')} dangerouslySetInnerHTML={{ 
                     __html: sanitizeHtml(renderTextWithLatex(
                       cleanVideoContentText.replace(/<p><strong>Watch the explanations for the previous questions<\/strong><\/p>/g, '')
                     )) 
