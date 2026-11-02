@@ -13,7 +13,10 @@
 import React, { useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { StickyNote } from 'lucide-react';
-import { anchorForQuote, anchorFromRange, blockText, rangeFromOffsets, resolveAnchor, type Anchor } from '../../lib/annotations/anchor';
+import { MAX_QUOTE_CHARS, anchorForQuote, anchorFromRange, blockText, rangeFromOffsets, resolveAnchor, type Anchor } from '../../lib/annotations/anchor';
+
+/** The server takes at most this many items per import. */
+const MAX_IMPORT_ITEMS = 200;
 import { clearLayer, paintLayer, supportsHighlightApi, type AnnotationColor, type PaintEntry } from '../../lib/annotations/paint';
 import { importAnnotations, type AnnotationSurface } from '../../services/api/annotations';
 import { reportUsage } from '../../services/api/usage';
@@ -205,13 +208,17 @@ export function AnnotationLayer({ surface, targetId, scope, attempt = 'current',
         anchor = el ? anchorForQuote(el, h.quote) : null;
         if (anchor) { key = k; break; }
       }
-      if (anchor) moved.push({ block_key: key, color: h.color, start_offset: anchor.start, end_offset: anchor.end, quote: anchor.quote, prefix: anchor.prefix, suffix: anchor.suffix });
-      else if (h.blockKeys.some((k) => !found.has(k))) left.push(h); // its question isn't rendered now
+      // The server refuses the whole batch for one bad item: leave out what it would refuse
+      // (an old highlight longer than a quote may be) — those are simply dropped.
+      if (anchor && anchor.quote.length <= MAX_QUOTE_CHARS) moved.push({ block_key: key, color: h.color, start_offset: anchor.start, end_offset: anchor.end, quote: anchor.quote, prefix: anchor.prefix, suffix: anchor.suffix });
+      else if (!anchor && h.blockKeys.some((k) => !found.has(k))) left.push(h); // its question isn't rendered now
     }
     if (!moved.length) { legacy.keep(left); return; }
-    importAnnotations(surface, targetId, moved)
+    importAnnotations(surface, targetId, moved.slice(0, MAX_IMPORT_ITEMS))
       .then(() => { legacy.keep(left); reload(); })
-      .catch(() => { imported.current = false; });
+      // One try per visit: this effect runs after every render, so retrying here would resend a
+      // refused batch on each one. The old highlights stay on the device for the next visit.
+      .catch((error) => reportError(error, { where: 'annotations.import', surface }));
   });
 
   // ── opening the toolbar ─────────────────────────────────────────────────────────────────────

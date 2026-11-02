@@ -34,12 +34,13 @@ const saved = {
 
 let root: Root | null = null;
 let block: HTMLParagraphElement;
+let rerender: () => Promise<void>;
 
 async function show(props: Partial<React.ComponentProps<typeof AnnotationLayer>> = {}) {
   const host = document.createElement('div');
   document.body.appendChild(host);
   root = createRoot(host);
-  await act(async () => {
+  rerender = () => act(async () => {
     root!.render(
       <div>
         <p data-annotation-scope="quiz:5" data-annotation-block="q:1:p">{TEXT}</p>
@@ -47,6 +48,7 @@ async function show(props: Partial<React.ComponentProps<typeof AnnotationLayer>>
       </div>,
     );
   });
+  await rerender();
   await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
   block = document.querySelector('p')!;
 }
@@ -151,4 +153,20 @@ describe('AnnotationLayer', () => {
     })]);
     expect(keep).toHaveBeenCalledWith([old[1]]);
   });
+
+  it('tries the import once per visit: a refused batch is not resent on every render', async () => {
+    api.importAnnotations.mockRejectedValue(Object.assign(new Error('422'), { response: { status: 422 } }));
+    const old: LegacyHighlight[] = [{ blockKeys: ['q:1:p'], quote: 'seeds frozen', color: 'blue' }];
+    const keep = vi.fn();
+    await show({ legacy: { read: () => old, keep } });
+    await wait(0);
+    // more renders of the page around the layer
+    for (let i = 0; i < 3; i++) {
+      await rerender();
+      await wait(20);
+    }
+    expect(api.importAnnotations).toHaveBeenCalledTimes(1);
+    expect(keep).not.toHaveBeenCalled();
+  });
 });
+
