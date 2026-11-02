@@ -74,8 +74,8 @@ function Idle({ link }: { link: string }) {
   return (
     <div className="flex flex-col items-center gap-6 text-center">
       {qr && <img src={qr} alt={t('chatLive.live.qrFor', { link })} className="h-[min(52vh,26rem)] w-auto rounded-2xl bg-card p-3" />}
-      <p className="text-4xl font-bold tracking-tight">{link.replace(/^https:\/\//, '')}</p>
-      <p className="text-2xl text-muted-foreground">{t('chatLive.live.idleHint')}</p>
+      <p className="max-w-full break-all text-2xl font-bold tracking-tight sm:text-4xl">{link.replace(/^https:\/\//, '')}</p>
+      <p className="text-lg text-muted-foreground sm:text-2xl">{t('chatLive.live.idleHint')}</p>
     </div>
   );
 }

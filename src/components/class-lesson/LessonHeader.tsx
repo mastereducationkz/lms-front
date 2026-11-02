@@ -61,7 +61,9 @@ export default function LessonHeader({ view, group, onGroup, sections, onJump, n
         stuck.on ? 'rounded-b-2xl border-t-0' : 'rounded-2xl',
       )}
     >
-      <div className="flex items-start gap-3">
+      {/* Phones: the join pill wraps onto its own row under the title (it used to squeeze the
+          title to «NUET Augus…» and the teacher to one word per line). */}
+      <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
         <Link
           to="/calendar"
           className="mt-0.5 inline-flex h-8 w-8 flex-none items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -70,7 +72,7 @@ export default function LessonHeader({ view, group, onGroup, sections, onJump, n
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 basis-[13rem]">
           <div className="flex flex-wrap items-center gap-2">
             <span className={cn('rounded-full px-2 py-0.5 text-[11px] font-semibold', status.tone)}>
               {view.status === 'live' && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500 align-middle" />}
@@ -100,14 +102,14 @@ export default function LessonHeader({ view, group, onGroup, sections, onJump, n
               href={view.join.url ?? undefined}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex flex-none items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="ml-11 inline-flex flex-none items-center gap-1.5 rounded-xl bg-emerald-600 sm:ml-0 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             >
               <Video className="h-4 w-4" aria-hidden />
               {t('classLesson.header.join')}
             </a>
           ) : (
             <span
-              className="inline-flex flex-none cursor-not-allowed items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground"
+              className="ml-11 inline-flex flex-none cursor-not-allowed items-center sm:ml-0 gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground"
               title={t('classLesson.header.joinOpensHint')}
             >
               <Video className="h-4 w-4" aria-hidden />

@@ -624,17 +624,17 @@ export default function AssignmentBuilderPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center text-foreground">
+      {/* Header: on phones the actions go under the title, so the title keeps the width */}
+      <div className="flex flex-col gap-3 @xl:flex-row @xl:items-center @xl:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl @xl:text-3xl font-bold flex items-center text-foreground">
             {isEditing ? t('homeworkStaff.builder.titleEdit') : copyFromId ? t('homeworkStaff.builder.titleCopy') : t('homeworkStaff.builder.titleCreate')}
           </h1>
           <p className="text-muted-foreground  mt-1">
             {isEditing ? t('homeworkStaff.builder.subtitleEdit') : t('homeworkStaff.builder.subtitleCreate')}
           </p>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2 shrink-0">
           <Button
             onClick={() => setPreviewMode(!previewMode)}
             variant={previewMode ? "default" : "outline"}

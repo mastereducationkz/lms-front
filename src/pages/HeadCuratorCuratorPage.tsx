@@ -114,15 +114,15 @@ export default function HeadCuratorCuratorPage() {
                     <ChevronLeft className="mr-2 h-4 w-4" /> {t('curatorPages.curatorDetail.backToDashboard')}
                 </Button>
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-4">
-                        <Avatar className="h-14 w-14">
+                    <div className="flex items-center gap-4 min-w-0">
+                        <Avatar className="h-14 w-14 shrink-0">
                             <AvatarFallback className="bg-brand-subtle text-brand-subtle-foreground font-bold text-xl">
                                 {curator.name.charAt(0)}
                             </AvatarFallback>
                         </Avatar>
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-foreground">{curator.name}</h1>
-                            <p className="text-muted-foreground">{curator.email}</p>
+                        <div className="min-w-0">
+                            <h1 className="text-2xl @xl:text-3xl font-bold tracking-tight text-foreground break-words">{curator.name}</h1>
+                            <p className="text-muted-foreground break-all">{curator.email}</p>
                         </div>
                     </div>
                     <OffboardButton userId={curator.id} name={curator.name} role="curator" />
@@ -223,15 +223,16 @@ export default function HeadCuratorCuratorPage() {
                     <Accordion type="multiple" className="w-full">
                         {curator.groups.map((group) => (
                             <AccordionItem key={group.id} value={`group-${group.id}`} className="border-b last:border-b-0">
-                                <AccordionTrigger className="px-6 py-4 hover:bg-muted/60 hover:no-underline">
-                                    <div className="flex items-center justify-between w-full pr-4">
-                                        <div className="flex items-center gap-4">
-                                            <div>
+                                <AccordionTrigger className="px-4 @xl:px-6 py-4 hover:bg-muted/60 hover:no-underline">
+                                    {/* Phones: the badges and «Лидерборд» wrap under the group name */}
+                                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 w-full min-w-0 pr-2 @xl:pr-4">
+                                        <div className="flex items-center gap-4 min-w-0 basis-full @xl:basis-auto">
+                                            <div className="min-w-0">
                                                 <p className="font-semibold text-foreground text-left">{group.name}</p>
                                                 <p className="text-sm text-muted-foreground text-left">{t('curatorPages.curatorDetail.studentCount', { count: group.student_count })}</p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex flex-wrap items-center gap-2 @xl:gap-3">
                                             {group.overdue_count > 0 && (
                                                 <Badge variant="destructive" className="text-xs">
                                                     {t('curatorPages.curatorDetail.overdueCount', { count: group.overdue_count })}
@@ -243,7 +244,7 @@ export default function HeadCuratorCuratorPage() {
                                             <Button 
                                                 variant="ghost" 
                                                 size="sm" 
-                                                className="text-brand hover:text-brand-subtle-foreground hover:bg-brand-surface"
+                                                className="h-7 px-1.5 @xl:h-9 @xl:px-3 text-brand hover:text-brand-subtle-foreground hover:bg-brand-surface"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     navigate(`/curator/leaderboard?groupId=${group.id}`);
@@ -254,7 +255,7 @@ export default function HeadCuratorCuratorPage() {
                                         </div>
                                     </div>
                                 </AccordionTrigger>
-                                <AccordionContent className="px-6 pb-4 bg-slate-50/30 dark:bg-muted/40">
+                                <AccordionContent className="px-2 @xl:px-6 pb-4 bg-slate-50/30 dark:bg-muted/40">
                                     {group.students.length === 0 ? (
                                         <p className="text-center text-muted-foreground italic py-4">{t('curatorPages.curatorDetail.noStudents')}</p>
                                     ) : (

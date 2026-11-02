@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import UserAvatar from '@/components/mascot/UserAvatar';
-import { BellOff, Info, Paperclip, Reply as ReplyIcon, X } from 'lucide-react';
+import { ArrowLeft, BellOff, Info, Paperclip, Reply as ReplyIcon, X } from 'lucide-react';
+import { chatPaneClasses } from '../components/chat/chatPanes';
 import { connectSocket } from '../services/socket';
 import { useVisiblePolling } from '../hooks/useVisiblePolling';
 import { ChatAttachment } from '../components/chat/ChatAttachment';
@@ -602,10 +603,19 @@ export default function ChatPage() {
     }
   };
 
+  // Phones: the list OR the open conversation, not both stacked (see chatPaneClasses).
+  const panes = chatPaneClasses(activePartnerId !== null || activeGroupConvId !== null);
+  const closeConversation = () => {
+    setActivePartnerId(null);
+    setActiveGroupConvId(null);
+    setReplyingTo(null);
+    setMessages([]);
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 h-[calc(100vh-200px)] min-h-0">
       {/* Список разговоров */}
-      <Card className="lg:col-span-4 flex flex-col min-h-0">
+      <Card className={`lg:col-span-4 ${panes.list} flex-col min-h-0`}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="text-lg font-semibold">
             {currentUser?.role === 'student' ? tr('chatLive.chat.titleStudent') : tr('chatLive.chat.titleStaff')}
@@ -903,14 +913,24 @@ export default function ChatPage() {
       </Card>
 
       {/* Область сообщений */}
-      <Card className="lg:col-span-8 flex flex-col min-h-0 order-last lg:order-none">
+      <Card className={`lg:col-span-8 ${panes.conversation} flex-col min-h-0 order-last lg:order-none`}>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`${panes.back} -ml-2 shrink-0`}
+              onClick={closeConversation}
+              aria-label={tr('common.back')}
+              title={tr('common.back')}
+            >
+              <ArrowLeft className="w-5 h-5" aria-hidden="true" />
+            </Button>
             <button
               type="button"
               disabled={!activePartnerId}
               onClick={() => { if (activePartnerId) setShowInfo(true); }}
-              className={`flex items-center gap-2 min-w-0 text-left ${activePartnerId ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}`}
+              className={`flex flex-1 items-center gap-2 min-w-0 text-left ${activePartnerId ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}`}
               aria-label={activePartnerId ? tr('chatLive.chat.openInfo') : undefined}
             >
               <CardTitle className="text-lg font-semibold truncate">

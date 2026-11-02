@@ -323,11 +323,13 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-2 flex-1">
-                    <GripVertical className="w-5 h-5 text-muted-foreground" />
-                    <Icon className="w-5 h-5 text-brand" />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
+                  {/* Phones: the bonus / points / delete controls wrap under the title instead of
+                      running past the card's right edge. */}
+                  <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+                    <GripVertical className="w-5 h-5 text-muted-foreground shrink-0" />
+                    <Icon className="w-5 h-5 text-brand shrink-0" />
+                    <div className="flex-1 min-w-[10rem]">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-medium text-muted-foreground">{tr('homeworkStaff.multi.taskNumber', { number: index + 1 })}</span>
                         <span className="text-xs px-2 py-1 bg-brand-subtle  text-brand-subtle-foreground  rounded">
                           {taskTypeInfo && tr(taskTypeInfo.label)}
@@ -347,7 +349,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
                         className="mt-1 w-full text-base font-semibold border-none focus:outline-none focus:ring-0 p-0 bg-transparent text-foreground"
                       />
                     </div>
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center gap-3 shrink-0 ml-auto">
                       {/* Optional/Bonus Checkbox */}
                       <label className="flex items-center space-x-1.5 cursor-pointer">
                         <Checkbox

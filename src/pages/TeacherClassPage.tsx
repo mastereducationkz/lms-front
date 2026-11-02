@@ -301,23 +301,23 @@ export default function TeacherClassPage() {
   );
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center">
-            <GraduationCap className="w-8 h-8 mr-3 text-brand" />
+    <div className="@xl:p-6 space-y-6">
+      {/* Header (no extra page padding on phones: the app shell already pads the page) */}
+      <div className="flex flex-col gap-3 @xl:flex-row @xl:items-center @xl:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl @xl:text-3xl font-bold text-foreground flex items-center">
+            <GraduationCap className="w-7 h-7 @xl:w-8 @xl:h-8 mr-3 text-brand shrink-0" />
             {t('teacherDesk.myClass.title')}
           </h1>
           <p className="text-muted-foreground  mt-1">{t('teacherDesk.myClass.subtitle')}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 @xl:gap-3 shrink-0">
           <Button
             onClick={() => setIsWeeklyAwardsOpen(true)}
             variant="outline"
             className="border-border text-foreground hover:bg-muted dark:hover:bg-secondary"
           >
-            <Trophy className="h-4 w-4" aria-hidden="true" />
+            <Trophy className="h-4 w-4 mr-2" aria-hidden="true" />
             {t('teacherDesk.awards.button')}
           </Button>
           <Button
@@ -452,8 +452,9 @@ export default function TeacherClassPage() {
           {filteredGroups.map((group) => (
             <Card key={group.id} className="border border-border">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                {/* Phones: the student count and average wrap under the group name */}
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                  <div className="flex items-center gap-3 min-w-0">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -478,7 +479,7 @@ export default function TeacherClassPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Users className="w-4 h-4" />
                       {t('teacherDesk.myClass.students', { count: group.total_students })}

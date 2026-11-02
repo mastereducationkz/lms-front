@@ -376,18 +376,18 @@
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => navigate('/homework')}>
+        <div className="flex flex-col gap-3 @2xl:flex-row @2xl:items-center @2xl:justify-between">
+          <div className="flex flex-col items-start gap-3 min-w-0 @xl:flex-row @xl:items-center @xl:gap-4">
+            <Button variant="outline" className="shrink-0" onClick={() => navigate('/homework')}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t('homeworkStaff.progress.backToHomework')}
             </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">{data.assignment.title}</h1>
+            <div className="min-w-0">
+              <h1 className="text-2xl @xl:text-3xl font-bold text-foreground break-words">{data.assignment.title}</h1>
             </div>
           </div>
           {(user?.role === 'teacher' || user?.role === 'admin') && (
-            <div className="text-right">
+            <div className="shrink-0 @2xl:text-right">
               <Badge className="mb-1" variant="secondary">{t('homeworkStaff.progress.new')}</Badge>
               <Button onClick={() => navigate(`/homework/${id}/grade`)}>
                 <History className="w-4 h-4 mr-2" />

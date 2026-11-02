@@ -872,7 +872,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
         {/* Bluebook-style question navigator (progress overview + jump-to-question) */}
         {!feedChecked ? (
-            <div className="fixed bottom-0 left-0 right-0 md:left-[var(--quiz-nav-left)] z-30 border-t border-border bg-background">
+            <div className="fixed bottom-0 left-0 right-0 lg:left-[var(--quiz-nav-left)] z-30 border-t border-border bg-background">
               {isQuizNavCollapsed ? (
                 <div className="flex justify-center px-3 py-1">
                   <button

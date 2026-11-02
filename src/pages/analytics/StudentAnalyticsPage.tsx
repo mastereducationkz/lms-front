@@ -254,13 +254,13 @@ export const StudentAnalyticsPage: React.FC = () => {
         <Button variant="ghost" onClick={() => navigate(-1)} className="w-fit pl-0 mb-2 hover:bg-muted dark:hover:bg-secondary -ml-2 text-muted-foreground">
           <ArrowLeft className="mr-2 h-4 w-4" /> {t('analytics.student.back')}
         </Button>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">{data.student_info?.name || t('analytics.student.details')}</h1>
-            <p className="text-muted-foreground">{data.student_info?.email}</p>
+        <div className="flex flex-col gap-3 @xl:flex-row @xl:items-center @xl:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl @xl:text-3xl font-bold tracking-tight text-foreground break-words">{data.student_info?.name || t('analytics.student.details')}</h1>
+            <p className="text-muted-foreground break-all">{data.student_info?.email}</p>
           </div>
           {hasAnyRole(['curator', 'admin', 'head_curator', 'head_teacher']) && (
-            <Button onClick={() => navigate(`/curator/students/${studentId}/report`)}>
+            <Button className="w-fit shrink-0" onClick={() => navigate(`/curator/students/${studentId}/report`)}>
               <FileText className="mr-2 h-4 w-4" /> {t('analytics.student.progressReport')}
             </Button>
           )}
@@ -315,17 +315,18 @@ export const StudentAnalyticsPage: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-8 max-w-xl">
-          <TabsTrigger value="performance" className="flex items-center gap-2">
+        {/* Phones: 2 x 2 (four labels in one row lay over each other). */}
+        <TabsList className="grid h-auto w-full grid-cols-2 @xl:grid-cols-4 mb-8 max-w-xl">
+          <TabsTrigger value="performance" className="flex min-w-0 items-center gap-1.5 whitespace-normal px-2 text-center leading-tight @xl:gap-2 @xl:px-3 [&>svg]:hidden @xl:[&>svg]:block [&>svg]:shrink-0">
             <TrendingUp className="h-4 w-4" /> {t('analytics.student.tabs.performance')}
           </TabsTrigger>
-          <TabsTrigger value="curriculum" className="flex items-center gap-2">
+          <TabsTrigger value="curriculum" className="flex min-w-0 items-center gap-1.5 whitespace-normal px-2 text-center leading-tight @xl:gap-2 @xl:px-3 [&>svg]:hidden @xl:[&>svg]:block [&>svg]:shrink-0">
             <BookOpen className="h-4 w-4" /> {t('analytics.student.tabs.curriculum')}
           </TabsTrigger>
-          <TabsTrigger value="homework" className="flex items-center gap-2">
+          <TabsTrigger value="homework" className="flex min-w-0 items-center gap-1.5 whitespace-normal px-2 text-center leading-tight @xl:gap-2 @xl:px-3 [&>svg]:hidden @xl:[&>svg]:block [&>svg]:shrink-0">
             <FileText className="h-4 w-4" /> {t('analytics.student.tabs.homework')}
           </TabsTrigger>
-          <TabsTrigger value="activity" className="flex items-center gap-2">
+          <TabsTrigger value="activity" className="flex min-w-0 items-center gap-1.5 whitespace-normal px-2 text-center leading-tight @xl:gap-2 @xl:px-3 [&>svg]:hidden @xl:[&>svg]:block [&>svg]:shrink-0">
             <History className="h-4 w-4" /> {t('analytics.student.tabs.history')}
           </TabsTrigger>
         </TabsList>
