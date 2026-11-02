@@ -55,18 +55,18 @@ export default function CreateCourseWizard() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">{tr('courseAuthoring.create.title')}</h1>
-      <div className="card p-6">
+      <div className="card p-4 sm:p-6">
         <Stepper steps={steps} current={step} onStepChange={setStep} />
 
         <div className="mt-6">
           {step === 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{tr('courseAuthoring.wizard.courseTitle')}</label>
+                <label className="block text-sm font-medium text-foreground/80 mb-2">{tr('courseAuthoring.wizard.courseTitle')}</label>
                 <input value={title} onChange={(e) => setTitle(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" placeholder={tr('courseAuthoring.wizard.titlePlaceholder')} />
               </div>
               <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">{tr('courseAuthoring.wizard.thumbnailUrl')}</label>
+                <label className="block text-sm font-medium text-foreground/80 mb-2">{tr('courseAuthoring.wizard.thumbnailUrl')}</label>
                 <input value={thumbnail} onChange={(e) => setThumbnail(e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder="https://.../image.jpg" />
                 {thumbnail && (
                   <div className="mt-3">
@@ -75,44 +75,44 @@ export default function CreateCourseWizard() {
                 )}
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">{tr('courseAuthoring.create.descriptionLabel')}</label>
+                <label className="block text-sm font-medium text-foreground/80 mb-2">{tr('courseAuthoring.create.descriptionLabel')}</label>
                 <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" rows={4} placeholder={tr('courseAuthoring.wizard.descriptionPlaceholder')} />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">{tr('courseAuthoring.create.tags')}</label>
+                <label className="block text-sm font-medium text-foreground/80 mb-2">{tr('courseAuthoring.create.tags')}</label>
                 <input value={tags} onChange={(e) => setTags(e.target.value)} className="w-full border rounded-lg px-3 py-2" placeholder={tr('courseAuthoring.wizard.tagsPlaceholder')} />
               </div>
             </div>
           )}
 
           {step === 1 && (
-            <div className="text-gray-600">
+            <div className="text-muted-foreground">
               <p className="mb-2 font-medium">{tr('courseAuthoring.wizard.curriculum')}</p>
               <p className="text-sm">{tr('courseAuthoring.wizard.curriculumHint')}</p>
             </div>
           )}
 
           {step === 2 && (
-            <div className="text-gray-600">
+            <div className="text-muted-foreground">
               <p className="mb-2 font-medium">{tr('courseAuthoring.wizard.content')}</p>
               <p className="text-sm">{tr('courseAuthoring.wizard.contentHint')}</p>
               <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{tr('courseAuthoring.wizard.thumbnailUrl')}</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-2">{tr('courseAuthoring.wizard.thumbnailUrl')}</label>
                   <input value={thumbnail} onChange={(e) => { setThumbnail(e.target.value); setFile(null); setFilePreview(''); }} className="w-full border rounded-lg px-3 py-2" placeholder="https://.../image.jpg" />
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 mb-2">{tr('courseAuthoring.create.previewAlt')}</div>
-                  <div className="border rounded-lg overflow-hidden h-24 bg-gray-50 flex items-center justify-center">
+                  <div className="text-xs text-muted-foreground mb-2">{tr('courseAuthoring.create.previewAlt')}</div>
+                  <div className="border rounded-lg overflow-hidden h-24 bg-muted flex items-center justify-center">
                     {filePreview || thumbnail ? (
                       <img src={filePreview || thumbnail} alt={tr('courseAuthoring.create.previewAlt')} className="w-full h-full object-cover" onError={() => { /* ignore */ }} />
                     ) : (
-                      <span className="text-xs text-gray-400">{tr('courseAuthoring.wizard.noImage')}</span>
+                      <span className="text-xs text-muted-foreground">{tr('courseAuthoring.wizard.noImage')}</span>
                     )}
                   </div>
                 </div>
                 <div className="md:col-span-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{tr('courseAuthoring.wizard.orUpload')}</label>
+                  <label className="block text-sm font-medium text-foreground/80 mb-2">{tr('courseAuthoring.wizard.orUpload')}</label>
                   <input
                     type="file"
                     accept="image/*"
@@ -130,21 +130,21 @@ export default function CreateCourseWizard() {
                       }
                     }}
                   />
-                  <p className="text-xs text-gray-500 mt-1">{tr('courseAuthoring.wizard.supported')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{tr('courseAuthoring.wizard.supported')}</p>
                 </div>
               </div>
             </div>
           )}
 
           {step === 3 && (
-            <div className="text-gray-600">
+            <div className="text-muted-foreground">
               <p className="mb-2 font-medium">{tr('courseAuthoring.wizard.assessments')}</p>
               <p className="text-sm">{tr('courseAuthoring.wizard.assessmentsHint')}</p>
             </div>
           )}
 
           {step === 4 && (
-            <div className="text-gray-600">
+            <div className="text-muted-foreground">
               <p className="mb-2 font-medium">{tr('courseAuthoring.wizard.publish')}</p>
               <p className="text-sm">{tr('courseAuthoring.wizard.publishHint')}</p>
             </div>

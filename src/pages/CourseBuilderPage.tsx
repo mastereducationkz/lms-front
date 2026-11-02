@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/api';
 import CourseSidebar from '../components/CourseSidebar.tsx';
+import { SidebarDrawer, useSidebarDrawer } from '../components/SidebarDrawer';
 import type { Course, CourseModule, Lesson, LessonContentType, Group } from '../types';
-import { ChevronDown, ChevronUp, MoreVertical, GripVertical, FileText, Video, HelpCircle, Users, Check, X, Eye, Trophy, Lock, LockOpen } from 'lucide-react';
+import { ChevronDown, ChevronUp, MoreVertical, GripVertical, FileText, Video, HelpCircle, Users, Check, X, Eye, Trophy, Lock, LockOpen, PanelLeft } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -363,6 +364,8 @@ export default function CourseBuilderPage() {
   const [moduleOrder, setModuleOrder] = useState<Array<number | string>>([]);
   const [lessonOrders, setLessonOrders] = useState<Map<number, string[]>>(new Map()); // moduleId -> lesson IDs in order
   const [activeSection, setActiveSection] = useState<'overview' | 'description' | 'content'>('overview');
+  // Phones: the course nav card is a drawer, not a 16rem column (lms-pages audit P1 #2).
+  const navDrawer = useSidebarDrawer('course-builder-nav');
   const [showInlineLectureForm, setShowInlineLectureForm] = useState<string | null>(null);
   const [inlineLectureData, setInlineLectureData] = useState({ title: '', type: 'text' as LessonContentType, videoUrl: '' });
   const [pendingLectures, setPendingLectures] = useState<any[]>([]);
@@ -1883,34 +1886,54 @@ export default function CourseBuilderPage() {
 
   if (!course) return <Loader size="xl" animation="spin" color="hsl(var(--brand))" />
 
+  // One nav card, two places: the md+ column and the phone drawer.
+  const courseSidebarProps = {
+    courseTitle: course.title,
+    courseId,
+    coverImageUrl: (course as any).cover_image_url,
+    isActive: (course as any).is_active,
+    onSave: handleSaveAllChanges,
+    hasUnsavedChanges,
+    pendingChangesCount: pendingModules.length + pendingUpdates.length + pendingLectures.length,
+    activeSection,
+    onCourseStatusChange: (isActive: boolean) => {
+      setCourse(prev => prev ? { ...prev, is_active: isActive } : null);
+    },
+  };
+
 
   return (
     <>
       <div className="flex gap-6 h-full">
-        {/* Course Navigation Panel */}
-        <div className="w-64 bg-card rounded-lg border flex-shrink-0 h-full">
-          <CourseSidebar 
-            courseTitle={course.title}
-            courseId={courseId}
-            coverImageUrl={(course as any).cover_image_url}
-            isActive={(course as any).is_active}
-            onSave={handleSaveAllChanges}
-            hasUnsavedChanges={hasUnsavedChanges}
-            pendingChangesCount={pendingModules.length + pendingUpdates.length + pendingLectures.length}
-            onNavigate={handleNavigate}
-            activeSection={activeSection}
-            onCourseStatusChange={(isActive) => {
-              setCourse(prev => prev ? { ...prev, is_active: isActive } : null);
-            }}
-          />
-      </div>
+        {/* Course Navigation Panel: a column from md up, a drawer on phones */}
+        <div className="hidden md:block w-64 bg-card rounded-lg border flex-shrink-0 h-full" data-testid="course-builder-nav-column">
+          <CourseSidebar {...courseSidebarProps} onNavigate={handleNavigate} />
+        </div>
+        <SidebarDrawer {...navDrawer.drawerProps} label={t('courseAuthoring.sidebar.menu')} closeLabel={t('common.close')}>
+          <CourseSidebar {...courseSidebarProps} onNavigate={(section) => { navDrawer.close(); handleNavigate(section); }} />
+        </SidebarDrawer>
 
         {/* Main Content Area */}
         <div className="flex-1 min-w-0 @container">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-foreground">{course?.title || t('courseAuthoring.builder.title')}</h1>
-              <p className="text-muted-foreground mt-1">{t('courseAuthoring.builder.subtitle')}</p>
+            <div className="flex items-start gap-3 min-w-0">
+              <Button
+                variant="outline"
+                size="icon"
+                className="md:hidden relative flex-shrink-0 mt-0.5"
+                title={t('courseAuthoring.sidebar.menu')}
+                aria-label={t('courseAuthoring.sidebar.menu')}
+                {...navDrawer.toggleProps}
+              >
+                <PanelLeft className="w-5 h-5" aria-hidden="true" />
+                {hasUnsavedChanges && (
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-brand ring-2 ring-background" aria-hidden="true" />
+                )}
+              </Button>
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold text-foreground break-words">{course?.title || t('courseAuthoring.builder.title')}</h1>
+                <p className="text-muted-foreground mt-1">{t('courseAuthoring.builder.subtitle')}</p>
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Button

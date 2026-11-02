@@ -13,6 +13,7 @@ export const courseAuthoring = {
   'courseAuthoring.card.studentsEnrolled': { one: '{count} student enrolled', other: '{count} students enrolled' },
 
   'courseAuthoring.stepper.completed': 'Completed',
+  'courseAuthoring.stepper.stepOf': 'Step {n} of {total}: {label}',
 
   'courseAuthoring.courseCard.start': 'Start Learning',
   'courseAuthoring.courseCard.review': 'Review Course',
@@ -75,6 +76,8 @@ export const courseAuthoring = {
   'courseAuthoring.sidebar.unpublishTitle': 'Unpublish Course',
   'courseAuthoring.sidebar.unpublishConfirm': 'Are you sure you want to unpublish this course? This will change the course status from "Active" to "Draft" and students will no longer be able to access it.',
   'courseAuthoring.sidebar.success': 'Success',
+  'courseAuthoring.sidebar.menu': 'Course menu',
+  'courseAuthoring.lesson.lessonList': 'Course lessons',
 
   'courseAuthoring.create.failed': 'Failed to create course',
   'courseAuthoring.create.title': 'Create Course',

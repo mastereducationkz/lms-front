@@ -10,6 +10,7 @@ export const courseAuthoring: RuTable<typeof en> = {
   'courseAuthoring.card.studentsEnrolled': { one: '{count} ученик на курсе', few: '{count} ученика на курсе', many: '{count} учеников на курсе', other: '{count} ученика на курсе' },
 
   'courseAuthoring.stepper.completed': 'Пройдено',
+  'courseAuthoring.stepper.stepOf': 'Шаг {n} из {total}: {label}',
 
   'courseAuthoring.courseCard.start': 'Начать обучение',
   'courseAuthoring.courseCard.review': 'Повторить курс',
@@ -72,6 +73,8 @@ export const courseAuthoring: RuTable<typeof en> = {
   'courseAuthoring.sidebar.unpublishTitle': 'Снять курс с публикации',
   'courseAuthoring.sidebar.unpublishConfirm': 'Снять курс с публикации? Его статус сменится с «Активен» на «Черновик», и ученики потеряют к нему доступ.',
   'courseAuthoring.sidebar.success': 'Готово',
+  'courseAuthoring.sidebar.menu': 'Меню курса',
+  'courseAuthoring.lesson.lessonList': 'Уроки курса',
 
   'courseAuthoring.create.failed': 'Не удалось создать курс',
   'courseAuthoring.create.title': 'Создать курс',
