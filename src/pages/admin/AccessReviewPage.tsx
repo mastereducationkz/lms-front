@@ -127,7 +127,7 @@ export default function AccessReviewPage() {
           <div className="flex flex-wrap gap-2">
             {history.length > 1 && (
               <Select value={String(reviewId ?? review?.id ?? '')} onValueChange={(v) => setReviewId(Number(v))}>
-                <SelectTrigger className="w-72" aria-label={t('offboarding.review.history')}>
+                <SelectTrigger className="w-full max-w-full sm:w-auto sm:min-w-72" aria-label={t('offboarding.review.history')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

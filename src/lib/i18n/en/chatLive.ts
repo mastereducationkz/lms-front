@@ -92,7 +92,7 @@ export const chatLive = {
   'chatLive.calendar.filter.webinars': 'Webinars',
   'chatLive.calendar.filter.assignments': 'Assignments',
   'chatLive.calendar.filter.allGroups': 'All groups',
-  'chatLive.calendar.filter.searchGroups': 'Search groups or teachers…',
+  'chatLive.calendar.filter.searchGroups': 'Search groups…',
   'chatLive.calendar.filter.noGroupMatches': 'No group matches',
   'chatLive.calendar.filter.showFinished': 'Show finished',
   'chatLive.calendar.filter.recordings': 'Recordings',

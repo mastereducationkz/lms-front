@@ -424,9 +424,9 @@ export default function EventManagement() {
 
       {/* Filters */}
       <div className="bg-card dark:bg-card rounded-lg border dark:border-border p-4">
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-center">
           {/* Search */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative min-w-[12rem]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder={t('adminPages.events.list.searchPlaceholder')}
@@ -438,7 +438,7 @@ export default function EventManagement() {
 
           {/* Event Type Filter */}
           <Select value={selectedEventType} onValueChange={(value) => setSelectedEventType(value as EventType | 'all')}>
-            <SelectTrigger className="w-full lg:w-48">
+            <SelectTrigger className="w-full lg:w-48 lg:shrink-0">
               <SelectValue placeholder={t('adminPages.events.list.typePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
@@ -451,7 +451,7 @@ export default function EventManagement() {
 
           {/* Date Filter */}
           <Select value={dateFilter} onValueChange={(value) => setDateFilter(value as any)}>
-            <SelectTrigger className="w-full lg:w-48">
+            <SelectTrigger className="w-full lg:w-48 lg:shrink-0">
               <SelectValue placeholder={t('adminPages.events.list.period')} />
             </SelectTrigger>
             <SelectContent>
@@ -464,7 +464,7 @@ export default function EventManagement() {
 
           {/* Group Filter */}
           <Select value={selectedGroupId.toString()} onValueChange={(value) => setSelectedGroupId(value === 'all' ? 'all' : parseInt(value))}>
-            <SelectTrigger className="w-full lg:w-48">
+            <SelectTrigger className="w-full lg:w-48 lg:shrink-0">
               <SelectValue placeholder={t('adminPages.events.list.group')} />
             </SelectTrigger>
             <SelectContent>
@@ -478,56 +478,56 @@ export default function EventManagement() {
           </Select>
 
           {/* Lessons Toggle */}
-          <div className="flex items-center gap-2 px-2 border dark:border-border rounded-md bg-muted dark:bg-secondary h-10">
+          <div className="flex min-h-10 min-w-0 items-center gap-2 px-2 py-2 border dark:border-border rounded-md bg-muted dark:bg-secondary lg:h-10 lg:py-0">
             <input
               type="checkbox"
               id="show-lessons"
               checked={showLessons}
               onChange={(e) => setShowLessons(e.target.checked)}
-              className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
+              className="w-4 h-4 shrink-0 rounded border-input text-brand focus:ring-brand cursor-pointer"
             />
-            <label htmlFor="show-lessons" className="text-sm font-medium text-foreground/80 cursor-pointer whitespace-nowrap">
+            <label htmlFor="show-lessons" className="min-w-0 text-sm font-medium text-foreground/80 cursor-pointer whitespace-normal sm:whitespace-nowrap">
               {t('adminPages.events.list.showLessons')}
             </label>
           </div>
 
           {/* What the list hides by default: what has ended, and what was cancelled */}
-          <div className="flex items-center gap-2 px-2 border dark:border-border rounded-md bg-muted dark:bg-secondary h-10">
+          <div className="flex min-h-10 min-w-0 items-center gap-2 px-2 py-2 border dark:border-border rounded-md bg-muted dark:bg-secondary lg:h-10 lg:py-0">
             <input
               type="checkbox"
               id="show-finished"
               checked={showFinished}
               onChange={(e) => setShowFinished(e.target.checked)}
-              className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
+              className="w-4 h-4 shrink-0 rounded border-input text-brand focus:ring-brand cursor-pointer"
             />
-            <label htmlFor="show-finished" className="text-sm font-medium text-foreground/80 cursor-pointer whitespace-nowrap">
+            <label htmlFor="show-finished" className="min-w-0 text-sm font-medium text-foreground/80 cursor-pointer whitespace-normal sm:whitespace-nowrap">
               {t('adminPages.events.list.showFinished')}
             </label>
           </div>
 
-          <div className="flex items-center gap-2 px-2 border dark:border-border rounded-md bg-muted dark:bg-secondary h-10">
+          <div className="flex min-h-10 min-w-0 items-center gap-2 px-2 py-2 border dark:border-border rounded-md bg-muted dark:bg-secondary lg:h-10 lg:py-0">
             <input
               type="checkbox"
               id="show-cancelled"
               checked={showCancelled}
               onChange={(e) => setShowCancelled(e.target.checked)}
-              className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
+              className="w-4 h-4 shrink-0 rounded border-input text-brand focus:ring-brand cursor-pointer"
             />
-            <label htmlFor="show-cancelled" className="text-sm font-medium text-foreground/80 cursor-pointer whitespace-nowrap">
+            <label htmlFor="show-cancelled" className="min-w-0 text-sm font-medium text-foreground/80 cursor-pointer whitespace-normal sm:whitespace-nowrap">
               {t('adminPages.events.list.showCancelled')}
             </label>
           </div>
 
           {/* Weekly series: one line each, or every week on its own */}
-          <div className="flex items-center gap-2 px-2 border dark:border-border rounded-md bg-muted dark:bg-secondary h-10">
+          <div className="flex min-h-10 min-w-0 items-center gap-2 px-2 py-2 border dark:border-border rounded-md bg-muted dark:bg-secondary lg:h-10 lg:py-0">
             <input
               type="checkbox"
               id="group-series"
               checked={groupWeekly}
               onChange={(e) => setGroupWeekly(e.target.checked)}
-              className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
+              className="w-4 h-4 shrink-0 rounded border-input text-brand focus:ring-brand cursor-pointer"
             />
-            <label htmlFor="group-series" className="text-sm font-medium text-foreground/80 cursor-pointer whitespace-nowrap">
+            <label htmlFor="group-series" className="min-w-0 text-sm font-medium text-foreground/80 cursor-pointer whitespace-normal sm:whitespace-nowrap">
               {t('adminPages.events.series.group')}
             </label>
           </div>

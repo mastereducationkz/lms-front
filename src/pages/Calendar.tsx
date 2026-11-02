@@ -387,7 +387,7 @@ export default function Calendar() {
             <div className="flex items-center gap-1.5">
               <Link2 className="h-4 w-4 flex-none text-muted-foreground" />
               <Select value={meetFilter} onValueChange={(v) => setMeetFilter(v as MeetFilter)}>
-                <SelectTrigger className="h-9 w-[160px] sm:w-48" aria-label={t('chatLive.calendar.filter.meetLink')}>
+                <SelectTrigger className="h-9 w-[184px] sm:w-48" aria-label={t('chatLive.calendar.filter.meetLink')}>
                   <SelectValue placeholder={t('chatLive.calendar.filter.anyMeetLink')} />
                 </SelectTrigger>
                 <SelectContent>

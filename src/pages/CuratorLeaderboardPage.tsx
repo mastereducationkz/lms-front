@@ -1510,7 +1510,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     value={programFilter}
                     onValueChange={(value) => setProgramFilter(value as 'all' | CourseType)}
                 >
-                    <SelectTrigger className="h-9 sm:h-8 w-[130px] rounded-md border-border text-xs">
+                    <SelectTrigger className="h-9 sm:h-8 w-[150px] rounded-md border-border text-xs">
                         <SelectValue placeholder={t('attendance.filters.subject')} />
                     </SelectTrigger>
                     <SelectContent>

@@ -236,9 +236,17 @@ export function DropdownValue({ placeholder, className, children }: {
   );
 }
 
-/** Trigger classes shared by every dropdown: the look of the app's inputs (height, border, radius, font). */
+/**
+ * Trigger classes shared by every dropdown: the look of the app's inputs (height, border, radius, font).
+ *
+ * Width: `min-w-[min(100%,6rem)]` — a flex row may shrink the trigger, but never below 6rem (the
+ * narrowest explicit trigger width in the app, `w-24`) or below its own container when that is
+ * narrower; `min-w-0` alone let nowrap siblings crush it to its border and padding (26 px on
+ * /admin/events). `max-w-full` caps a content-sized trigger with a long label at its container, so
+ * the label truncates instead of overflowing. A call site opts out of the floor with `min-w-0`.
+ */
 export const TRIGGER_BASE =
-  'flex h-9 min-w-0 items-center justify-between gap-2 whitespace-nowrap rounded-md border border-input px-3 py-2 text-left text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring data-[state=open]:ring-1 data-[state=open]:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
+  'flex h-9 min-w-[min(100%,6rem)] max-w-full items-center justify-between gap-2 whitespace-nowrap rounded-md border border-input px-3 py-2 text-left text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring data-[state=open]:ring-1 data-[state=open]:ring-ring disabled:cursor-not-allowed disabled:opacity-50';
 
 const BLOCK_DISPLAY = new Set(['block', 'flex', 'grid', 'table', 'flow-root']);
 const INLINE_DISPLAY = new Set(['inline', 'inline-block', 'inline-flex', 'inline-grid', 'inline-table']);
