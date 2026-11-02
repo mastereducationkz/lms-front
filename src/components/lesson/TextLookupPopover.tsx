@@ -33,12 +33,23 @@ interface TextLookupPopoverProps {
   containerRef: React.RefObject<HTMLElement>;
   /** Off for quiz questions and checkpoints (lookupAllowed in ./lookup/selection). */
   enabled?: boolean;
+  /**
+   * Only inside elements matching this selector (both ends of the selection in the same one):
+   * the reading text of a homework, the passages of a submitted quiz. Unset: the whole container.
+   */
+  blocks?: string;
 }
+
+const insideOneBlock = (range: Range, selector: string) => {
+  const blockOf = (node: Node) => (node instanceof Element ? node : node.parentElement)?.closest(selector) ?? null;
+  const start = blockOf(range.startContainer);
+  return start !== null && start === blockOf(range.endContainer);
+};
 
 const sameRange = (a: Range, b: Range) =>
   a.compareBoundaryPoints(Range.START_TO_START, b) === 0 && a.compareBoundaryPoints(Range.END_TO_END, b) === 0;
 
-export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerRef, enabled = true }) => {
+export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerRef, enabled = true, blocks }) => {
   const { isLookUpEnabled } = useSettings();
   const active = enabled && isLookUpEnabled;
   const [lang, setLang] = useLookupLang();
@@ -100,7 +111,8 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
   }, [reset]);
 
   const onSettle = useCallback(
-    (selection: SettledSelection | null) => {
+    (settled: SettledSelection | null) => {
+      const selection = settled && (!blocks || insideOneBlock(settled.range, blocks)) ? settled : null;
       const current = targetRef.current;
       if (!selection) {
         if (current && !current.armed) close(); // the chip goes with its selection
@@ -117,7 +129,7 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
       }
       run(next, lang);
     },
-    [close, reset, run, lang],
+    [close, reset, run, lang, blocks],
   );
 
   useSelectionSettle(containerRef, [floatingEl], active, onSettle);

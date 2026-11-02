@@ -26,6 +26,7 @@ vi.mock('../../services/api/lookup', async () => {
 import { streamLookup } from '../../services/api/lookup';
 import { saveLookupLang } from '../../services/api/uiState';
 import { TextLookupPopover } from './TextLookupPopover';
+import { homeworkLookupBlocks } from './lookup/selection';
 
 interface Call {
   request: { text: string; context?: string; lang: LookupLang };
@@ -38,15 +39,15 @@ const calls: Call[] = [];
 let container: HTMLDivElement;
 let root: Root;
 
-function mount(enabled = true) {
+function mount(enabled = true, blocks?: string, html?: string) {
   container = document.createElement('div');
-  container.innerHTML =
+  container.innerHTML = html ??
     '<p id="p1">The archivist was meticulous, labeling every folder by date and source.</p>' +
     '<p id="p2">On weekends she walked along the bank of the river and sketched the old mills.</p>';
   document.body.appendChild(container);
   const ref = { current: container };
   root = createRoot(document.createElement('div'));
-  act(() => root.render(<TextLookupPopover containerRef={ref} enabled={enabled} />));
+  act(() => root.render(<TextLookupPopover containerRef={ref} enabled={enabled} blocks={blocks} />));
 }
 
 /** Selects `word` in paragraph `id` (or `text` across both) the way a person would. */
@@ -246,4 +247,37 @@ describe('Look Up', () => {
     expect(calls).toHaveLength(1);
     expect(card()).not.toBeNull();
   });
+
+  it('limited to some blocks, runs only there: homework description and instructions, not its tasks', () => {
+    const block = (key: string, id: string, text: string) =>
+      `<div data-annotation-scope="homework:3" data-annotation-block="${key}"><p id="${id}">${text}</p></div>`;
+    mount(true, homeworkLookupBlocks('homework:3'),
+      block('hw:d', 'p1', 'Practise finding evidence in research notes.') +
+      block('hw:i', 'p2', 'Underline the claim and the evidence, then answer.') +
+      block('hw:t:t1:q', 'p3', 'What does the word meticulous mean here?'));
+    select('p3', 'meticulous');
+    settle();
+    expect(card()).toBeNull();
+    expect(calls).toHaveLength(0);
+
+    select('p2', 'evidence');
+    settle();
+    expect(card()).not.toBeNull();
+    expect(calls).toHaveLength(1);
+  });
+
+  it('limited to some blocks, ignores a selection that runs from one block into another', () => {
+    mount(true, '[data-annotation-block]',
+      '<div data-annotation-block="a"><p id="p1">Bees pollinate flowers.</p></div>' +
+      '<div data-annotation-block="b"><p id="p2">Seeds sleep in the vault.</p></div>');
+    const range = document.createRange();
+    range.setStart(container.querySelector('#p1')!.firstChild!, 0);
+    range.setEnd(container.querySelector('#p2')!.firstChild!, 5);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(range);
+    document.dispatchEvent(new Event('selectionchange'));
+    settle();
+    expect(card()).toBeNull();
+  });
 });
+

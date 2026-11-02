@@ -24,7 +24,7 @@ import QuizRenderer from '../components/lesson/QuizRenderer';
 import SummaryStepRenderer from '../components/lesson/SummaryStepRenderer';
 import TextLookupPopover from '../components/lesson/TextLookupPopover';
 import { AnnotationLayer, annotationBlock } from '../components/annotations/AnnotationLayer';
-import { lookupAllowed } from '../components/lesson/lookup/selection';
+import { lookupAllowed, lookupInQuizReview } from '../components/lesson/lookup/selection';
 import { toast } from '../components/Toast';
 import { getAnswerKey, scoreQuiz } from '../components/lesson/quiz/scoring';
 import { isQuizScorePassing, resolveQuizPassingScorePercent } from '../utils/quizPassingScore';
@@ -2119,6 +2119,7 @@ export default function LessonPage() {
             <div ref={textContentRef} className="relative">
               {/* No Look Up here: in a quiz it would hand out answers (lookupAllowed). */}
               <QuizRenderer
+                reviewLookup={lookupInQuizReview(lesson?.kind)}
                 singleAttempt={checkpointRetakeBlocked}
                 continueAction={
                   lesson?.kind === 'checkpoint'

@@ -6,7 +6,7 @@ vi.mock('../../../services/api/client', () => ({ api: {} }));
 vi.mock('../../../contexts/AuthContext', () => ({ useAuth: () => ({ user: null, updateUser: () => {} }) }));
 import { readNdjson, type LookupEvent } from '../../../services/api/lookup';
 import { pickLookupLang } from './lookupLang';
-import { MAX_CONTEXT_CHARS, contextAround, lookupAllowed, selectionKind } from './selection';
+import { MAX_CONTEXT_CHARS, contextAround, homeworkLookupBlocks, lookupAllowed, lookupInQuizReview, selectionKind } from './selection';
 import { IDLE, lookupReducer, type LookupState } from './useLookupStream';
 
 describe('what a selection is', () => {
@@ -34,6 +34,19 @@ describe('what a selection is', () => {
     expect(lookupAllowed('quiz', 'lesson')).toBe(false);
     expect(lookupAllowed('text', 'checkpoint')).toBe(false);
     expect(lookupAllowed('video_text', 'checkpoint')).toBe(false);
+  });
+
+  it('opens up in quiz review after submission, but never in a checkpoint (owner, 2026-11-02)', () => {
+    expect(lookupInQuizReview('lesson')).toBe(true);
+    expect(lookupInQuizReview(undefined)).toBe(true);
+    expect(lookupInQuizReview('checkpoint')).toBe(false);
+  });
+
+  it('on homework covers the description and the instructions, never a task question', () => {
+    const selector = homeworkLookupBlocks('homework:12');
+    expect(selector).toContain('[data-annotation-scope="homework:12"][data-annotation-block="hw:d"]');
+    expect(selector).toContain('[data-annotation-scope="homework:12"][data-annotation-block="hw:i"]');
+    expect(selector).not.toMatch(/hw:t|hw:q/);
   });
 
   it('translates into the account language, then this browser’s, then Russian', () => {
