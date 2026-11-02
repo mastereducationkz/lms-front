@@ -84,6 +84,7 @@ export function AnnotationLayer({ surface, targetId, scope, attempt = 'current',
   const [toolbar, setToolbar] = useState<Toolbar | null>(null);
   const [overlay, setOverlay] = useState<OverlayItem[]>([]);
   const [openNote, setOpenNote] = useState<number | null>(null);
+  const [lookupOpen, setLookupOpen] = useState(false);
   const layerId = useId();
   const apiPaint = useRef(supportsHighlightApi()).current;
   const painted = useRef(new Map<number, { range: Range; blockKey: string }>());
@@ -138,9 +139,10 @@ export function AnnotationLayer({ surface, targetId, scope, attempt = 'current',
       map.set(a.id, { range, blockKey: a.block_key });
     }
     painted.current = map;
+    if (lookupBelow) setLookupOpen(Boolean(document.querySelector('[data-lookup-card]')));
     if (apiPaint) paintLayer(layerId, entries);
     measure();
-  }, [blocks, items, apiPaint, layerId, measure]);
+  }, [blocks, items, apiPaint, layerId, measure, lookupBelow]);
 
   const paintRef = useRef(paint);
   paintRef.current = paint;
@@ -297,6 +299,7 @@ export function AnnotationLayer({ surface, targetId, scope, attempt = 'current',
           startInNote={toolbar.mode === 'edit' && toolbar.startInNote}
           touch={toolbar.touch}
           lookupBelow={lookupBelow && toolbar.mode === 'create'}
+          lookupOpen={lookupBelow && lookupOpen}
           onClose={close}
           onColor={(color) => {
             if (toolbar.mode === 'create') createWith(color);

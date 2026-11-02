@@ -14,6 +14,12 @@ export interface SettledSelection {
   touch: boolean;
 }
 
+/** Inside a floating selection tool (marked data-selection-chrome)? */
+export const isSelectionChrome = (node: Node | EventTarget | null): boolean => {
+  const el = node instanceof Element ? node : node instanceof Node ? node.parentElement : null;
+  return !!el?.closest('[data-selection-chrome]');
+};
+
 const coarsePointer = () => {
   try {
     return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -39,7 +45,11 @@ export function useSelectionSettle(
     let pointerDown = false;
     let pointerType: string | null = null;
 
-    const inIgnored = (node: Node | null) => !!node && ignored.current.some((ref) => ref.current?.contains(node));
+    // Floating selection tools (Look Up's card and chip, the highlight toolbar) mark their roots
+    // with data-selection-chrome: a tap in one of them is never a new choice of text, so the
+    // other tool doesn't re-settle and pop up over it.
+    const inIgnored = (node: Node | null) =>
+      !!node && (ignored.current.some((ref) => ref.current?.contains(node)) || isSelectionChrome(node));
 
     const check = () => {
       timer = undefined;
