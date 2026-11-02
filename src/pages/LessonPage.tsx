@@ -2377,12 +2377,14 @@ export default function LessonPage() {
               return null;
             })()}
             {staffPreview && (
+              // Phones: icon only — with the label and «Дальше» the staff row ran under the right-hand
+              // buttons and hid the title (owner, 2026-11-02).
               <span
-                className="ml-2 h-5 px-2 inline-flex items-center gap-1 rounded text-[10px] font-medium shrink-0 bg-brand-surface text-brand-subtle-foreground"
+                className="sm:ml-2 h-5 px-1.5 sm:px-2 inline-flex items-center gap-1 rounded text-[10px] font-medium shrink-0 bg-brand-surface text-brand-subtle-foreground"
                 title={t('learning.lesson.staffPreviewHint')}
               >
                 <Eye className="w-3 h-3" aria-hidden="true" />
-                {t('learning.lesson.staffPreview')}
+                <span className="sr-only sm:not-sr-only">{t('learning.lesson.staffPreview')}</span>
               </span>
             )}
             {staffPreview && (
@@ -2391,10 +2393,11 @@ export default function LessonPage() {
                 size="sm" 
                 onClick={skipLesson} 
                 title={t('learning.lesson.skipHint')}
-                className="ml-2 text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                aria-label={t('learning.lesson.skip')}
+                className="shrink-0 px-2 sm:px-3 sm:ml-2 text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
               >
-                <SkipForward className="w-4 h-4 mr-1" />
-                {t('learning.lesson.skip')}
+                <SkipForward className="w-4 h-4 sm:mr-1" aria-hidden="true" />
+                <span className="hidden sm:inline">{t('learning.lesson.skip')}</span>
               </Button>
             )}
             {import.meta.env.DEV && (
@@ -2424,7 +2427,7 @@ export default function LessonPage() {
                 title={t('lessonPlayer.header.practiceTitle')}
                 aria-label={t('lessonPlayer.header.practiceAria')}
               >
-                <Printer className="w-4 h-4 mr-1" />
+                <Printer className="w-4 h-4 sm:mr-1" aria-hidden="true" />
                 <span className="hidden sm:inline">{t('lessonPlayer.header.practice')}</span>
               </Button>
             )}
@@ -2441,8 +2444,8 @@ export default function LessonPage() {
                 title={t('lessonPlayer.header.editLesson')}
                 aria-label={t('lessonPlayer.header.editLesson')}
               >
-                <Pencil className="w-4 h-4 mr-1" />
-                {t('common.edit')}
+                <Pencil className="w-4 h-4 sm:mr-1" aria-hidden="true" />
+                <span className="hidden sm:inline">{t('common.edit')}</span>
               </Button>
             )}
             {/* Favorite (bookmark) current step */}
