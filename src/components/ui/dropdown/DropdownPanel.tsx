@@ -31,6 +31,8 @@ const PANEL_BASE =
 export function DropdownPanel({ className, side = 'bottom', align = 'start', sideOffset = 4 }: DropdownPanelProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const listRef = React.useRef<HTMLDivElement>(null);
+  // Tab / Shift+Tab: the field focus moves on to once the list has closed (Escape: back to the trigger).
+  const focusAfterClose = React.useRef<HTMLElement | null>(null);
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
@@ -49,8 +51,15 @@ export function DropdownPanel({ className, side = 'bottom', align = 'start', sid
           const target = finePointer() || typed ? inputRef.current ?? listRef.current : listRef.current;
           target?.focus({ preventScroll: true });
         }}
+        onCloseAutoFocus={(event) => {
+          const next = focusAfterClose.current;
+          focusAfterClose.current = null;
+          if (!next || !next.isConnected) return;
+          event.preventDefault();
+          next.focus();
+        }}
       >
-        <PanelBody inputRef={inputRef} listRef={listRef} />
+        <PanelBody inputRef={inputRef} listRef={listRef} focusAfterClose={focusAfterClose} />
       </PopoverPrimitive.Content>
     </PopoverPrimitive.Portal>
   );
@@ -59,6 +68,33 @@ export function DropdownPanel({ className, side = 'bottom', align = 'start', sid
 /** A mouse or trackpad (not a finger): only then does the search box take focus on open. */
 function finePointer(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: fine)').matches;
+}
+
+const FOCUSABLE = 'a[href], button, input, select, textarea, iframe, [tabindex], [contenteditable=""], [contenteditable="true"]';
+
+/** Can Tab land here? Visible, enabled, not tabindex=-1, not inside [hidden] / [inert]. */
+function tabbable(el: HTMLElement): boolean {
+  if (el.tabIndex < 0 || (el as HTMLButtonElement).disabled) return false;
+  if (el instanceof HTMLInputElement && el.type === 'hidden') return false;
+  // Not the open list's own search box, nor anything else floating in a popper.
+  if (el.closest('[hidden], [inert], [data-radix-popper-content-wrapper]')) return false;
+  // checkVisibility is missing in older browsers and jsdom: then trust the checks above.
+  const check = (el as HTMLElement & { checkVisibility?: () => boolean }).checkVisibility;
+  return typeof check === 'function' ? check.call(el) : true;
+}
+
+/**
+ * The field Tab (+1) or Shift+Tab (-1) reaches from the trigger, in document order, staying inside
+ * the Dialog the trigger sits in (wrapping there, as its focus trap does). Null at either end of the page.
+ */
+function neighbourField(trigger: HTMLElement, step: 1 | -1): HTMLElement | null {
+  const scope = trigger.closest<HTMLElement>('[role="dialog"], [role="alertdialog"]') ?? document.body;
+  const fields = Array.from(scope.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((el) => el === trigger || tabbable(el));
+  const at = fields.indexOf(trigger);
+  if (at < 0) return null;
+  const next = at + step;
+  if (next >= 0 && next < fields.length) return fields[next];
+  return scope === document.body ? null : fields[(next + fields.length) % fields.length] ?? null;
 }
 
 /** Where the list starts: on the chosen option when it is listed and pickable, else the first pickable one. */
@@ -77,8 +113,9 @@ function reveal(list: HTMLElement | null, row: HTMLElement | null | undefined, c
   else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
 }
 
-function PanelBody({ inputRef, listRef }: {
+function PanelBody({ inputRef, listRef, focusAfterClose }: {
   inputRef: React.RefObject<HTMLInputElement>; listRef: React.RefObject<HTMLDivElement>;
+  focusAfterClose: React.MutableRefObject<HTMLElement | null>;
 }) {
   const ctx = useDropdown();
   const t = useT();
@@ -150,7 +187,9 @@ function PanelBody({ inputRef, listRef }: {
         if (current >= 0 && !opts[current]?.disabled) ctx.pick(opts[current].value);
         return;
       case 'Tab':
+        // As a native select: the list closes and focus goes on to the next (or previous) field.
         event.preventDefault();
+        focusAfterClose.current = ctx.triggerRef.current ? neighbourField(ctx.triggerRef.current, event.shiftKey ? -1 : 1) : null;
         ctx.setOpen(false);
         return;
       default:

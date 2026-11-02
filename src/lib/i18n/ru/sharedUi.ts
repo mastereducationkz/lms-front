@@ -9,6 +9,7 @@ export const sharedUi: RuTable<typeof en> = {
   'sharedUi.select.searchPlaceholder': 'Поиск…',
   'sharedUi.select.empty': 'Ничего не найдено',
   'sharedUi.select.capped': 'Показаны первые {count} — уточните поиск',
+  'sharedUi.select.defaultPlaceholder': 'Выберите…',
   'sharedUi.unsavedChanges.leave': 'Есть несохранённые изменения. Точно уйти со страницы?',
   'sharedUi.meetMark.has': 'Ссылка на Google Meet',
   'sharedUi.meetMark.missing': 'Нет ссылки на Google Meet',

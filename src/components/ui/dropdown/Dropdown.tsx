@@ -8,6 +8,8 @@ import * as React from 'react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/sharedUi';
 import { isPrintableKey, shouldSearch, type DropdownEntry, type DropdownOption } from './logic';
 
 export interface DropdownContextValue {
@@ -25,6 +27,8 @@ export interface DropdownContextValue {
   emptyText?: string;
   listId: string;
   triggerId?: string;
+  /** The trigger button, for Tab / Shift+Tab to find the field after (or before) it. */
+  triggerRef: React.MutableRefObject<HTMLButtonElement | null>;
   /** A character typed on the closed trigger, handed to the panel when it opens (the panel clears it). */
   typedKey: React.MutableRefObject<string | null>;
 }
@@ -82,6 +86,7 @@ export function DropdownRoot({
   );
   const open = (openProp ?? openInner) && !disabled;
   const typedKey = React.useRef<string | null>(null);
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
 
   const onOpenChangeRef = React.useRef(onOpenChange);
   onOpenChangeRef.current = onOpenChange;
@@ -105,7 +110,7 @@ export function DropdownRoot({
     entries, value, selected, open, setOpen, pick, disabled,
     searchable: searchable ?? shouldSearch(entries),
     searchPlaceholder, emptyText, listId, triggerId,
-    typedKey,
+    typedKey, triggerRef,
   }), [entries, value, selected, open, setOpen, pick, disabled, searchable, searchPlaceholder, emptyText, listId, triggerId]);
 
   return (
@@ -166,7 +171,11 @@ export const DropdownTrigger = React.forwardRef<HTMLButtonElement, DropdownTrigg
     return (
       <PopoverPrimitive.Trigger asChild>
         <button
-          ref={ref}
+          ref={(node) => {
+            ctx.triggerRef.current = node;
+            if (typeof ref === 'function') ref(node);
+            else if (ref) ref.current = node;
+          }}
           type="button"
           id={id ?? ctx.triggerId}
           role="combobox"
@@ -211,13 +220,16 @@ export function DropdownValue({ placeholder, className, children }: {
   placeholder?: React.ReactNode; className?: string; children?: React.ReactNode;
 }) {
   const { selected } = useDropdown();
-  const body = selected ? (children ?? selected.label) : placeholder;
+  const t = useT();
+  // No option matches the value: a muted «Select…» rather than an empty field.
+  const shown = placeholder ?? t('sharedUi.select.defaultPlaceholder');
+  const body = selected ? (children ?? selected.label) : shown;
   const muted = !selected || (selected.disabled && selected.value === '') || selected.hidden;
   return (
     <span
       data-dd-text=""
       className={cn('block min-w-0 flex-1 truncate text-left', muted && 'text-muted-foreground', className)}
-      title={selected?.text || (typeof placeholder === 'string' ? placeholder : undefined)}
+      title={selected?.text || (typeof shown === 'string' ? shown : undefined)}
     >
       {body ?? ' '}
     </span>

@@ -228,6 +228,63 @@ describe('NativeSelect (drop-in for <select>)', () => {
   });
 });
 
+describe('Tab and the default placeholder', () => {
+  const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+  const form = (inDialog = false) => {
+    const fields = (
+      <>
+        <input id="before" />
+        <NativeSelect id="mid"><option value="a">A</option><option value="b">B</option></NativeSelect>
+        <button type="button" id="skip" disabled>x</button>
+        <input id="after" />
+      </>
+    );
+    return inDialog
+      ? <Dialog open><DialogContent aria-describedby={undefined}><DialogTitle>T</DialogTitle>{fields}</DialogContent></Dialog>
+      : fields;
+  };
+
+  it('Tab closes the list and moves on to the next field; Shift+Tab to the previous one; Escape returns to the trigger', async () => {
+    await show(form());
+    await key(await openDropdown('#mid'), 'Tab');
+    await settle();
+    expect(dropdownList('#mid')).toBeNull();
+    expect(document.activeElement?.id).toBe('after');
+    const list = await openDropdown('#mid');
+    await act(async () => { list.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true })); });
+    await settle();
+    expect(document.activeElement?.id).toBe('before');
+    await openDropdown('#mid');
+    await closeDropdown('#mid');
+    expect(document.activeElement).toBe(dropdownTrigger('#mid'));
+  });
+
+  it('inside a Dialog, Tab stays in the Dialog', async () => {
+    await show(form(true));
+    await key(await openDropdown('#mid'), 'Tab');
+    await settle();
+    expect(document.activeElement?.id).toBe('after');
+  });
+
+  it('a value no option has shows a muted «Select…» when no placeholder was given (NativeSelect and Select)', async () => {
+    await show(
+      <>
+        <NativeSelect id="nv" value="zzz" onChange={() => {}}><option value="a">A</option></NativeSelect>
+        <NativeSelect id="nd" defaultValue="zzz"><option value="a">A</option></NativeSelect>
+        <NativeSelect id="nf"><option value="a">A</option></NativeSelect>
+        <Select value="nope"><SelectTrigger id="sv"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="a">A</SelectItem></SelectContent></Select>
+        <Select value="nope"><SelectTrigger id="sp"><SelectValue placeholder="Pick one" /></SelectTrigger><SelectContent><SelectItem value="a">A</SelectItem></SelectContent></Select>
+      </>,
+    );
+    for (const id of ['#nv', '#nd', '#sv']) {
+      expect(dropdownText(id)).toBe('Select…');
+      expect(dropdownTrigger(id).querySelector('[data-dd-text]')?.className).toContain('text-muted-foreground');
+    }
+    expect(dropdownText('#nf')).toBe('A'); // no defaultValue at all: the first option, as a native select
+    expect(dropdownText('#sp')).toBe('Pick one');
+  });
+});
+
 describe('focus on open: the search box only under a mouse', () => {
   const pointer = (fine: boolean) => vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => ({
     matches: query === '(pointer: fine)' ? fine : !fine, media: query, onchange: null,

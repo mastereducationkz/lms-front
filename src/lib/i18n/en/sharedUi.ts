@@ -9,6 +9,7 @@ export const sharedUi = {
   'sharedUi.select.searchPlaceholder': 'Search…',
   'sharedUi.select.empty': 'Nothing matches',
   'sharedUi.select.capped': 'Showing the first {count} — refine the search',
+  'sharedUi.select.defaultPlaceholder': 'Select…',
   'sharedUi.unsavedChanges.leave': 'You have unsaved changes. Are you sure you want to leave?',
   'sharedUi.meetMark.has': 'Google Meet link',
   'sharedUi.meetMark.missing': 'No Google Meet link',
