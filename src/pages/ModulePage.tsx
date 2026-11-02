@@ -192,19 +192,20 @@ export default function ModulePage() {
         ) : (
           <div className="space-y-4">
             {lessons.map((lesson, idx) => (
-              <div key={lesson.id} className="card p-5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-brand-subtle text-brand-subtle-foreground rounded-full flex items-center justify-center font-semibold">
+              <div key={lesson.id} className="card p-5 flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="w-10 h-10 flex-none bg-brand-subtle text-brand-subtle-foreground rounded-full flex items-center justify-center font-semibold">
                     {idx + 1}
                   </div>
-                  <div>
-                    <div className="font-medium text-lg">{lesson.title}</div>
-                    <div className="text-sm text-muted-foreground flex items-center gap-3">
-                      <span className="inline-flex items-center gap-1">
+                  <div className="min-w-0">
+                    <div className="font-medium text-lg break-words">{lesson.title}</div>
+                    {/* On a phone the two facts wrap as whole pieces («Text lesson», «0 minutes»), never word by word. */}
+                    <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap">
                         <Play className="h-3.5 w-3.5 opacity-60" aria-hidden="true" />
                         {getLessonType(lesson)}
                       </span>
-                      <span className="inline-flex items-center gap-1">
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap">
                         <Clock className="h-3.5 w-3.5 opacity-60" aria-hidden="true" />
                         {t('lessonPlayer.common.minutesLong', { count: lesson.duration_minutes || 0 })}
                       </span>
@@ -213,7 +214,7 @@ export default function ModulePage() {
                 </div>
                 <Link 
                   to={`/lecture/${lesson.id}`} 
-                  className="btn-primary text-sm"
+                  className="btn-primary text-sm flex-none"
                 >
                   {getLessonStatus(lesson.id) === 'completed' ? t('lessonPlayer.module.review') : t('lessonPlayer.common.start')}
                 </Link>
