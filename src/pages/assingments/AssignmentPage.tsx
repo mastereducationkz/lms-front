@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.tsx';
 import apiClient from '../../services/api';
@@ -25,6 +25,8 @@ import { Textarea } from '../../components/ui/textarea.tsx';
 import { Label } from '../../components/ui/label.tsx';
 import MultiTaskSubmission from '../../components/assignments/MultiTaskSubmission.tsx';
 import { AnnotationLayer, annotationBlock } from '../../components/annotations/AnnotationLayer';
+import TextLookupPopover from '../../components/lesson/TextLookupPopover';
+import { homeworkLookupBlocks } from '../../components/lesson/lookup/selection';
 import PlatformTestPanel from '../../components/assignments/PlatformTestPanel.tsx';
 import { compressImage } from '../../utils/imageCompression';
 import { AudioPlayer } from '../../components/AudioPlayer';
@@ -50,6 +52,8 @@ const STATUS_KEYS: Record<string, MessageKey> = {
 
 export default function AssignmentPage() {
   const { id } = useParams<{ id: string }>();
+  // Look Up on the homework's reading text (description, instructions), not on its tasks.
+  const pageRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const t = useT();
   const navigate = useNavigate();
@@ -867,8 +871,14 @@ export default function AssignmentPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 @2xl:p-6">
-      <AnnotationLayer surface="homework" targetId={Number(assignment.id)} scope={`homework:${assignment.id}`} />
+    <div ref={pageRef} className="max-w-4xl mx-auto space-y-6 @2xl:p-6">
+      <TextLookupPopover containerRef={pageRef} blocks={homeworkLookupBlocks(`homework:${assignment.id}`)} />
+      <AnnotationLayer
+        surface="homework"
+        targetId={Number(assignment.id)}
+        scope={`homework:${assignment.id}`}
+        lookupBelow={(blockKey) => blockKey === 'hw:d' || blockKey === 'hw:i'}
+      />
       {/* Header Card */}
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center text-red-800 dark:text-red-400">

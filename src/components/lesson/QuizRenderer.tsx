@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { reportErrorMessage } from '../../lib/questionReport';
 import { Button } from '../ui/button';
 import {
@@ -23,6 +23,7 @@ import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, HelpCircle, Lock a
 import { renderTextWithLatex } from '../../utils/latex';
 import { sanitizeHtml } from '../../lib/safeHtml';
 import { AnnotationLayer, annotationBlock, type LegacyHighlight } from '../annotations/AnnotationLayer';
+import TextLookupPopover from './TextLookupPopover';
 import type { Step } from '../../types';
 import { DEFAULT_QUIZ_PASSING_SCORE_REQUIRED } from '../../utils/quizPassingScore';
 import { LongTextQuestion } from './quiz/LongTextQuestion';
@@ -119,6 +120,8 @@ interface QuizRendererProps {
   highlightedQuestionId?: string;
   isTeacher?: boolean;
   isSpecialGroupStudent?: boolean;
+  /** Look Up on passages and questions once the attempt is submitted (never in checkpoints). */
+  reviewLookup?: boolean;
   passingScorePercent?: number;
 }
 
@@ -158,6 +161,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
     highlightedQuestionId,
     isTeacher,
     isSpecialGroupStudent = false,
+    reviewLookup = false,
     passingScorePercent = DEFAULT_QUIZ_PASSING_SCORE_REQUIRED,
   } = props;
 
@@ -255,6 +259,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
   // device-only highlights move to the server the first time the quiz opens.
   const annotationScope = `quiz:${currentStep?.id ?? 'none'}`;
   const annotationsFinished = quizState === 'completed' || feedChecked;
+  // Look Up after submission only (owner, 2026-11-02): while answering it would hand out answers.
+  const quizRootRef = useRef<HTMLDivElement>(null);
   const legacyHighlights = useMemo(() => {
     const key = currentStep ? `quiz_text_highlights_${currentStep.id}` : null;
     return {
@@ -2047,7 +2053,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
   return (
     <>
-      {content}
+      <div ref={quizRootRef} className="contents">{content}</div>
+      {reviewLookup && (
+        <TextLookupPopover
+          containerRef={quizRootRef}
+          enabled={annotationsFinished}
+          blocks={`[data-annotation-scope="${annotationScope}"][data-annotation-block]`}
+        />
+      )}
       {currentStep && quizState !== 'title' && (
         <AnnotationLayer
           key={`${annotationsFinished ? 'finished' : 'open'}-${quizAttempt?.id ?? ''}`}

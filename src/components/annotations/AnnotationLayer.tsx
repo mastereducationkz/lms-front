@@ -43,8 +43,8 @@ interface Props {
   scope: string;
   attempt?: 'current' | 'latest';
   readOnly?: boolean;
-  /** A Look Up chip waits under touch selections in these blocks. */
-  lookupBelow?: boolean;
+  /** A Look Up chip waits under touch selections in these blocks (all, or those it names). */
+  lookupBelow?: boolean | ((blockKey: string) => boolean);
   legacy?: { read: () => LegacyHighlight[]; keep: (left: LegacyHighlight[]) => void };
 }
 
@@ -298,8 +298,8 @@ export function AnnotationLayer({ surface, targetId, scope, attempt = 'current',
           note={editing?.note}
           startInNote={toolbar.mode === 'edit' && toolbar.startInNote}
           touch={toolbar.touch}
-          lookupBelow={lookupBelow && toolbar.mode === 'create'}
-          lookupOpen={lookupBelow && lookupOpen}
+          lookupBelow={toolbar.mode === 'create' && (typeof lookupBelow === 'function' ? lookupBelow(toolbar.blockKey) : Boolean(lookupBelow))}
+          lookupOpen={Boolean(lookupBelow) && lookupOpen}
           onClose={close}
           onColor={(color) => {
             if (toolbar.mode === 'create') createWith(color);

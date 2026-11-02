@@ -68,6 +68,21 @@ export function isEditable(node: Node | null): boolean {
   return !!element?.closest('input, textarea, select, [contenteditable=""], [contenteditable="true"]');
 }
 
+/**
+ * Quiz review: once an attempt is submitted its answers are in, so Look Up may help with the
+ * passages and questions there (owner, 2026-11-02). Never in a checkpoint, never while answering.
+ */
+export function lookupInQuizReview(lessonKind: string | undefined | null): boolean {
+  return lessonKind !== 'checkpoint';
+}
+
+/**
+ * Homework: Look Up on the reading text — the description and the instructions — but not on task
+ * questions, where a vocabulary task would be answered by it (owner, 2026-11-02).
+ */
+export const homeworkLookupBlocks = (scope: string): string =>
+  ['hw:d', 'hw:i'].map((key) => `[data-annotation-scope="${scope}"][data-annotation-block="${key}"]`).join(', ');
+
 /** Steps Look Up may run on. Quiz questions and checkpoints would hand out answers (owner, 2026-10-07). */
 export function lookupAllowed(stepType: string | undefined, lessonKind: string | undefined | null): boolean {
   if (lessonKind === 'checkpoint') return false;
