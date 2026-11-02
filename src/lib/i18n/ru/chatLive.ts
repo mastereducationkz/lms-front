@@ -97,7 +97,7 @@ export const chatLive: RuTable<typeof en> = {
   'chatLive.calendar.filter.webinars': 'Вебинары',
   'chatLive.calendar.filter.assignments': 'Домашние задания',
   'chatLive.calendar.filter.allGroups': 'Все группы',
-  'chatLive.calendar.filter.searchGroups': 'Поиск по группам и преподавателям…',
+  'chatLive.calendar.filter.searchGroups': 'Поиск группы…',
   'chatLive.calendar.filter.noGroupMatches': 'Таких групп нет',
   'chatLive.calendar.filter.showFinished': 'Показать завершённые',
   'chatLive.calendar.filter.recordings': 'Записи',

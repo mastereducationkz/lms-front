@@ -62,7 +62,7 @@ describe('Select (shadcn API on the engine)', () => {
     expect(trigger.getAttribute('role')).toBe('combobox');
     expect(trigger.getAttribute('aria-haspopup')).toBe('listbox');
     expect(trigger.className).toContain('w-40');
-    expect(trigger.className).not.toContain('w-full');
+    expect(trigger.className.split(' ')).not.toContain('w-full');
     expect(dropdownText(trigger)).toBe('Grape');
     expect(dropdownList(trigger)).toBeNull();
     await act(async () => { root!.render(<Fruits value="" />); });

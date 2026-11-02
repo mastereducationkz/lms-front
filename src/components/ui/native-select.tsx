@@ -142,7 +142,7 @@ export const NativeSelect = React.forwardRef<HTMLButtonElement, NativeSelectProp
       <DropdownTrigger
         ref={ref}
         id={id}
-        className={cn(TRIGGER_BASE, 'inline-flex max-w-full bg-background', normalizeDisplay(className))}
+        className={cn(TRIGGER_BASE, 'inline-flex bg-background', normalizeDisplay(className))}
         {...(rest as React.ButtonHTMLAttributes<HTMLButtonElement>)}
       >
         <span className="grid min-w-0 flex-1">

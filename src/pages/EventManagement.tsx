@@ -424,9 +424,9 @@ export default function EventManagement() {
 
       {/* Filters */}
       <div className="bg-card dark:bg-card rounded-lg border dark:border-border p-4">
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-center">
           {/* Search */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative min-w-[12rem]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder={t('adminPages.events.list.searchPlaceholder')}
@@ -438,7 +438,7 @@ export default function EventManagement() {
 
           {/* Event Type Filter */}
           <Select value={selectedEventType} onValueChange={(value) => setSelectedEventType(value as EventType | 'all')}>
-            <SelectTrigger className="w-full lg:w-48">
+            <SelectTrigger className="w-full lg:w-48 lg:shrink-0">
               <SelectValue placeholder={t('adminPages.events.list.typePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
@@ -451,7 +451,7 @@ export default function EventManagement() {
 
           {/* Date Filter */}
           <Select value={dateFilter} onValueChange={(value) => setDateFilter(value as any)}>
-            <SelectTrigger className="w-full lg:w-48">
+            <SelectTrigger className="w-full lg:w-48 lg:shrink-0">
               <SelectValue placeholder={t('adminPages.events.list.period')} />
             </SelectTrigger>
             <SelectContent>
@@ -464,7 +464,7 @@ export default function EventManagement() {
 
           {/* Group Filter */}
           <Select value={selectedGroupId.toString()} onValueChange={(value) => setSelectedGroupId(value === 'all' ? 'all' : parseInt(value))}>
-            <SelectTrigger className="w-full lg:w-48">
+            <SelectTrigger className="w-full lg:w-48 lg:shrink-0">
               <SelectValue placeholder={t('adminPages.events.list.group')} />
             </SelectTrigger>
             <SelectContent>
