@@ -1,4 +1,5 @@
 import React from 'react';
+import { NativeSelect } from '../ui/native-select';
 
 interface InlineSelectProps {
   value: string;
@@ -18,7 +19,7 @@ export const InlineSelect: React.FC<InlineSelectProps> = ({
   className = '',
 }) => {
   return (
-    <select
+    <NativeSelect
       value={value}
       onChange={(e) => onValueChange(e.target.value)}
       disabled={disabled}
@@ -32,6 +33,6 @@ export const InlineSelect: React.FC<InlineSelectProps> = ({
           {opt}
         </option>
       ))}
-    </select>
+    </NativeSelect>
   );
 };
