@@ -298,7 +298,7 @@ function LessonMaterialsFeed() {
             options={groupOptions}
             value={groupSelectValue}
             onChange={(v) => setGroupId(v === ALL_GROUPS ? null : Number(v))}
-            placeholder={isModerator ? t('pickGroup', locale) : t('allGroups', locale)}
+            placeholder={isModerator ? t('pickerPickGroup', locale) : t('allGroups', locale)}
             searchPlaceholder={t('searchGroups', locale)}
             emptyText={t('searchNothing', locale)}
             ariaLabel={isModerator ? t('pickGroup', locale) : t('allGroups', locale)}

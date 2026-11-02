@@ -161,7 +161,7 @@ export default function ModulePage() {
 
   return (
     <div className="space-y-8">
-      <Breadcrumbs items={[
+      <Breadcrumbs label={t('lessonPlayer.module.breadcrumb')} items={[
         { to: '/dashboard', label: t('lessonPlayer.module.dashboard') }, 
         { to: '/courses', label: t('learning.courses.title') }, 
         { to: `/course/${courseId}`, label: course.title },

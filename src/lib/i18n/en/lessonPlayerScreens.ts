@@ -42,6 +42,7 @@ export const lessonPlayerScreens = {
   'lessonPlayer.module.errorTitle': 'Error loading module',
   'lessonPlayer.module.notFound': 'Module not found',
   'lessonPlayer.module.dashboard': 'Dashboard',
+  'lessonPlayer.module.breadcrumb': 'Course navigation',
   'lessonPlayer.module.progress': 'Module Progress',
   'lessonPlayer.module.empty': 'No lessons available',
   'lessonPlayer.module.emptyHint': 'This module doesn\'t have any lessons yet',

@@ -72,8 +72,8 @@ export default function AppearanceSection() {
                   </span>
                 )}
               </div>
-              <div className="mt-2 truncate text-sm font-medium text-foreground">{o.label}</div>
-              {o.hint && <div className="truncate text-xs text-muted-foreground">{o.hint}</div>}
+              <div className="mt-2 break-words text-sm font-medium leading-snug text-foreground">{o.label}</div>
+              {o.hint && <div className="mt-0.5 break-words text-xs leading-snug text-muted-foreground">{o.hint}</div>}
             </button>
           );
         })}

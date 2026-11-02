@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Check, Circle, Loader2, RefreshCw, Square, SquareCheck } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { HScroll } from '../../components/ui/h-scroll';
 import { SearchableSelect } from '../../components/ui/searchable-select';
 import { UnitPicker, type PickedUnit } from '../../components/checkpoints/UnitPicker';
 import { toast } from 'sonner';
@@ -210,7 +211,7 @@ export default function CheckpointsAdminPage() {
 
       {/* ---- matrix ---- */}
       {matrix && (
-        <div className="overflow-x-auto rounded-lg border">
+        <HScroll className="rounded-lg border">
           <table className="min-w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
@@ -267,7 +268,7 @@ export default function CheckpointsAdminPage() {
           <p className="px-3 py-2 text-[11px] text-muted-foreground border-t">
             {t('adminPages.checkpoints.legendStart')} <Check className="inline h-3 w-3 align-[-2px] text-emerald-600 dark:text-emerald-400" strokeWidth={3} aria-label={t('adminPages.checkpoints.legendCheck')} /> {t('adminPages.checkpoints.legendCompleted')} <Circle className="inline h-2 w-2" aria-label={t('adminPages.checkpoints.legendCircle')} /> {t('adminPages.checkpoints.legendNotYet')} {t('adminPages.checkpoints.legendRule')}
           </p>
-        </div>
+        </HScroll>
       )}
 
       {/* ---- cell detail ---- */}
@@ -334,7 +335,7 @@ export default function CheckpointsAdminPage() {
       {/* ---- definitions ---- */}
       <div className="space-y-2">
         <h2 className="font-medium">{t('adminPages.checkpoints.definitions')}</h2>
-        <div className="overflow-x-auto rounded-lg border">
+        <HScroll className="rounded-lg border">
           <table className="min-w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
@@ -418,7 +419,7 @@ export default function CheckpointsAdminPage() {
               })}
             </tbody>
           </table>
-        </div>
+        </HScroll>
       </div>
     </div>
   );

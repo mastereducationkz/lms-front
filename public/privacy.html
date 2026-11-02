@@ -11,7 +11,8 @@
     h1 { font-size: 1.6rem; margin-bottom: 0.2rem; }
     h2 { font-size: 1.15rem; margin-top: 2rem; border-bottom: 1px solid #d1d5db55; padding-bottom: 4px; }
     table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
-    th, td { border: 1px solid #d1d5db88; padding: 6px 10px; text-align: left; vertical-align: top; }
+    th, td { border: 1px solid #d1d5db88; padding: 6px 10px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+    @media (max-width: 480px) { th, td { padding: 6px; } }
     ul { padding-left: 22px; }
     .muted { color: #6b7280; font-size: 0.9rem; }
     .lang-divider { margin: 48px 0 32px; border: none; border-top: 2px solid #d1d5db88; }

@@ -42,6 +42,7 @@ export const lessonPlayerScreens: RuTable<typeof en> = {
   'lessonPlayer.module.errorTitle': 'Ошибка загрузки модуля',
   'lessonPlayer.module.notFound': 'Модуль не найден',
   'lessonPlayer.module.dashboard': 'Дашборд',
+  'lessonPlayer.module.breadcrumb': 'Навигация по курсу',
   'lessonPlayer.module.progress': 'Прогресс по модулю',
   'lessonPlayer.module.empty': 'Уроков пока нет',
   'lessonPlayer.module.emptyHint': 'В этом модуле пока нет уроков',
