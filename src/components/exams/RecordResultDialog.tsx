@@ -1,3 +1,4 @@
+import { NativeSelect } from '@/components/ui/native-select';
 import { createPortal } from 'react-dom';
 import { useState } from 'react';
 import { Button } from '../ui/button';
@@ -226,8 +227,8 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
               <div>
                 <label htmlFor={`rr-date-${b.key}`} className="text-xs font-medium">{t('teacherInsights.recordResult.testDate')}</label>
                 {isSat && officialDates.length > 0 && (
-                  <select
-                    className="mt-1 mb-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  <NativeSelect
+                    className="mt-1 mb-1 block w-full"
                     value={officialDates.some((d) => d.test_date === b.testDate) ? b.testDate : ''}
                     onChange={(e) => e.target.value && patch(b.key, { testDate: e.target.value })}
                     aria-label={t('teacherInsights.recordResult.pickOfficialAria')}
@@ -236,7 +237,7 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
                     {officialDates.filter((d) => d.is_past).map((d) => (
                       <option key={d.test_date} value={d.test_date}>{d.label}</option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 )}
                 {/* SAT is official sittings only; the free date stays for IELTS/NUET, or if the list failed to load. */}
                 {!(isSat && officialDates.length > 0) && (
@@ -296,10 +297,10 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
                 <>
                   <div>
                     <label htmlFor={`rr-o-${b.key}`} className="text-xs font-medium">{t('teacherInsights.recordResult.overallBand')}</label>
-                    <select id={`rr-o-${b.key}`} value={b.overall} onChange={(e) => patch(b.key, { overall: e.target.value })}
-                            className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                    <NativeSelect id={`rr-o-${b.key}`} value={b.overall} onChange={(e) => patch(b.key, { overall: e.target.value })}
+                            className="mt-1 block w-full">
                       {IELTS_BANDS.map((band) => <option key={band} value={band}>{band || t('teacherInsights.recordResult.select')}</option>)}
-                    </select>
+                    </NativeSelect>
                   </div>
                   <div className="grid grid-cols-4 gap-2">
                     {([['listening', t('teacherInsights.recordResult.listening')], ['reading', t('teacherInsights.recordResult.reading')],
@@ -307,11 +308,11 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
                       .map(([field, label]) => (
                         <div key={field}>
                           <label className="text-xs font-medium">{label}</label>
-                          <select value={b[field]} onChange={(e) => patch(b.key, { [field]: e.target.value })}
+                          <NativeSelect value={b[field]} onChange={(e) => patch(b.key, { [field]: e.target.value })}
                                   aria-label={t('teacherInsights.recordResult.bandAria', { section: label })}
-                                  className="mt-1 block w-full rounded-md border border-input bg-background px-2 py-2 text-sm">
+                                  className="mt-1 block w-full px-2">
                             {IELTS_BANDS.map((band) => <option key={band} value={band}>{band || '—'}</option>)}
-                          </select>
+                          </NativeSelect>
                         </div>
                       ))}
                   </div>

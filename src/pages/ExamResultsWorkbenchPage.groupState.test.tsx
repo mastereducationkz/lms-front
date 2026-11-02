@@ -22,6 +22,7 @@ vi.mock('../services/api/exams', () => ({
   updatePlannedDate: vi.fn(),
 }));
 
+import { optionLabels, pickValue } from '@/test/dropdown';
 import ExamResultsWorkbenchPage from './ExamResultsWorkbenchPage';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -82,14 +83,13 @@ describe('exam-results page group state', () => {
     getExamGroups.mockResolvedValue([
       { id: 9, name: 'SAT - Old', program_type: 'sat', teacher_id: 2, teacher_name: 'T', is_finished: true },
     ]);
-    const select = host.querySelector('#er-group') as HTMLSelectElement;
-    await act(async () => { select.value = '1'; select.dispatchEvent(new Event('change', { bubbles: true })); });
+    await pickValue(host.querySelector('#er-group'), 1);
     const finished = Array.from(host.querySelectorAll('button')).find((b) => b.textContent === 'Finished')!;
     await act(async () => { finished.click(); });
     await settle();
     expect(getExamResults).toHaveBeenLastCalledWith(expect.objectContaining({ groupState: 'finished' }));
     expect(getExamResults).toHaveBeenLastCalledWith(expect.not.objectContaining({ groupId: expect.anything() }));
-    expect(Array.from(host.querySelectorAll('#er-group option')).map((o) => o.textContent)).toContain('SAT - Old — T · finished');
+    expect(await optionLabels(host.querySelector('#er-group'))).toContain('SAT - Old — T · finished');
   });
 
   it('a finished student row carries the finished tag next to the group', async () => {

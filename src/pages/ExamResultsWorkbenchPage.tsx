@@ -1,3 +1,4 @@
+import { NativeSelect } from '@/components/ui/native-select';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Download, FileText, History, MessageSquareQuote, Plus, Search } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
@@ -393,15 +394,15 @@ export default function ExamResultsWorkbenchPage() {
                 <label htmlFor="er-cohort" className="text-xs font-medium">
                   {t('exams.filters.officialDate')}
                 </label>
-                <select id="er-cohort" value={exactDate} onChange={(e) => setExactDate(e.target.value)}
-                        className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <NativeSelect id="er-cohort" value={exactDate} onChange={(e) => setExactDate(e.target.value)}
+                        className="mt-1 block w-full">
                   <option value="">{t('exams.filters.anyDate')}</option>
                   {officialDates.map((d) => (
                     <option key={d.test_date} value={d.test_date}>
                       {d.is_past ? t('exams.filters.pastDate', { label: d.label }) : d.label}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </div>
             )}
             <div>
@@ -416,16 +417,16 @@ export default function ExamResultsWorkbenchPage() {
             </div>
             <div>
               <label htmlFor="er-group" className="text-xs font-medium">{t('exams.filters.group')}</label>
-              <select id="er-group" value={groupId}
+              <NativeSelect id="er-group" value={groupId}
                       onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : '')}
-                      className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                      className="mt-1 block w-full">
                 <option value="">{t('exams.filters.allMyGroups')}</option>
                 {groups.map((g) => (
                   <option key={g.id} value={g.id}>
                     {groupOptionLabel(g, t('exams.groupState.tag'))}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
           </div>
 

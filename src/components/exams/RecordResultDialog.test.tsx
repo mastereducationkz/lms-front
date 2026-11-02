@@ -14,6 +14,7 @@ vi.mock('../../services/api/exams', () => ({
   uploadResultProof: vi.fn(),
 }));
 
+import { dropdownValue, pickValue } from '@/test/dropdown';
 import { RecordResultDialog } from './RecordResultDialog';
 import type { ExamResultRow, SatOfficialDate } from '../../services/api/exams';
 
@@ -48,10 +49,9 @@ async function type(id: string, value: string) {
   await act(async () => { setter.call(el, value); el.dispatchEvent(new Event('input', { bubbles: true })); });
 }
 const saveButton = () => { const all = document.querySelectorAll('button'); return all[all.length - 1] as HTMLButtonElement; };
-async function pickDate(value: string) {
-  const select = document.querySelector('select[aria-label]') as HTMLSelectElement;
-  await act(async () => { select.value = value; select.dispatchEvent(new Event('change', { bubbles: true })); });
-}
+/** The SAT official-date dropdown (named by its aria-label). */
+const DATE_PICKER = 'button[role="combobox"][aria-label]';
+const pickDate = (value: string) => pickValue(DATE_PICKER, value);
 
 describe('RecordResultDialog date guard', () => {
   it('offers SAT official dates only — no free date field', async () => {
@@ -84,7 +84,7 @@ describe('RecordResultDialog date guard', () => {
 describe('RecordResultDialog, October 2026 recheck', () => {
   it('starts with NO date: a stale plan used to be saved as the sitting', async () => {
     await open();
-    expect((document.querySelector('select[aria-label]') as HTMLSelectElement).value).toBe('');
+    expect(dropdownValue(DATE_PICKER)).toBe('');
     expect(document.body.textContent).toContain('2025-10-04');   // shown as a hint only
     expect(saveButton().disabled).toBe(true);
   });

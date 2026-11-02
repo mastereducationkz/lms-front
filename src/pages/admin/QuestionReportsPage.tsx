@@ -1,3 +1,4 @@
+import { NativeSelect } from '@/components/ui/native-select';
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
@@ -521,16 +522,16 @@ export default function QuestionReportsPage() {
       {/* Filter */}
       <div className="flex items-center gap-4 mb-4">
         <Filter className="w-5 h-5 text-muted-foreground" />
-        <select 
+        <NativeSelect
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm dark:border-border dark:bg-card dark:text-foreground"
+          className="rounded-lg"
         >
           <option value="">{t('adminPages.questionReports.allReports')}</option>
           {Object.entries(statusConfig).map(([status, config]) => (
             <option key={status} value={status}>{t(config.label)}</option>
           ))}
-        </select>
+        </NativeSelect>
         {statusFilter && (
           <Button variant="ghost" size="sm" onClick={() => setStatusFilter('')}>
             {t('adminPages.questionReports.clearFilter')}
