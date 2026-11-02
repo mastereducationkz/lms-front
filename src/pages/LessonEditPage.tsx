@@ -22,7 +22,8 @@ import {
   Eye,
   GripVertical,
   Trophy,
-  Scissors
+  Scissors,
+  ListTree
 } from 'lucide-react';
 import {
   DndContext,
@@ -58,6 +59,7 @@ import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import UnsavedChangesDialog from '../components/UnsavedChangesDialog';
 import { useAuth } from '../contexts/AuthContext';
 import { canEditCourseContent } from '../lib/courseAccess';
+import { SidebarDrawer, useSidebarDrawer } from '../components/SidebarDrawer';
 import { useT } from '@/lib/i18n/react';
 import type { MessageKey } from '@/lib/i18n';
 import '@/lib/i18n/catalogs/courseAuthoring';
@@ -68,6 +70,8 @@ interface LessonSidebarProps {
   courseLessons: Lesson[];
   selectedLessonId: string;
   onLessonSelect: (lessonId: string) => void;
+  /** Inside the phone drawer: fill it instead of the fixed 16rem column. */
+  inDrawer?: boolean;
 }
 
 const groupLessonsByModule = (lessons: Lesson[]): Map<string, Lesson[]> => {
@@ -154,7 +158,7 @@ const STEP_TYPE_LABELS: Record<string, MessageKey> = {
   summary: 'courseAuthoring.lesson.typeSummary',
 };
 
-const LessonSidebar = ({ course, modules, courseLessons, selectedLessonId, onLessonSelect }: LessonSidebarProps) => {
+const LessonSidebar = ({ course, modules, courseLessons, selectedLessonId, onLessonSelect, inDrawer = false }: LessonSidebarProps) => {
   const t = useT();
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const moduleLectures = useMemo(() => groupLessonsByModule(courseLessons), [courseLessons]);
@@ -191,7 +195,7 @@ const LessonSidebar = ({ course, modules, courseLessons, selectedLessonId, onLes
   };
 
   return (
-    <div className="w-64 bg-background border-r h-screen flex flex-col">
+    <div className={`${inDrawer ? 'w-full h-full' : 'w-64 border-r h-screen'} bg-background flex flex-col`}>
       {/* Course Header - Fixed */}
       <div className="p-4 border-b bg-muted/20 flex-shrink-0">
         <div className="flex items-center gap-2">
@@ -486,6 +490,8 @@ export default function LessonEditPage() {
   
   // State for step reordering
   const [isReordering, setIsReordering] = useState(false);
+  // Phones: the course's lesson list is a drawer, not a 16rem column (lms-pages audit P1 #1).
+  const lessonDrawer = useSidebarDrawer('lesson-editor-lessons');
 
   // Immediate auto-save function
   const immediateAutoSave = useCallback(
@@ -1256,32 +1262,54 @@ export default function LessonEditPage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar */}
-      <LessonSidebar
-        course={course}
-        modules={modules}
-        courseLessons={courseLessons}
-        selectedLessonId={lessonId!}
-        onLessonSelect={handleLessonSelect}
-      />
+      {/* Sidebar: a column from md up, a drawer on phones */}
+      <div className="hidden md:block flex-shrink-0" data-testid="lesson-editor-sidebar-column">
+        <LessonSidebar
+          course={course}
+          modules={modules}
+          courseLessons={courseLessons}
+          selectedLessonId={lessonId!}
+          onLessonSelect={handleLessonSelect}
+        />
+      </div>
+      <SidebarDrawer {...lessonDrawer.drawerProps} label={t('courseAuthoring.lesson.lessonList')} closeLabel={t('common.close')}>
+        <LessonSidebar
+          inDrawer
+          course={course}
+          modules={modules}
+          courseLessons={courseLessons}
+          selectedLessonId={lessonId!}
+          onLessonSelect={(id) => { lessonDrawer.close(); handleLessonSelect(id); }}
+        />
+      </SidebarDrawer>
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* <MaintenanceBanner /> */}
         {/* Header */}
         <Card className="border-0 rounded-none border-b">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Settings className="w-5 h-5 text-primary" />
-                <div>
-                  <CardTitle className="text-lg">{t('courseAuthoring.lesson.settings')}</CardTitle>
-                  <CardDescription>
+          <CardHeader className="p-4 pb-3 sm:p-6 sm:pb-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-3 min-w-0">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="md:hidden flex-shrink-0"
+                  title={t('courseAuthoring.lesson.lessonList')}
+                  aria-label={t('courseAuthoring.lesson.lessonList')}
+                  {...lessonDrawer.toggleProps}
+                >
+                  <ListTree className="w-5 h-5" aria-hidden="true" />
+                </Button>
+                <Settings className="hidden sm:block w-5 h-5 text-primary flex-shrink-0" aria-hidden="true" />
+                <div className="min-w-0">
+                  <CardTitle className="text-lg truncate">{t('courseAuthoring.lesson.settings')}</CardTitle>
+                  <CardDescription className="hidden sm:block">
                     {t('courseAuthoring.lesson.settingsHint')}
                   </CardDescription>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {canEditCourseContent(user?.role) && (
                   <Button
                     variant="outline"
@@ -1295,20 +1323,20 @@ export default function LessonEditPage() {
                     title={t('courseAuthoring.lesson.viewAsStudent')}
                     aria-label={t('courseAuthoring.lesson.viewLesson')}
                   >
-                    <Eye className="w-4 h-4 mr-1" />
-                    {t('courseAuthoring.lesson.view')}
+                    <Eye className="w-4 h-4 sm:mr-1" aria-hidden="true" />
+                    <span className="hidden sm:inline">{t('courseAuthoring.lesson.view')}</span>
                   </Button>
                 )}
                 {showSaveSuccess && (
                   <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-md border border-green-200 dark:bg-green-950/40 dark:text-green-300 dark:border-green-800/60">
-                    <CheckCircle className="w-4 h-4" />
-                    <span className="text-sm font-medium">{t('courseAuthoring.lesson.saved')}</span>
+                    <CheckCircle className="w-4 h-4" aria-hidden="true" />
+                    <span className="sr-only sm:not-sr-only text-sm font-medium">{t('courseAuthoring.lesson.saved')}</span>
                   </div>
                 )}
                 {autoSaveStatus === 'saving' && (
                   <div className="flex items-center gap-2 px-3 py-1 bg-brand-surface text-brand-subtle-foreground rounded-md border border-brand-border">
                     <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm font-medium">{t('courseAuthoring.lesson.saving')}</span>
+                    <span className="sr-only sm:not-sr-only text-sm font-medium">{t('courseAuthoring.lesson.saving')}</span>
                   </div>
                 )}
               </div>
@@ -1317,19 +1345,19 @@ export default function LessonEditPage() {
         </Card>
         
         {/* Content */}
-        <div className="flex-1 p-6 overflow-y-auto">
+        <div className="flex-1 p-4 sm:p-6 overflow-y-auto">
           <div className="max-w-4xl mx-auto space-y-3">
             {/* Lesson Title */}
             <Card>
-              <CardHeader>
+              <CardHeader className="p-4 sm:p-6">
                 <CardTitle className="flex items-center gap-2">
                   <Edit3 className="w-5 h-5" />
                   {t('courseAuthoring.lesson.settings')}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-x-2">
                     <Label htmlFor="lesson-title">{t('courseAuthoring.create.titleLabel')}</Label>
                     <span className="text-sm text-muted-foreground">
                       {t('courseAuthoring.lesson.charsRemaining', { count: remainingChars })}
@@ -1404,7 +1432,7 @@ export default function LessonEditPage() {
                   items={steps.map(s => s.id)}
                   strategy={horizontalListSortingStrategy}
                 >
-                  <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(15, 1fr)' }}>
+                  <div className="grid gap-1 grid-cols-8 sm:grid-cols-[repeat(15,1fr)]">
                     {steps
                       .sort((a, b) => a.order_index - b.order_index)
                       .map((step) => (
@@ -1596,15 +1624,17 @@ export default function LessonEditPage() {
         {/* Bottom Bar */}
         <Card className="border-0 rounded-none border-t">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between max-w-4xl mx-auto">
+            <div className="flex flex-wrap items-center justify-between gap-2 max-w-4xl mx-auto">
               <div className="flex items-center gap-3">
                 <Button
                   variant="outline"
                   onClick={() => navigate(`/teacher/course/${courseId}`)}
                   className="flex items-center gap-2"
+                  aria-label={t('courseAuthoring.lesson.returnToCourse')}
+                  title={t('courseAuthoring.lesson.returnToCourse')}
                 >
-                  <ArrowLeft className="w-4 h-4" />
-                  {t('courseAuthoring.lesson.returnToCourse')}
+                  <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">{t('courseAuthoring.lesson.returnToCourse')}</span>
                 </Button>
                 <Button
                   onClick={handleSave}

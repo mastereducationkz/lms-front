@@ -55,7 +55,7 @@ export default function CreateCourseWizard() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">{tr('courseAuthoring.create.title')}</h1>
-      <div className="card p-6">
+      <div className="card p-4 sm:p-6">
         <Stepper steps={steps} current={step} onStepChange={setStep} />
 
         <div className="mt-6">
