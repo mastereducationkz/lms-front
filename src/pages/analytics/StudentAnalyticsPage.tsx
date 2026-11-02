@@ -212,7 +212,7 @@ export const StudentAnalyticsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="p-8 flex justify-center items-center">
+      <div className="py-8 flex justify-center items-center">
         <div className="animate-pulse text-muted-foreground">{t('teacherInsights.studentAnalytics.loading')}</div>
       </div>
     );
@@ -220,7 +220,7 @@ export const StudentAnalyticsPage: React.FC = () => {
 
   if (error || !data) {
     return (
-      <div className="p-8">
+      <div>
         <div className="max-w-4xl mx-auto">
           <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4 pl-0 hover:bg-transparent">
             <ArrowLeft className="mr-2 h-4 w-4" /> {t('teacherInsights.studentAnalytics.backToAnalytics')}
@@ -248,7 +248,7 @@ export const StudentAnalyticsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col space-y-2">
         <Button variant="ghost" onClick={() => navigate(-1)} className="w-fit pl-0 mb-2 hover:bg-muted dark:hover:bg-secondary -ml-2 text-muted-foreground">

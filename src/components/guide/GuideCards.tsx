@@ -151,7 +151,6 @@ export const TipCard = forwardRef<HTMLDivElement, TipCardProps>(function TipCard
   { tipKey, title, body, side, style, hidden, onGotIt, arrowRef, arrowStyle },
   ref,
 ) {
-  const t = useT();
   const titleId = `guide-tip-${tipKey.replace(/[^a-z0-9-]/gi, '-')}`;
   return (
     <div
@@ -160,6 +159,7 @@ export const TipCard = forwardRef<HTMLDivElement, TipCardProps>(function TipCard
       aria-labelledby={titleId}
       data-guide="tip"
       data-tip-key={tipKey}
+      data-variant="anchored"
       data-side={side}
       style={{ ...style, visibility: hidden ? 'hidden' : undefined }}
       className="pointer-events-auto fixed left-0 top-0 z-40 flex w-[min(18.5rem,calc(100vw-1.5rem))] max-h-[calc(100dvh-1.5rem)]"
@@ -185,16 +185,68 @@ export const TipCard = forwardRef<HTMLDivElement, TipCardProps>(function TipCard
           </div>
         </div>
         <div className="mt-3 flex justify-end">
-          <button
-            type="button"
-            onClick={onGotIt}
-            data-guide-action="got-it"
-            className={cn('inline-flex h-8 items-center rounded-lg bg-brand-solid px-3 text-[13px] font-semibold text-brand-solid-foreground transition-colors hover:bg-brand-solid-hover', FOCUS)}
-          >
-            {t('guide.tip.gotIt')}
-          </button>
+          <GotIt onClick={onGotIt} />
         </div>
       </div>
     </div>
   );
 });
+
+function GotIt({ onClick }: { onClick: () => void }) {
+  const t = useT();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-guide-action="got-it"
+      className={cn('inline-flex h-8 flex-none items-center rounded-lg bg-brand-solid px-3 text-[13px] font-semibold text-brand-solid-foreground transition-colors hover:bg-brand-solid-hover', FOCUS)}
+    >
+      {t('guide.tip.gotIt')}
+    </button>
+  );
+}
+
+interface TipBarProps {
+  tipKey: string;
+  title: string;
+  body: string;
+  onGotIt: () => void;
+}
+
+/**
+ * The same tip on a phone (owner decision (b), 2026-11-02): a compact bar pinned to the bottom of the
+ * screen instead of a bubble over the page. Same copy, same «Got it». It sits above the page and the
+ * Topbar (z-40, like the bubble) and under every dialog (z-50), clear of the home indicator.
+ */
+export function TipBar({ tipKey, title, body, onGotIt }: TipBarProps) {
+  const titleId = `guide-tip-${tipKey.replace(/[^a-z0-9-]/gi, '-')}`;
+  return (
+    <div
+      role="region"
+      aria-labelledby={titleId}
+      data-guide="tip"
+      data-tip-key={tipKey}
+      data-variant="bar"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+    >
+      <div
+        className={cn(
+          'pointer-events-auto mx-auto max-h-[45dvh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-popover p-3 text-popover-foreground',
+          SHADOW,
+          'animate-in fade-in-0 slide-in-from-bottom-2 duration-200 motion-reduce:animate-none',
+        )}
+      >
+        <div className="flex items-center gap-2.5">
+          <span className="inline-flex h-7 w-7 flex-none items-center justify-center rounded-full bg-brand-subtle text-brand-subtle-foreground" aria-hidden>
+            <Lightbulb className="h-3.5 w-3.5" />
+          </span>
+          <p id={titleId} className="min-w-0 flex-1 text-sm font-semibold leading-snug text-foreground">
+            {title}
+          </p>
+          <GotIt onClick={onGotIt} />
+        </div>
+        <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">{body}</p>
+      </div>
+    </div>
+  );
+}

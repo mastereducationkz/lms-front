@@ -479,6 +479,13 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
+          {/* Loading and «nothing here» sit in the card itself: inside the table they were centred across
+              its min-width and cut off by the scroller on a phone. */}
+          {loading || visible.length === 0 ? (
+            <p className="flex min-h-24 items-center justify-center px-6 py-8 text-center text-sm text-muted-foreground" data-testid="lesson-requests-empty">
+              {loading ? t('common.loading') : t('lessonRequests.list.empty')}
+            </p>
+          ) : (
           <Table>
             <TableHeader>
               <TableRow>
@@ -492,20 +499,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                    {t('common.loading')}
-                  </TableCell>
-                </TableRow>
-              ) : visible.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                    {t('lessonRequests.list.empty')}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                visible.map(req => {
+              {visible.map(req => {
                   const isOpen = expanded === req.id;
                   const bad = inconsistent(req);
                   return [
@@ -779,10 +773,10 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                       </TableRow>
                     ),
                   ];
-                })
-              )}
+                })}
             </TableBody>
           </Table>
+          )}
         </CardContent>
       </Card>
       </>

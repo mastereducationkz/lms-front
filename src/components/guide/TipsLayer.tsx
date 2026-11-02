@@ -2,13 +2,15 @@
  * One-time page tips: at most one on screen, never over the tour, the welcome or an open dialog, no
  * dimming, nothing blocked. A tip waits until its element is actually on screen (a phone without the
  * sidebar, a closed menu, a section scrolled away) and shows once it has stayed there a moment.
+ * On a phone (below `sm`, the app's phone layout) it shows as a bar at the bottom of the screen
+ * instead of a bubble over the content (owner decision (b), 2026-11-02); «Got it» works the same.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { visibleInViewport } from '@/lib/guide/geometry';
 import { useT } from '@/lib/i18n/react';
 import { findShown, isShown, otherDialogOpen, viewportSize } from './dom';
-import { TipCard } from './GuideCards';
+import { TipBar, TipCard } from './GuideCards';
 import { tipsFor, type TipDefinition } from './tips';
 import { tourStore } from './tourStore';
 import { useAnchoredCard } from './useAnchoredCard';
@@ -17,6 +19,22 @@ import { useAnchoredCard } from './useAnchoredCard';
 const POLL_MS = 400;
 /** The element has to stay in view this long first: no tip flashing past during a scroll or a load. */
 const SETTLE_MS = 700;
+/** The phone layout: below Tailwind's `sm`, the breakpoint the app's phone layouts switch at. */
+const PHONE_QUERY = '(max-width: 639px)';
+
+function usePhoneLayout(): boolean {
+  const query = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia(PHONE_QUERY) : null;
+  const [phone, setPhone] = useState(() => Boolean(query()?.matches));
+  useEffect(() => {
+    const mq = query();
+    if (!mq) return undefined;
+    const onChange = () => setPhone(mq.matches);
+    onChange();
+    mq.addEventListener?.('change', onChange);
+    return () => mq.removeEventListener?.('change', onChange);
+  }, []);
+  return phone;
+}
 
 interface Props {
   role: string | null | undefined;
@@ -49,6 +67,8 @@ function TipBubble({ tip, el, onGotIt }: { tip: TipDefinition; el: HTMLElement; 
 export default function TipsLayer({ role, pathname, busy, dismissed, onDismiss }: Props) {
   const candidates = useMemo(() => tipsFor(role, pathname, dismissed), [role, pathname, dismissed]);
   const [active, setActive] = useState<{ tip: TipDefinition; el: HTMLElement } | null>(null);
+  const phone = usePhoneLayout();
+  const t = useT();
   // Tell the dashboard prompts (lib/dashboardPrompt) a tip is up, so they don't pile on.
   useEffect(() => {
     tourStore.setTip(active !== null);
@@ -91,16 +111,16 @@ export default function TipsLayer({ role, pathname, busy, dismissed, onDismiss }
   }, [busy, candidates]);
 
   if (!active) return null;
+  const onGotIt = () => {
+    onDismiss(active.tip.key);
+    setActive(null);
+  };
   return createPortal(
-    <TipBubble
-      key={active.tip.key}
-      tip={active.tip}
-      el={active.el}
-      onGotIt={() => {
-        onDismiss(active.tip.key);
-        setActive(null);
-      }}
-    />,
+    phone ? (
+      <TipBar key={active.tip.key} tipKey={active.tip.key} title={t(active.tip.title)} body={t(active.tip.body)} onGotIt={onGotIt} />
+    ) : (
+      <TipBubble key={active.tip.key} tip={active.tip} el={active.el} onGotIt={onGotIt} />
+    ),
     document.body,
   );
 }

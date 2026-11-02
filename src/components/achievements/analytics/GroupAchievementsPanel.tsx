@@ -54,12 +54,15 @@ export default function GroupAchievementsPanel({ groupId }: { groupId: number })
   return (
     <section className="mt-6 rounded-2xl border border-border bg-card dark:bg-card shadow-sm">
       <button type="button" onClick={toggle} className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left">
-        <span className="flex items-center gap-2">
-          <Trophy className="h-4 w-4 text-amber-500" />
-          <span className="font-semibold text-foreground">{t('achievements.group.title')}</span>
-          {data && <span className="text-xs text-muted-foreground">· {t('achievements.group.earned', { count: data.summary.unlocks })}</span>}
+        {/* On a phone the count drops under the title as one piece («· 12 всего») instead of breaking up. */}
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span className="flex min-w-0 items-center gap-2">
+            <Trophy className="h-4 w-4 flex-none text-amber-500" />
+            <span className="font-semibold text-foreground">{t('achievements.group.title')}</span>
+          </span>
+          {data && <span className="whitespace-nowrap text-xs text-muted-foreground">· {t('achievements.group.earned', { count: data.summary.unlocks })}</span>}
         </span>
-        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-4 w-4 flex-none text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <div className="space-y-5 border-t border-border px-5 py-4">
