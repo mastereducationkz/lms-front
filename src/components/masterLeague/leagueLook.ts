@@ -40,6 +40,8 @@ export interface LeagueLook {
   /** The muted colour a step quieter (a goal's count, the producer's note). */
   mutedSoft: string;
   coachText: string;
+  /** A stat tile on the banner: football's is translucent; studio's are solid, so the motif never runs through their words. */
+  tile: string;
   /** A done goal chip. */
   done: string;
   /** A filled control or a done chip, with its text. */
@@ -75,6 +77,7 @@ export const FOOTBALL_LOOK: LeagueLook = {
   mutedSoft: 'text-blue-100/80',
   coachText: 'text-blue-100/90',
   done: 'bg-amber-300 font-semibold text-blue-950',
+  tile: 'bg-white/10',
   solid: 'bg-amber-300 text-blue-950',
   solidHover: 'hover:bg-amber-200',
   focus: 'focus-visible:outline-amber-300',
@@ -115,6 +118,7 @@ const OFF_SEASON: LeagueLook = {
   mutedSoft: 'text-[#EADFD4]/80',
   coachText: 'text-[#EADFD4]/90',
   done: 'bg-[#F7A56B] font-semibold text-[#1F130B]',
+  tile: 'bg-[#3D312A]',
   solid: 'bg-[#F7A56B] text-[#1F130B]',
   solidHover: 'hover:bg-[#FBC9A2]',
   focus: 'focus-visible:outline-[#F7A56B]',
@@ -155,6 +159,7 @@ const SECTION_80: LeagueLook = {
   mutedSoft: 'text-[#E5D9F7]/80',
   coachText: 'text-[#E5D9F7]/90',
   done: 'bg-[#F5C451] font-semibold text-[#1F0F3D]',
+  tile: 'bg-[#341A5C]',
   solid: 'bg-[#F5C451] text-[#1F0F3D]',
   solidHover: 'hover:bg-[#F9DC8E]',
   focus: 'focus-visible:outline-[#F5C451]',
@@ -195,6 +200,7 @@ const STUDIO_LOOK: LeagueLook = {
   mutedSoft: 'text-[#DEDAD2]/80',
   coachText: 'text-[#DEDAD2]/90',
   done: 'bg-[#E8C268] font-semibold text-[#16171A]',
+  tile: 'bg-[#2C2D33]',
   solid: 'bg-[#E8C268] text-[#16171A]',
   solidHover: 'hover:bg-[#F3DCA0]',
   focus: 'focus-visible:outline-[#E8C268]',

@@ -84,6 +84,14 @@ describe('the studio season banner', () => {
     expect(banner(league({ group: { id: 499, name: 'Master League Encore' } }))).toContain('#1A1B1F');
   });
 
+  it('keeps «Off-Season» whole and the last track with Release Day on a phone', () => {
+    const html = banner(league({ group: { id: 401, name: 'Master League Off-Season' } }));
+    expect(html).toContain('Master League · Off‑Season');
+    expect(html).toMatch(/<li role="none" class="flex shrink-0 items-center gap-1.5"><span title="Track 5: upcoming[^"]*" role="listitem"/);
+    expect(html).toContain('title="Release Day · 5 Dec" role="listitem"');
+    expect(html).toContain('bg-[#3D312A]'); // solid stat tiles: the motif never runs through their words
+  });
+
   it('puts Kasatik in the studio look, never the football kit', () => {
     const html = banner(league());
     expect(html).toContain('Kasatik in the Master League studio look');
@@ -96,6 +104,8 @@ describe('the studio season banner', () => {
     expect(html).toContain('Matchday 4 of 11');
     expect(html).toContain('Coach’s note');
     expect(banner({ ...football, theme: undefined })).toBe(html);
+    expect(html).not.toContain('role="none"');
+    expect(html).not.toContain('role="listitem"');
     expect(leagueLook(undefined, 'Master League Section.80')).toBe(FOOTBALL_LOOK);
   });
 });

@@ -56,6 +56,9 @@ export function achievementTheme(a: { key: string; title?: string | null }): Lea
   return a.title && hasMessage(key) && t(key, undefined, 'en') === a.title ? 'studio' : 'football';
 }
 
+/** A group's name that never breaks at its hyphen («Off-Season» stays whole on a phone): non-breaking hyphens. */
+export const unbreakable = (name: string): string => name.replace(/-/g, '‑');
+
 /** The look a studio group gets, by the tail of its name («Master League Section.80» → section80). */
 export type StudioGroupLook = 'offSeason' | 'section80' | 'studio';
 

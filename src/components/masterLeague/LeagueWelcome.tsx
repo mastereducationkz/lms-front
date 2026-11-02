@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { achievementField } from '@/lib/achievements';
 import { groupTail } from '@/lib/leagueSeason';
-import { achievementTheme, withTheme, type LeagueTheme } from '@/lib/leagueTheme';
+import { achievementTheme, unbreakable, withTheme, type LeagueTheme } from '@/lib/leagueTheme';
 import { formatDate } from '@/lib/i18n';
 import { useLocale, useT } from '@/lib/i18n/react';
 import type { Achievement } from '@/services/api/achievementsUi';
@@ -71,8 +71,9 @@ export function LeagueWelcomeBody({ items, league, saving, onClose, theme, Title
   const others = items.filter((a) => a.key !== 'ml_signed');
   const total = league?.lessons.total ?? 0;
   const date = league?.exam_date ? formatDate(league.exam_date, { day: 'numeric', month: 'long' }, locale) : '';
-  const group = league ? groupTail(league.group.name) : '';
   const studio = season === 'studio';
+  const tail = league ? groupTail(league.group.name) : '';
+  const group = studio ? unbreakable(tail) : tail;
   return (
     <>
       <style>{studio ? CSS + studioRays(look) : CSS}</style>

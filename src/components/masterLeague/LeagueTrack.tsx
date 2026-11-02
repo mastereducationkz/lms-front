@@ -19,21 +19,24 @@ import '@/lib/i18n/catalogs/studentHome';
 const pipSize = (look: LeagueLook) =>
   `flex h-[22px] w-[22px] shrink-0 items-center justify-center ${look.pipShape} text-[10px] font-bold tabular-nums @lg:h-6 @lg:w-6`;
 
-function Pip({ item, look }: { item: LeagueLesson; look: LeagueLook }) {
+/** A pip is its own list item; inside the studio's last pair it is a span that keeps the list-item role. */
+type PipTag = 'li' | 'span';
+
+function Pip({ item, look, as: Tag = 'li' }: { item: LeagueLesson; look: LeagueLook; as?: PipTag }) {
   const locale = useLocale();
   const label = pipLabel(item, locale, look.theme);
   return (
-    <li title={label} className={`${pipSize(look)} ${look.pip[item.state]}`}>
+    <Tag title={label} role={Tag === 'span' ? 'listitem' : undefined} className={`${pipSize(look)} ${look.pip[item.state]}`}>
       <span className="sr-only">{label}</span>
       <span aria-hidden className="flex items-center justify-center">
         {item.state === 'attended' ? <Check className="h-3 w-3" strokeWidth={3.4} /> : item.state === 'missed' ? <Minus className="h-3 w-3" strokeWidth={3} /> : item.number}
       </span>
-    </li>
+    </Tag>
   );
 }
 
 /** The end of the track: quiet until the exam, pulsing on the day, lit once it has happened. */
-function FinalPip({ phase, examDate, look }: { phase: LeaguePhase; examDate: string | null; look: LeagueLook }) {
+function FinalPip({ phase, examDate, look, as: Tag = 'li' }: { phase: LeaguePhase; examDate: string | null; look: LeagueLook; as?: PipTag }) {
   const t = useT();
   const locale = useLocale();
   const label = examDate
@@ -42,10 +45,10 @@ function FinalPip({ phase, examDate, look }: { phase: LeaguePhase; examDate: str
   const style = phase === 'after' ? look.pipEnd.done : phase === 'exam_day' ? look.pipEnd.today : look.pipEnd.ahead;
   const Icon = look.theme === 'studio' ? Disc3 : Trophy;
   return (
-    <li title={label} className={`${pipSize(look)} ml-1 ${style}`}>
+    <Tag title={label} role={Tag === 'span' ? 'listitem' : undefined} className={`${pipSize(look)} ml-1 ${style}`}>
       <span className="sr-only">{label}</span>
       <Icon aria-hidden className="h-3 w-3" strokeWidth={2.6} />
-    </li>
+    </Tag>
   );
 }
 
@@ -56,8 +59,21 @@ export default function LeagueTrack({ items, phase, examDate, look = FOOTBALL_LO
   if (items.length === 0) return null;
   return (
     <ol aria-label={t(themedKey('studentHome.league.track', look.theme))} className="mt-3 flex flex-wrap items-center gap-1.5">
-      {items.map((item) => <Pip key={item.id} item={item} look={look} />)}
-      <FinalPip phase={phase} examDate={examDate} look={look} />
+      {look.theme === 'studio' ? (
+        <>
+          {items.slice(0, -1).map((item) => <Pip key={item.id} item={item} look={look} />)}
+          {/* the last track and Release Day never part: on a phone the record does not wrap onto a row of its own */}
+          <li role="none" className="flex shrink-0 items-center gap-1.5">
+            <Pip item={items[items.length - 1]} look={look} as="span" />
+            <FinalPip phase={phase} examDate={examDate} look={look} as="span" />
+          </li>
+        </>
+      ) : (
+        <>
+          {items.map((item) => <Pip key={item.id} item={item} look={look} />)}
+          <FinalPip phase={phase} examDate={examDate} look={look} />
+        </>
+      )}
     </ol>
   );
 }

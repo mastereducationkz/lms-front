@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   attendanceText, coachNote, groupTail, homeworkText, needsTicker, phaseCopy,
 } from '@/lib/leagueSeason';
-import { withTheme } from '@/lib/leagueTheme';
+import { unbreakable, withTheme } from '@/lib/leagueTheme';
 import { BannerMotif } from './LeagueArt';
 import { leagueLook, type LeagueLook } from './leagueLook';
 import { useLocale, useT } from '@/lib/i18n/react';
@@ -30,7 +30,7 @@ import '@/lib/i18n/catalogs/studentHome';
 
 function Stat({ value, label, look }: { value: string; label: string; look: LeagueLook }) {
   return (
-    <div className="min-w-0 rounded-xl bg-white/10 px-3 py-2 ring-1 ring-white/10">
+    <div className={`min-w-0 rounded-xl ${look.tile} px-3 py-2 ring-1 ring-white/10`}>
       <div className="text-lg font-extrabold leading-tight tabular-nums text-white">{value}</div>
       <div className={`text-[10px] leading-tight ${look.muted} @lg:text-[11px]`}>{label}</div>
     </div>
@@ -72,7 +72,7 @@ export function LeagueBannerView({ league, userId, now, locale, defaultOpen = fa
         </div>
         <div className="min-w-0">
           <p className={`text-[11px] font-bold uppercase tracking-[0.16em] ${look.accent}`}>
-            {t('studentHome.league.eyebrow', { group: groupTail(league.group.name) })}
+            {t('studentHome.league.eyebrow', { group: look.theme === 'studio' ? unbreakable(groupTail(league.group.name)) : groupTail(league.group.name) })}
           </p>
           <h2 id={headingId} className="mt-0.5 text-xl font-extrabold leading-tight @lg:text-2xl">{copy.title}</h2>
           <p className={`mt-1 text-sm ${look.muted}`}>{copy.sub}</p>
@@ -84,7 +84,7 @@ export function LeagueBannerView({ league, userId, now, locale, defaultOpen = fa
         <div className="col-span-2 grid grid-cols-3 gap-2 @lg:col-span-1 @lg:col-start-3 @lg:row-span-2 @lg:row-start-1 @lg:grid-cols-2">
           <Stat value={attendanceText(league.attendance, locale)} label={t('studentHome.league.stat.attendance')} look={look} />
           <Stat value={homeworkText(league.homework, locale)} label={t('studentHome.league.stat.homework')} look={look} />
-          <div className="min-w-0 rounded-xl bg-white/10 px-3 py-2 ring-1 ring-white/10 @lg:col-span-2">
+          <div className={`min-w-0 rounded-xl ${look.tile} px-3 py-2 ring-1 ring-white/10 @lg:col-span-2`}>
             <div className={`text-[11px] leading-snug ${look.muted}`}>{t('studentHome.league.stat.squad', { count: league.squad_size })}</div>
           </div>
         </div>
