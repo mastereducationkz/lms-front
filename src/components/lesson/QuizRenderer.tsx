@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { reportErrorMessage } from '../../lib/questionReport';
 import { Button } from '../ui/button';
 import {
@@ -22,11 +22,7 @@ import {
 import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, HelpCircle, Lock as LockIcon, AlertCircle, Wrench, ClipboardList } from 'lucide-react';
 import { renderTextWithLatex } from '../../utils/latex';
 import { sanitizeHtml } from '../../lib/safeHtml';
-import { applyHighlightsToHtml as applyHighlightsToHtmlShared } from '../../utils/highlightUtils';
-import { useSelectionSettle, type SettledSelection } from './lookup/useSelectionSettle';
-import { HIGHLIGHTABLE_ATTR, highlightQuestionOf, paletteOffsetY } from './quiz/highlightSelection';
-import { reportUsage } from '../../services/api/usage';
-import AuthContext from '../../contexts/AuthContext';
+import { AnnotationLayer, annotationBlock, type LegacyHighlight } from '../annotations/AnnotationLayer';
 import type { Step } from '../../types';
 import { DEFAULT_QUIZ_PASSING_SCORE_REQUIRED } from '../../utils/quizPassingScore';
 import { LongTextQuestion } from './quiz/LongTextQuestion';
@@ -77,8 +73,6 @@ const hasVisibleContent = (html: string | undefined | null): boolean => {
 // Define a more specific type for quiz questions if possible
 type QuizQuestion = any;
 type QuizData = any;
-type HighlightColor = 'yellow' | 'pink' | 'blue';
-type TextHighlight = { text: string; color: HighlightColor };
 type ReviewStatusKey = 'correct' | 'incorrect' | 'partial' | 'review' | 'unscored';
 
 interface QuizRendererProps {
@@ -244,7 +238,6 @@ const QuizRenderer = (props: QuizRendererProps) => {
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportedQuestions, setReportedQuestions] = useState<Set<string>>(new Set());
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
-  const [textHighlightsByQuestion, setTextHighlightsByQuestion] = useState<Map<string, TextHighlight[]>>(new Map());
   // Crossed-out answer options: Map<questionId, Set<optionIndex>>
   const [crossedOutByQuestion, setCrossedOutByQuestion] = useState<Map<string, Set<number>>>(new Map());
 
@@ -257,137 +250,46 @@ const QuizRenderer = (props: QuizRendererProps) => {
       return next
     })
   }
-  const [areHighlightsHydrated, setAreHighlightsHydrated] = useState(false);
-  const [highlightPalette, setHighlightPalette] = useState<{
-    questionId: string;
-    selectedText: string;
-    selectionOffsetY: number;
-  } | null>(null);
-
-  const quizTextHighlightsStorageKey = currentStep ? `quiz_text_highlights_${currentStep.id}` : null;
-
-  // Usage of the highlighter (owner 2026-11-02): students only, so staff previews don't count.
-  const isStudentViewer = useContext(AuthContext)?.user?.role === 'student';
-  const countHighlight = useCallback((action: 'exposed' | 'offered' | 'add' | 'remove') => {
-    if (isStudentViewer) reportUsage('quiz.highlight', action);
-  }, [isStudentViewer]);
-  const exposedSteps = useRef(new Set<number>());
-  useEffect(() => {
-    if (!currentStep || questions.length === 0 || exposedSteps.current.has(currentStep.id)) return;
-    exposedSteps.current.add(currentStep.id);
-    countHighlight('exposed');
-  }, [currentStep, questions.length, countHighlight]);
-
-  useEffect(() => {
-    setAreHighlightsHydrated(false);
-
-    if (!quizTextHighlightsStorageKey) {
-      setTextHighlightsByQuestion(new Map());
-      setAreHighlightsHydrated(true);
-      return;
-    }
-
-    try {
-      const savedHighlights = localStorage.getItem(quizTextHighlightsStorageKey);
-      if (!savedHighlights) {
-        setTextHighlightsByQuestion(new Map());
-        setAreHighlightsHydrated(true);
-        return;
-      }
-
-      const parsedHighlights = JSON.parse(savedHighlights);
-      if (!parsedHighlights || typeof parsedHighlights !== 'object' || Array.isArray(parsedHighlights)) {
-        setTextHighlightsByQuestion(new Map());
-        setAreHighlightsHydrated(true);
-        return;
-      }
-
-      const nextMap = new Map<string, TextHighlight[]>();
-      Object.entries(parsedHighlights).forEach(([questionId, values]) => {
-        if (!Array.isArray(values)) return;
-        const normalizedValues = values
-          .map((value: any) => {
-            if (typeof value === 'string') {
-              return { text: value.trim(), color: 'yellow' as HighlightColor };
-            }
-            if (!value || typeof value !== 'object') return null;
-            const text = value.text?.toString().trim();
-            const color = value.color as HighlightColor;
-            if (!text) return null;
-            if (color !== 'yellow' && color !== 'pink' && color !== 'blue') {
-              return { text, color: 'yellow' as HighlightColor };
-            }
-            return { text, color };
-          })
-          .filter((value): value is TextHighlight => {
-            if (!value || typeof value !== 'object') return false
-            if (typeof (value as TextHighlight).text !== 'string') return false
-            return (value as TextHighlight).text.length >= 2
-          });
-        if (normalizedValues.length > 0) {
-          nextMap.set(questionId, normalizedValues);
+  // Highlights and notes (owner, 2026-11-02): one layer per quiz step. While answering they belong
+  // to the open attempt; once it is submitted the finished attempt is shown, read-only. The old
+  // device-only highlights move to the server the first time the quiz opens.
+  const annotationScope = `quiz:${currentStep?.id ?? 'none'}`;
+  const annotationsFinished = quizState === 'completed' || feedChecked;
+  const legacyHighlights = useMemo(() => {
+    const key = currentStep ? `quiz_text_highlights_${currentStep.id}` : null;
+    return {
+      read: (): LegacyHighlight[] => {
+        if (!key) return [];
+        try {
+          const raw = JSON.parse(localStorage.getItem(key) || 'null');
+          if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return [];
+          return Object.entries(raw).flatMap(([qid, values]) => (Array.isArray(values) ? values : []).flatMap((v: any) => {
+            const quote = typeof v === 'string' ? v : v?.text;
+            const color = ['yellow', 'pink', 'blue'].includes(v?.color) ? v.color : 'yellow';
+            return typeof quote === 'string' && quote.trim().length >= 2
+              ? [{ blockKeys: [`q:${qid}:p`, `q:${qid}:q`, `q:${qid}:t`], quote, color }]
+              : [];
+          }));
+        } catch {
+          return [];
         }
-      });
-      setTextHighlightsByQuestion(nextMap);
-      setAreHighlightsHydrated(true);
-    } catch (error) {
-      console.error('Failed to restore text highlights from localStorage:', error);
-      setTextHighlightsByQuestion(new Map());
-      setAreHighlightsHydrated(true);
-    }
-  }, [quizTextHighlightsStorageKey]);
-
-  useEffect(() => {
-    if (!quizTextHighlightsStorageKey) return;
-    if (!areHighlightsHydrated) return;
-
-    const payload = Object.fromEntries(
-      Array.from(textHighlightsByQuestion.entries())
-        .filter(([, values]) => values.length > 0)
-    );
-
-    localStorage.setItem(quizTextHighlightsStorageKey, JSON.stringify(payload));
-  }, [quizTextHighlightsStorageKey, textHighlightsByQuestion, areHighlightsHydrated]);
-
-  const addTextHighlight = (questionId: string, highlightText: string, color: HighlightColor) => {
-    const normalizedText = highlightText.replace(/\s+/g, ' ').trim();
-    if (normalizedText.length < 2) return;
-
-    setTextHighlightsByQuestion(prev => {
-      const next = new Map(prev);
-      const current = next.get(questionId) || [];
-      const existingIndex = current.findIndex((item) => item.text === normalizedText);
-      if (existingIndex >= 0) {
-        const updated = [...current];
-        updated[existingIndex] = { ...updated[existingIndex], color };
-        next.set(questionId, updated);
-        return next;
-      }
-      next.set(questionId, [...current, { text: normalizedText, color }]);
-      return next;
-    });
-    countHighlight('add');
-  };
-
-  const removeTextHighlight = (questionId: string, highlightText: string) => {
-    const normalizedText = highlightText.replace(/\s+/g, ' ').trim();
-    if (normalizedText.length < 2) return;
-
-    setTextHighlightsByQuestion(prev => {
-      const current = prev.get(questionId) || [];
-      const filtered = current.filter((item) => item.text !== normalizedText);
-      const next = new Map(prev);
-
-      if (filtered.length === 0) {
-        next.delete(questionId);
-      } else {
-        next.set(questionId, filtered);
-      }
-
-      return next;
-    });
-    countHighlight('remove');
-  };
+      },
+      keep: (left: LegacyHighlight[]) => {
+        if (!key) return;
+        try {
+          if (!left.length) { localStorage.removeItem(key); return; }
+          const grouped: Record<string, { text: string; color: string }[]> = {};
+          for (const h of left) {
+            const qid = h.blockKeys[0].split(':')[1];
+            (grouped[qid] ||= []).push({ text: h.quote, color: h.color });
+          }
+          localStorage.setItem(key, JSON.stringify(grouped));
+        } catch {
+          // Storage blocked: the old highlights simply stay where they are.
+        }
+      },
+    };
+  }, [currentStep]);
 
   const submitQuizForReview = () => {
     setFeedChecked(true)
@@ -407,116 +309,6 @@ const QuizRenderer = (props: QuizRendererProps) => {
     setIsSubmitConfirmOpen(false)
     submitQuizForReview()
   }
-
-  // A settled selection (mouse, keyboard or touch) inside one question opens the palette. A
-  // cleared selection leaves it open: on a phone, tapping a colour clears the selection first.
-  const documentRoot = useRef<HTMLElement>(typeof document !== 'undefined' ? document.body : null);
-  const handleSettledSelection = (selection: SettledSelection | null) => {
-    if (!selection) return;
-    const selectedText = selection.text.replace(/\s+/g, ' ').trim();
-    if (selectedText.length < 2) return;
-    const questionId = highlightQuestionOf(selection.range);
-    if (!questionId) return;
-    const rect = selection.range.getBoundingClientRect();
-    if (!rect.width && !rect.height) return;
-    const selectionOffsetY = paletteOffsetY(selection.range, questionId);
-    const prev = highlightPalette;
-    if (!prev || prev.questionId !== questionId || prev.selectedText !== selectedText) countHighlight('offered');
-    setHighlightPalette({ questionId, selectedText, selectionOffsetY });
-  };
-  useSelectionSettle(documentRoot, [], true, handleSettledSelection);
-
-  const handleHighlightColorPick = (color: HighlightColor) => {
-    if (!highlightPalette) return;
-    addTextHighlight(highlightPalette.questionId, highlightPalette.selectedText, color);
-    setHighlightPalette(null);
-    window.getSelection()?.removeAllRanges();
-  };
-
-  useEffect(() => {
-    if (!highlightPalette) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target?.closest('[data-highlight-palette="true"]')) return;
-      setHighlightPalette(null);
-    };
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      setHighlightPalette(null);
-      window.getSelection()?.removeAllRanges();
-    };
-
-    window.addEventListener('pointerdown', handlePointerDown);
-    window.addEventListener('keydown', handleEscape);
-
-    return () => {
-      window.removeEventListener('pointerdown', handlePointerDown);
-      window.removeEventListener('keydown', handleEscape);
-    };
-  }, [highlightPalette]);
-
-  const EMPTY_HIGHLIGHTS: TextHighlight[] = [];
-  const getQuestionHighlights = (questionId: string) => textHighlightsByQuestion.get(questionId) || EMPTY_HIGHLIGHTS;
-
-  const renderHighlightedLatex = (questionId: string, htmlSource: string) => {
-    const rendered = renderTextWithLatex(htmlSource);
-    return applyHighlightsToHtmlShared(rendered, getQuestionHighlights(questionId), questionId);
-  };
-
-  const handleHighlightedTextClick = (event: React.MouseEvent) => {
-    const target = event.target as HTMLElement | null
-    if (!target) return
-
-    const mark = target.closest('mark[data-highlight-text][data-highlight-question-id]') as HTMLElement | null
-    if (!mark) return
-
-    const questionId = mark.getAttribute('data-highlight-question-id') || ''
-    const highlightText = mark.getAttribute('data-highlight-text') || ''
-    if (!questionId || !highlightText) return
-
-    removeTextHighlight(questionId, highlightText)
-    setHighlightPalette(null)
-    window.getSelection()?.removeAllRanges()
-    event.preventDefault()
-    event.stopPropagation()
-  }
-
-  const renderHighlightPalette = (questionId: string) => {
-    if (!highlightPalette || highlightPalette.questionId !== questionId) return null;
-
-    return (
-      <div
-        data-highlight-palette="true"
-        className="absolute z-20 flex flex-col sm:flex-col items-center gap-2 rounded-lg border border-border bg-popover/95 p-2 shadow-lg backdrop-blur-sm"
-        style={{
-          right: 'clamp(-56px, -2vw, 8px)',
-          top: highlightPalette.selectionOffsetY,
-          maxWidth: 'calc(100vw - 16px)'
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => handleHighlightColorPick('yellow')}
-          className="h-6 w-6 rounded-sm bg-amber-300 hover:bg-amber-400 ring-1 ring-black/10 dark:ring-white/15"
-          aria-label={t('lessonPlayer.quiz.highlightYellow')}
-        />
-        <button
-          type="button"
-          onClick={() => handleHighlightColorPick('pink')}
-          className="h-6 w-6 rounded-sm bg-pink-300 hover:bg-pink-400 ring-1 ring-black/10 dark:ring-white/15"
-          aria-label={t('lessonPlayer.quiz.highlightPink')}
-        />
-        <button
-          type="button"
-          onClick={() => handleHighlightColorPick('blue')}
-          className="h-6 w-6 rounded-sm bg-sky-300 hover:bg-sky-400 ring-1 ring-black/10 dark:ring-white/15"
-          aria-label={t('lessonPlayer.quiz.highlightBlue')}
-        />
-      </div>
-    );
-  };
 
   // Get the question being reported
   const getReportedQuestion = () => {
@@ -746,11 +538,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 className={`relative overflow-visible bg-transparent rounded-xl transition-all ${
                   showUnansweredError ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-background' : ''
                 }`}
-                {...{ [HIGHLIGHTABLE_ATTR]: q.id.toString() }}
                 data-tip="quiz-highlight"
-                onClick={handleHighlightedTextClick}
               >
-                {renderHighlightPalette(q.id.toString())}
                 <div className="p-2 md:p-6">
                   {showUnansweredError && (
                     <div className="mb-3 flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400">
@@ -788,14 +577,15 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     <div className="bg-muted/40 p-4 rounded-lg mb-4 border border-border/60">
                       <div
                         className="text-foreground/90 prose dark:prose-invert max-w-none select-text"
-                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderHighlightedLatex(q.id.toString(), q.content_text)) }}
+                        {...annotationBlock(annotationScope, `q:${q.id}:p`)}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.content_text)) }}
                       />
                     </div>
                   )}
 
                   {/* Question */}
                   <h3 className="text-lg font-bold text-foreground mb-4 select-text">
-                    <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderHighlightedLatex(q.id.toString(), (q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]'))) }} />
+                    <span {...annotationBlock(annotationScope, `q:${q.id}:q`)} dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex((q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]'))) }} />
                   </h3>
 
                   {/* Answer Input Based on Question Type */}
@@ -818,21 +608,22 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       revealCorrect={feedRevealCorrect}
                     />
                   ) : q.question_type === 'text_completion' ? (
-                    <TextCompletionQuestion
-                      question={q}
-                      questionId={q.id.toString()}
-                      highlights={getQuestionHighlights(q.id.toString())}
-                      answers={gapAnswers.get(q.id.toString()) || []}
-                      onAnswerChange={(idx, val) => {
-                        const currentAnswers = gapAnswers.get(q.id.toString()) || [];
-                        const newAnswers = [...currentAnswers];
-                        newAnswers[idx] = val;
-                        setGapAnswers(prev => new Map(prev.set(q.id.toString(), newAnswers)));
-                      }}
-                      disabled={feedChecked}
-                      showResult={feedChecked}
-                      revealCorrect={feedRevealCorrect}
-                    />
+                    <div {...annotationBlock(annotationScope, `q:${q.id}:t`)}>
+                      <TextCompletionQuestion
+                        question={q}
+                        questionId={q.id.toString()}
+                        answers={gapAnswers.get(q.id.toString()) || []}
+                        onAnswerChange={(idx, val) => {
+                          const currentAnswers = gapAnswers.get(q.id.toString()) || [];
+                          const newAnswers = [...currentAnswers];
+                          newAnswers[idx] = val;
+                          setGapAnswers(prev => new Map(prev.set(q.id.toString(), newAnswers)));
+                        }}
+                        disabled={feedChecked}
+                        showResult={feedChecked}
+                        revealCorrect={feedRevealCorrect}
+                      />
+                    </div>
                   ) : q.question_type === 'single_choice' || q.question_type === 'multiple_choice' || q.question_type === 'media_question' ? (
                     <ChoiceQuestion
                       question={q}
@@ -853,21 +644,22 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       showResult={feedChecked}
                     />
                   ) : (
-                    <FillInBlankQuestion
-                      question={q}
-                      questionId={q.id.toString()}
-                      highlights={getQuestionHighlights(q.id.toString())}
-                      answers={gapAnswers.get(q.id.toString()) || []}
-                      onAnswerChange={(idx, val) => {
-                        const currentAnswers = gapAnswers.get(q.id.toString()) || [];
-                        const newAnswers = [...currentAnswers];
-                        newAnswers[idx] = val;
-                        setGapAnswers(prev => new Map(prev.set(q.id.toString(), newAnswers)));
-                      }}
-                      disabled={feedChecked}
-                      showResult={feedChecked}
-                      revealCorrect={feedRevealCorrect}
-                    />
+                    <div {...annotationBlock(annotationScope, `q:${q.id}:t`)}>
+                      <FillInBlankQuestion
+                        question={q}
+                        questionId={q.id.toString()}
+                        answers={gapAnswers.get(q.id.toString()) || []}
+                        onAnswerChange={(idx, val) => {
+                          const currentAnswers = gapAnswers.get(q.id.toString()) || [];
+                          const newAnswers = [...currentAnswers];
+                          newAnswers[idx] = val;
+                          setGapAnswers(prev => new Map(prev.set(q.id.toString(), newAnswers)));
+                        }}
+                        disabled={feedChecked}
+                        showResult={feedChecked}
+                        revealCorrect={feedRevealCorrect}
+                      />
+                    </div>
                   )}
 
                   {/* Result Indicator - Explanation only (removed buggy isCorrect labels) */}
@@ -1474,11 +1266,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
         <div
           id={`question-${q.id}`}
           className="relative overflow-visible bg-transparent"
-          {...{ [HIGHLIGHTABLE_ATTR]: q.id.toString() }}
           data-tip="quiz-highlight"
-          onClick={handleHighlightedTextClick}
         >
-          {renderHighlightPalette(q.id.toString())}
           <div className="p-2 md:p-6">
             {/* Media Attachment for Media Questions */}
             {(q.question_type === 'media_question' || q.question_type === 'media_open_question') && q.media_url && (
@@ -1503,14 +1292,15 @@ const QuizRenderer = (props: QuizRendererProps) => {
               <div className="bg-muted/40 p-4 rounded-lg mb-4 border border-border/60">
                 <div
                   className="text-foreground/90 prose dark:prose-invert max-w-none select-text"
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderHighlightedLatex(q.id.toString(), q.content_text)) }}
+                  {...annotationBlock(annotationScope, `q:${q.id}:p`)}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.content_text)) }}
                 />
               </div>
             )}
 
             {/* Question */}
             <h3 className="text-lg font-bold text-foreground mb-4 select-text">
-              <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderHighlightedLatex(q.id.toString(), (q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]'))) }} />
+              <span {...annotationBlock(annotationScope, `q:${q.id}:q`)} dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex((q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]'))) }} />
             </h3>
 
             {/* Answer Input Based on Question Type */}
@@ -1537,20 +1327,21 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 showResult={false}
               />
             ) : q.question_type === 'text_completion' ? (
-              <TextCompletionQuestion
-                question={q}
-                questionId={q.id.toString()}
-                highlights={getQuestionHighlights(q.id.toString())}
-                answers={gapAnswers.get(q.id.toString()) || []}
-                onAnswerChange={(idx, val) => {
-                  const currentAnswers = gapAnswers.get(q.id.toString()) || [];
-                  const newAnswers = [...currentAnswers];
-                  newAnswers[idx] = val;
-                  setGapAnswers(prev => new Map(prev.set(q.id.toString(), newAnswers)));
-                }}
-                disabled={false}
-                showResult={false}
-              />
+              <div {...annotationBlock(annotationScope, `q:${q.id}:t`)}>
+                <TextCompletionQuestion
+                  question={q}
+                  questionId={q.id.toString()}
+                  answers={gapAnswers.get(q.id.toString()) || []}
+                  onAnswerChange={(idx, val) => {
+                    const currentAnswers = gapAnswers.get(q.id.toString()) || [];
+                    const newAnswers = [...currentAnswers];
+                    newAnswers[idx] = val;
+                    setGapAnswers(prev => new Map(prev.set(q.id.toString(), newAnswers)));
+                  }}
+                  disabled={false}
+                  showResult={false}
+                />
+              </div>
             ) : q.question_type === 'single_choice' || q.question_type === 'multiple_choice' || q.question_type === 'media_question' ? (
               <ChoiceQuestion
                 question={q}
@@ -1570,20 +1361,21 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 showResult={false}
               />
             ) : (
-              <FillInBlankQuestion
-                question={q}
-                questionId={q.id.toString()}
-                highlights={getQuestionHighlights(q.id.toString())}
-                answers={gapAnswers.get(q.id.toString()) || []}
-                onAnswerChange={(idx, val) => {
-                  const currentAnswers = gapAnswers.get(q.id.toString()) || [];
-                  const newAnswers = [...currentAnswers];
-                  newAnswers[idx] = val;
-                  setGapAnswers(prev => new Map(prev.set(q.id.toString(), newAnswers)));
-                }}
-                disabled={false}
-                showResult={false}
-              />
+              <div {...annotationBlock(annotationScope, `q:${q.id}:t`)}>
+                <FillInBlankQuestion
+                  question={q}
+                  questionId={q.id.toString()}
+                  answers={gapAnswers.get(q.id.toString()) || []}
+                  onAnswerChange={(idx, val) => {
+                    const currentAnswers = gapAnswers.get(q.id.toString()) || [];
+                    const newAnswers = [...currentAnswers];
+                    newAnswers[idx] = val;
+                    setGapAnswers(prev => new Map(prev.set(q.id.toString(), newAnswers)));
+                  }}
+                  disabled={false}
+                  showResult={false}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -1689,7 +1481,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             {/* Content Text / Passage */}
             {hasVisibleContent(question.content_text) && question.question_type !== 'text_completion' && question.question_type !== 'fill_blank' && (
               <div className="bg-muted/40 p-4 rounded-lg mb-4 border border-border/60">
-                <div className="text-foreground/90 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(question.content_text)) }} />
+                <div className="text-foreground/90 prose dark:prose-invert max-w-none" {...annotationBlock(annotationScope, `q:${question.id}:p`)} dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(question.content_text)) }} />
               </div>
             )}
 
@@ -1735,14 +1527,16 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
                   if (question.question_type === 'fill_blank') {
                     return (
-                      <FillInBlankQuestion
-                        question={question}
-                        answers={current}
-                        onAnswerChange={() => { }}
-                        disabled={true}
-                        showResult={true}
-                        revealCorrect={canRevealCorrectAnswers(false)}
-                      />
+                      <div {...annotationBlock(annotationScope, `q:${question.id}:t`)}>
+                        <FillInBlankQuestion
+                          question={question}
+                          answers={current}
+                          onAnswerChange={() => { }}
+                          disabled={true}
+                          showResult={true}
+                          revealCorrect={canRevealCorrectAnswers(false)}
+                        />
+                      </div>
                     );
                   } else {
                     // Text completion fallback or implementation
@@ -1949,13 +1743,13 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     {/* Content Text */}
                     {hasVisibleContent(q.content_text) && q.question_type !== 'text_completion' && q.question_type !== 'fill_blank' && (
                       <div className="bg-muted/40 p-4 rounded-lg mb-4 border border-border/60">
-                        <div className="text-foreground/90 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.content_text)) }} />
+                        <div className="text-foreground/90 prose dark:prose-invert max-w-none" {...annotationBlock(annotationScope, `q:${q.id}:p`)} dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.content_text)) }} />
                       </div>
                     )}
 
                     {/* Question */}
                     <h3 className="text-lg font-bold text-foreground mb-4">
-                      <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex((q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]'))) }} />
+                      <span {...annotationBlock(annotationScope, `q:${q.id}:q`)} dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex((q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]'))) }} />
                     </h3>
 
                     {/* Answer Input Based on Question Type - ALWAYS SHOW RESULT */}
@@ -1976,14 +1770,16 @@ const QuizRenderer = (props: QuizRendererProps) => {
                         revealCorrect={canRevealCorrectAnswers(isPassed)}
                       />
                     ) : q.question_type === 'text_completion' ? (
-                      <TextCompletionQuestion
-                        question={q}
-                        answers={gapAnswers.get(q.id.toString()) || []}
-                        onAnswerChange={() => {}}
-                        disabled={true}
-                        showResult={true}
-                        revealCorrect={canRevealCorrectAnswers(isPassed)}
-                      />
+                      <div {...annotationBlock(annotationScope, `q:${q.id}:t`)}>
+                        <TextCompletionQuestion
+                          question={q}
+                          answers={gapAnswers.get(q.id.toString()) || []}
+                          onAnswerChange={() => {}}
+                          disabled={true}
+                          showResult={true}
+                          revealCorrect={canRevealCorrectAnswers(isPassed)}
+                        />
+                      </div>
                     ) : q.question_type === 'single_choice' || q.question_type === 'multiple_choice' || q.question_type === 'media_question' ? (
                       <ChoiceQuestion
                         question={q}
@@ -2002,14 +1798,16 @@ const QuizRenderer = (props: QuizRendererProps) => {
                         showResult={true}
                       />
                     ) : (
-                      <FillInBlankQuestion
-                        question={q}
-                        answers={gapAnswers.get(q.id.toString()) || []}
-                        onAnswerChange={() => {}}
-                        disabled={true}
-                        showResult={true}
-                        revealCorrect={canRevealCorrectAnswers(isPassed)}
-                      />
+                      <div {...annotationBlock(annotationScope, `q:${q.id}:t`)}>
+                        <FillInBlankQuestion
+                          question={q}
+                          answers={gapAnswers.get(q.id.toString()) || []}
+                          onAnswerChange={() => {}}
+                          disabled={true}
+                          showResult={true}
+                          revealCorrect={canRevealCorrectAnswers(isPassed)}
+                        />
+                      </div>
                     )}
 
                     {q.explanation && (
@@ -2250,6 +2048,17 @@ const QuizRenderer = (props: QuizRendererProps) => {
   return (
     <>
       {content}
+      {currentStep && quizState !== 'title' && (
+        <AnnotationLayer
+          key={`${annotationsFinished ? 'finished' : 'open'}-${quizAttempt?.id ?? ''}`}
+          surface="quiz"
+          targetId={currentStep.id}
+          scope={annotationScope}
+          attempt={annotationsFinished ? 'latest' : 'current'}
+          readOnly={annotationsFinished}
+          legacy={annotationsFinished ? undefined : legacyHighlights}
+        />
+      )}
     </>
   );
 };

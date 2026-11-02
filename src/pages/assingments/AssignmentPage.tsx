@@ -24,6 +24,7 @@ import { Badge } from '../../components/ui/badge.tsx';
 import { Textarea } from '../../components/ui/textarea.tsx';
 import { Label } from '../../components/ui/label.tsx';
 import MultiTaskSubmission from '../../components/assignments/MultiTaskSubmission.tsx';
+import { AnnotationLayer, annotationBlock } from '../../components/annotations/AnnotationLayer';
 import PlatformTestPanel from '../../components/assignments/PlatformTestPanel.tsx';
 import { compressImage } from '../../utils/imageCompression';
 import { AudioPlayer } from '../../components/AudioPlayer';
@@ -661,7 +662,7 @@ export default function AssignmentPage() {
           <Card>
           <CardHeader>
             <CardTitle>{t('homework.shared.instructions')}</CardTitle>
-            <CardDescription>
+            <CardDescription {...annotationBlock(`homework:${assignment.id}`, 'hw:q')}>
               {assignment.content?.question || assignment.description}
             </CardDescription>
           </CardHeader>
@@ -687,7 +688,7 @@ export default function AssignmentPage() {
           {readinessBanner}
           <div className="prose dark:prose-invert max-w-none">
             <h3 className="text-lg font-medium mb-2">{t('homework.shared.instructions')}</h3>
-            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">
+            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap" {...annotationBlock(`homework:${assignment.id}`, 'hw:q')}>
               {assignment.content?.question || assignment.description}
             </p>
 
@@ -867,6 +868,7 @@ export default function AssignmentPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 @2xl:p-6">
+      <AnnotationLayer surface="homework" targetId={Number(assignment.id)} scope={`homework:${assignment.id}`} />
       {/* Header Card */}
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center text-red-800 dark:text-red-400">
@@ -898,7 +900,7 @@ export default function AssignmentPage() {
                   )}
                 </div>
               </CardTitle>
-              <CardDescription className="text-base text-muted-foreground">
+              <CardDescription className="text-base text-muted-foreground" {...annotationBlock(`homework:${assignment.id}`, 'hw:d')}>
                 {assignment.description}
               </CardDescription>
             </div>

@@ -23,6 +23,7 @@ import { UploadFailedError } from '../../lib/uploadFailure';
 import { safeLinkUrl, safeUploadUrl } from '../../lib/mediaUrl';
 import { formatTime } from '../../lib/i18n';
 import { useT } from '../../lib/i18n/react';
+import { annotationBlock } from '../../lib/annotations/block';
 import '@/lib/i18n/catalogs/homework';
 import '@/lib/i18n/catalogs/pastPapers';
 
@@ -933,7 +934,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
 
         return (
           <div className="space-y-3">
-            <div className="text-sm font-medium text-foreground">{task.content.question}</div>
+            <div className="text-sm font-medium text-foreground" {...annotationBlock(`homework:${assignment.id}`, `hw:t:${task.id}:q`)}>{task.content.question}</div>
             
             {/* Teacher Reference File */}
             {task.content.teacher_file_url && (
@@ -1181,7 +1182,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
         return (
           <div className="space-y-3">
      
-            <div className="text-sm font-medium text-foreground">{task.content.question}</div>
+            <div className="text-sm font-medium text-foreground" {...annotationBlock(`homework:${assignment.id}`, `hw:t:${task.id}:q`)}>{task.content.question}</div>
             {/* Student Response Label */}
             {readOnly && taskAnswer.text_response && (
               <div className="text-xs text-muted-foreground font-medium">{t('homework.tasks.studentResponse')}</div>
@@ -1340,7 +1341,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             })()}
             
             {/* Question/Instructions */}
-            <div className="text-sm font-medium text-foreground">{task.content.question}</div>
+            <div className="text-sm font-medium text-foreground" {...annotationBlock(`homework:${assignment.id}`, `hw:t:${task.id}:q`)}>{task.content.question}</div>
             
             {/* Student Response Label */}
             {readOnly && taskAnswer.text_response && (
@@ -1525,7 +1526,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
         <Card className="border-border bg-secondary/50 dark:bg-secondary">
           <CardContent className="pt-6">
             <h4 className="mb-2 font-medium text-foreground">{t('homework.shared.instructions')}</h4>
-            <p className="whitespace-pre-wrap text-sm text-foreground">{assignment.content.instructions}</p>
+            <p className="whitespace-pre-wrap text-sm text-foreground" {...annotationBlock(`homework:${assignment.id}`, 'hw:i')}>{assignment.content.instructions}</p>
           </CardContent>
         </Card>
       )}
