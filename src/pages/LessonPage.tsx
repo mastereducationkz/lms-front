@@ -2230,7 +2230,7 @@ export default function LessonPage() {
 
   const loadingSkeleton = (
     <div className="flex h-screen overflow-hidden bg-background">
-      <div className="hidden md:block w-80 border-r border-border/70 p-4 space-y-3" aria-busy="true">
+      <div className="hidden lg:block w-80 border-r border-border/70 p-4 space-y-3" aria-busy="true">
         <Skeleton className="h-12 w-full" />
         <Skeleton className="h-8 w-3/4" />
         <Skeleton className="h-8 w-2/3" />
@@ -2323,8 +2323,10 @@ export default function LessonPage() {
       className="flex h-screen overflow-hidden bg-background"
       style={{ ['--quiz-nav-left' as any]: isSidebarCollapsed ? '0px' : '20rem' }}
     >
-      {/* Sidebar - Hidden on mobile, visible on desktop */}
-      <div className="hidden md:block">
+      {/* Sidebar: from lg up only. At 768 its 320 px left the header ~450 px and the staff
+          buttons hid the title; below lg the lesson list opens as a drawer (same breakpoint as
+          the drawer overlay below). */}
+      <div className="hidden lg:block">
         <LessonSidebar
           course={course}
           modules={modules}
@@ -2346,7 +2348,7 @@ export default function LessonPage() {
               lesson list opens from its own icon on the right. */}
           <div className="flex flex-1 items-center gap-2 sm:gap-3 min-w-0">
             {isSidebarCollapsed && (
-              <Button variant="ghost" size="icon" className="hidden md:flex" onClick={() => setIsSidebarCollapsed(false)} title={t('lessonPlayer.sidebar.expand')}>
+              <Button variant="ghost" size="icon" className="hidden lg:flex" onClick={() => setIsSidebarCollapsed(false)} title={t('lessonPlayer.sidebar.expand')}>
                 <PanelLeftOpen className="w-5 h-5" />
               </Button>
             )}
@@ -2484,11 +2486,11 @@ export default function LessonPage() {
                 <Languages className="w-5 h-5" />
               </Button>
             )}
-            {/* Phones: the course's lesson list (the sidebar's drawer). */}
+            {/* Phones and tablets: the course's lesson list (the sidebar's drawer). */}
             <Button
               variant="ghost"
               size="sm"
-              className="md:hidden h-9 w-9 p-0 rounded-lg border bg-background text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground"
+              className="lg:hidden h-9 w-9 p-0 rounded-lg border bg-background text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground"
               onClick={() => setIsMobileSidebarOpen(true)}
               title={t('learning.lesson.lessons')}
               aria-label={t('learning.lesson.lessons')}

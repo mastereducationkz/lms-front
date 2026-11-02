@@ -242,14 +242,14 @@ export default function AssignmentGradingPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 p-6">
-      <div className="flex items-center space-x-4">
-        <Button variant="outline" onClick={() => navigate('/homework')}>
+      <div className="flex flex-col items-start gap-3 @xl:flex-row @xl:items-center @xl:gap-4">
+        <Button variant="outline" className="shrink-0" onClick={() => navigate('/homework')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t('common.back')}
         </Button>
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{t('homeworkStaff.grading.title')}</h1>
-          <p className="text-muted-foreground">{assignment?.title}</p>
+        <div className="min-w-0">
+          <h1 className="text-2xl @xl:text-3xl font-bold text-foreground">{t('homeworkStaff.grading.title')}</h1>
+          <p className="text-muted-foreground break-words">{assignment?.title}</p>
         </div>
       </div>
 

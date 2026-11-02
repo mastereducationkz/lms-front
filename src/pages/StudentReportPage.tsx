@@ -305,10 +305,11 @@ export default function StudentReportPage() {
       </button>
 
       {/* Header */}
-      <div className="flex items-start gap-4 p-5 bg-card border border-border rounded-xl">
-        <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-semibold text-foreground">{t('studentReport.title', { name: student.name })}</h1>
-          <p className="text-sm text-muted-foreground">{student.email}</p>
+      {/* Phones: the two buttons go under the title (they were laid over it). */}
+      <div className="flex flex-col @2xl:flex-row items-start gap-4 p-4 @xl:p-5 bg-card border border-border rounded-xl">
+        <div className="flex-1 min-w-0 w-full">
+          <h1 className="text-lg font-semibold text-foreground break-words">{t('studentReport.title', { name: student.name })}</h1>
+          <p className="text-sm text-muted-foreground break-all">{student.email}</p>
           <div className="flex flex-wrap gap-1.5 mt-2">
             {student.groups.map(g => (
               <Badge key={g.id} className="bg-muted text-muted-foreground border-border text-xs font-normal">
@@ -317,8 +318,10 @@ export default function StudentReportPage() {
             ))}
           </div>
         </div>
-        <Button variant="outline" onClick={openParentReport}>{t('studentReport.parentText')}</Button>
-        <Button onClick={() => setExportOpen(true)}>{t('studentReport.downloadPdf')}</Button>
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <Button variant="outline" onClick={openParentReport}>{t('studentReport.parentText')}</Button>
+          <Button onClick={() => setExportOpen(true)}>{t('studentReport.downloadPdf')}</Button>
+        </div>
       </div>
 
       {weekly_tests.errors.length > 0 && (

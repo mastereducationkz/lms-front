@@ -210,12 +210,13 @@ export default function StudentProfilePage() {
         {t('studentCard.profile.backToJournal')}
       </button>
 
-      {/* Student card */}
-      <div className="flex items-start gap-4 p-5 bg-card border border-border rounded-xl">
+      {/* Student card. Phones: the report button and dates drop under the name (they used to be
+          laid over the name, e-mail and group chips). */}
+      <div className="flex flex-wrap @xl:flex-nowrap items-start gap-4 p-4 @xl:p-5 bg-card border border-border rounded-xl">
         <UserAvatar userId={student.id} name={student.name} avatarUrl={student.avatar_url} mascot={student.mascot} isStudent size={56} />
-        <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-semibold text-foreground">{student.name}</h1>
-          <p className="text-sm text-muted-foreground">{student.email}</p>
+        <div className="flex-1 min-w-[10rem]">
+          <h1 className="text-lg font-semibold text-foreground break-words">{student.name}</h1>
+          <p className="text-sm text-muted-foreground break-all">{student.email}</p>
           <div className="flex flex-wrap gap-1.5 mt-2">
             {groups.map(g => (
               <Badge key={g.id} className="bg-muted text-muted-foreground border-border text-xs font-normal">{g.name}</Badge>
@@ -227,7 +228,7 @@ export default function StudentProfilePage() {
             )}
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1 text-right text-xs text-muted-foreground">
+        <div className="flex basis-full flex-col items-start gap-1 text-left text-xs text-muted-foreground @xl:basis-auto @xl:shrink-0 @xl:items-end @xl:text-right">
           <Button size="sm" className="mb-1" onClick={() => navigate(`/curator/students/${student.id}/report`)}>
             {t('studentCard.profile.report')}
           </Button>
@@ -279,13 +280,14 @@ export default function StudentProfilePage() {
       {/* Kasatik Achievements: badges, streak and Stars of the Week (hides itself if unavailable) */}
       <StudentAchievementsSection studentId={student.id} />
 
-      {/* Tabs */}
-      <div className="flex gap-0 border-b border-border">
+      {/* Tabs. Phones: the row scrolls sideways (the 4th tab was cut off). The underline is an
+          inset shadow, not border-b + -mb-px, which would make the scroller scroll 1px down. */}
+      <div className="flex gap-0 overflow-x-auto [scrollbar-width:none] shadow-[inset_0_-1px_0_0_hsl(var(--border))]">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
               activeTab === tab.id
                 ? 'border-foreground text-foreground'
                 : 'border-transparent text-muted-foreground hover:text-foreground'

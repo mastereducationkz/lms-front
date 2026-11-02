@@ -173,7 +173,9 @@ export async function getLesson(id: number | string): Promise<LessonView> {
     return response.data as LessonView;
   } catch (error: unknown) {
     const status = (error as { response?: { status?: number } })?.response?.status ?? null;
-    throw new LessonLoadError(detailOf(error, 'Failed to load the lesson'), status);
+    // No server detail -> empty message, so the page shows its own translated text instead of an
+    // English string in a Russian UI.
+    throw new LessonLoadError(detailOf(error, ''), status);
   }
 }
 
