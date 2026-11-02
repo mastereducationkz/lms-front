@@ -18,6 +18,7 @@ vi.mock('../services/api/exams', () => ({
   exportBluebookGrid: vi.fn(),
 }));
 
+import { dropdownText, dropdownValue } from '@/test/dropdown';
 import BluebookGroupGridPage from './BluebookGroupGridPage';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -69,7 +70,8 @@ describe('Bluebook page group state', () => {
     await act(async () => { finished.click(); });
     await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
     expect(getBluebookGroups).toHaveBeenLastCalledWith(undefined, 'finished');
-    expect(host.querySelector('#bb-group option')?.textContent).toBe('SAT - Old · finished');
+    expect(dropdownText(host.querySelector('#bb-group'))).toBe('SAT - Old · finished');
+    expect(dropdownValue(host.querySelector('#bb-group'))).toBe('9');
     expect(getBluebookGrid).toHaveBeenLastCalledWith(9);
   });
 });

@@ -100,7 +100,16 @@ describe('event form: who runs the event', () => {
     expect(shown.some((text) => text.includes('Абдураимов Азамат') && text.includes('no Workspace account'))).toBe(true);
   });
 
-  it('the list is searchable by name', async () => {
+  it('a short list has no search box; from 6 entries the list is searchable by name', async () => {
+    await show(webinar);
+    await act(async () => { trigger()!.click(); });
+    expect(document.body.querySelector('input[role="combobox"]')).toBeNull();
+    await act(async () => { root?.unmount(); });
+    getEventHosts.mockResolvedValue([
+      ...STAFF,
+      { id: 1, name: 'Ким Дана', role: 'teacher', has_workspace: true },
+      { id: 2, name: 'Нурланов Ерлан', role: 'curator', has_workspace: true },
+    ]);
     await show(webinar);
     await act(async () => { trigger()!.click(); });
     const search = document.body.querySelector('input[role="combobox"]') as HTMLInputElement;

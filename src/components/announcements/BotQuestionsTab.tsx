@@ -8,6 +8,7 @@ import {
   type BotOutcome, type BotQuestion, type BotQuestionsSummary,
 } from '../../services/api/aiLabels';
 import '@/lib/i18n/catalogs/announcements';
+import { NativeSelect } from '@/components/ui/native-select';
 
 const OUTCOMES: { key: BotOutcome; name: MessageKey; hint: MessageKey }[] = [
   { key: 'answered', name: 'announcements.bot.outcomeAnswered', hint: 'announcements.bot.outcomeAnsweredHint' },
@@ -153,11 +154,11 @@ function QuestionList({ days, topic, outcome, labels, onChanged }: {
             </div>
             <label className="inline-flex items-center gap-1 text-xs text-muted-foreground">
               {r.corrected ? <UserCheck className="h-3.5 w-3.5" aria-label={tr('announcements.bot.setByPerson')} /> : <Sparkles className="h-3.5 w-3.5" aria-label="Jev" />}
-              <select value={r.topic ?? ''} onChange={(e) => void fix(r, e.target.value)}
-                className="rounded-md border border-border bg-card px-1.5 py-1 text-xs text-foreground" aria-label={tr('announcements.bot.topic')}>
+              <NativeSelect value={r.topic ?? ''} onChange={(e) => void fix(r, e.target.value)}
+                className="h-7 rounded-md border border-border bg-card px-1.5 py-1 text-xs text-foreground" aria-label={tr('announcements.bot.topic')}>
                 {!r.topic && <option value="">—</option>}
                 {Object.entries(labels).map(([key, name]) => <option key={key} value={key}>{name}</option>)}
-              </select>
+              </NativeSelect>
               {r.confidence != null && !r.corrected && <span className="tabular-nums">{Math.round(r.confidence * 100)}%</span>}
             </label>
           </li>

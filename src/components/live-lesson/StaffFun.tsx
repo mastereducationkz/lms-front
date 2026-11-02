@@ -17,6 +17,7 @@ import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/chatLive';
 import { LiveAvatar } from './orcas';
 import { ReactionGlyph } from './reactionIcons';
+import { NativeSelect } from '@/components/ui/native-select';
 
 const AUTO: Record<string, MessageKey> = { focus: 'chatLive.live.pausedFocus', timer: 'chatLive.live.pausedTimer' };
 
@@ -152,11 +153,11 @@ function CrownBlock({ state, api, run, renderStar }: {
       )}
       {open && (
         <div className="mt-2 flex gap-1.5">
-          <select value={choice} onChange={(e) => setChoice(e.target.value ? Number(e.target.value) : '')}
-            className="min-w-0 flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs">
+          <NativeSelect value={choice} onChange={(e) => setChoice(e.target.value ? Number(e.target.value) : '')}
+            className="h-7 min-w-0 flex-1 rounded-lg border border-border bg-background px-2 py-1 text-xs">
             <option value="">{t('chatLive.live.pickStudent')}</option>
             {candidates.map((p) => <option key={p.user_id} value={p.user_id}>{p.name}</option>)}
-          </select>
+          </NativeSelect>
           <button type="button" disabled={choice === ''}
             onClick={() => { if (choice !== '') { run(() => api.crown(id, choice)); setOpen(false); } }}
             className="rounded-lg bg-amber-500 px-2 py-1 text-xs font-semibold text-white disabled:opacity-40">{t('chatLive.live.crownButton')}</button>

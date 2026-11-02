@@ -5,6 +5,7 @@ import { reasonComplete, type OverrideAsk, type OverrideReason } from '../../lib
 import type { MessageKey } from '../../lib/i18n';
 import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/meet';
+import { NativeSelect } from '@/components/ui/native-select';
 
 const FLAG: Partial<Record<MeetFlagCode, MessageKey>> = {
   marked_absent_was_in_room: 'meet.override.flagMarkedAbsentWasInRoom',
@@ -50,7 +51,7 @@ export function OverrideReasonsDialog({ open, items, options, onCancel, onConfir
               <div key={item.key} className="rounded-lg border border-border p-3">
                 <div className="break-words text-sm font-medium text-foreground">{item.studentName} · {item.lessonLabel}</div>
                 <div className="text-xs text-muted-foreground">{flag && t(flag)}</div>
-                <select
+                <NativeSelect
                   aria-label={t('meet.override.reasonFor', { name: item.studentName })}
                   value={reason?.code ?? ''}
                   onChange={(e) => set(item.key, { code: e.target.value })}
@@ -58,7 +59,7 @@ export function OverrideReasonsDialog({ open, items, options, onCancel, onConfir
                 >
                   <option value="" disabled>{t('meet.override.choose')}</option>
                   {presets.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
-                </select>
+                </NativeSelect>
                 {reason?.code === 'other' && (
                   <textarea
                     aria-label={t('meet.override.describe')}

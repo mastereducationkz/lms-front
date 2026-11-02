@@ -3,6 +3,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { vi } from 'vitest';
 import type { ReactElement } from 'react';
+import { pickValue } from '@/test/dropdown';
 
 (globalThis as { ResizeObserver?: unknown }).ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} };
 
@@ -65,10 +66,8 @@ export async function type(selector: string, value: string) {
 export const click = async (el: Element | null) => { await act(async () => { (el as HTMLElement).click(); }); };
 export const submit = async () => { await act(async () => { (document.querySelector('form') as HTMLFormElement).requestSubmit(); }); await settle(); };
 export const text = () => document.body.textContent ?? '';
-export async function pick(selector: string, value: string) {
-  const select = document.querySelector(selector) as HTMLSelectElement;
-  await act(async () => { select.value = value; select.dispatchEvent(new Event('change', { bubbles: true })); });
-}
+/** Chooses an option of a dropdown (NativeSelect / Select) by its value. */
+export const pick = (selector: string, value: string) => pickValue(selector, value);
 export async function upload(selector: string, file: File) {
   const input = document.querySelector(selector) as HTMLInputElement;
   await act(async () => { Object.defineProperty(input, 'files', { value: [file], configurable: true }); input.dispatchEvent(new Event('change', { bubbles: true })); });

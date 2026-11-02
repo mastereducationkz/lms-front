@@ -20,6 +20,7 @@ import { PAST_PAPER_TASK_TYPE } from '../../lib/pastPapers';
 import '@/lib/i18n/catalogs/teacher';
 import '@/lib/i18n/catalogs/homeworkStaff';
 import '@/lib/i18n/catalogs/pastPapers';
+import { NativeSelect } from '@/components/ui/native-select';
 
 interface Task {
   id: string;
@@ -218,7 +219,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
           <div className="space-y-4">
             <div>
               <Label htmlFor={`bluebook-test-${task.id}`}>{tr('homeworkStaff.multi.bluebookTest')}</Label>
-              <select
+              <NativeSelect
                 id={`bluebook-test-${task.id}`}
                 className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={task.content.test_number ?? ''}
@@ -236,7 +237,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
                 {BLUEBOOK_TEST_NUMBERS.map((n) => (
                   <option key={n} value={n}>{tr('homeworkStaff.multi.bluebookOption', { number: n })}</option>
                 ))}
-              </select>
+              </NativeSelect>
               <p className="text-xs text-muted-foreground  mt-1">
                 {tr('homeworkStaff.multi.bluebookHint')}
               </p>

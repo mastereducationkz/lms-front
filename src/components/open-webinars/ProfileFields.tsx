@@ -4,8 +4,12 @@ import { Label } from '../ui/label';
 import { GRADES, ROLES, gradeLabel, intakeYears, yearLabel, type ProfileDraft } from './profileQuestions';
 import type { TFunction } from '../../lib/i18n/translate';
 import '@/lib/i18n/catalogs/openWebinars';
+import '@/lib/i18n/catalogs/sharedUi';
+import { NativeSelect } from '@/components/ui/native-select';
 
 const FIELD = 'h-9 w-full rounded-md border border-input bg-background px-3 text-sm';
+/** The page's own language (a visitor's choice), not the signed-in user's, for the dropdown's search box. */
+const searchTexts = (t: TFunction) => ({ searchPlaceholder: t('sharedUi.select.searchPlaceholder'), emptyText: t('sharedUi.select.empty') });
 
 interface Props {
   t: TFunction;
@@ -69,19 +73,19 @@ export function SchoolFields({ t, value, onChange }: Props) {
   return (
     <>
       <Field id="ow-grade" label={t(value.role === 'parent' ? 'openWebinars.form.profile.gradeParent' : 'openWebinars.form.profile.gradeStudent')}>
-        <select id="ow-grade" className={FIELD} value={value.grade} onChange={(e) => set({ grade: e.target.value })} required>
+        <NativeSelect id="ow-grade" className={FIELD} value={value.grade} onChange={(e) => set({ grade: e.target.value })} required {...searchTexts(t)}>
           <option value="" disabled>{t('openWebinars.form.choose')}</option>
           {GRADES.map((g) => <option key={g} value={g}>{gradeLabel(g, t)}</option>)}
-        </select>
+        </NativeSelect>
       </Field>
       <Field id="ow-city" label={<>{t('openWebinars.form.profile.city')}<Optional t={t} /></>}>
         <Input id="ow-city" value={value.city} onChange={(e) => set({ city: e.target.value })} autoComplete="address-level2" maxLength={80} />
       </Field>
       <Field id="ow-year" label={<>{t('openWebinars.form.profile.year')}<Optional t={t} /></>}>
-        <select id="ow-year" className={FIELD} value={value.intakeYear} onChange={(e) => set({ intakeYear: e.target.value })}>
+        <NativeSelect id="ow-year" className={FIELD} value={value.intakeYear} onChange={(e) => set({ intakeYear: e.target.value })} {...searchTexts(t)}>
           <option value="">{t('openWebinars.form.choose')}</option>
           {intakeYears().map((y) => <option key={y} value={y}>{yearLabel(y, t)}</option>)}
-        </select>
+        </NativeSelect>
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field id="ow-sat" label={<>{t('openWebinars.form.profile.sat')}<Optional t={t} /></>}>

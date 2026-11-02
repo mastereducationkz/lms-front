@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { dropdownTrigger, optionLabels, pickValue } from '../../../test/dropdown';
 import { click, mount, settle, text, unmount } from '../../../pages/publicWebinarsTestKit';
 
 vi.mock('../../../contexts/AuthContext', async () => {
@@ -46,9 +47,9 @@ describe('Telegram alerts of the question-reports page', () => {
     api.setAlertRecipients.mockResolvedValue(state({ recipients: [{ user_id: 986, name: 'Абдураимов Азамат', role: 'head_teacher', linked: false }, { user_id: 5, name: 'Another Teacher', role: 'teacher', linked: true }], candidates: [] }));
     await mount(<AlertRecipients />);
     await open();
-    const select = document.querySelector('select') as HTMLSelectElement;
-    expect(Array.from(select.options).map((o) => o.textContent)).toEqual(['Add a person…', 'Another Teacher (Teacher) ✓']);
-    select.value = '5'; select.dispatchEvent(new Event('change', { bubbles: true }));
+    const select = dropdownTrigger(document.body);
+    expect(await optionLabels(select)).toEqual(['Add a person…', 'Another Teacher (Teacher) ✓']);
+    await pickValue(select, '5');
     await settle();
     await click(button('Add'));
     await settle();

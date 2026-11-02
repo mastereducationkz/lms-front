@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiError } from '../services/api/apiError';
+import { dropdownValue, pickValue } from '../test/dropdown';
 
 const auth = vi.hoisted(() => ({ role: 'admin' }));
 vi.mock('../contexts/AuthContext', async () => {
@@ -61,10 +62,7 @@ const type = (selector: string, value: string) => act(async () => {
 });
 const click = (el: Element | null) => act(async () => { (el as HTMLElement).click(); });
 const radioPick = (name: string, value: string) => click(host.querySelector(`input[name="${name}"][value="${value}"]`));
-const pick = (selector: string, value: string) => act(async () => {
-  const select = host.querySelector(selector) as HTMLSelectElement;
-  select.value = value; select.dispatchEvent(new Event('change', { bubbles: true }));
-});
+const pick = (selector: string, value: string) => pickValue(host.querySelector(selector), value);
 const submit = async () => { await click(host.querySelector('button[type="submit"]')); await settle(); };
 const radio = (value: string) => host.querySelector(`input[name="access-mode"][value="${value}"]`) as HTMLInputElement;
 const saveButton = () => host.querySelector('button[type="submit"]') as HTMLButtonElement;
@@ -152,7 +150,7 @@ describe('create form: Save for a webinar that opens to everyone', () => {
     await show();
     await fillWebinar();
     await click(radio('registration'));
-    expect((host.querySelector('#ow-pipeline') as HTMLSelectElement).value).toBe('');
+    expect(dropdownValue(host.querySelector('#ow-pipeline'))).toBe('');
     expect(saveButton().disabled).toBe(true);
     await pick('#ow-pipeline', '10736538');
     expect(saveButton().disabled).toBe(false);

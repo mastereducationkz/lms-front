@@ -11,6 +11,7 @@ import type { AutomaticMessage } from '../../services/api/announcements';
 import { AUTOMATIC_KINDS, KIND_LABELS, isLongText, type AutomaticKind } from '../../lib/automaticMessages';
 import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/announcements';
+import { NativeSelect } from '@/components/ui/native-select';
 
 const PAGE = 50;
 const PERIODS = [1, 7, 30, 90] as const;
@@ -98,24 +99,24 @@ export function AutomaticMessagesTab() {
       <div className="flex flex-wrap items-end gap-3">
         <div>
           <label htmlFor="auto-days" className="block text-xs font-medium">{t('announcements.automatic.period')}</label>
-          <select id="auto-days" value={days} onChange={(e) => setDays(Number(e.target.value))} className={`mt-1 ${select}`}>
+          <NativeSelect id="auto-days" value={days} onChange={(e) => setDays(Number(e.target.value))} className={`mt-1 ${select}`}>
             {PERIODS.map((p) => <option key={p} value={p}>{t(PERIOD_KEYS[p])}</option>)}
-          </select>
+          </NativeSelect>
         </div>
         <div>
           <label htmlFor="auto-kind" className="block text-xs font-medium">{t('announcements.automatic.kindLabel')}</label>
-          <select id="auto-kind" value={kind} onChange={(e) => setKind(e.target.value)} className={`mt-1 ${select}`}>
+          <NativeSelect id="auto-kind" value={kind} onChange={(e) => setKind(e.target.value)} className={`mt-1 ${select}`}>
             <option value="">{t('announcements.automatic.allKinds')}</option>
             {AUTOMATIC_KINDS.map((k) => <option key={k} value={k}>{t(KIND_LABELS[k])}</option>)}
-          </select>
+          </NativeSelect>
         </div>
         <div>
           <label htmlFor="auto-status" className="block text-xs font-medium">{t('announcements.automatic.statusLabel')}</label>
-          <select id="auto-status" value={status} onChange={(e) => setStatus(e.target.value)} className={`mt-1 ${select}`}>
+          <NativeSelect id="auto-status" value={status} onChange={(e) => setStatus(e.target.value)} className={`mt-1 ${select}`}>
             <option value="">{t('announcements.automatic.anyStatus')}</option>
             <option value="sent">{t('announcements.automatic.status.sent')}</option>
             <option value="failed">{t('announcements.automatic.status.failed')}</option>
-          </select>
+          </NativeSelect>
         </div>
         <div className="min-w-[14rem] flex-1">
           <label htmlFor="auto-search" className="block text-xs font-medium">{t('announcements.automatic.search')}</label>

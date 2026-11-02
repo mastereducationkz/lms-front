@@ -26,6 +26,7 @@ import {
 } from '../../utils/quizPassingScore';
 import '@/lib/i18n/catalogs/adminTools';
 import '@/lib/i18n/catalogs/courseAuthoring';
+import { NativeSelect } from '@/components/ui/native-select';
 
 /** The question-type names in the question list. */
 const QUESTION_TYPE_LABELS: Record<string, MessageKey> = {
@@ -1569,7 +1570,7 @@ export default function QuizLessonEditor({
 
               <div className="flex items-center gap-2 mb-2">
                 <label className="text-xs text-muted-foreground">{tr('courseAuthoring.quiz.difficulty')}</label>
-                <select
+                <NativeSelect
                   className="h-8 rounded border bg-transparent px-2 text-xs"
                   value={draftQuestion.difficulty || ''}
                   onChange={(e) => applyDraftUpdate({ difficulty: (e.target.value || undefined) as any })}
@@ -1578,7 +1579,7 @@ export default function QuizLessonEditor({
                   <option value="easy">{tr('courseAuthoring.quiz.difficultyEasy')}</option>
                   <option value="medium">{tr('courseAuthoring.quiz.difficultyMedium')}</option>
                   <option value="hard">{tr('courseAuthoring.quiz.difficultyHard')}</option>
-                </select>
+                </NativeSelect>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

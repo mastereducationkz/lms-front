@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiError } from '../../services/api/apiError';
 import { button, click, mount, pause, pick, text, type, unmount } from '../../pages/publicWebinarsTestKit';
+import { dropdownText, dropdownValue, optionLabels } from '../../test/dropdown';
 
 vi.mock('../../contexts/AuthContext', async () => {
   const { createContext } = await import('react');
@@ -54,10 +55,9 @@ describe('«Who can join» on the create form', () => {
   it('has no pipeline preselected, and asks nothing until one is chosen', async () => {
     await mount(<Harness />);
     await click(radio('open'));
-    const select = document.querySelector('#ow-pipeline') as HTMLSelectElement;
-    expect(select.value).toBe('');
-    expect(select.options[0].textContent).toBe('Choose the pipeline');
-    expect(Array.from(select.options).map((o) => o.textContent)).toEqual(['Choose the pipeline', 'SAT', 'NUET + IELTS']);
+    expect(dropdownValue('#ow-pipeline')).toBe('');
+    expect(dropdownText('#ow-pipeline')).toBe('Choose the pipeline');
+    expect(await optionLabels('#ow-pipeline')).toEqual(['Choose the pipeline', 'SAT', 'NUET + IELTS']);
     await pause(ASK);
     expect(api.preflightOpenAccess).not.toHaveBeenCalled();
     expect(latest.pipelineId).toBeNull();
