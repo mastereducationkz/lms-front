@@ -46,7 +46,7 @@ describe('the Master League kit parts', () => {
     expect(isLeaguePart('hat', 25)).toBe(false); // the gold-star cape
     expect(isLeaguePart('frame', 4)).toBe(false);
     expect(isLeaguePart('hat', 3)).toBe(false); // a free hat
-    expect(isLeaguePart('hat', 29)).toBe(false); // nothing beyond the catalogue
+    expect(isLeaguePart('hat', 32)).toBe(false); // nothing beyond the catalogue
     expect(isLeaguePart('prop', 99)).toBe(false);
     expect(FREE_COUNTS).toEqual({ hat: 17, eyewear: 8, expression: 8, prop: 16, background: 11, frame: 1 });
   });
@@ -56,7 +56,7 @@ describe('the Master League kit parts', () => {
       'ml_1500', 'ml_breakthrough', 'ml_ever_present', 'ml_first_whistle', 'ml_full_squad', 'ml_hat_trick',
       'ml_mock_climb', 'ml_no_loose_ends', 'ml_perfect', 'ml_signed',
     ]);
-    expect(REWARD_PARTS.filter((r) => LEAGUE_ACHIEVEMENTS.has(r.achievement))).toHaveLength(11);
+    expect(REWARD_PARTS.filter((r) => LEAGUE_ACHIEVEMENTS.has(r.achievement))).toHaveLength(22); // 11 per season
   });
 
   it('read as locked while the server does not list their achievement (the front end ships first)', () => {

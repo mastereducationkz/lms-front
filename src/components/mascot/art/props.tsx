@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { book, calculator, coffee, laptop, pencil, pillow, quill } from './propsStudy';
 import { controller, cupcake, decks, guitar, magnifier, rocket, trophy, wave } from './propsFun';
 import { LEAGUE_PROPS } from './leagueProps';
+import { STUDIO_PROPS } from './studioProps';
 import { REWARD_PROPS } from './rewardProps';
 
 export interface PropPiece {
@@ -33,4 +34,6 @@ export const PROP_ART: PropPiece[] = [
   ...REWARD_PROPS,
   // Master League rewards (p27 Silver Whistle … p29 Gold Clipboard)
   ...LEAGUE_PROPS,
+  // Master League season 2 «Studio» (p31 Vintage Mic … p34 Chart Arrow)
+  ...STUDIO_PROPS,
 ];

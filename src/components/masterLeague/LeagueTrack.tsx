@@ -3,29 +3,27 @@
  * a tick = attended, a hollow dash = missed, a dashed ring = not marked yet, a pulsing gold ring =
  * today, a quiet ring = still to come. The number sits in every pip that isn't ticked, and every pip
  * has its words for a screen reader (matchday, state, and the day for the ones to come).
+ *
+ * A studio season reads the same row as a tracklist: square-cornered track numbers in the group's
+ * colours, ending in a record for Release Day.
  */
-import { Check, Minus, Trophy } from 'lucide-react';
+import { Check, Disc3, Minus, Trophy } from 'lucide-react';
 import { pipLabel } from '@/lib/leagueSeason';
+import { themedKey } from '@/lib/leagueTheme';
 import { formatDate } from '@/lib/i18n';
 import { useLocale, useT } from '@/lib/i18n/react';
-import type { LeagueLesson, LeaguePhase, LessonState } from '@/services/api/masterLeague';
+import type { LeagueLesson, LeaguePhase } from '@/services/api/masterLeague';
+import { FOOTBALL_LOOK, type LeagueLook } from './leagueLook';
 import '@/lib/i18n/catalogs/studentHome';
 
-const PIP: Record<LessonState, string> = {
-  attended: 'bg-amber-300 text-blue-950 shadow-[0_0_10px_rgba(252,211,77,0.55)]',
-  missed: 'border-2 border-white/35 text-white/60',
-  unmarked: 'border-2 border-dashed border-amber-200/80 text-amber-100',
-  today: 'border-2 border-amber-300 bg-amber-300/20 text-amber-200 animate-pulse motion-reduce:animate-none',
-  upcoming: 'border border-white/30 bg-white/5 text-white/80',
-};
+const pipSize = (look: LeagueLook) =>
+  `flex h-[22px] w-[22px] shrink-0 items-center justify-center ${look.pipShape} text-[10px] font-bold tabular-nums @lg:h-6 @lg:w-6`;
 
-const PIP_SIZE = 'flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-[10px] font-bold tabular-nums @lg:h-6 @lg:w-6';
-
-function Pip({ item }: { item: LeagueLesson }) {
+function Pip({ item, look }: { item: LeagueLesson; look: LeagueLook }) {
   const locale = useLocale();
-  const label = pipLabel(item, locale);
+  const label = pipLabel(item, locale, look.theme);
   return (
-    <li title={label} className={`${PIP_SIZE} ${PIP[item.state]}`}>
+    <li title={label} className={`${pipSize(look)} ${look.pip[item.state]}`}>
       <span className="sr-only">{label}</span>
       <span aria-hidden className="flex items-center justify-center">
         {item.state === 'attended' ? <Check className="h-3 w-3" strokeWidth={3.4} /> : item.state === 'missed' ? <Minus className="h-3 w-3" strokeWidth={3} /> : item.number}
@@ -34,33 +32,32 @@ function Pip({ item }: { item: LeagueLesson }) {
   );
 }
 
-/** The trophy at the end of the track: quiet until the Final, pulsing on the day, gold once it has been played. */
-function FinalPip({ phase, examDate }: { phase: LeaguePhase; examDate: string | null }) {
+/** The end of the track: quiet until the exam, pulsing on the day, lit once it has happened. */
+function FinalPip({ phase, examDate, look }: { phase: LeaguePhase; examDate: string | null; look: LeagueLook }) {
   const t = useT();
   const locale = useLocale();
   const label = examDate
-    ? t('studentHome.league.pip.finalOn', { date: formatDate(examDate, { day: 'numeric', month: 'short' }, locale) })
-    : t('studentHome.league.pip.final');
-  const style = phase === 'after'
-    ? 'bg-amber-300 text-blue-950 shadow-[0_0_12px_rgba(252,211,77,0.7)]'
-    : phase === 'exam_day'
-      ? 'border-2 border-amber-300 bg-amber-300/20 text-amber-200 animate-pulse motion-reduce:animate-none'
-      : 'border border-amber-200/60 text-amber-200';
+    ? t(themedKey('studentHome.league.pip.finalOn', look.theme), { date: formatDate(examDate, { day: 'numeric', month: 'short' }, locale) })
+    : t(themedKey('studentHome.league.pip.final', look.theme));
+  const style = phase === 'after' ? look.pipEnd.done : phase === 'exam_day' ? look.pipEnd.today : look.pipEnd.ahead;
+  const Icon = look.theme === 'studio' ? Disc3 : Trophy;
   return (
-    <li title={label} className={`${PIP_SIZE} ml-1 ${style}`}>
+    <li title={label} className={`${pipSize(look)} ml-1 ${style}`}>
       <span className="sr-only">{label}</span>
-      <Trophy aria-hidden className="h-3 w-3" strokeWidth={2.6} />
+      <Icon aria-hidden className="h-3 w-3" strokeWidth={2.6} />
     </li>
   );
 }
 
-export default function LeagueTrack({ items, phase, examDate }: { items: LeagueLesson[]; phase: LeaguePhase; examDate: string | null }) {
+export default function LeagueTrack({ items, phase, examDate, look = FOOTBALL_LOOK }: {
+  items: LeagueLesson[]; phase: LeaguePhase; examDate: string | null; look?: LeagueLook;
+}) {
   const t = useT();
   if (items.length === 0) return null;
   return (
-    <ol aria-label={t('studentHome.league.track')} className="mt-3 flex flex-wrap items-center gap-1.5">
-      {items.map((item) => <Pip key={item.id} item={item} />)}
-      <FinalPip phase={phase} examDate={examDate} />
+    <ol aria-label={t(themedKey('studentHome.league.track', look.theme))} className="mt-3 flex flex-wrap items-center gap-1.5">
+      {items.map((item) => <Pip key={item.id} item={item} look={look} />)}
+      <FinalPip phase={phase} examDate={examDate} look={look} />
     </ol>
   );
 }

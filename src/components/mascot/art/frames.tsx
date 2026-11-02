@@ -5,6 +5,7 @@
  */
 import type { ReactNode } from 'react';
 import { club1500Frame, leagueCrestFrame } from './leagueFrame';
+import { goldRecordFrame, platinumRecordFrame } from './studioFrames';
 
 /** Extra viewBox margin on every side when a frame is worn. */
 export const FRAME_PAD = 18;
@@ -132,4 +133,7 @@ export const FRAME_ART: ((uid: string) => ReactNode)[] = [
   leagueCrestFrame,
   // 1500 Club (Master League: an official 1500+)
   club1500Frame,
+  // Master League season 2 «Studio»: f7 Gold Record, f8 Platinum Record
+  goldRecordFrame,
+  platinumRecordFrame,
 ];

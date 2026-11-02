@@ -2,6 +2,7 @@
  * Kasatik Achievements API (owner, 2026-10-04) — typed exactly to the shared contract
  * (scratchpad ACHIEVEMENTS_CONTRACT.md §3, incl. Amendment 1). Backend prefix: /achievements.
  */
+import type { LeagueTheme } from '@/lib/leagueThemeName';
 import { api } from './client';
 
 export type AchievementTier = 'earned' | 'rare' | 'legendary' | 'social' | 'seasonal' | 'league';
@@ -53,6 +54,8 @@ export interface MyAchievements {
   star_awards: StarAward[];
   /** Master League: true when the student may see the league achievements and kit parts (absent on an older backend). */
   league_access?: boolean;
+  /** Master League: the student's season theme (football | studio); absent on an older backend, which means football. */
+  league_theme?: LeagueTheme;
 }
 
 export type StudentAchievements = Omit<MyAchievements, 'locked_parts' | 'unseen'>;

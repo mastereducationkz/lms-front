@@ -6,6 +6,7 @@
  */
 import { activeLocale, formatDate, hasMessage, t, type Locale, type MessageKey } from '@/lib/i18n';
 import { achievementField } from '@/lib/achievements';
+import { achievementTheme, themedKey, type LeagueTheme } from '@/lib/leagueTheme';
 import type { AchievementTier } from '@/services/api/achievementsUi';
 import '@/lib/i18n/catalogs/sharedUi';
 import '@/lib/i18n/catalogs/studentHome';
@@ -23,10 +24,13 @@ export interface CardText {
   accent: CardAccent;
 }
 
-/** One proud line per achievement, in the student's own voice (sharedUi.shareCard.proud.<key>); null for one without. */
-export function proudLine(key: string, locale: Locale = activeLocale()): string | null {
+/**
+ * One proud line per achievement, in the student's own voice (sharedUi.shareCard.proud.<key>); null for
+ * one without. A studio-season league achievement says it in studio words where they differ.
+ */
+export function proudLine(key: string, locale: Locale = activeLocale(), theme?: LeagueTheme): string | null {
   const id = `sharedUi.shareCard.proud.${key}`;
-  return hasMessage(id) ? t(id, undefined, locale) : null;
+  return hasMessage(id) ? t(themedKey(id, theme), undefined, locale) : null;
 }
 
 export const TIER_PILL: Record<AchievementTier, MessageKey> = {
@@ -61,7 +65,7 @@ export function achievementText(
     pill: t(TIER_PILL[a.tier] ?? 'sharedUi.shareCard.pill.achievement', undefined, locale),
     lead: t('sharedUi.shareCard.unlockedLead', undefined, locale),
     title: achievementField(a, 'title', locale),
-    line: proudLine(a.key, locale) ?? achievementField(a, 'description', locale) ?? null,
+    line: proudLine(a.key, locale, achievementTheme(a)) ?? achievementField(a, 'description', locale) ?? null,
     accent: a.tier === 'legendary' || a.tier === 'league' ? 'gold' : a.tier === 'seasonal' ? 'emerald' : 'blue',
   };
 }

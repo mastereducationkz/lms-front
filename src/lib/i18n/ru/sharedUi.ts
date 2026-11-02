@@ -76,6 +76,11 @@ export const sharedUi: RuTable<typeof en> = {
   'sharedUi.shareCard.proud.ml_full_squad': 'Вся команда в сборе.',
   'sharedUi.shareCard.proud.ml_ever_present': 'Не меньше 90% сезона Master League.',
   'sharedUi.shareCard.proud.ml_no_loose_ends': 'Все домашние задания Master League вовремя.',
+  // Master League, сезон 2 «Студия»
+  'sharedUi.shareCard.proud.studio.ml_signed': 'Контракт с Master League подписан.',
+  'sharedUi.shareCard.proud.studio.ml_first_whistle': 'Первая сессия Master League записана.',
+  'sharedUi.shareCard.proud.studio.ml_full_squad': 'Весь состав в студии, и я тоже.',
+  'sharedUi.shareCard.proud.studio.ml_ever_present': 'Не меньше 90% сессий Master League.',
   'sharedUi.shareCard.proud.nauryz': 'Учёба не остановилась даже на Наурыз.',
   'sharedUi.shareCard.proud.winter_lights': 'Учёба не остановилась даже на зимних каникулах.',
   'sharedUi.shareCard.proud.test_day_ready': 'На уроке — прямо перед днём экзамена.',

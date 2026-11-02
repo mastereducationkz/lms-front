@@ -3,6 +3,7 @@
  * celebration and Star of the Week. Shapes follow the shared contract (backend `src/achievements`).
  * GETs skip the request cache: an unlock must show the moment it happens.
  */
+import { asLeagueTheme, type LeagueTheme } from '@/lib/leagueThemeName';
 import { api } from './client';
 
 export type AchievementTier = 'earned' | 'rare' | 'legendary' | 'social' | 'seasonal' | 'league';
@@ -60,6 +61,8 @@ export interface MyAchievements {
   star_awards?: StarAward[];
   /** Master League: true when the student may see the league achievements and kit parts (absent on an older backend). */
   league_access?: boolean;
+  /** Master League: the student's season theme (football | studio); absent on an older backend, which means football. */
+  league_theme?: LeagueTheme;
 }
 
 export type StudentAchievements = Omit<MyAchievements, 'locked_parts' | 'unseen'>;
@@ -84,6 +87,7 @@ function asMyAchievements(data: unknown): MyAchievements {
     },
     star_awards: Array.isArray(d.star_awards) ? d.star_awards : undefined,
     league_access: d.league_access === true,
+    league_theme: asLeagueTheme(d.league_theme),
   };
 }
 

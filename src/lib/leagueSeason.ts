@@ -7,6 +7,7 @@
 import { almatyCivilDate } from './datetime';
 import { activeLocale, formatDate, formatTime, t, type Locale, type MessageKey } from './i18n';
 import type { LeagueGoal, LeaguePhase, LeagueLesson, LessonState, MyLeague } from '../services/api/masterLeague';
+import { themedT, type LeagueTheme } from './leagueTheme';
 import '@/lib/i18n/catalogs/studentHome';
 
 /** The six league achievements for playing the season, in the order the banner and the page show them. */
@@ -42,8 +43,8 @@ export function currentMatchday(league: Pick<MyLeague, 'lessons' | 'next_lesson'
 export const pipKey = (state: LessonState): MessageKey => `studentHome.league.pip.${state}`;
 
 /** What a screen reader hears for one pip, with the lesson's day for the ones still to come. */
-export function pipLabel(item: LeagueLesson, locale: Locale = activeLocale()): string {
-  const base = t(pipKey(item.state), { n: item.number }, locale);
+export function pipLabel(item: LeagueLesson, locale: Locale = activeLocale(), theme?: LeagueTheme): string {
+  const base = themedT(pipKey(item.state), { n: item.number }, locale, theme);
   return item.state === 'upcoming' || item.state === 'today' ? `${base} · ${kickoffLabel(item.starts_at, locale)}` : base;
 }
 
@@ -69,14 +70,15 @@ export function kickoffLabel(startsAt: string, locale: Locale = activeLocale()):
  * «last matchday played» once the lessons run out. A lesson that has already started shows its
  * time instead of a negative countdown.
  */
-export function kickoffLine(league: Pick<MyLeague, 'next_lesson'>, now: number, locale: Locale = activeLocale()): string {
+export function kickoffLine(league: Pick<MyLeague, 'next_lesson' | 'theme'>, now: number, locale: Locale = activeLocale()): string {
   const next = league.next_lesson;
-  if (!next) return t('studentHome.league.lastMatchday', undefined, locale);
+  const theme = league.theme;
+  if (!next) return themedT('studentHome.league.lastMatchday', undefined, locale, theme);
   const start = Date.parse(next.starts_at);
   if (Number.isFinite(start) && start > now && start - now < DAY_MS) {
-    return t('studentHome.league.kickoffIn', { time: formatCountdown(start - now, locale) }, locale);
+    return themedT('studentHome.league.kickoffIn', { time: formatCountdown(start - now, locale) }, locale, theme);
   }
-  return t('studentHome.league.nextKickoff', { when: kickoffLabel(next.starts_at, locale) }, locale);
+  return themedT('studentHome.league.nextKickoff', { when: kickoffLabel(next.starts_at, locale) }, locale, theme);
 }
 
 /** Does the banner need a ticking clock (a kick-off inside the last 24 hours)? */
@@ -137,7 +139,7 @@ function afterSub(league: MyLeague, now: number, locale: Locale, tr: (id: string
 export function phaseCopy(league: MyLeague, now: number, locale: Locale = activeLocale()): PhaseCopy {
   const phase = league.phase === 'over' ? 'after' : league.phase;
   const key = PHASE_KEY[phase];
-  const tr = (id: string, params?: Record<string, string | number>) => t(`studentHome.league.${id}` as MessageKey, params, locale);
+  const tr = (id: string, params?: Record<string, string | number>) => themedT(`studentHome.league.${id}` as MessageKey, params, locale, league.theme);
   if (phase === 'season') {
     const days = league.days_to_exam;
     const left = days != null && days >= 0 ? tr('daysToFinal', { count: days }) : null;
@@ -172,16 +174,19 @@ const COACH_NEWS = [
   { key: 'kane', until: Date.parse('2026-10-30T00:00:00+05:00'), phases: ['warmup', 'season', 'finalWeek'] },
 ];
 
-/** The coach's note for today: a news night while one runs, else one of three per phase, stable through the day. */
+/**
+ * The coach's note for today: a news night while one runs, else one of three per phase, stable through
+ * the day. A studio season hears its producer instead, and the football news nights are not theirs.
+ */
 export function coachNote(
-  noteKey: string, now: number, userId: number | string, locale: Locale = activeLocale(), daysToExam?: number | null,
+  noteKey: string, now: number, userId: number | string, locale: Locale = activeLocale(), daysToExam?: number | null, theme?: LeagueTheme,
 ): string {
-  const news = COACH_NEWS.find((n) => now < n.until && n.phases.includes(noteKey));
+  const news = theme === 'studio' ? undefined : COACH_NEWS.find((n) => now < n.until && n.phases.includes(noteKey));
   if (news && daysToExam != null && daysToExam > 0) {
     return t(`studentHome.league.news.${news.key}` as MessageKey, { count: daysToExam }, locale);
   }
   const n = (dayIndex(now, userId) % 3) + 1;
-  return t(`studentHome.league.note.${noteKey}.${n}` as MessageKey, undefined, locale);
+  return themedT(`studentHome.league.note.${noteKey}.${n}` as MessageKey, undefined, locale, theme);
 }
 
 export interface GoalView {
@@ -192,13 +197,13 @@ export interface GoalView {
 }
 
 /** The season goals in a fixed order; one of the six the server did not send shows as not done yet. */
-export function goalViews(goals: LeagueGoal[], locale: Locale = activeLocale()): GoalView[] {
+export function goalViews(goals: LeagueGoal[], locale: Locale = activeLocale(), theme?: LeagueTheme): GoalView[] {
   const listed = LEAGUE_RESULT_GOAL_KEYS.filter((key) => goals.some((g) => g.key === key));
   return [...LEAGUE_GOAL_KEYS, ...listed].map((key) => {
     const g = goals.find((x) => x.key === key);
     return {
       key,
-      title: t(`studentHome.achievement.${key}.title` as MessageKey, undefined, locale),
+      title: themedT(`studentHome.achievement.${key}.title` as MessageKey, undefined, locale, theme),
       unlocked: g?.unlocked === true,
       progress: g?.progress ?? null,
     };

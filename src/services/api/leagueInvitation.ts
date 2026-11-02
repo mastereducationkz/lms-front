@@ -7,6 +7,7 @@
  * A failed read is an error, never «no invitation»: the page must not tell a student there is nothing
  * for them just because a request dropped.
  */
+import { asLeagueTheme, type LeagueTheme } from '@/lib/leagueThemeName';
 import { api } from './client';
 
 export type InvitationState = 'open' | 'accepted' | 'declined' | 'expired' | 'withdrawn';
@@ -37,6 +38,8 @@ export interface LeagueInvitation {
   chosen_group_id: number | null;
   /** Once the CRM has enrolled an accepting student; null until then. */
   member_status: MemberStatus | null;
+  /** The cohort's theme; football from a backend that does not send it. */
+  theme?: LeagueTheme;
 }
 
 const STATES: readonly InvitationState[] = ['open', 'accepted', 'declined', 'expired', 'withdrawn'];
@@ -72,6 +75,7 @@ export function asInvitation(data: unknown): LeagueInvitation | null {
     options,
     chosen_group_id: typeof d.chosen_group_id === 'number' ? d.chosen_group_id : null,
     member_status: MEMBER.includes(d.member_status) ? d.member_status : null,
+    theme: asLeagueTheme(d.theme),
   };
 }
 
