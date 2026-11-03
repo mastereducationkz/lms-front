@@ -16,7 +16,7 @@ export default function TrainingBanner() {
     <div
       role="status"
       aria-label={t('trainingCopy.banner', { commit })}
-      className="pointer-events-none fixed bottom-2 left-1/2 z-[10000] max-w-[calc(100vw-1rem)] -translate-x-1/2 select-none truncate rounded-full bg-amber-500/95 px-3 py-1 font-mono text-xs font-semibold text-black shadow-lg"
+      className="pointer-events-none fixed bottom-2 left-1/2 z-[10000] w-max max-w-[calc(100vw-1rem)] -translate-x-1/2 select-none rounded-2xl bg-amber-500/95 px-3 py-1 text-center font-mono text-xs font-semibold leading-tight text-black shadow-lg"
     >
       {t('trainingCopy.banner', { commit })}
     </div>
