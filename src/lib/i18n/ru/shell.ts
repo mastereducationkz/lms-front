@@ -58,6 +58,7 @@ export const shell: RuTable<typeof en> = {
   'shell.nav.manualUnlocks': 'Ручные открытия',
   'shell.nav.trialAccess': 'Пробный доступ',
   'shell.nav.trialLinks': 'Пробные ссылки (QR)',
+  'shell.nav.staffTraining': 'Обучение сотрудников',
   'shell.nav.chat': 'Чат',
   'shell.nav.support': 'Поддержка',
   'shell.nav.loadingCourses': 'Загрузка курсов...',

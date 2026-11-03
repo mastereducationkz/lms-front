@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext.tsx';
 import { connectSocket } from '../services/socket';
 import { useVisiblePolling } from '../hooks/useVisiblePolling';
 import { useOffboardingConfig } from '../hooks/useOffboardingConfig';
+import { useStaffTrainingEnabled } from '../hooks/useStaffTrainingEnabled';
 import apiClient from '../services/api';
 import logoIco from '../assets/masteredlogo-ico.ico';
 import { CRM_ONBOARDING_URL, CRM_TASKS_URL, CRM_WORKSPACE_URL } from '../lib/crmLinks';
@@ -39,6 +40,7 @@ import {
   ArrowLeftRight,
   Timer,
   QrCode,
+  BookOpenCheck,
   Headset,
   Presentation,
   Video,
@@ -107,7 +109,8 @@ export function getNavigationItems(
   isSpecialGroupStudent: boolean = false,
   lessonRequestCount: number = 0,
   attendanceDue?: AttendanceDue,
-  offboardingEnabled: boolean = false
+  offboardingEnabled: boolean = false,
+  staffTrainingEnabled: boolean = false
 ): NavItemTuple[] {
   // Muted while Google Meet still owes us the call, red the moment the register can actually
   // be taken — see lib/attendanceBadge.
@@ -170,6 +173,11 @@ export function getNavigationItems(
     ['/manual-unlocks', t('shell.nav.manualUnlocks'), Unlock, 0, ['teacher', 'head_teacher'], 'manual-unlocks-nav', 'primary'],
     ['/trial-access', t('shell.nav.trialAccess'), Timer, 0, ['admin', 'head_curator'], 'trial-access-nav', 'admin'],
     ['/admin/trial-links', t('shell.nav.trialLinks'), QrCode, 0, ['admin', 'head_curator', 'marketing'], 'trial-links-nav', 'admin'],
+    // Staff training (CONTRACTS §8): every staff role, marketing included; students and parents never.
+    // Only once the backend says it is switched on (404 staff_training_off hides it).
+    ...(staffTrainingEnabled
+      ? [['/training', t('shell.nav.staffTraining'), BookOpenCheck, 0, ['admin', 'teacher', 'head_teacher', 'curator', 'head_curator', 'marketing'], 'training-nav', 'primary'] as NavItemTuple]
+      : []),
     ['/chat', t('shell.nav.chat'), MessageCircle, unreadCount, null, 'messages-nav', 'primary'],
     ['https://support.mastereducation.kz', t('shell.nav.support'), Headset, 0, null, 'support-nav', 'primary'],
   ];
@@ -180,8 +188,8 @@ export function getNavigationItems(
     if (_userRole === 'marketing') return allItems.filter(([to]) => to === '/admin/trial-links' || to === '/inbox');
   }
 
-  // The marketing role has one page (lms-backend refuses it everywhere else).
-  if (_userRole === 'marketing') return allItems.filter(([to]) => to === '/admin/trial-links');
+  // The marketing role has two pages: trial links and staff training (lms-backend refuses it everywhere else).
+  if (_userRole === 'marketing') return allItems.filter(([to]) => to === '/admin/trial-links' || to === '/training');
 
   if (_userRole === 'student' && isSpecialGroupStudent) {
     // These students have no calendar, so a lesson-recordings or materials entry would only
@@ -241,6 +249,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
   const { pathname } = useLocation();
   const replayKind = replayTourFor(user?.role);
   const offboarding = useOffboardingConfig(user?.role);
+  const staffTraining = useStaffTrainingEnabled(user?.id, user?.role);
 
   // Hide restricted student nav items until role-specific special-group state is resolved.
   const hideRestrictedStudentNav = useMemo(() => {
@@ -434,7 +443,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
       
       <nav className="flex flex-col flex-1 overflow-y-auto min-h-0 pt-1">
         {buildNavSections(
-          getNavigationItems(t, user?.role, unread, unseenGraded, hideRestrictedStudentNav, lessonRequestCount, attendanceDue, !!offboarding?.enabled),
+          getNavigationItems(t, user?.role, unread, unseenGraded, hideRestrictedStudentNav, lessonRequestCount, attendanceDue, !!offboarding?.enabled, staffTraining),
           t
         )
           .map((section) => ({

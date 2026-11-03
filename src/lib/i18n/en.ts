@@ -54,6 +54,7 @@ import { openWebinars } from './en/openWebinars';
 import { trialLinks } from './en/trialLinks';
 import { pastPapers } from './en/pastPapers';
 import { seasonal } from './en/seasonal';
+import { staffTraining } from './en/staffTraining';
 import { trainingCopy } from './en/trainingCopy';
 
 export const EN_NAMESPACES = {
@@ -109,6 +110,7 @@ export const EN_NAMESPACES = {
   trialLinks,
   pastPapers,
   seasonal,
+  staffTraining,
   trainingCopy,
 } as const;
 
@@ -165,6 +167,7 @@ export const en = {
   ...trialLinks,
   ...pastPapers,
   ...seasonal,
+  ...staffTraining,
   ...trainingCopy,
 } as const;
 

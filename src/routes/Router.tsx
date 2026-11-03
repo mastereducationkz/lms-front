@@ -14,6 +14,7 @@ import AppLayout from '../layouts/AppLayout.tsx';
 import ThinkingLoader from '../components/ThinkingLoader';
 import { t } from '../lib/i18n';
 import { offboardingRoutes } from './offboardingRoutes';
+import { trainingRoutes } from './trainingRoutes';
 import { TRAINING_BUILD } from '../lib/trainingBuild';
 import TrainingBanner from '../components/TrainingBanner';
 import '@/lib/i18n/catalogs/shell';
@@ -821,6 +822,9 @@ export default function Router() {
           } />
 
           {offboardingRoutes()}
+
+          {/* Staff training: every staff role, marketing included (CONTRACTS §8). */}
+          {trainingRoutes()}
 
           {/* Head Teacher Routes */}
           {/* Dashboard is handled by /dashboard route and DashboardPage dispatcher */}
