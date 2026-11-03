@@ -87,7 +87,7 @@ export default function TemplateEditor({ items, courses, disabled, onChange }: {
       {!disabled && (
         <div className="flex gap-2">
           <div className="min-w-0 flex-1">
-            <NativeSelect value={adding} onValueChange={setAdding} searchable placeholder={t('trialLinks.settings.addCourse')}>
+            <NativeSelect className="flex w-full" value={adding} onValueChange={setAdding} searchable placeholder={t('trialLinks.settings.addCourse')}>
               <option value="">—</option>
               {courses.filter((c) => !used.has(Number(c.id))).map((c) => <option key={c.id} value={String(c.id)}>{c.title}</option>)}
             </NativeSelect>

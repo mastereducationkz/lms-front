@@ -81,8 +81,8 @@ export default function SignupsTab({ links }: { links: TrialLinkRow[] }) {
         <FilterBar links={links} value={stat} onChange={(next) => { setStat(next); setPage(1); }} />
         <div className="flex flex-wrap items-end gap-3">
           <div className="w-48 space-y-1">
-            <Label className="text-xs">{t('trialLinks.admin.col.outcome')}</Label>
-            <NativeSelect value={outcome} onValueChange={(v) => { setOutcome(v); setPage(1); }}>
+            <Label className="block text-xs">{t('trialLinks.admin.col.outcome')}</Label>
+            <NativeSelect className="flex w-full" value={outcome} onValueChange={(v) => { setOutcome(v); setPage(1); }}>
               <option value="">{t('trialLinks.admin.allOutcomes')}</option>
               {OUTCOMES.map((o) => <option key={o} value={o}>{outcomeLabel(t, o)}</option>)}
             </NativeSelect>

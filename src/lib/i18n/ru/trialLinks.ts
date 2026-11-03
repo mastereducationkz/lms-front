@@ -181,6 +181,8 @@ export const trialLinks: RuTable<typeof en> = {
   'trialLinks.present.newSchool': 'Новая школа',
   'trialLinks.present.newSchoolName': 'Название школы',
   'trialLinks.present.newSchoolCity': 'Город',
+  'trialLinks.present.addSchool': 'Добавить новую школу',
+  'trialLinks.present.pickFromList': 'Выбрать из списка',
   'trialLinks.present.start': 'Начать',
   'trialLinks.present.running': 'Идёт презентация',
   'trialLinks.present.signedUp': { one: 'зарегистрировался', few: 'зарегистрировались', many: 'зарегистрировались', other: 'зарегистрировались' },

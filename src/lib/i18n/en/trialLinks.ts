@@ -176,6 +176,8 @@ export const trialLinks = {
   'trialLinks.present.newSchool': 'New school',
   'trialLinks.present.newSchoolName': 'School name',
   'trialLinks.present.newSchoolCity': 'City',
+  'trialLinks.present.addSchool': 'Add a new school',
+  'trialLinks.present.pickFromList': 'Pick from the list',
   'trialLinks.present.start': 'Start',
   'trialLinks.present.running': 'Presenting now',
   'trialLinks.present.signedUp': { one: 'signed up', other: 'signed up' },
