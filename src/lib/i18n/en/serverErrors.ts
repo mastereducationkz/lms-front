@@ -116,4 +116,28 @@ export const serverErrors = {
   // Half-point homework grades (2026-10-27): steps of 0.5, 0..max_score.
   'serverErrors.grade_half_step': 'Use whole or half points, e.g. 7 or 7.5',
   'serverErrors.grade_out_of_range': 'The grade must be between 0 and {max}',
+  // Staff training (2026-11): refusals of /staff-training/*.
+  'serverErrors.staff_training_staff_only': 'Staff training is for staff accounts only',
+  'serverErrors.staff_training_off': 'Staff training is not switched on yet',
+  'serverErrors.staff_training_clip_changed': 'This video was just updated. Reload it to carry on',
+  'serverErrors.staff_training_watch_first': 'Watch the video first: the questions open at 90%',
+  'serverErrors.staff_training_check_rate': 'Wait a few seconds before checking again',
+  'serverErrors.staff_training_progress_forbidden': 'You can’t see this training progress',
+  'serverErrors.training_copy_unavailable': 'The training copy is unavailable right now. Try again in a minute',
+  'serverErrors.staff_training_not_found': 'We couldn’t find that in staff training',
+  'serverErrors.staff_training_bad_answer': 'That isn’t one of the answers offered. Reload the page and try again',
+  'serverErrors.staff_training_bad_request': 'That request wasn’t valid. Check it and try again',
+  'serverErrors.staff_training_new_hire_locked': 'Only an admin can cancel a new hire’s track',
+  'serverErrors.staff_training_reset_limit': 'You can start the practice over 5 times a day. Try again tomorrow',
+  // Pipeline-only refusals (the staff-training service calls); staff never meet them, the catalog keeps them worded.
+  'serverErrors.staff_training_service_off': 'Staff training service calls are switched off',
+  'serverErrors.staff_training_service_key': 'The service key is missing or wrong',
+  'serverErrors.staff_training_version_stale': 'A newer version of this clip is already registered',
+  'serverErrors.staff_training_media_missing': 'Upload all four files of this version first',
+  'serverErrors.staff_training_media_too_large': 'A media file can be at most 45 MB',
+  'serverErrors.staff_training_manifest_invalid': 'The clip manifest is not valid',
+  'serverErrors.staff_training_sha_required': 'Send the file’s sha256 with the upload',
+  'serverErrors.staff_training_sha_mismatch': 'The file does not match its sha256',
+  'serverErrors.staff_training_unknown_role': 'There is no track for this role',
+  'serverErrors.staff_training_unknown_item': 'Some items of the track are not registered',
 } as const satisfies MessageTable;
