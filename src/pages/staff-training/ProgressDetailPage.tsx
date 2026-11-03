@@ -5,9 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/Toast';
 import { useLocale, useT } from '@/lib/i18n/react';
 import { formatDate, formatDateTime } from '@/lib/i18n/format';
-import {
-  cancelAssignment, getTrainingProgress, getTrainingProgressOf, type ProgressDetail, type ProgressRow,
-} from '@/services/api/staffTraining';
+import { cancelAssignment, getTrainingProgressOf } from '@/services/api/staffTraining';
 import { BackLink, LoadError, Loading, PageShell } from '@/components/staff-training/PageShell';
 import AssignDialog from '@/components/staff-training/AssignDialog';
 import StateChip from '@/components/staff-training/StateChip';
@@ -16,23 +14,15 @@ import { errorText, pick } from '@/components/staff-training/model';
 import { useLoad } from '@/components/staff-training/useLoad';
 import '@/lib/i18n/catalogs/staffTraining';
 
-type Loaded = ProgressDetail & { row: ProgressRow | null };
-
-/** The detail answer has no person in it (CONTRACTS §6.2), so the name, role and state come from the list. */
-async function load(userId: number): Promise<Loaded> {
-  const [detail, list] = await Promise.all([getTrainingProgressOf(userId), getTrainingProgress({}).catch(() => null)]);
-  return { ...detail, row: list?.rows.find((r) => r.user.id === userId) ?? null };
-}
-
 /** /training/progress/:userId (also where the CRM's HR card links): one person's track, step by step. */
 export default function ProgressDetailPage() {
   const userId = Number(useParams().userId);
   const t = useT();
   const locale = useLocale();
-  const { data, error, reload } = useLoad(() => load(userId), userId);
+  const { data, error, reload } = useLoad(() => getTrainingProgressOf(userId), userId);
   const [assigning, setAssigning] = useState(false);
 
-  const person = data?.user ?? data?.row?.user ?? null;
+  const person = data?.user ?? null;
   const track = data?.track ?? null;
 
   const cancel = async (enrollmentId: number) => {
@@ -54,10 +44,10 @@ export default function ProgressDetailPage() {
             <div className="space-y-1">
               <h1 className="text-2xl font-bold tracking-tight text-foreground">{person?.name ?? ''}</h1>
               {person && <p className="text-sm text-muted-foreground">{person.email} · {t('staffTraining.progress.joined', { date: formatDate(person.created_at, undefined, locale) })}</p>}
-              {data.row?.last_active_at && <p className="text-xs text-muted-foreground">{t('staffTraining.progress.col.active')}: {formatDateTime(data.row.last_active_at, undefined, locale)}</p>}
+              {data.person.last_active_at && <p className="text-xs text-muted-foreground">{t('staffTraining.progress.col.active')}: {formatDateTime(data.person.last_active_at, undefined, locale)}</p>}
             </div>
             <div className="flex items-center gap-3">
-              {(track?.state ?? data.row?.state) && <StateChip state={(track?.state ?? data.row!.state)} />}
+              {track && <StateChip state={track.state} />}
               <Button variant="outline" size="sm" onClick={() => setAssigning(true)}>
                 <UserPlus className="mr-2 h-4 w-4" aria-hidden />{t('staffTraining.detail.assignClips')}
               </Button>
@@ -79,14 +69,14 @@ export default function ProgressDetailPage() {
                 {data.assigned_clips.map((assigned, i) => (
                   <StepCard
                     key={assigned.clip.id}
-                    item={{ position: i + 1, kind: 'clip', required: assigned.required ?? false, done: assigned.done, clip: assigned.clip }}
+                    item={{ position: i + 1, kind: 'clip', required: assigned.required, done: assigned.done, clip: assigned.clip }}
                     locale={locale}
                     readOnly
-                    action={assigned.enrollment_id !== undefined ? (
-                      <Button variant="ghost" size="icon" className="-my-1 shrink-0" title={t('staffTraining.detail.cancel')} aria-label={t('staffTraining.detail.cancel')} onClick={() => cancel(assigned.enrollment_id!)}>
+                    action={(
+                      <Button variant="ghost" size="icon" className="-my-1 shrink-0" title={t('staffTraining.detail.cancel')} aria-label={t('staffTraining.detail.cancel')} onClick={() => cancel(assigned.enrollment_id)}>
                         <X className="h-4 w-4" aria-hidden />
                       </Button>
-                    ) : undefined}
+                    )}
                   />
                 ))}
               </ol>

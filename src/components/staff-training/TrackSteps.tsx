@@ -54,6 +54,7 @@ export function StepCard({ item, locale, current, showRequired = true, readOnly,
   const poster = mediaUrl(clip?.poster_url);
   const result = task?.last_result;
   const Icon = item.kind === 'clip' ? PlayCircle : ClipboardCheck;
+  const failedTries = (item.attempts?.failed ?? 0) + (item.attempts?.wrong_total ?? 0);
 
   const body = (
     <>
@@ -72,6 +73,7 @@ export function StepCard({ item, locale, current, showRequired = true, readOnly,
           <span className="inline-flex items-center gap-1"><Icon className="h-3.5 w-3.5" aria-hidden />{t(item.kind === 'clip' ? 'staffTraining.step.clip' : 'staffTraining.step.task')}</span>
           <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium">{t(platform === 'crm' ? 'staffTraining.platform.crm' : 'staffTraining.platform.lms')}</span>
           {clip && <ClipMeta clip={clip} />}
+          {failedTries > 0 && <span className="text-amber-700 dark:text-amber-400">{t('staffTraining.progress.failedAttempts', { count: failedTries })}</span>}
           {showRequired && <span>{t(item.required ? 'staffTraining.required' : 'staffTraining.optional')}</span>}
           {result && (
             <span className={cn('inline-flex items-center gap-1', result.status === 'passed' ? 'text-emerald-700 dark:text-emerald-400' : result.status === 'failed' ? 'text-red-700 dark:text-red-400' : '')}>

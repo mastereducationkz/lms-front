@@ -62,7 +62,7 @@ function ClipBody({ clip, reload }: { clip: ClipDetail; reload: () => void }) {
     <>
       <header className="space-y-1.5">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">{pick(clip.title, locale)}</h1>
-        {clip.summary && <p className="max-w-3xl text-sm text-muted-foreground">{pick(clip.summary, locale)}</p>}
+        {pick(clip.summary, locale) && <p className="max-w-3xl text-sm text-muted-foreground">{pick(clip.summary, locale)}</p>}
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" aria-hidden />{formatClock(clip.duration_ms)}</span>
           <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium">{t(clip.platform === 'crm' ? 'staffTraining.platform.crm' : 'staffTraining.platform.lms')}</span>

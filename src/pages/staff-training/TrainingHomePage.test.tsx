@@ -17,7 +17,7 @@ const summary = (id: number, key: string, over = {}) => ({
 
 const me = (over: Partial<TrainingMe> = {}): TrainingMe => ({
   user: { id: 12, role: 'curator', ui_locale: 'ru' },
-  enrollments: [{ id: 5, kind: 'track', track_id: 2, source: 'new_hire', required: true, due_at: null, completed_at: null }],
+  enrollments: [{ id: 5, kind: 'track', track_id: 2, clip_id: null, source: 'new_hire', required: true, due_at: null, completed_at: null }],
   track: {
     id: 2, role: 'curator', title: { ru: 'Куратор', en: 'Curator' }, version: 3, state: 'in_progress', done_items: 1, total_items: 3, completed_at: null,
     items: [
@@ -59,7 +59,7 @@ describe('the training home page', () => {
   it('shows the library for someone with no track, and what was assigned to them', async () => {
     api.getTrainingMe.mockResolvedValue(me({
       track: null, enrollments: [],
-      assigned_clips: [{ clip: summary(9, 'c'), done: false, due_at: null, required: true }],
+      assigned_clips: [{ clip: summary(9, 'c'), done: false, due_at: null, required: true, enrollment_id: 91 }],
     }));
     api.getTrainingLibrary.mockResolvedValue([
       { id: 2, role: 'curator', title: { ru: 'Куратор', en: 'Curator' }, items: [{ position: 1, kind: 'clip', required: true, clip: summary(7, 'a') }] },

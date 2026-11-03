@@ -65,16 +65,15 @@ describe('WatchTracker', () => {
 });
 
 describe('beatEveryMs', () => {
-  it('beats every 10 s at normal speed and faster as the video speeds up', () => {
-    expect(beatEveryMs(1)).toBe(10_000);
-    expect(beatEveryMs(1.25)).toBe(6000);
-    expect(beatEveryMs(1.5)).toBe(3000);
+  it('beats every 10 s at every speed the player offers, and faster only beyond 2×', () => {
+    for (const rate of [1, 1.25, 1.5, 2]) expect(beatEveryMs(rate)).toBe(10_000);
+    expect(beatEveryMs(3)).toBe(1500);
   });
 
-  it('keeps each beat inside the server limit (wall time + 2 s) at every allowed speed', () => {
-    for (const rate of [1, 1.25, 1.5, 2]) {
+  it('keeps each beat inside the server budget (wall time × 2 + 2 s) at every speed', () => {
+    for (const rate of [1, 1.25, 1.5, 2, 2.5, 3, 4]) {
       const wall = beatEveryMs(rate);
-      expect(wall * rate).toBeLessThanOrEqual(wall + 2000);
+      expect(wall * rate).toBeLessThanOrEqual(wall * 2 + 2000);
     }
   });
 });

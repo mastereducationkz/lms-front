@@ -71,12 +71,13 @@ export class WatchTracker {
 }
 
 /**
- * How often to send a beat. 10 s at normal speed. At speed r a beat covers more video than wall time, and the
- * server refuses an interval longer than wall + 2 s, so the beat comes before 2 s / (r - 1) of wall time passed.
+ * How often to send a beat: 10 s. The server believes a beat's claimed video seconds up to wall time × 2 + 2 s
+ * (lms-backend buckets.budget_ms), so a 10 s beat holds at every speed up to 2× (20 s of video ≤ 22 s). Above
+ * 2× (only the browser's own speed menu goes there) the beat comes before 2 s / (r - 2) of wall time passed.
  */
 export function beatEveryMs(rate: number): number {
-  if (!(rate > 1)) return 10_000;
-  return Math.min(10_000, Math.max(1000, Math.floor(1500 / (rate - 1))));
+  if (!(rate > 2)) return 10_000;
+  return Math.min(10_000, Math.max(1000, Math.floor(1500 / (rate - 2))));
 }
 
 /** Where to resume: the saved position, unless it is at the very start or within the last seconds. */

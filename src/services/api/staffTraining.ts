@@ -40,7 +40,7 @@ export interface TaskSummary {
   key: string;
   platform: TrainingPlatform;
   title: Bilingual;
-  /** Instructions (Markdown subset). Not in the §6.1 sample; see «Contract deviations» of the PR. */
+  /** Instructions (Markdown subset). */
   body?: Bilingual | null;
   last_result?: TaskResult | null;
 }
@@ -52,8 +52,8 @@ export interface TrackItem {
   done?: boolean;
   clip?: ClipSummary;
   task?: TaskSummary;
-  /** Heads' detail page only: how many answers/checks it took. */
-  attempts?: number;
+  /** The heads' detail page only: how many wrong answers (clip) or checks (task) it took. */
+  attempts?: { questions?: unknown[]; wrong_total?: number; checks?: number; failed?: number };
 }
 
 export interface TrackView {
@@ -72,6 +72,7 @@ export interface TrainingEnrollment {
   id: number;
   kind: 'track' | 'clip';
   track_id: number | null;
+  clip_id: number | null;
   source: 'new_hire' | 'assigned';
   required: boolean;
   due_at: string | null;
@@ -82,9 +83,8 @@ export interface AssignedClip {
   clip: ClipSummary;
   done: boolean;
   due_at: string | null;
-  /** Needed to cancel an assignment; see «Contract deviations» of the PR. */
-  enrollment_id?: number;
-  required?: boolean;
+  enrollment_id: number;
+  required: boolean;
 }
 
 export interface TrainingMe {
@@ -117,7 +117,8 @@ export interface ClipDetail {
   id: number;
   key: string;
   title: Bilingual;
-  summary: Bilingual | null;
+  /** `{ru: null, en: null}` when the clip has no summary. */
+  summary: { ru: string | null; en: string | null } | null;
   platform: TrainingPlatform;
   duration_ms: number;
   content_version: number;
@@ -162,7 +163,9 @@ export interface ProgressRow {
 
 export interface ProgressList { rows: ProgressRow[]; counts: Record<TrainingState, number> }
 export interface ProgressDetail {
-  user?: ProgressRow['user'];
+  person: { id: number; name: string; role: string; last_active_at: string | null };
+  user: ProgressRow['user'] & { is_active: boolean };
+  enrollments: TrainingEnrollment[];
   track: TrackView | null;
   assigned_clips: AssignedClip[];
 }

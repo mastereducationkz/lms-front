@@ -2,10 +2,10 @@ import '@/lib/i18n/catalogs/staffTraining';
 import type { Locale } from '@/lib/i18n';
 import type { TFunction } from '@/lib/i18n';
 import { reasonCodeOf } from '@/services/api/apiError';
-import type { Bilingual, TrackItem, TrainingState } from '@/services/api/staffTraining';
+import type { TrackItem, TrainingState } from '@/services/api/staffTraining';
 
 /** The text in the reader's language; the other language when that one is empty, so a gap never shows as a blank. */
-export function pick(text: Bilingual | null | undefined, locale: Locale): string {
+export function pick(text: { ru?: string | null; en?: string | null } | null | undefined, locale: Locale): string {
   if (!text) return '';
   const other: Locale = locale === 'ru' ? 'en' : 'ru';
   return text[locale] || text[other] || '';

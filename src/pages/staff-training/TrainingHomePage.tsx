@@ -47,7 +47,7 @@ export default function TrainingHomePage() {
       </header>
 
       {error ? (
-        // The server answers 404 «staff_training_off» while the feature is switched off (the global 404 handler drops the code).
+        // The server answers 404 `staff_training_off` while the feature is switched off.
         statusOf(error) === 404
           ? <p role="status" className="rounded-2xl border border-dashed border-border p-6 text-sm text-muted-foreground">{t('staffTraining.off')}</p>
           : <LoadError message={errorText(error, t, 'staffTraining.loadFailed')} onRetry={reload} />
