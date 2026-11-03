@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Inbox as InboxIcon } from 'lucide-react';
 import { Label } from '../../components/ui/label';
 import { NativeSelect } from '../../components/ui/native-select';
 import { Button } from '../../components/ui/button';
 import { formatDateTime, type MessageKey } from '../../lib/i18n';
-import { useLocale, useT } from '../../lib/i18n/react';
+import { useT } from '../../lib/i18n/react';
 import { cn } from '../../lib/utils';
 import {
   fetchInbox, fetchInboxMessage, type InboxMessage, type InboxMessageFull,
@@ -19,7 +19,6 @@ const KNOWN_RECIPIENTS = ['parent', 'student', 'staff', 'group_chat', 'external'
 /** /inbox (training build only): everything the practice copy would have sent, so a task can show «this is what the parent receives». */
 export default function InboxPage() {
   const t = useT();
-  const locale = useLocale();
   const [channel, setChannel] = useState('');
   const [items, setItems] = useState<InboxMessage[]>([]);
   const [more, setMore] = useState(false);
@@ -92,7 +91,7 @@ export default function InboxPage() {
                 >
                   <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                     <span>{label('channel', m.channel, KNOWN_CHANNELS)} · {label('recipient', m.recipient_kind, KNOWN_RECIPIENTS)}</span>
-                    {m.created_at && <time dateTime={m.created_at}>{formatDateTime(m.created_at, locale)}</time>}
+                    {m.created_at && <time dateTime={m.created_at}>{formatDateTime(m.created_at)}</time>}
                   </div>
                   <div className="mt-1 truncate text-sm font-medium text-foreground">{m.subject || t('trainingCopy.inbox.noSubject')}</div>
                   <div className="truncate text-xs text-muted-foreground">{m.recipient_label}</div>
@@ -104,7 +103,7 @@ export default function InboxPage() {
         </section>
 
         <section aria-live="polite" className={cn('min-w-0', !selected && 'hidden @3xl:block')}>
-          {selected ? <Detail message={selected} onBack={() => setSelected(null)} t={t} locale={locale} label={label} />
+          {selected ? <Detail message={selected} onBack={() => setSelected(null)} t={t} label={label} />
             : <p className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">{t('trainingCopy.inbox.pick')}</p>}
         </section>
       </div>
@@ -112,10 +111,18 @@ export default function InboxPage() {
   );
 }
 
-function Detail({ message, onBack, t, locale, label }: {
-  message: InboxMessageFull; onBack: () => void; t: ReturnType<typeof useT>; locale: ReturnType<typeof useLocale>;
+/** The message's HTML as a document of its own: a blob URL in an iframe with no permissions (nothing in it runs, it cannot reach this page). */
+function useHtmlUrl(html: string | null): string | null {
+  const url = useMemo(() => (html ? URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' })) : null), [html]);
+  useEffect(() => () => { if (url) URL.revokeObjectURL(url); }, [url]);
+  return url;
+}
+
+function Detail({ message, onBack, t, label }: {
+  message: InboxMessageFull; onBack: () => void; t: ReturnType<typeof useT>;
   label: (kind: 'channel' | 'recipient', value: string, known: readonly string[]) => string;
 }) {
+  const htmlUrl = useHtmlUrl(message.body_html);
   return (
     <article className="space-y-3 rounded-lg border border-border bg-card p-4">
       <Button variant="ghost" size="sm" className="@3xl:hidden" onClick={onBack}>
@@ -126,13 +133,13 @@ function Detail({ message, onBack, t, locale, label }: {
         <dt className="text-muted-foreground">{t('trainingCopy.inbox.to')}</dt>
         <dd className="break-words">{message.recipient_label} ({label('recipient', message.recipient_kind, KNOWN_RECIPIENTS)})</dd>
         <dt className="text-muted-foreground">{label('channel', message.channel, KNOWN_CHANNELS)}</dt>
-        <dd>{message.created_at ? formatDateTime(message.created_at, locale) : ''} · {t(`trainingCopy.inbox.app.${message.source_app}` as MessageKey)}</dd>
+        <dd>{message.created_at ? formatDateTime(message.created_at) : ''} · {t(`trainingCopy.inbox.app.${message.source_app}` as MessageKey)}</dd>
       </dl>
-      {message.body_html ? (
+      {htmlUrl ? (
         <div className="space-y-1">
           <div className="text-xs font-medium text-muted-foreground">{t('trainingCopy.inbox.html')}</div>
           {/* Sandboxed with no permissions: the message is rendered, never run. */}
-          <iframe title={message.subject || String(message.id)} sandbox="" srcDoc={message.body_html}
+          <iframe title={message.subject || String(message.id)} sandbox="" src={htmlUrl}
             className="h-96 w-full rounded-md border border-border bg-white" />
         </div>
       ) : (

@@ -30,7 +30,14 @@ const msg = (over: Record<string, unknown> = {}) => ({
   body_text: 'Айдар пропустил урок', has_html: true, ...over,
 });
 
-beforeEach(() => { vi.stubGlobal('localStorage', memoryStorage()); fetchInbox.mockReset(); fetchInboxMessage.mockReset(); });
+const blobs: Blob[] = [];
+const readBlob = (b: Blob) => new Promise<string>((resolve) => { const r = new FileReader(); r.onload = () => resolve(String(r.result)); r.readAsText(b); });
+beforeEach(() => {
+  vi.stubGlobal('localStorage', memoryStorage());
+  fetchInbox.mockReset(); fetchInboxMessage.mockReset(); blobs.length = 0;
+  URL.createObjectURL = ((b: Blob) => { blobs.push(b); return `blob:inbox/${blobs.length}`; }) as typeof URL.createObjectURL;
+  URL.revokeObjectURL = (() => undefined) as typeof URL.revokeObjectURL;
+});
 afterEach(async () => { await unmount(); vi.unstubAllGlobals(); });
 
 describe('the practice inbox', () => {
@@ -63,7 +70,8 @@ describe('the practice inbox', () => {
     const frame = document.querySelector('iframe') as HTMLIFrameElement;
     expect(frame).not.toBeNull();
     expect(frame.getAttribute('sandbox')).toBe('');     // no scripts, no forms, no same-origin
-    expect(frame.getAttribute('srcdoc')).toContain('hello');
+    expect(frame.getAttribute('src')).toBe('blob:inbox/1');
+    expect(await readBlob(blobs[0])).toContain('hello');
     await click(rows[1]); await settle();
     expect(document.querySelector('iframe')).toBeNull();
     expect(text()).toContain('plain words');
