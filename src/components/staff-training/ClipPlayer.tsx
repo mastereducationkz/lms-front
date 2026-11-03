@@ -22,6 +22,8 @@ interface Props {
   onBeat: (result: BeatResult) => void;
   /** The clip changed under the viewer (409): the page loads it again. */
   onChanged: () => void;
+  /** Open at this second instead of where the viewer stopped last time (a search result's «0:42» link). */
+  startAtMs?: number;
 }
 
 type SubChoice = 'off' | 'ru' | 'en';
@@ -42,14 +44,14 @@ function storedChoice(): SubChoice | null {
  * saved position, and the watched seconds reported as beats. What counts is only what played: a seek, however far,
  * starts a new interval and adds nothing to the one before it.
  */
-const ClipPlayer = forwardRef<PlayerHandle, Props>(function ClipPlayer({ clip, locale, onBeat, onChanged }, ref) {
+const ClipPlayer = forwardRef<PlayerHandle, Props>(function ClipPlayer({ clip, locale, onBeat, onChanged, startAtMs }, ref) {
   const t = useT();
   const video = useRef<HTMLVideoElement>(null);
   const tracker = useRef(new WatchTracker());
   const queue = useRef<Promise<unknown>>(Promise.resolve());
-  const latest = useRef({ clip, onBeat, onChanged });
+  const latest = useRef({ clip, onBeat, onChanged, startAtMs });
   const sentPosition = useRef(clip.progress.last_position_ms);
-  latest.current = { clip, onBeat, onChanged };
+  latest.current = { clip, onBeat, onChanged, startAtMs };
 
   const { tracks, failed: subsFailed } = useSubtitleTracks(clip.subtitles);
   const [choice, setChoice] = useState<SubChoice>(() => storedChoice() ?? clip.subtitles.find((s) => s.default)?.lang ?? 'ru');
@@ -102,6 +104,12 @@ const ClipPlayer = forwardRef<PlayerHandle, Props>(function ClipPlayer({ clip, l
     const at = () => el.currentTime * 1000;
     const on: Record<string, () => void> = {
       loadedmetadata: () => {
+        const linked = latest.current.startAtMs;
+        if (linked !== undefined && linked > 0 && linked < latest.current.clip.duration_ms) {
+          el.currentTime = linked / 1000;       // a search link: not a resume, and the jump itself is never counted as watched
+          void el.play()?.catch(() => undefined); // a browser may refuse autoplay: the viewer then presses play
+          return;
+        }
         const start = resumeAtMs(latest.current.clip.progress.last_position_ms, latest.current.clip.duration_ms);
         if (start > 0) {
           el.currentTime = start / 1000;

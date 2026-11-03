@@ -7,6 +7,7 @@ import type { UserRole } from '../types';
 
 const TrainingHomePage = lazyRoute(() => import('../pages/staff-training/TrainingHomePage.tsx'));
 const TrainingLibraryPage = lazyRoute(() => import('../pages/staff-training/TrainingLibraryPage.tsx'));
+const SearchPage = lazyRoute(() => import('../pages/staff-training/SearchPage.tsx'));
 const ClipPage = lazyRoute(() => import('../pages/staff-training/ClipPage.tsx'));
 const TaskPage = lazyRoute(() => import('../pages/staff-training/TaskPage.tsx'));
 const ProgressPage = lazyRoute(() => import('../pages/staff-training/ProgressPage.tsx'));
@@ -30,6 +31,7 @@ export function trainingRoutes() {
   return [
     page('/training', staff, <TrainingHomePage />),
     page('/training/library', staff, <TrainingLibraryPage />),
+    page('/training/search', staff, <SearchPage />),
     page('/training/clips/:clipId', staff, <ClipPage />),
     page('/training/tasks/:taskId', staff, <TaskPage />),
     page('/training/progress', heads, <ProgressPage />),

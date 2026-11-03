@@ -140,4 +140,5 @@ export const serverErrors = {
   'serverErrors.staff_training_sha_mismatch': 'The file does not match its sha256',
   'serverErrors.staff_training_unknown_role': 'There is no track for this role',
   'serverErrors.staff_training_unknown_item': 'Some items of the track are not registered',
+  'serverErrors.staff_training_search_chunks_invalid': 'Those excerpts did not come from your search. Search again',
 } as const satisfies MessageTable;
