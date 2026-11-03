@@ -49,6 +49,7 @@ import { sharedUi } from './ru/sharedUi';
 import { live } from './ru/live';
 import { offboarding } from './ru/offboarding';
 import { openWebinars } from './ru/openWebinars';
+import { trialLinks } from './ru/trialLinks';
 import { pastPapers } from './ru/pastPapers';
 import { seasonal } from './ru/seasonal';
 
@@ -102,6 +103,7 @@ export const RU_NAMESPACES = {
   live,
   offboarding,
   openWebinars,
+  trialLinks,
   pastPapers,
   seasonal,
 } as const;
@@ -156,6 +158,7 @@ export const ru: Readonly<Record<string, Message>> = {
   ...live,
   ...offboarding,
   ...openWebinars,
+  ...trialLinks,
   ...pastPapers,
   ...seasonal,
 };

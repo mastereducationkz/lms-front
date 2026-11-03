@@ -38,6 +38,7 @@ import {
   Unlock,
   ArrowLeftRight,
   Timer,
+  QrCode,
   Headset,
   Presentation,
   Video,
@@ -95,7 +96,7 @@ function badgeToneClass(tone?: AttendanceBadgeTone): string {
     : 'bg-red-600 text-white';
 }
 
-function getNavigationItems(
+export function getNavigationItems(
   t: TFunction,
   _userRole: string | undefined,
   unreadCount: number,
@@ -165,9 +166,13 @@ function getNavigationItems(
     ['/my-requests', t('shell.nav.myRequests'), ArrowLeftRight, lessonRequestCount, ['teacher'], 'my-requests-nav', 'primary'],
     ['/manual-unlocks', t('shell.nav.manualUnlocks'), Unlock, 0, ['teacher', 'head_teacher'], 'manual-unlocks-nav', 'primary'],
     ['/trial-access', t('shell.nav.trialAccess'), Timer, 0, ['admin', 'head_curator'], 'trial-access-nav', 'admin'],
+    ['/admin/trial-links', t('shell.nav.trialLinks'), QrCode, 0, ['admin', 'head_curator', 'marketing'], 'trial-links-nav', 'admin'],
     ['/chat', t('shell.nav.chat'), MessageCircle, unreadCount, null, 'messages-nav', 'primary'],
     ['https://support.mastereducation.kz', t('shell.nav.support'), Headset, 0, null, 'support-nav', 'primary'],
   ];
+
+  // The marketing role has one page (lms-backend refuses it everywhere else).
+  if (_userRole === 'marketing') return allItems.filter(([to]) => to === '/admin/trial-links');
 
   if (_userRole === 'student' && isSpecialGroupStudent) {
     // These students have no calendar, so a lesson-recordings or materials entry would only

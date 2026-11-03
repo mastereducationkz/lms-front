@@ -58,6 +58,8 @@ const CheckpointsAdminPage = lazyRoute(() => import('../pages/admin/CheckpointsA
 const UserManagement = lazyRoute(() => import('../pages/UserManagement.tsx'));
 const ManualUnlocksPage = lazyRoute(() => import('../pages/admin/ManualUnlocksPage.tsx'));
 const TrialAccessPage = lazyRoute(() => import('../pages/admin/TrialAccessPage.tsx'));
+const TrialLinksPage = lazyRoute(() => import('../pages/admin/TrialLinksPage.tsx'));
+const TrialSignupPage = lazyRoute(() => import('../pages/TrialSignupPage.tsx'));
 const LessonRequestManagement = lazyRoute(() => import('../pages/admin/LessonRequestManagement.tsx'));
 const RecordingsTeachersPage = lazyRoute(() => import('../pages/admin/RecordingsTeachersPage.tsx'));
 const LessonPage = lazyRoute(() => import('../pages/LessonPage.tsx'));
@@ -162,6 +164,8 @@ export default function Router() {
                 <Route path="/w/:slug" element={<PublicWebinarPage />} />
                 <Route path="/privacy" element={<PrivacyPolicyPage />} />
                 <Route path="/r/:slug" element={<PublicRecordingPage />} />
+                {/* Trial sign-up behind the QR code on a presentation slide (owner, 2026-11-03): no login. */}
+                <Route path="/t/:code" element={<TrialSignupPage />} />
 
                 <Route path="/login" element={
                   <ProtectedRoute requireAuth={false}>
@@ -621,6 +625,15 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['admin', 'head_curator']}>
               <AppLayout>
                 <TrialAccessPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* QR sign-up links: admins, head curators and the marketing role (its only page). */}
+          <Route path="/admin/trial-links" element={
+            <ProtectedRoute allowedRoles={['admin', 'head_curator', 'marketing']}>
+              <AppLayout>
+                <TrialLinksPage />
               </AppLayout>
             </ProtectedRoute>
           } />

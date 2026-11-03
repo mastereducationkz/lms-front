@@ -16,7 +16,7 @@ export type Locale = 'en' | 'ru';
 
 export const LOCALES: readonly Locale[] = ['en', 'ru'];
 
-const RUSSIAN_UI_ROLES: ReadonlySet<string> = new Set(['curator', 'head_curator']);
+const RUSSIAN_UI_ROLES: ReadonlySet<string> = new Set(['curator', 'head_curator', 'marketing']);
 
 export function isLocale(value: unknown): value is Locale {
   return value === 'en' || value === 'ru';

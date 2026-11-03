@@ -5,7 +5,7 @@ import apiClient from '../services/api';
 import { toggleCuratorAnalyticsHidden, provisionUserToPlatform } from '../services/api/admin';
 import { getRecordingTeacher } from '../services/api/recordingsAdmin';
 import { toast } from '../components/Toast';
-import type { User, CreateUserRequest, UpdateUserRequest, UpdateGroupRequest, Group, Course, GroupType, CourseType } from '../types';
+import type { User, CreateUserRequest, UpdateUserRequest, UpdateGroupRequest, Group, Course, GroupType, CourseType, UserRole } from '../types';
 
 const GROUP_TYPE_LABELS: Record<GroupType, MessageKey> = {
   group: 'adminUsers.groupType.group',
@@ -111,7 +111,7 @@ const withBold = (message: string) =>
 interface UserFormData {
   name: string;
   email: string;
-  role: 'student' | 'teacher' | 'curator' | 'admin' | 'head_curator' | 'head_teacher' | 'parent';
+  role: UserRole;
   student_id?: string;
   password?: string;
   is_active: boolean;
@@ -1277,6 +1277,7 @@ export default function UserManagement() {
                       <SelectItem value="head_curator">{roleLabel('head_curator')}</SelectItem>
                       <SelectItem value="curator">{roleLabel('curator')}</SelectItem>
                       <SelectItem value="admin">{roleLabel('admin')}</SelectItem>
+                      <SelectItem value="marketing">{roleLabel('marketing')}</SelectItem>
                     </>
                   )}
                 </SelectContent>
@@ -2105,6 +2106,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
                   <SelectItem value="curator">{roleLabel('curator')}</SelectItem>
                   <SelectItem value="admin">{roleLabel('admin')}</SelectItem>
                   <SelectItem value="parent">{roleLabel('parent')}</SelectItem>
+                  <SelectItem value="marketing">{roleLabel('marketing')}</SelectItem>
                 </>
               )}
             </SelectContent>

@@ -57,6 +57,7 @@ export const shell = {
   'shell.nav.myRequests': 'My Requests',
   'shell.nav.manualUnlocks': 'Manual Unlocks',
   'shell.nav.trialAccess': 'Trial Access',
+  'shell.nav.trialLinks': 'Trial links (QR)',
   'shell.nav.chat': 'Chat',
   'shell.nav.support': 'Support',
   'shell.nav.loadingCourses': 'Loading courses...',
@@ -112,6 +113,7 @@ export const shell = {
   'shell.role.curator': 'Curator',
   'shell.role.student': 'Student',
   'shell.role.parent': 'Parent',
+  'shell.role.marketing': 'Marketing',
   'shell.role.unknown': 'Unknown',
 
   'shell.groups.word': { one: 'group', other: 'groups' },
