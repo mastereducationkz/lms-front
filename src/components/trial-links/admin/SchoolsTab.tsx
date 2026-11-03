@@ -130,7 +130,7 @@ export default function SchoolsTab() {
             <DialogTitle>{merging ? t('trialLinks.schools.mergeTitle', { name: label(merging) }) : ''}</DialogTitle>
             <DialogDescription>{t('trialLinks.schools.mergeHelp')}</DialogDescription>
           </DialogHeader>
-          <NativeSelect value={mergeInto} onValueChange={setMergeInto} searchable placeholder={t('trialLinks.schools.merge')}>
+          <NativeSelect className="flex w-full" value={mergeInto} onValueChange={setMergeInto} searchable placeholder={t('trialLinks.schools.merge')}>
             <option value="">—</option>
             {schools.filter((s) => s.id !== merging?.id).map((s) => <option key={s.id} value={String(s.id)}>{label(s)}</option>)}
           </NativeSelect>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Loader2, Play, QrCode, Square } from 'lucide-react';
+import { Loader2, Play, Plus, QrCode, Square } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
@@ -73,6 +73,7 @@ export default function PresentTab({ links }: { links: TrialLinkRow[] }) {
   const [schoolId, setSchoolId] = useState('');
   const [newName, setNewName] = useState('');
   const [newCity, setNewCity] = useState('');
+  const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const reload = useCallback(() => { listPresentations().then(setRecent).catch(() => undefined); }, []);
@@ -84,12 +85,12 @@ export default function PresentTab({ links }: { links: TrialLinkRow[] }) {
   const linkOf = (id: number) => links.find((l) => l.id === id);
 
   const start = async () => {
-    const newSchool = newName.trim().length >= 2 ? { name: newName.trim(), city: newCity.trim() } : undefined;
+    const newSchool = adding && newName.trim().length >= 2 ? { name: newName.trim(), city: newCity.trim() } : undefined;
     if (!linkId || (!schoolId && !newSchool)) { toast(t('trialLinks.present.chooseSchool'), 'error'); return; }
     setBusy(true);
     try {
       await startPresentation({ link_id: Number(linkId), ...(newSchool ? { new_school: newSchool } : { school_id: Number(schoolId) }) });
-      setNewName(''); setNewCity(''); setSchoolId('');
+      setNewName(''); setNewCity(''); setSchoolId(''); setAdding(false);
       reload();
     } catch {
       toast(t('trialLinks.admin.saveFailed'), 'error');
@@ -108,28 +109,40 @@ export default function PresentTab({ links }: { links: TrialLinkRow[] }) {
               <p className="mt-1 text-sm text-muted-foreground">{t('trialLinks.present.help')}</p>
             </div>
             {links.length > 1 && (
-              <div className="space-y-1">
-                <Label className="text-xs">{t('trialLinks.present.link')}</Label>
-                <NativeSelect value={linkId} onValueChange={setLinkId}>
+              <div className="space-y-1.5">
+                <Label htmlFor="tl-present-link" className="block">{t('trialLinks.present.link')}</Label>
+                <NativeSelect id="tl-present-link" className="flex w-full" value={linkId} onValueChange={setLinkId}>
                   {links.map((l) => <option key={l.id} value={String(l.id)}>{l.title}</option>)}
                 </NativeSelect>
               </div>
             )}
-            <div className="space-y-1">
-              <Label className="text-xs">{t('trialLinks.present.school')}</Label>
-              <NativeSelect value={schoolId} onValueChange={(v) => { setSchoolId(v); setNewName(''); }} searchable
-                placeholder={t('trialLinks.present.schoolSearch')} searchPlaceholder={t('trialLinks.present.schoolSearch')}>
-                <option value="">—</option>
-                {schools.map((s) => <option key={s.id} value={String(s.id)}>{s.city ? `${s.name}, ${s.city}` : s.name}</option>)}
-              </NativeSelect>
-            </div>
-            <fieldset className="space-y-2 rounded-xl bg-muted/50 p-3">
-              <legend className="px-1 text-xs font-medium text-muted-foreground">{t('trialLinks.present.newSchool')}</legend>
-              <div className="grid gap-2 @lg:grid-cols-[2fr_1fr]">
-                <Input value={newName} onChange={(e) => { setNewName(e.target.value); setSchoolId(''); }} placeholder={t('trialLinks.present.newSchoolName')} maxLength={160} />
-                <Input value={newCity} onChange={(e) => setNewCity(e.target.value)} placeholder={t('trialLinks.present.newSchoolCity')} maxLength={80} />
+            {adding ? (
+              <div className="space-y-2 rounded-xl border border-border bg-muted/40 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="block">{t('trialLinks.present.newSchool')}</Label>
+                  <button type="button" onClick={() => { setAdding(false); setNewName(''); setNewCity(''); }}
+                    className="text-xs font-medium text-primary underline-offset-4 hover:underline">
+                    {t('trialLinks.present.pickFromList')}
+                  </button>
+                </div>
+                <div className="grid gap-2 @lg:grid-cols-[2fr_1fr]">
+                  <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t('trialLinks.present.newSchoolName')} maxLength={160} autoFocus />
+                  <Input value={newCity} onChange={(e) => setNewCity(e.target.value)} placeholder={t('trialLinks.present.newSchoolCity')} maxLength={80} />
+                </div>
               </div>
-            </fieldset>
+            ) : (
+              <div className="space-y-1.5">
+                <Label htmlFor="tl-present-school" className="block">{t('trialLinks.present.school')}</Label>
+                <NativeSelect id="tl-present-school" className="flex h-11 w-full" value={schoolId} onValueChange={setSchoolId} searchable
+                  placeholder={t('trialLinks.present.schoolSearch')} searchPlaceholder={t('trialLinks.present.schoolSearch')}>
+                  {schools.map((s) => <option key={s.id} value={String(s.id)}>{s.city ? `${s.name}, ${s.city}` : s.name}</option>)}
+                </NativeSelect>
+                <button type="button" onClick={() => { setAdding(true); setSchoolId(''); }}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-4 hover:underline">
+                  <Plus className="h-3.5 w-3.5" aria-hidden />{t('trialLinks.present.addSchool')}
+                </button>
+              </div>
+            )}
             <Button size="lg" className="w-full" onClick={start} disabled={busy}>
               {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <Play className="mr-2 h-4 w-4" aria-hidden />}
               {t('trialLinks.present.start')}

@@ -16,18 +16,18 @@ export function FilterBar({ links, value, onChange }: { links: TrialLinkRow[]; v
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div className="w-56 space-y-1">
-        <Label className="text-xs">{t('trialLinks.present.link')}</Label>
-        <NativeSelect value={value.linkId} onValueChange={(linkId) => onChange({ ...value, linkId })}>
+        <Label className="block text-xs">{t('trialLinks.present.link')}</Label>
+        <NativeSelect className="flex w-full" value={value.linkId} onValueChange={(linkId) => onChange({ ...value, linkId })}>
           <option value="">{t('trialLinks.admin.allLinks')}</option>
           {links.map((l) => <option key={l.id} value={String(l.id)}>{l.title}</option>)}
         </NativeSelect>
       </div>
       <div className="w-40 space-y-1">
-        <Label htmlFor="tl-from" className="text-xs">{t('trialLinks.admin.from')}</Label>
+        <Label htmlFor="tl-from" className="block text-xs">{t('trialLinks.admin.from')}</Label>
         <Input id="tl-from" type="date" value={value.from} onChange={(e) => onChange({ ...value, from: e.target.value })} className="w-full" />
       </div>
       <div className="w-40 space-y-1">
-        <Label htmlFor="tl-to" className="text-xs">{t('trialLinks.admin.to')}</Label>
+        <Label htmlFor="tl-to" className="block text-xs">{t('trialLinks.admin.to')}</Label>
         <Input id="tl-to" type="date" value={value.to} onChange={(e) => onChange({ ...value, to: e.target.value })} className="w-full" />
       </div>
     </div>
