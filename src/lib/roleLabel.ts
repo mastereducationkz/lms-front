@@ -11,6 +11,7 @@ const ROLE_KEYS: Record<string, MessageKey> = {
   curator: 'shell.role.curator',
   student: 'shell.role.student',
   parent: 'shell.role.parent',
+  marketing: 'shell.role.marketing',
 };
 
 export function roleLabel(role: string | null | undefined, locale: Locale = activeLocale()): string {

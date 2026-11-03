@@ -48,7 +48,8 @@ export interface User {
   ui_language?: 'en' | 'ru' | null;
 }
 
-export type UserRole = 'student' | 'teacher' | 'curator' | 'admin' | 'head_curator' | 'head_teacher' | 'parent';
+/** `marketing`: the trial-links page only (lms-backend src/utils/marketing_scope.py). */
+export type UserRole = 'student' | 'teacher' | 'curator' | 'admin' | 'head_curator' | 'head_teacher' | 'parent' | 'marketing';
 
 // =============================================================================
 // AUTH TYPES

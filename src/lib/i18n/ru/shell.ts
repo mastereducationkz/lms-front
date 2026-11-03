@@ -57,6 +57,7 @@ export const shell: RuTable<typeof en> = {
   'shell.nav.myRequests': 'Мои заявки',
   'shell.nav.manualUnlocks': 'Ручные открытия',
   'shell.nav.trialAccess': 'Пробный доступ',
+  'shell.nav.trialLinks': 'Пробные ссылки (QR)',
   'shell.nav.chat': 'Чат',
   'shell.nav.support': 'Поддержка',
   'shell.nav.loadingCourses': 'Загрузка курсов...',
@@ -111,6 +112,7 @@ export const shell: RuTable<typeof en> = {
   'shell.role.curator': 'Куратор',
   'shell.role.student': 'Студент',
   'shell.role.parent': 'Родитель',
+  'shell.role.marketing': 'Маркетинг',
   'shell.role.unknown': 'Неизвестно',
 
   'shell.groups.word': { one: 'группа', few: 'группы', many: 'групп', other: 'группы' },

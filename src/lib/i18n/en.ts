@@ -51,6 +51,7 @@ import { sharedUi } from './en/sharedUi';
 import { live } from './en/live';
 import { offboarding } from './en/offboarding';
 import { openWebinars } from './en/openWebinars';
+import { trialLinks } from './en/trialLinks';
 import { pastPapers } from './en/pastPapers';
 import { seasonal } from './en/seasonal';
 
@@ -104,6 +105,7 @@ export const EN_NAMESPACES = {
   live,
   offboarding,
   openWebinars,
+  trialLinks,
   pastPapers,
   seasonal,
 } as const;
@@ -158,6 +160,7 @@ export const en = {
   ...live,
   ...offboarding,
   ...openWebinars,
+  ...trialLinks,
   ...pastPapers,
   ...seasonal,
 } as const;

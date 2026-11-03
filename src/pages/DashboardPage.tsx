@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import apiClient from "../services/api";
 import Skeleton from '../components/Skeleton.tsx';
@@ -82,6 +82,9 @@ export default function DashboardPage() {
 
   // Parents aren't students — the student stats endpoint 403s for them. Show a
   // dedicated parent view (children + chat) instead of the broken fallback.
+  // The marketing role has one page: the trial links (lms-backend refuses it everywhere else).
+  if (user?.role === 'marketing') return <Navigate to="/admin/trial-links" replace />;
+
   if (user?.role === 'parent') {
     return (
       <Suspense fallback={<DashboardChunkFallback />}>
