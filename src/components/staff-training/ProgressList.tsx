@@ -44,7 +44,7 @@ function useCells() {
   };
 }
 
-const ROLE_KEYS: Record<string, 'staffTraining.role.admin' | 'staffTraining.role.teacher' | 'staffTraining.role.head_teacher' | 'staffTraining.role.curator' | 'staffTraining.role.head_curator' | 'staffTraining.role.marketing'> = {
+export const ROLE_KEYS: Record<string, 'staffTraining.role.admin' | 'staffTraining.role.teacher' | 'staffTraining.role.head_teacher' | 'staffTraining.role.curator' | 'staffTraining.role.head_curator' | 'staffTraining.role.marketing'> = {
   admin: 'staffTraining.role.admin',
   teacher: 'staffTraining.role.teacher',
   head_teacher: 'staffTraining.role.head_teacher',

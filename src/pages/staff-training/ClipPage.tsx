@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocale, useT } from '@/lib/i18n/react';
@@ -31,6 +31,8 @@ function ClipBody({ clip, reload }: { clip: ClipDetail; reload: () => void }) {
   const t = useT();
   const locale = useLocale();
   const player = useRef<PlayerHandle>(null);
+  const linked = Number(useSearchParams()[0].get('t'));
+  const startAtMs = Number.isFinite(linked) && linked > 0 ? Math.floor(linked) * 1000 : undefined;
   const [watched, setWatched] = useState(clip.progress.watched);
   const [pct, setPct] = useState(clip.progress.watch_pct);
   const [passedIds, setPassedIds] = useState<Set<number>>(() => new Set(clip.questions.filter((q) => q.passed).map((q) => q.id)));
@@ -71,7 +73,7 @@ function ClipBody({ clip, reload }: { clip: ClipDetail; reload: () => void }) {
 
       {changed && <p role="status" className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:bg-amber-950/50 dark:text-amber-100">{t('staffTraining.clip.changed')}</p>}
 
-      <ClipPlayer ref={player} clip={clip} locale={locale} onBeat={onBeat} onChanged={onChanged} />
+      <ClipPlayer ref={player} clip={clip} locale={locale} onBeat={onBeat} onChanged={onChanged} startAtMs={startAtMs} />
 
       <QuestionsSection
         questions={clip.questions}

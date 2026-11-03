@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, BookOpenCheck, Info, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,7 @@ import { LoadError, Loading, PageShell } from '@/components/staff-training/PageS
 import StateChip from '@/components/staff-training/StateChip';
 import TrackSteps, { StepCard } from '@/components/staff-training/TrackSteps';
 import LibraryView from '@/components/staff-training/LibraryView';
+import SearchBox from '@/components/staff-training/search/SearchBox';
 import { PROGRESS_ROLES, currentItem, errorText, itemId, itemPath, pick, statusOf } from '@/components/staff-training/model';
 import { useLoad } from '@/components/staff-training/useLoad';
 import '@/lib/i18n/catalogs/staffTraining';
@@ -17,6 +18,7 @@ import '@/lib/i18n/catalogs/staffTraining';
 export default function TrainingHomePage() {
   const t = useT();
   const locale = useLocale();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { data: me, error, reload } = useLoad(getTrainingMe, 'me');
   const canSeeProgress = !!user && (PROGRESS_ROLES as readonly string[]).includes(user.role);
@@ -45,6 +47,13 @@ export default function TrainingHomePage() {
           )}
         </nav>
       </header>
+
+      {!error && (
+        <section aria-label={t('staffTraining.search.title')} className="space-y-1.5">
+          <SearchBox onSubmit={(query) => navigate(`/training/search?q=${encodeURIComponent(query)}`)} />
+          <p className="text-xs text-muted-foreground">{t('staffTraining.search.homeHint')}</p>
+        </section>
+      )}
 
       {error ? (
         // The server answers 404 `staff_training_off` while the feature is switched off.

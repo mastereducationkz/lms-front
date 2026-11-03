@@ -130,4 +130,5 @@ export const serverErrors: RuTable<typeof en> = {
   'serverErrors.staff_training_sha_mismatch': 'Файл не совпадает со своим sha256',
   'serverErrors.staff_training_unknown_role': 'Для этой роли нет маршрута',
   'serverErrors.staff_training_unknown_item': 'Некоторые шаги маршрута не зарегистрированы',
+  'serverErrors.staff_training_search_chunks_invalid': 'Эти отрывки не из вашего поиска. Выполните поиск ещё раз',
 };
