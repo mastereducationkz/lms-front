@@ -55,6 +55,7 @@ import { trialLinks } from './en/trialLinks';
 import { pastPapers } from './en/pastPapers';
 import { seasonal } from './en/seasonal';
 import { staffTraining } from './en/staffTraining';
+import { trainingCopy } from './en/trainingCopy';
 
 export const EN_NAMESPACES = {
   common,
@@ -110,6 +111,7 @@ export const EN_NAMESPACES = {
   pastPapers,
   seasonal,
   staffTraining,
+  trainingCopy,
 } as const;
 
 export const en = {
@@ -166,6 +168,7 @@ export const en = {
   ...pastPapers,
   ...seasonal,
   ...staffTraining,
+  ...trainingCopy,
 } as const;
 
 export type MessageKey = keyof typeof en;

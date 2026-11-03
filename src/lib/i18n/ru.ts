@@ -53,6 +53,7 @@ import { trialLinks } from './ru/trialLinks';
 import { pastPapers } from './ru/pastPapers';
 import { seasonal } from './ru/seasonal';
 import { staffTraining } from './ru/staffTraining';
+import { trainingCopy } from './ru/trainingCopy';
 
 export const RU_NAMESPACES = {
   common,
@@ -108,6 +109,7 @@ export const RU_NAMESPACES = {
   pastPapers,
   seasonal,
   staffTraining,
+  trainingCopy,
 } as const;
 
 export const ru: Readonly<Record<string, Message>> = {
@@ -164,4 +166,5 @@ export const ru: Readonly<Record<string, Message>> = {
   ...pastPapers,
   ...seasonal,
   ...staffTraining,
+  ...trainingCopy,
 };
