@@ -116,4 +116,12 @@ export const serverErrors = {
   // Half-point homework grades (2026-10-27): steps of 0.5, 0..max_score.
   'serverErrors.grade_half_step': 'Use whole or half points, e.g. 7 or 7.5',
   'serverErrors.grade_out_of_range': 'The grade must be between 0 and {max}',
+  // Staff training (2026-11): refusals of /staff-training/*.
+  'serverErrors.staff_training_staff_only': 'Staff training is for staff accounts only',
+  'serverErrors.staff_training_off': 'Staff training is not switched on yet',
+  'serverErrors.staff_training_clip_changed': 'This video was just updated. Reload it to carry on',
+  'serverErrors.staff_training_watch_first': 'Watch the video first: the questions open at 90%',
+  'serverErrors.staff_training_check_rate': 'Wait a few seconds before checking again',
+  'serverErrors.staff_training_progress_forbidden': 'You can’t see this training progress',
+  'serverErrors.training_copy_unavailable': 'The training copy is unavailable right now. Try again in a minute',
 } as const satisfies MessageTable;

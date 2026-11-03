@@ -108,4 +108,11 @@ export const serverErrors: RuTable<typeof en> = {
   'serverErrors.child_access_ended': 'Доступ ребёнка к платформе закончился, поэтому его данные больше не показываются.',
   'serverErrors.grade_half_step': 'Оценка — целое число или с половиной, например 7 или 7,5',
   'serverErrors.grade_out_of_range': 'Оценка должна быть от 0 до {max}',
+  'serverErrors.staff_training_staff_only': 'Обучение сотрудников доступно только сотрудникам',
+  'serverErrors.staff_training_off': 'Обучение сотрудников ещё не включено',
+  'serverErrors.staff_training_clip_changed': 'Это видео только что обновили. Загрузите его заново, чтобы продолжить',
+  'serverErrors.staff_training_watch_first': 'Сначала посмотрите видео: вопросы открываются после 90%',
+  'serverErrors.staff_training_check_rate': 'Подождите несколько секунд перед следующей проверкой',
+  'serverErrors.staff_training_progress_forbidden': 'Вам недоступен прогресс этого обучения',
+  'serverErrors.training_copy_unavailable': 'Тренажёр сейчас недоступен, попробуйте через минуту',
 };

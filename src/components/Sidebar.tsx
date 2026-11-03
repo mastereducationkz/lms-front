@@ -39,6 +39,7 @@ import {
   ArrowLeftRight,
   Timer,
   QrCode,
+  BookOpenCheck,
   Headset,
   Presentation,
   Video,
@@ -167,12 +168,14 @@ export function getNavigationItems(
     ['/manual-unlocks', t('shell.nav.manualUnlocks'), Unlock, 0, ['teacher', 'head_teacher'], 'manual-unlocks-nav', 'primary'],
     ['/trial-access', t('shell.nav.trialAccess'), Timer, 0, ['admin', 'head_curator'], 'trial-access-nav', 'admin'],
     ['/admin/trial-links', t('shell.nav.trialLinks'), QrCode, 0, ['admin', 'head_curator', 'marketing'], 'trial-links-nav', 'admin'],
+    // Staff training (CONTRACTS §8): every staff role, marketing included; students and parents never.
+    ['/training', t('shell.nav.staffTraining'), BookOpenCheck, 0, ['admin', 'teacher', 'head_teacher', 'curator', 'head_curator', 'marketing'], 'training-nav', 'primary'],
     ['/chat', t('shell.nav.chat'), MessageCircle, unreadCount, null, 'messages-nav', 'primary'],
     ['https://support.mastereducation.kz', t('shell.nav.support'), Headset, 0, null, 'support-nav', 'primary'],
   ];
 
-  // The marketing role has one page (lms-backend refuses it everywhere else).
-  if (_userRole === 'marketing') return allItems.filter(([to]) => to === '/admin/trial-links');
+  // The marketing role has two pages: trial links and staff training (lms-backend refuses it everywhere else).
+  if (_userRole === 'marketing') return allItems.filter(([to]) => to === '/admin/trial-links' || to === '/training');
 
   if (_userRole === 'student' && isSpecialGroupStudent) {
     // These students have no calendar, so a lesson-recordings or materials entry would only

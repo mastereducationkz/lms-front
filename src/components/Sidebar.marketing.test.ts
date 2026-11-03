@@ -19,12 +19,21 @@ const paths = (role: string) => getNavigationItems((k, p) => t(k, p, 'en'), role
   .map(([to]) => to);
 
 describe('the marketing role in the sidebar', () => {
-  it('sees only the trial links page', () => {
-    expect(paths('marketing')).toEqual(['/admin/trial-links']);
+  it('sees the trial links page and staff training, nothing else', () => {
+    expect(paths('marketing')).toEqual(['/admin/trial-links', '/training']);
   });
   it('admins and head curators see it next to Trial Access', () => {
     expect(paths('admin')).toContain('/admin/trial-links');
     expect(paths('head_curator')).toContain('/admin/trial-links');
     expect(paths('teacher')).not.toContain('/admin/trial-links');
+  });
+});
+
+describe('staff training in the sidebar', () => {
+  it('is there for every staff role and never for students or parents', () => {
+    for (const role of ['admin', 'teacher', 'head_teacher', 'curator', 'head_curator', 'marketing']) {
+      expect(paths(role), role).toContain('/training');
+    }
+    for (const role of ['student', 'parent']) expect(paths(role), role).not.toContain('/training');
   });
 });

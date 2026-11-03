@@ -58,6 +58,7 @@ export const shell = {
   'shell.nav.manualUnlocks': 'Manual Unlocks',
   'shell.nav.trialAccess': 'Trial Access',
   'shell.nav.trialLinks': 'Trial links (QR)',
+  'shell.nav.staffTraining': 'Staff training',
   'shell.nav.chat': 'Chat',
   'shell.nav.support': 'Support',
   'shell.nav.loadingCourses': 'Loading courses...',
