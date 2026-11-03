@@ -7,6 +7,7 @@ import type { DashboardStats, Course, User } from '../types';
 import { lazyRoute } from '../lib/lazyRoute';
 import { useT } from '../lib/i18n/react';
 import '@/lib/i18n/catalogs/adminUsers';
+import { resumeLessonPath } from '../lib/courseResume';
 
 // Each role dashboard is lazy so a user only downloads the chunk for their own
 // role (TeacherDashboard/AdminDashboard/HeadCuratorDashboard pull in recharts —
@@ -182,7 +183,14 @@ export default function DashboardPage() {
       <StudentDashboard
         firstName={firstName}
         stats={stats}
-        onContinueCourse={(id: string) => navigate(`/course/${id}`)}
+        onContinueCourse={async (id: string) => {
+          // Straight to where the student left off (lib/courseResume.ts), with the course page
+          // underneath in history so Back lands on the outline; the course page when there's
+          // no resume point.
+          const resume = await apiClient.getCourseResume(id);
+          navigate(`/course/${id}`);
+          if (resume) navigate(resumeLessonPath(id, resume));
+        }}
         onGoToAllCourses={() => navigate('/courses')}
       />
     </Suspense>
