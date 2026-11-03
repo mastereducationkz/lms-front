@@ -1,0 +1,133 @@
+name: Deploy Training Copy
+
+# Keeps the training copy's front (https://train-lms.mastereducation.kz, lms-backend deploy/training/README.md) on the commit production
+# serves: the newest commit on master that passed Frontend CI, the same pick «Deploy Frontend to Server» makes. Daily at 02:30
+# Almaty and by hand. It exits at once when the copy already runs that commit (the copy's /version.json), so most nights cost seconds;
+# otherwise it builds `--mode training` (.env.training, the «ТРЕНАЖЁР» banner) on the runner, pushes training-<sha> to GHCR,
+# and asks the host to pull it (forced command, no build on the host).
+on:
+  schedule:
+    - cron: "30 21 * * *"
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit to ship (empty: the newest verified commit on master)"
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-training
+  cancel-in-progress: false
+
+jobs:
+  pick:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      deploy: ${{ steps.decide.outputs.deploy }}
+      sha: ${{ steps.decide.outputs.sha }}
+    env:
+      HAS_KEY: ${{ secrets.TRAINING_DEPLOY_KEY != '' && secrets.NETCUP_KNOWN_HOSTS != '' }}
+    steps:
+      - name: Not configured yet
+        if: env.HAS_KEY != 'true'
+        run: 'echo "::notice::TRAINING_DEPLOY_KEY / NETCUP_KNOWN_HOSTS are not set - nothing deployed"'
+      - uses: actions/checkout@v4
+        if: env.HAS_KEY == 'true'
+        with:
+          sparse-checkout: scripts/ci
+      - name: Which commit, and does the copy already run it
+        id: decide
+        if: env.HAS_KEY == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_SHA: ${{ github.event.inputs.sha }}
+        run: |
+          set -euo pipefail
+          SHA="${INPUT_SHA:-}"
+          if [ -z "$SHA" ]; then
+            python3 scripts/ci/pick_deploy_sha.py --repo "${{ github.repository }}" --branch master \
+              --ci-workflow frontend-ci.yml --trigger-sha "${{ github.sha }}" > pick.out
+            cat pick.out
+            grep -q '^deploy=true$' pick.out || { echo "deploy=false" >> "$GITHUB_OUTPUT"; exit 0; }
+            SHA="$(sed -n 's/^sha=//p' pick.out)"
+          fi
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::not a commit sha: '$SHA'"; exit 1; }
+          RUNNING="$(curl -fsS --max-time 10 https://train-lms.mastereducation.kz/version.json 2>/dev/null \
+            | python3 -c 'import json, sys; print(json.load(sys.stdin)["commit"])' 2>/dev/null || true)"
+          if [ "$RUNNING" = "$SHA" ] && [ -z "${INPUT_SHA:-}" ]; then
+            echo "The copy already runs $SHA"
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: pick
+    if: ${{ needs.pick.outputs.deploy == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      SHA: ${{ needs.pick.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.pick.outputs.sha }}
+      - name: Check the checkout is the picked sha
+        run: |
+          set -euo pipefail
+          [ "$(git rev-parse HEAD)" = "$SHA" ] || { echo "checked out $(git rev-parse HEAD), expected $SHA"; exit 1; }
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            VITE_MODE=training
+            VITE_STAGING_COMMIT=${{ needs.pick.outputs.sha }}
+          tags: ghcr.io/mastereducationkz/lms-front/lms-frontend:training-${{ needs.pick.outputs.sha }}
+          cache-from: type=gha,scope=training-frontend
+          cache-to: type=gha,mode=max,scope=training-frontend,ignore-error=true
+
+  deploy:
+    needs: [pick, build]
+    runs-on: ubuntu-latest
+    # A job of its own so the token that goes to the host can only read packages.
+    permissions:
+      packages: read
+    env:
+      NETCUP_HOST: 159.195.6.160
+      SHA: ${{ needs.pick.outputs.sha }}
+    steps:
+      - name: Ship it
+        # The key can run only `/root/bin/training-deploy lms-front` on the host (forced command, lms-backend deploy/training/setup.sh
+        # authorize). The sha is the ssh command; this job's token, which dies with the job, goes on stdin.
+        env:
+          DEPLOY_KEY: ${{ secrets.TRAINING_DEPLOY_KEY }}
+          KNOWN_HOSTS: ${{ secrets.NETCUP_KNOWN_HOSTS }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/training_deploy
+          chmod 600 ~/.ssh/training_deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$GHCR_TOKEN" \
+            | ssh -i ~/.ssh/training_deploy -o IdentitiesOnly=yes -o BatchMode=yes \
+                -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 "root@$NETCUP_HOST" "$SHA"
+      - name: Check the page
+        run: |
+          set -euo pipefail
+          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors https://train-lms.mastereducation.kz/version.json | grep -q "$SHA"
+          echo "### The training copy front runs \`${SHA:0:7}\`" >> "$GITHUB_STEP_SUMMARY"

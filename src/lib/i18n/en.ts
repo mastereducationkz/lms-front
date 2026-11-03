@@ -54,6 +54,7 @@ import { openWebinars } from './en/openWebinars';
 import { trialLinks } from './en/trialLinks';
 import { pastPapers } from './en/pastPapers';
 import { seasonal } from './en/seasonal';
+import { trainingCopy } from './en/trainingCopy';
 
 export const EN_NAMESPACES = {
   common,
@@ -108,6 +109,7 @@ export const EN_NAMESPACES = {
   trialLinks,
   pastPapers,
   seasonal,
+  trainingCopy,
 } as const;
 
 export const en = {
@@ -163,6 +165,7 @@ export const en = {
   ...trialLinks,
   ...pastPapers,
   ...seasonal,
+  ...trainingCopy,
 } as const;
 
 export type MessageKey = keyof typeof en;

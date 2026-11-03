@@ -27,6 +27,8 @@ ARG VITE_STAGING_COMMIT=""
 ENV VITE_STAGING_BRANCH=$VITE_STAGING_BRANCH \
     VITE_STAGING_COMMIT=$VITE_STAGING_COMMIT
 RUN npm run build -- --mode "$VITE_MODE"
+# The training copy's build records its commit (/version.json), so «Deploy Training Copy» can see what the copy already runs.
+RUN if [ "$VITE_MODE" = training ]; then printf '{"commit":"%s"}\n' "$VITE_STAGING_COMMIT" > dist/version.json; fi
 
 # Serve stage: static files via nginx
 FROM nginx:1.27-alpine

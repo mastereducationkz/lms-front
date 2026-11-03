@@ -14,6 +14,8 @@ import AppLayout from '../layouts/AppLayout.tsx';
 import ThinkingLoader from '../components/ThinkingLoader';
 import { t } from '../lib/i18n';
 import { offboardingRoutes } from './offboardingRoutes';
+import { TRAINING_BUILD } from '../lib/trainingBuild';
+import TrainingBanner from '../components/TrainingBanner';
 import '@/lib/i18n/catalogs/shell';
 
 // Pages are code-split with React.lazy so the initial download is a small app shell plus only
@@ -59,6 +61,9 @@ const UserManagement = lazyRoute(() => import('../pages/UserManagement.tsx'));
 const ManualUnlocksPage = lazyRoute(() => import('../pages/admin/ManualUnlocksPage.tsx'));
 const TrialAccessPage = lazyRoute(() => import('../pages/admin/TrialAccessPage.tsx'));
 const TrialLinksPage = lazyRoute(() => import('../pages/admin/TrialLinksPage.tsx'));
+// The training copy's two pages: their routes exist only in the training build (VITE_APP_ENV=training).
+const TrainingLoginPage = lazyRoute(() => import('../pages/training-copy/TrainingLoginPage.tsx'));
+const TrainingInboxPage = lazyRoute(() => import('../pages/training-copy/InboxPage.tsx'));
 const TrialSignupPage = lazyRoute(() => import('../pages/TrialSignupPage.tsx'));
 const LessonRequestManagement = lazyRoute(() => import('../pages/admin/LessonRequestManagement.tsx'));
 const RecordingsTeachersPage = lazyRoute(() => import('../pages/admin/RecordingsTeachersPage.tsx'));
@@ -143,6 +148,7 @@ export default function Router() {
       <ThemeProvider {...THEME_PROVIDER_PROPS}>
         <Toaster />
         <AuthProvider>
+          {TRAINING_BUILD && <TrainingBanner />}
           <SettingsProvider>
             <SeasonProvider>
               <OnboardingManager>
@@ -166,6 +172,8 @@ export default function Router() {
                 <Route path="/r/:slug" element={<PublicRecordingPage />} />
                 {/* Trial sign-up behind the QR code on a presentation slide (owner, 2026-11-03): no login. */}
                 <Route path="/t/:code" element={<TrialSignupPage />} />
+                {/* The training copy's one-click sign-in from the production LMS (training build only). */}
+                {TRAINING_BUILD && <Route path="/training-login" element={<TrainingLoginPage />} />}
 
                 <Route path="/login" element={
                   <ProtectedRoute requireAuth={false}>
@@ -886,6 +894,17 @@ export default function Router() {
               </AppLayout>
             </ProtectedRoute>
           } />
+
+          {/* The training copy's inbox: everything the copy would have sent (training build only; every role). */}
+          {TRAINING_BUILD && (
+            <Route path="/inbox" element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <TrainingInboxPage />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+          )}
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

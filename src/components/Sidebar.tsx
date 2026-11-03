@@ -51,6 +51,8 @@ import {
   UserMinus,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { Inbox as InboxIcon } from 'lucide-react';
+import { TRAINING_BUILD } from '../lib/trainingBuild';
 import type { Course } from '../types';
 import { roleLabel } from '@/lib/roleLabel';
 import { replayTourFor } from '@/lib/guide/state';
@@ -58,6 +60,7 @@ import { requestTourReplay } from '@/components/guide/tourStore';
 import { useT } from '@/lib/i18n/react';
 import type { TFunction } from '@/lib/i18n';
 import '@/lib/i18n/catalogs/shell';
+import '@/lib/i18n/catalogs/trainingCopy';
 import '@/lib/i18n/catalogs/guide';
 
 /** Only three groups: primary nav, curator tools, admin tools */
@@ -170,6 +173,12 @@ export function getNavigationItems(
     ['/chat', t('shell.nav.chat'), MessageCircle, unreadCount, null, 'messages-nav', 'primary'],
     ['https://support.mastereducation.kz', t('shell.nav.support'), Headset, 0, null, 'support-nav', 'primary'],
   ];
+
+  // The training copy's inbox (training build only): a link for every role, marketing included.
+  if (TRAINING_BUILD) {
+    allItems.push(['/inbox', t('trainingCopy.nav.inbox'), InboxIcon, 0, null, 'inbox-nav', 'primary']);
+    if (_userRole === 'marketing') return allItems.filter(([to]) => to === '/admin/trial-links' || to === '/inbox');
+  }
 
   // The marketing role has one page (lms-backend refuses it everywhere else).
   if (_userRole === 'marketing') return allItems.filter(([to]) => to === '/admin/trial-links');
