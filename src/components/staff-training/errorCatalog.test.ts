@@ -6,7 +6,7 @@ import '@/lib/i18n/catalogs/serverErrors';
 const CODES = [
   'staff_training_off', 'staff_training_staff_only', 'staff_training_progress_forbidden', 'staff_training_not_found',
   'staff_training_clip_changed', 'staff_training_watch_first', 'staff_training_bad_answer', 'staff_training_bad_request',
-  'staff_training_check_rate', 'staff_training_reset_limit', 'staff_training_new_hire_locked', 'training_copy_unavailable',
+  'staff_training_check_rate', 'staff_training_reset_limit', 'staff_training_new_hire_locked', 'training_copy_unavailable', 'training_copy_preparing',
   'staff_training_service_off', 'staff_training_service_key', 'staff_training_version_stale', 'staff_training_media_missing',
   'staff_training_media_too_large', 'staff_training_manifest_invalid', 'staff_training_sha_required', 'staff_training_sha_mismatch',
   'staff_training_unknown_role', 'staff_training_unknown_item',
