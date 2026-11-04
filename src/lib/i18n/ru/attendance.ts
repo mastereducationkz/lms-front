@@ -11,6 +11,7 @@ export const attendance: RuTable<typeof en> = {
   'attendance.status.cancelledTitle': 'Урок отменён',
   'attendance.status.notYet': 'Занятие ещё не прошло',
   'attendance.status.notMarkedYet': 'Ещё не отмечен',
+  'attendance.status.notMarkedShort': 'Не отмечен',
   'attendance.status.excusedShort': 'Ув.',
   'attendance.status.excused': 'Уважительная причина',
   'attendance.status.excusedWithNote': 'Уважительная причина: {note}',
