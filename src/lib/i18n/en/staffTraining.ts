@@ -94,6 +94,7 @@ export const staffTraining = {
   'staffTraining.task.open': 'Open the training copy',
   'staffTraining.task.opening': 'Opening…',
   'staffTraining.task.openHint': 'It opens in a new tab. Do the task there, then come back here and press “Check”.',
+  'staffTraining.task.namesNote': 'Names in your practice copy may differ from the video',
   'staffTraining.task.blocked': 'Your browser blocked the new tab. Open the training copy from here (the link works once):',
   'staffTraining.task.check': 'Check',
   'staffTraining.task.checking': 'Checking…',

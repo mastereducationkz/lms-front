@@ -120,6 +120,7 @@ export default function TaskCard({ task, locale, done, onChecked }: Props) {
           </Button>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">{t('staffTraining.task.openHint')}</p>
+        <p className="mt-1 text-xs text-muted-foreground" data-task-names-note>{t('staffTraining.task.namesNote')}</p>
         {blockedUrl && (
           <p className="mt-3 text-sm text-foreground">
             {t('staffTraining.task.blocked')}{' '}
