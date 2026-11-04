@@ -343,6 +343,13 @@ const AttendanceToggle = ({
     // just defaults an unmarked lesson to "missed". Show a neutral "—" instead.
     if (isFuture && s === 'missed') return { label: '—', color: 'bg-muted text-muted-foreground dark:bg-secondary', title: t('attendance.status.notYet') };
 
+    // `registered` is «not marked yet», not an absence: painting it red «Не был» told the
+    // curator a student skipped a lesson nobody had taken the register for (CRM-121). Same
+    // words as LessonScoresDialog. It still cycles to «Был» on a click, and can still be excused.
+    if (initialStatus === 'registered' && !excused) {
+      return { label: t('attendance.status.notMarkedShort'), color: 'bg-muted text-muted-foreground dark:bg-secondary', title: t('attendance.status.notMarkedYet') };
+    }
+
     if (s === 'missed' && excused) {
       return {
         label: t('attendance.status.excusedShort'),

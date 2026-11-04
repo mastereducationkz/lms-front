@@ -16,6 +16,7 @@ export const attendance = {
   'attendance.status.cancelledTitle': 'Lesson cancelled',
   'attendance.status.notYet': "Lesson hasn't happened yet",
   'attendance.status.notMarkedYet': 'Not marked yet',
+  'attendance.status.notMarkedShort': 'Not marked',
   'attendance.status.excusedShort': 'Exc.',
   'attendance.status.excused': 'Excused absence',
   'attendance.status.excusedWithNote': 'Excused absence: {note}',
