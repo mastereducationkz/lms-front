@@ -90,6 +90,7 @@ export const staffTraining: RuTable<typeof en> = {
   'staffTraining.task.open': 'Открыть тренажёр',
   'staffTraining.task.opening': 'Открываем…',
   'staffTraining.task.openHint': 'Он откроется в новой вкладке. Выполните задание там, затем вернитесь сюда и нажмите «Проверить».',
+  'staffTraining.task.namesNote': 'Имена в вашей копии могут отличаться от видео',
   'staffTraining.task.blocked': 'Браузер заблокировал новую вкладку. Откройте тренажёр отсюда (ссылка работает один раз):',
   'staffTraining.task.check': 'Проверить',
   'staffTraining.task.checking': 'Проверяем…',

@@ -31,6 +31,15 @@ const show = (over = {}, locale: 'ru' | 'en' = 'en') =>
   mount(<TaskCard task={task(over)} locale={locale} done={false} onChecked={vi.fn()} />);
 
 describe('TaskCard: the training copy', () => {
+  it('tells the reader that the names in their practice copy may differ from the video', async () => {
+    await show();
+    expect(text()).toContain('Names in your practice copy may differ from the video');
+    await unmount();
+    setActiveLocale('ru');
+    await show({}, 'ru');
+    expect(text()).toContain('Имена в вашей копии могут отличаться от видео');
+  });
+
   it('never asks for the sign-in link until the button is clicked', async () => {
     await show();
     await settle();
