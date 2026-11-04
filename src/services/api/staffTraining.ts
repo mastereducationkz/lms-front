@@ -189,9 +189,12 @@ async function get<T>(path: string, fallback: string, params?: object): Promise<
   }
 }
 
-async function post<T>(path: string, body: unknown, fallback: string): Promise<T> {
+/** Opening or resetting the practice copy builds a slice inside the call (2.5-4 s, more when many hires open it at once): wait up to 40 s. */
+const SLICE_CALL_TIMEOUT_MS = 40000;
+
+async function post<T>(path: string, body: unknown, fallback: string, timeout?: number): Promise<T> {
   try {
-    return (await api.post(`${BASE}${path}`, body)).data as T;
+    return (await api.post(`${BASE}${path}`, body, timeout ? { timeout } : undefined)).data as T;
   } catch (error) {
     throw apiError(error, fallback);
   }
@@ -233,9 +236,9 @@ export const answerQuestion = (questionId: number, chosen: string[]) =>
 
 /** Opens the single-use sign-in link. Never call this ahead of a click: the link is good for one use. */
 export const openTask = (taskId: number) =>
-  post<{ url: string; expires_at: string }>(`/tasks/${taskId}/open`, {}, 'Could not open the training copy');
+  post<{ url: string; expires_at: string }>(`/tasks/${taskId}/open`, {}, 'Could not open the training copy', SLICE_CALL_TIMEOUT_MS);
 export const checkTask = (taskId: number) => post<CheckResult>(`/tasks/${taskId}/check`, {}, 'Could not check the task');
-export const resetPractice = (taskId: number) => post<{ ok: boolean }>(`/tasks/${taskId}/reset-practice`, {}, 'Could not reset the practice');
+export const resetPractice = (taskId: number) => post<{ ok: boolean }>(`/tasks/${taskId}/reset-practice`, {}, 'Could not reset the practice', SLICE_CALL_TIMEOUT_MS);
 
 export const getTrainingProgress = (filters: ProgressFilters) =>
   get<ProgressList>('/progress', 'Could not load the progress', {
