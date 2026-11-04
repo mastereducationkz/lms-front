@@ -595,6 +595,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
             <div className="flex items-center">
               {(() => {
                 const avatar = (
+                  <span className="contents" data-training-hide>
                   <UserAvatar
                     userId={user?.id}
                     name={user?.name}
@@ -603,6 +604,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                     isStudent={user?.role === 'student'}
                     size={40}
                   />
+                  </span>
                 );
                 // Offsets clear the sidebar (w-64 / collapsed w-20) so the card never covers it.
                 return variant === 'desktop'
@@ -610,7 +612,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                   : avatar;
               })()}
               {!isCollapsed && (
-                <div className="ml-3 text-left">
+                <div className="ml-3 text-left" data-training-hide>
                   <div className="text-sm font-medium text-foreground line-clamp-1">{user?.name || t('shell.menu.userFallback')}</div>
                   <div className="text-xs text-muted-foreground">{roleLabel(user?.role)}</div>
                 </div>
