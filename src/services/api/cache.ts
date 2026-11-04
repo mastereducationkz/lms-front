@@ -127,6 +127,10 @@ const INVALIDATION_RULES: Array<{ mutation: RegExp; invalidatePrefixes: string[]
   { mutation: /^\/checkpoints(\/|$)/, invalidatePrefixes: ['/checkpoints'] },
   // Confirming suggested activity scores writes the register's scores.
   { mutation: /^\/live\/lessons\/\d+\/suggestions\/confirm/, invalidatePrefixes: ['/lessons', '/events', '/leaderboard', '/student-journal'] },
+  // Saving a register from the lesson page (/events/:id/attendance, /events/:id/activity-scores) writes what the
+  // group's attendance grid, the journal and the head-teacher table read; without this they kept the old
+  // «Not marked» for up to their TTL.
+  { mutation: /^\/events\/\d+\/(attendance|activity-scores)(\/|$)/, invalidatePrefixes: ['/leaderboard', '/student-journal', '/head-teacher', '/lessons'] },
   { mutation: /^\/progress\/(quiz-attempt|lesson\/\d+\/complete|step\/\d+\/visit)/, invalidatePrefixes: ['/checkpoints'] },
 ]
 
@@ -225,6 +229,9 @@ export const invalidateByPrefix = (prefix: string): number => {
       removed += 1
     }
   }
+  // The persisted copy must lose them too, now: a reload inside the debounce window (or a PWA update that
+  // reloads the page right after a save) would otherwise bring the invalidated entries back for their full TTL.
+  if (removed > 0) persistNow()
   return removed
 }
 
