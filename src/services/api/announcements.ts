@@ -132,7 +132,12 @@ export async function getGroups(status?: GroupStatus): Promise<TelegramGroup[]> 
       ...NO_CACHE,
       params: status ? { status } : undefined,
     });
-    return response.data;
+    // The screen filters this: a body that is not a list (an object from a bot that is off, a proxy error page)
+    // must read as «no groups», never crash the page.
+    const body = response.data;
+    if (Array.isArray(body)) return body;
+    const wrapped = body && typeof body === 'object' ? (body.items ?? body.groups) : undefined;
+    return Array.isArray(wrapped) ? wrapped : [];
   } catch (error) {
     rethrow(error, 'Failed to load Telegram groups');
   }
@@ -153,7 +158,13 @@ export async function setGroupStatus(
 export async function getRecipientSummary(): Promise<RecipientSummary> {
   try {
     const response = await api.get('/announcements/recipients', NO_CACHE);
-    return response.data;
+    const body = response.data;
+    const count = (value: unknown) => (typeof value === 'number' ? value : 0);
+    return {
+      approved_groups: count(body?.approved_groups),
+      students_opted_in: count(body?.students_opted_in),
+      students_bound: count(body?.students_bound),
+    };
   } catch (error) {
     rethrow(error, 'Failed to load recipient counts');
   }
@@ -162,7 +173,9 @@ export async function getRecipientSummary(): Promise<RecipientSummary> {
 export async function getAnnouncements(limit = 50, offset = 0): Promise<AnnouncementListResponse> {
   try {
     const response = await api.get('/announcements', { ...NO_CACHE, params: { limit, offset } });
-    return response.data;
+    const body = response.data;
+    const announcements = Array.isArray(body?.announcements) ? body.announcements : [];
+    return { announcements, total: typeof body?.total === 'number' ? body.total : announcements.length };
   } catch (error) {
     rethrow(error, 'Failed to load announcements');
   }
