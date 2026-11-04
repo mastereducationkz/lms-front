@@ -291,4 +291,8 @@ export const openWebinars = {
   'openWebinars.admin.leads.off': 'Off: registrations and call-back requests stay in the LMS only and are not sent to amoCRM, now or later. The «leave your number» card is hidden on the public pages.',
   'openWebinars.admin.leads.turnOff': 'Stop sending to amoCRM',
   'openWebinars.admin.leads.turnOn': 'Send to amoCRM again',
+  // --- «Duplicate» an open webinar (owner, 2026-11-04) ---
+  'openWebinars.admin.duplicate.button': 'Duplicate',
+  'openWebinars.admin.duplicate.note': 'Copy of the webinar «{title}» — choose the date, title, speaker and banner.',
+  'openWebinars.admin.duplicate.loadFailed': 'Couldn’t load the webinar to copy, so the form is empty. {message}',
 } as const satisfies MessageTable;

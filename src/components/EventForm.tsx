@@ -47,6 +47,7 @@ import OpenAccessCard from './open-webinars/OpenAccessCard';
 import CreateAccessSection from './open-webinars/CreateAccessSection';
 import { createWithAccess } from './open-webinars/createWithAccess';
 import { draftReady, emptyDraft, isOpenRole, isPublicMode, preflightBodyOf, speakerMissing, type AccessDraft } from './open-webinars/accessModel';
+import { endAfterStart, type DuplicateDraft } from './open-webinars/duplicate';
 import '@/lib/i18n/catalogs/openWebinars';
 import { useT } from '@/lib/i18n/react';
 import '@/lib/i18n/catalogs/adminTools';
@@ -60,9 +61,11 @@ interface EventFormProps {
   onAccessFailed?: (event: Event, message: string) => void;
   /** Edit only: why the public access did not save right after the event was created; shown on its card. */
   accessError?: string | null;
+  /** Create only: «Duplicate» of an open webinar — the form starts from this copy; nothing is saved until Create. */
+  duplicate?: DuplicateDraft;
 }
 
-export default function EventForm({ event, onSave, onCancel, onAccessFailed, accessError = null }: EventFormProps) {
+export default function EventForm({ event, onSave, onCancel, onAccessFailed, accessError = null, duplicate }: EventFormProps) {
   const { user } = useAuth();
   const t = useT();
   const [loading, setLoading] = useState(false);
@@ -77,28 +80,31 @@ export default function EventForm({ event, onSave, onCancel, onAccessFailed, acc
   const [selectedModuleForLesson, setSelectedModuleForLesson] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   // «Who can join» of a new webinar (create only): the roles that may open one to everyone choose it here.
-  const [access, setAccess] = useState<AccessDraft>(emptyDraft);
+  const [access, setAccess] = useState<AccessDraft>(() => (!event && duplicate ? duplicate.access : emptyDraft()));
   // An occurrence of a recurring series can carry its edit to the later weeks.
   const series = useEventSeries(event);
 
+  // What the form starts from: the event being edited, or the copied webinar (its per-webinar fields left empty).
+  const seed: Partial<Event> | undefined = event ?? duplicate?.seed;
+
   // Form state (display in KZ, send UTC)
   const [formData, setFormData] = useState({
-    title: event?.title || '',
-    description: event?.description || '',
-    event_type: event?.event_type || 'class' as EventType,
-    start_datetime: event?.start_datetime ? toDatetimeLocal(event.start_datetime) : '',
-    end_datetime: event?.end_datetime ? toDatetimeLocal(event.end_datetime) : '',
-    location: event?.location || '',
-    is_online: event?.is_online ?? true,
-    meeting_url: event?.meeting_url || '',
-    is_recurring: event?.is_recurring || false,
-    recurrence_pattern: event?.recurrence_pattern || 'weekly',
-    recurrence_end_date: event?.recurrence_end_date || '',
-    max_participants: event?.max_participants || undefined,
-    group_ids: event?.group_ids || [],
-    course_ids: event?.course_ids || [],
-    lesson_id: event?.lesson_id || undefined,
-    teacher_id: event?.teacher_id || undefined
+    title: seed?.title || '',
+    description: seed?.description || '',
+    event_type: seed?.event_type || 'class' as EventType,
+    start_datetime: seed?.start_datetime ? toDatetimeLocal(seed.start_datetime) : '',
+    end_datetime: seed?.end_datetime ? toDatetimeLocal(seed.end_datetime) : '',
+    location: seed?.location || '',
+    is_online: seed?.is_online ?? true,
+    meeting_url: seed?.meeting_url || '',
+    is_recurring: seed?.is_recurring || false,
+    recurrence_pattern: seed?.recurrence_pattern || 'weekly',
+    recurrence_end_date: seed?.recurrence_end_date || '',
+    max_participants: seed?.max_participants || undefined,
+    group_ids: seed?.group_ids || [],
+    course_ids: seed?.course_ids || [],
+    lesson_id: seed?.lesson_id || undefined,
+    teacher_id: seed?.teacher_id || undefined
   });
 
   // Heads may open a webinar to everyone; a series cannot be opened, so a ticked «recurring» ignores the choice.
@@ -114,7 +120,7 @@ export default function EventForm({ event, onSave, onCancel, onAccessFailed, acc
 
   const loadData = async () => {
     // On its own: a failure of the group or course lists must not blank the host list, nor the reverse.
-    getEventHosts(event?.teacher_id)
+    getEventHosts(seed?.teacher_id)
       .then(setTeachers)
       .catch((error) => { console.error('Failed to load hosts:', error); setHostsFailed(true); });
     try {
@@ -146,7 +152,11 @@ export default function EventForm({ event, onSave, onCancel, onAccessFailed, acc
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
+      // A copied webinar keeps its length: the end follows the chosen start until the end is typed by hand.
+      ...(field === 'start_datetime' && duplicate && !event
+        ? { end_datetime: endAfterStart({ start: prev.start_datetime, end: prev.end_datetime }, value, duplicate.durationMinutes) }
+        : {}),
     }));
     
     // Clear error when user starts typing
@@ -363,6 +373,11 @@ export default function EventForm({ event, onSave, onCancel, onAccessFailed, acc
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {!event && duplicate && (
+          <p role="status" data-duplicate-note className="rounded-lg border border-border bg-muted/60 p-3 text-sm text-muted-foreground">
+            {t('openWebinars.admin.duplicate.note', { title: duplicate.sourceTitle })}
+          </p>
+        )}
         {error && (
           <Alert className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
             <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />

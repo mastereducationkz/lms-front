@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
+import DuplicateButton from '../components/open-webinars/DuplicateButton';
 import RecordingPanel from '../components/open-webinars/RecordingPanel';
 import { answersSummary } from '../components/open-webinars/profileQuestions';
 import { getOpenAccess, listRegistrations, retryFailedLeads, retryLead, type OpenAccess, type RegistrationRow } from '../services/api/openWebinars';
@@ -116,7 +117,10 @@ export default function OpenWebinarRegistrationsPage() {
           <Link to={`/admin/events/${id}/edit`} className="mb-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" aria-hidden />{t('openWebinars.admin.regs.back')}</Link>
           <h1 className="text-xl font-bold sm:text-2xl">{t('openWebinars.admin.regs.title', { title })}</h1>
         </div>
-        {publicUrl && <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-4 hover:underline"><ExternalLink className="h-4 w-4" aria-hidden />{t('openWebinars.admin.regs.page')}</a>}
+        <div className="flex flex-wrap items-center gap-3">
+          {publicUrl && <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-4 hover:underline"><ExternalLink className="h-4 w-4" aria-hidden />{t('openWebinars.admin.regs.page')}</a>}
+          <DuplicateButton eventId={id} />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">

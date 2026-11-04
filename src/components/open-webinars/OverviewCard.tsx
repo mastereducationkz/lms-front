@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import DuplicateButton from './DuplicateButton';
 import { getOverview, retryFailedLeads, type Overview } from '../../services/api/openWebinars';
 import { formatDateTime } from '../../lib/i18n/format';
 import { useLocale, useT } from '@/lib/i18n/react';
@@ -68,7 +69,7 @@ export default function OverviewCard() {
               <div className="overflow-x-auto rounded-xl border border-border">
                 <table className="w-full text-left text-sm">
                   <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
-                    <tr>{(['title', 'date', 'mode', 'registered', 'consultations', 'failed'] as const).map((c) => <th key={c} className="px-3 py-2.5 font-medium">{t(`openWebinars.admin.overview.col.${c}` as 'openWebinars.admin.overview.col.title')}</th>)}</tr>
+                    <tr>{(['title', 'date', 'mode', 'registered', 'consultations', 'failed'] as const).map((c) => <th key={c} className="px-3 py-2.5 font-medium">{t(`openWebinars.admin.overview.col.${c}` as 'openWebinars.admin.overview.col.title')}</th>)}<th className="px-3 py-2.5"><span className="sr-only">{t('openWebinars.admin.duplicate.button')}</span></th></tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {overview.items.map((w) => (
@@ -82,6 +83,7 @@ export default function OverviewCard() {
                         <td className="px-3 py-2.5 tabular-nums">{w.registered}</td>
                         <td data-consultations className="px-3 py-2.5 tabular-nums">{w.consultations}</td>
                         <td className={`px-3 py-2.5 tabular-nums ${w.leads_failed > 0 ? 'font-semibold text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>{w.leads_failed}</td>
+                        <td className="px-3 py-2.5 text-right"><DuplicateButton eventId={w.event_id} /></td>
                       </tr>
                     ))}
                   </tbody>

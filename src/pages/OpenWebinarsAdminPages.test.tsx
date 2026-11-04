@@ -168,8 +168,8 @@ describe('Admin → Open webinars: the overview', () => {
     expect(row(7).textContent).toContain('30');
     expect(row(8).textContent).toContain('Anyone who registers');
     expect(row(8).textContent).toContain('Cancelled');
-    expect(row(8).querySelector('td:last-child')?.className).toContain('text-red');
-    expect(row(7).querySelector('td:last-child')?.className).not.toContain('text-red');
+    expect(row(8).querySelector('td:nth-child(6)')?.className).toContain('text-red');
+    expect(row(7).querySelector('td:nth-child(6)')?.className).not.toContain('text-red');
     expect(document.querySelector('[data-failed-total]')?.textContent).toBe('2 failed leads in total');
   });
 
@@ -177,7 +177,7 @@ describe('Admin → Open webinars: the overview', () => {
     api.getOverview.mockResolvedValue({ failed_total: 0, items: [item(7, { access_mode: 'open', registered: 0, consultations: 4 }), item(8, { registered: 12, consultations: 0 })] });
     await show();
     const headers = Array.from(document.querySelectorAll('[data-overview] thead th')).map((th) => th.textContent);
-    expect(headers).toEqual(['Webinar', 'Date', 'Access', 'Registered', 'Call-backs', 'Failed leads']);
+    expect(headers).toEqual(['Webinar', 'Date', 'Access', 'Registered', 'Call-backs', 'Failed leads', 'Duplicate']);
     expect(row(7).querySelector('[data-consultations]')?.textContent).toBe('4');
     expect(row(7).querySelector('td:nth-child(4)')?.textContent).toBe('0');
     expect(row(8).querySelector('[data-consultations]')?.textContent).toBe('0');
