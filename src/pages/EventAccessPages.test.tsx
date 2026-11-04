@@ -10,6 +10,8 @@ vi.mock('../contexts/AuthContext', async () => {
 });
 const getEventDetails = vi.hoisted(() => vi.fn());
 vi.mock('../services/api', () => ({ getEventDetails }));
+// The create page reads a «Duplicate» source's public access; these tests open it without one.
+vi.mock('../services/api/openWebinars', () => ({ getOpenAccess: vi.fn() }));
 
 // The form and the card have their own tests and talk to the API client: markers stand in, carrying what the pages hand them.
 vi.mock('../components/EventForm', async () => {

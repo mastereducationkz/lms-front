@@ -291,4 +291,7 @@ export const openWebinars: RuTable<typeof en> = {
   'openWebinars.admin.leads.off': 'Выключено: регистрации и заявки на звонок остаются только в LMS и не отправляются в amoCRM — ни сейчас, ни потом. Карточка «Оставьте номер» на публичных страницах скрыта.',
   'openWebinars.admin.leads.turnOff': 'Не отправлять в amoCRM',
   'openWebinars.admin.leads.turnOn': 'Снова отправлять в amoCRM',
+  'openWebinars.admin.duplicate.button': 'Дублировать',
+  'openWebinars.admin.duplicate.note': 'Копия вебинара «{title}» — выберите дату, название, спикера и баннер.',
+  'openWebinars.admin.duplicate.loadFailed': 'Не удалось загрузить вебинар для копии, поэтому форма пустая. {message}',
 };
