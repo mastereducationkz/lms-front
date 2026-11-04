@@ -78,7 +78,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
 
   return (
     <div ref={bar} className="sticky top-0 z-30 bg-gray-50/80 dark:bg-card/80 backdrop-blur border-b border-border px-4 sm:px-5 md:px-6 py-3 sm:py-3.5 flex items-center justify-between gap-3">
-      <div className="min-w-0">
+      <div className="min-w-0" data-training-hide>
         <div className="truncate text-sm sm:text-[14px] text-muted-foreground">{t('shell.topbar.welcomeBack')}</div>
         <div className="truncate text-[16px] sm:text-xl font-semibold text-foreground">{user?.name}!</div>
       </div>

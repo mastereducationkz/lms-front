@@ -28,6 +28,7 @@ describe('the training banner', () => {
     await banner();
     expect(text()).toBe('TRAINING COPY · nothing you do here leaves it · abcdef0');
     expect(document.querySelector('[role=status]')).not.toBeNull();
+    expect(document.querySelector('[data-training-banner]')).not.toBeNull(); // the recorder hides the banner by this attribute
   });
 
   it('is not there in production or staging builds', async () => {
