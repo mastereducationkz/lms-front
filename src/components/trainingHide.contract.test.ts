@@ -13,4 +13,19 @@ describe('the attributes the training recorder hides', () => {
     const sidebar = src('./Sidebar.tsx');
     expect(sidebar.match(/data-training-hide/g)?.length).toBe(2);
   });
+  it('marks the greeting of every dashboard that prints the account name', () => {
+    // curator + head curator (render-library found the curator one missing), student hero, parent
+    expect(src('../pages/HeadCuratorDashboard.tsx')).toMatch(/<h1 data-training-hide[^>]*>\{t\('curatorDashboard\.greeting'/);
+    expect(src('../pages/ParentDashboard.tsx')).toMatch(/<h1 data-training-hide[^>]*>\{t\('parent\.dashboard\.greeting'/);
+    expect(src('./dashboard/DashboardHero.tsx')).toMatch(/<CardTitle data-training-hide[^>]*>\{tr\("studentHome\.hero\.welcome"/);
+  });
+  it('leaves no greeting message with a {name} unmarked', () => {
+    // every page/component that formats a *greeting* i18n key with the user's name carries the marker on that element
+    const pages = ['../pages/HeadCuratorDashboard.tsx', '../pages/ParentDashboard.tsx', './dashboard/DashboardHero.tsx', './Topbar.tsx'];
+    for (const f of pages) {
+      const text = src(f);
+      const keyed = text.match(/[^\n]*(greeting'|hero\.welcome|welcomeBack)[^\n]*/g) ?? [];
+      for (const line of keyed) expect(line + (text.split(line)[0].slice(-200))).toContain('data-training-hide');
+    }
+  });
 });

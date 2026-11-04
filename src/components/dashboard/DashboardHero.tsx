@@ -132,7 +132,7 @@ export default function DashboardHero({
         <div className="min-w-0 flex-1 @4xl:basis-[22rem] @4xl:min-w-[18rem]">
           {/* pr-12 keeps the greeting clear of the banner-colour dot in the top-right corner */}
           <CardHeader className="p-5 pr-12 sm:p-6 sm:pr-14">
-            <CardTitle className="text-2xl sm:text-3xl">{tr("studentHome.hero.welcome", { name: firstName })}</CardTitle>
+            <CardTitle data-training-hide className="text-2xl sm:text-3xl">{tr("studentHome.hero.welcome", { name: firstName })}</CardTitle>
             <CardDescription className="text-white/80 text-sm sm:text-base">
               {tr("studentHome.hero.subtitle")}
             </CardDescription>

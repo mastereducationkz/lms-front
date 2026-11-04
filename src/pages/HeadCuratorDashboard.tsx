@@ -127,7 +127,7 @@ export default function HeadCuratorDashboard() {
       {/* Заголовок */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-foreground dark:text-foreground">{t('curatorDashboard.greeting', { name: user?.name ?? '' })}</h1>
+          <h1 data-training-hide className="text-2xl font-bold text-foreground dark:text-foreground">{t('curatorDashboard.greeting', { name: user?.name ?? '' })}</h1>
           <p className="text-muted-foreground flex items-center gap-2">
             {user?.role === 'head_curator' 
               ? t('curatorDashboard.subtitle.headCurator')

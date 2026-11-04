@@ -33,7 +33,7 @@ export default function ParentDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground dark:text-foreground">{t('parent.dashboard.greeting', { name: firstName })}</h1>
+        <h1 data-training-hide className="text-2xl font-bold text-foreground dark:text-foreground">{t('parent.dashboard.greeting', { name: firstName })}</h1>
         <p className="text-muted-foreground mt-1">
           {t('parent.dashboard.subtitle')}
         </p>
