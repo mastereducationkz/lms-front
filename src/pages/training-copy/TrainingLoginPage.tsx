@@ -46,6 +46,7 @@ export default function TrainingLoginPage() {
         if (!mounted.current) return;
         // The server answers every refusal with one 401; no answer or a 5xx did not spend the link, so trying again can work.
         const status = (e as { response?: { status?: number } })?.response?.status;
+        document.title = t('trainingCopy.login.pageTitleError');
         setFailure(status === undefined || status >= 500 ? 'unreachable' : 'expired');
       });
   };

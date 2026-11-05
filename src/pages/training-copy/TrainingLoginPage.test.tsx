@@ -105,6 +105,16 @@ describe('/training-login', () => {
     expect(document.title).toBe('Practice copy · Master Education');
   });
 
+  it('titles the tab for the failure too, not «Opening…»', async () => {
+    redeem.mockRejectedValue({ response: { status: 401 } });
+    await open('?t=USED');
+    expect(document.title).toBe('Could not open the practice copy · Master Education');
+    redeem.mockRejectedValue({ response: undefined, code: 'ERR_NETWORK' });
+    await unmount();
+    await open('?t=JWT');
+    expect(document.title).toBe('Could not open the practice copy · Master Education');
+  });
+
   it('offers a retry when the copy did not answer, and the second try can succeed', async () => {
     redeem.mockRejectedValueOnce({ response: undefined, code: 'ERR_NETWORK' }).mockResolvedValueOnce({ user: { id: 1 }, path: '/attendance', task: null });
     await open('?t=JWT');

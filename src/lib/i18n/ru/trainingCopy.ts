@@ -3,6 +3,7 @@ import type { RuTable } from '../types';
 
 export const trainingCopy: RuTable<typeof en> = {
   'trainingCopy.banner': 'ТРЕНАЖЁР · учебная копия · сообщения никуда не уходят · {commit}',
+  'trainingCopy.bannerNoCommit': 'ТРЕНАЖЁР · учебная копия · сообщения никуда не уходят',
   'trainingCopy.nav.inbox': 'Входящие тренажёра',
 
   'trainingCopy.login.signingIn': 'Открываем тренажёр…',
@@ -11,6 +12,7 @@ export const trainingCopy: RuTable<typeof en> = {
   'trainingCopy.login.hint': 'Это ваша учебная копия LMS и CRM — здесь можно всё пробовать.',
   'trainingCopy.login.pageTitleOpening': 'Открываем тренажёр · Master Education',
   'trainingCopy.login.pageTitleReady': 'Тренажёр · Master Education',
+  'trainingCopy.login.pageTitleError': 'Не удалось открыть тренажёр · Master Education',
   'trainingCopy.login.errorHeading': 'Не удалось открыть тренажёр',
   'trainingCopy.login.failed': 'Тренажёр не ответил. Проверьте соединение и повторите.',
   'trainingCopy.login.retry': 'Повторить',
