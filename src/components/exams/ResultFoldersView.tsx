@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Download, Search } from 'lucide-react';
+import { Camera, Download, Search } from 'lucide-react';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -184,6 +184,13 @@ export function ResultFoldersView({ canWrite }: { canWrite: boolean }) {
               <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
                      placeholder={t('exams.folders.search')} aria-label={t('exams.filters.searchLabel')} className="pl-8" />
             </div>
+            {/* One click for the question curators ask most: which results have their screenshot. */}
+            <Button type="button" size="sm" variant={proof === 'with' ? 'default' : 'outline'}
+                    aria-pressed={proof === 'with'} title={t('exams.folders.onlyWithProofHint')}
+                    onClick={() => setProof(proof === 'with' ? '' : 'with')}>
+              <Camera className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              {t('exams.folders.onlyWithProof')}
+            </Button>
             <label className="inline-flex items-center gap-1.5 text-xs">
               <input type="checkbox" checked={unconfirmedOnly} onChange={(e) => setUnconfirmedOnly(e.target.checked)} />
               {t('exams.folders.unconfirmedOnly')}
