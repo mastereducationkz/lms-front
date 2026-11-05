@@ -13,10 +13,11 @@ import {
   type MeetRecord,
 } from '../../services/api/meetAttendance';
 import { lessonReviewing, type FlagReviewing } from './FlagReview';
+import { joinLogLine } from '../../lib/meetJoinLog';
 import { MeetTimeline, type TimelineRow } from './MeetTimeline';
 import { WhoIsThis } from './WhoIsThis';
 import { activeLocale, t as translate, type Locale, type MessageKey } from '../../lib/i18n';
-import { useT } from '../../lib/i18n/react';
+import { useLocale, useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/meet';
 import '@/lib/i18n/catalogs/meetViews';
 
@@ -133,10 +134,10 @@ const VERDICT_COUNT: Record<'present' | 'late' | 'absent', MessageKey> = {
   absent: 'meet.count.absent',
 };
 
-function personRow(p: MeetPerson, kind: TimelineRow['kind'], note?: string): TimelineRow {
+function personRow(p: MeetPerson, kind: TimelineRow['kind'], note?: string, joinLog?: string): TimelineRow {
   return {
     key: `u${p.user_id}`, userId: p.user_id, name: p.name, kind, mark: p.mark, presence: p, flags: p.flags,
-    accounts: p.accounts, note, verdict: p.verdict, register: p.register,
+    accounts: p.accounts, note, verdict: p.verdict, register: p.register, joinLog,
   };
 }
 
@@ -179,6 +180,7 @@ function clockText(record: MeetRecord, locale: Locale = activeLocale()): string 
 /** A finished lesson's Meet record: the headline numbers, the accounts to confirm, the timeline. */
 export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compact = false, reviewing, onApplyVerdicts, applying = false }: Props) {
   const t = useT();
+  const locale = useLocale();
   const [showHidden, setShowHidden] = useState(false);
   const students = useMemo(() => record.students ?? [], [record.students]);
   const joined = students.filter((s) => s.sessions.length > 0).length;
@@ -188,7 +190,7 @@ export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compa
 
   const rows: TimelineRow[] = useMemo(() => [
     ...(teacher ? [personRow(teacher, 'teacher')] : []),
-    ...students.map((s) => personRow(s, 'student')),
+    ...students.map((s) => personRow(s, 'student', undefined, compact ? undefined : joinLogLine(s, record, locale))),
     // Unconfirmed accounts are still real time in the room: shown, marked "?", until named.
     ...unknown.map((u): TimelineRow => ({
       key: `p${u.participant_id}`, name: u.display_name || t('meetViews.shared.noName'), kind: 'unknown',
@@ -196,7 +198,7 @@ export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compa
     })),
     ...(record.others ?? []).map((o) => personRow(o, 'other', o.role === 'student' ? t('meetViews.record.otherGroup')
       : ROLE[o.role] ? t(ROLE[o.role]) : o.role.replace('_', ' '))),
-  ], [teacher, students, unknown, record.others, t]);
+  ], [teacher, students, unknown, record, compact, locale, t]);
   const hiddenRows: TimelineRow[] = notTracked.map((n) => ({
     key: `p${n.participant_id}`, name: n.display_name || t('meetViews.shared.noName'), kind: 'not_tracked',
     presence: n, flags: [], accounts: [n], note: t('meetViews.shared.notStudent'),

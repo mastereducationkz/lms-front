@@ -9,6 +9,7 @@ import type { MessageKey } from '../../lib/i18n';
 import { useLocale, useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/meet';
 import '@/lib/i18n/catalogs/meetViews';
+import '@/lib/i18n/catalogs/meetJoinLog';
 
 export { FlagChip };
 
@@ -31,6 +32,8 @@ export interface TimelineRow {
   verdict?: MeetVerdict;
   /** Students only: what the register says about this student in this lesson (2026-09-23). */
   register?: StudentRegister | null;
+  /** Students only, in the full view: when they came and went, and why the mark is what it is. */
+  joinLog?: string;
 }
 
 const BAR: Record<RowKind, string> = {
@@ -204,7 +207,9 @@ export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = fal
               {row.kind === 'student' && !compact && row.verdict && (
                 <div className="mt-1 flex"><VerdictChip verdict={row.verdict} mark={row.mark} /></div>
               )}
-              {row.kind === 'student' && !compact && row.register && (
+              {row.kind === 'student' && !compact && row.joinLog ? (
+                <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{row.joinLog}</div>
+              ) : row.kind === 'student' && !compact && row.register && (
                 <div className="mt-0.5 whitespace-pre-line text-[11px] leading-snug text-muted-foreground">
                   {registerNote(row.register, locale)}
                 </div>
@@ -222,6 +227,12 @@ export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = fal
                   {row.accounts.map((a) => (
                     <span key={a.participant_id} className="inline-flex max-w-full items-center gap-1 rounded bg-muted px-1.5 py-px text-[11px] text-muted-foreground">
                       <span className="truncate">{t(KIND_LABEL[a.kind])} · {a.display_name || t('meetViews.timeline.noName')}</span>
+                      {a.auto && (
+                        <span title={t('meetJoinLog.autoHint')}
+                          className="flex-none rounded bg-sky-100 px-1 text-[10px] font-semibold uppercase tracking-wide text-sky-800 dark:bg-sky-900/50 dark:text-sky-200">
+                          {t('meetJoinLog.auto')}
+                        </span>
+                      )}
                       <button
                         type="button"
                         disabled={busy}

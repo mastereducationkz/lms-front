@@ -116,6 +116,9 @@ export interface MeetAccount {
   participant_id: number;
   kind: MeetAccountKind;
   display_name: string | null;
+  /** A guest the group's earlier confirmation matched by name, not a person today; one × undoes it and forgets it. */
+  auto?: boolean;
+  matched_at?: string | null;
 }
 
 export interface MeetPresence {

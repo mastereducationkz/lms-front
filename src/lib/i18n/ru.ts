@@ -39,6 +39,7 @@ import { studentHome } from './ru/studentHome';
 import { publicPages } from './ru/publicPages';
 import { chatLive } from './ru/chatLive';
 import { meetViews } from './ru/meetViews';
+import { meetJoinLog } from './ru/meetJoinLog';
 import { teacherDesk } from './ru/teacherDesk';
 import { teacherInsights } from './ru/teacherInsights';
 import { courseAuthoring } from './ru/courseAuthoring';
@@ -95,6 +96,7 @@ export const RU_NAMESPACES = {
   publicPages,
   chatLive,
   meetViews,
+  meetJoinLog,
   teacherDesk,
   teacherInsights,
   courseAuthoring,
@@ -152,6 +154,7 @@ export const ru: Readonly<Record<string, Message>> = {
   ...publicPages,
   ...chatLive,
   ...meetViews,
+  ...meetJoinLog,
   ...teacherDesk,
   ...teacherInsights,
   ...courseAuthoring,
