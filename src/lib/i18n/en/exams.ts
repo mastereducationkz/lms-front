@@ -4,8 +4,11 @@ import type { MessageTable } from '../types';
 export const exams = {
   'exams.title': 'Exam results',
   'exams.subtitle': 'Track, record and evidence exam results in one place.',
-  'exams.export.button': 'Export XLSX',
+  'exams.export.button': 'Export to Excel',
   'exams.export.running': 'Exporting…',
+  'exams.export.empty': 'Nothing to export',
+  'exams.export.scopeStudents': { one: '{count} student', other: '{count} students' },
+  'exams.export.scopeFolder': { one: '{title} · {count} result', other: '{title} · {count} results' },
 
   'exams.filters.exam': 'Exam',
   'exams.filters.examType': 'Exam type',
@@ -192,7 +195,6 @@ export const exams = {
   'exams.folders.unconfirmedOnly': 'Only «no proof»',
   'exams.folders.search': 'Search student…',
   'exams.folders.capped': 'Showing {shown} of {total}. Narrow the filters to see the rest.',
-  'exams.folders.export': 'Export folder',
   'exams.folders.loadFailed': 'Could not load the folders.',
   'exams.folders.col.student': 'Student',
   'exams.folders.col.group': 'Group',
