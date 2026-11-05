@@ -4,8 +4,11 @@ import type { RuTable } from '../types';
 export const exams: RuTable<typeof en> = {
   'exams.title': 'Результаты экзаменов',
   'exams.subtitle': 'Отслеживание, внесение результатов и подтверждения — в одном месте.',
-  'exams.export.button': 'Экспорт XLSX',
-  'exams.export.running': 'Экспорт…',
+  'exams.export.button': 'Экспорт в Excel',
+  'exams.export.running': 'Выгрузка…',
+  'exams.export.empty': 'Нет строк для выгрузки',
+  'exams.export.scopeStudents': { one: '{count} ученик', few: '{count} ученика', many: '{count} учеников', other: '{count} ученика' },
+  'exams.export.scopeFolder': { one: '{title} · {count} результат', few: '{title} · {count} результата', many: '{title} · {count} результатов', other: '{title} · {count} результата' },
 
   'exams.filters.exam': 'Экзамен',
   'exams.filters.examType': 'Тип экзамена',
@@ -191,7 +194,6 @@ export const exams: RuTable<typeof en> = {
   'exams.folders.unconfirmedOnly': 'Только «без подтверждения»',
   'exams.folders.search': 'Поиск: ученик…',
   'exams.folders.capped': 'Показано {shown} из {total}. Сузьте фильтры, чтобы увидеть остальные.',
-  'exams.folders.export': 'Экспорт папки',
   'exams.folders.loadFailed': 'Не удалось загрузить папки.',
   'exams.folders.col.student': 'Ученик',
   'exams.folders.col.group': 'Группа',

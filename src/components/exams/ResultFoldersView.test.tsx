@@ -10,10 +10,12 @@ vi.mock('../../contexts/AuthContext', async () => {
 
 const getResultFolders = vi.fn();
 const getFolderResults = vi.fn();
+const exportFolderResults = vi.fn();
+const onExport = vi.fn();
 vi.mock('../../services/api/examFolders', () => ({
   getResultFolders: (f: unknown) => getResultFolders(f),
   getFolderResults: (f: unknown) => getFolderResults(f),
-  exportFolderResults: vi.fn(),
+  exportFolderResults: (f: unknown) => exportFolderResults(f),
 }));
 vi.mock('../../services/api/exams', () => ({ getExamGroups: () => Promise.resolve([]) }));
 
@@ -33,10 +35,11 @@ beforeEach(async () => {
   vi.useFakeTimers();
   getResultFolders.mockResolvedValue({ folders: [], all, curators: [] });
   getFolderResults.mockResolvedValue({ rows: [], total: 0 });
+  exportFolderResults.mockResolvedValue(new Blob(['x']));
   host = document.createElement('div');
   document.body.appendChild(host);
   root = createRoot(host);
-  await act(async () => { root!.render(<ResultFoldersView canWrite={false} />); });
+  await act(async () => { root!.render(<ResultFoldersView canWrite={false} onExport={onExport} />); });
   await settle();
 });
 afterEach(async () => {
@@ -76,5 +79,24 @@ describe('ResultFoldersView screenshot filter', () => {
     await act(async () => { chip().click(); });
     await settle();
     expect(lastFilters(getFolderResults)).toMatchObject({ proof: 'with', unconfirmedOnly: true });
+  });
+
+  it('hands the page header what it would export: the folder, its count, and a run() that uses the filters', async () => {
+    getFolderResults.mockResolvedValue({ rows: [], total: 7 });
+    await act(async () => { chip().click(); });
+    await settle();
+    const action = onExport.mock.calls[onExport.mock.calls.length - 1][0];
+    expect(action).toMatchObject({ scope: 'All results · 7 results', count: 7, busy: false });
+    URL.createObjectURL = vi.fn(() => 'blob:x');
+    URL.revokeObjectURL = vi.fn();
+    await act(async () => { action.run(); });
+    expect(exportFolderResults).toHaveBeenCalledWith(expect.objectContaining({ proof: 'with' }));
+  });
+
+  it('has no export button of its own any more, and clears the header when it goes away', async () => {
+    expect([...host.querySelectorAll('button')].some((b) => /export/i.test(b.textContent ?? ''))).toBe(false);
+    await act(async () => { root!.unmount(); });
+    root = null;
+    expect(onExport.mock.calls[onExport.mock.calls.length - 1][0]).toBeNull();
   });
 });

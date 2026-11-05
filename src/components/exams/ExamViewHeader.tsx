@@ -1,13 +1,14 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Button } from '../ui/button';
 import { ProofPreviewDialog } from './ProofPreviewDialog';
+import { ExamExportButton, type ExportAction } from './ExamExportButton';
 import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/exams';
 
 export type ExamView = 'students' | 'folders';
 
-/** Page title, the Students | Folders switch and, on the right, whatever the active view puts there. */
-export function ExamViewHeader({ view, onView, children }: { view: ExamView; onView: (v: ExamView) => void; children?: ReactNode }) {
+/** Page title, the Students | Folders switch and, next to it, the export control (one instance for both views). */
+export function ExamViewHeader({ view, onView, action }: { view: ExamView; onView: (v: ExamView) => void; action: ExportAction | null }) {
   const t = useT();
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -15,7 +16,7 @@ export function ExamViewHeader({ view, onView, children }: { view: ExamView; onV
         <h1 className="text-xl font-semibold">{t('exams.title')}</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">{t('exams.subtitle')}</p>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-start gap-2">
         <div className="flex gap-1" role="group" aria-label={t('exams.view.label')}>
           {(['students', 'folders'] as const).map((v) => (
             <Button key={v} size="sm" variant={view === v ? 'default' : 'outline'} aria-pressed={view === v}
@@ -24,7 +25,7 @@ export function ExamViewHeader({ view, onView, children }: { view: ExamView; onV
             </Button>
           ))}
         </div>
-        {children}
+        <ExamExportButton action={action} />
       </div>
     </div>
   );

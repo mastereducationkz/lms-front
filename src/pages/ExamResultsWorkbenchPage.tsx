@@ -1,6 +1,6 @@
 import { NativeSelect } from '@/components/ui/native-select';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Download, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -29,6 +29,7 @@ import '@/lib/i18n/catalogs/exams';
 import '@/lib/i18n/catalogs/teacherInsights';
 import { ExamStudentsTable, isOutcome, type RowActions } from '../components/exams/ExamStudentsTable';
 import { ResultFoldersView } from '../components/exams/ResultFoldersView';
+import type { ExportAction } from '../components/exams/ExamExportButton';
 import { DeepLinkedProof, ExamViewHeader, type ExamView } from '../components/exams/ExamViewHeader';
 import { datePassedNoResult } from '../components/exams/datePassed';
 
@@ -82,6 +83,7 @@ export default function ExamResultsWorkbenchPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [foldersExport, setFoldersExport] = useState<ExportAction | null>(null);
   const [historyFor, setHistoryFor] = useState<ExamResultRow | null>(null);
   const [recording, setRecording] = useState<ExamResultRow | null>(null);
   const [breakdownFor, setBreakdownFor] = useState<ExamResultRow | null>(null);
@@ -261,11 +263,20 @@ export default function ExamResultsWorkbenchPage() {
   const isSat = examType === 'sat';
   const pastDates = officialDates.filter((d) => d.is_past);
 
+  // One header, one export button, in both views: only what the button exports follows the view.
+  const studentsExport: ExportAction = {
+    scope: t('exams.export.scopeStudents', { count: visible.length }),
+    count: visible.length,
+    busy: exporting,
+    run: handleExport,
+  };
+  const header = <ExamViewHeader view={view} onView={setView} action={view === 'folders' ? foldersExport : studentsExport} />;
+
   if (view === 'folders') {
     return (
       <div className="space-y-4 p-4 sm:p-6">
-        <ExamViewHeader view={view} onView={setView} />
-        <ResultFoldersView canWrite={canWrite} />
+        {header}
+        <ResultFoldersView canWrite={canWrite} onExport={setFoldersExport} />
         <DeepLinkedProof />
       </div>
     );
@@ -273,12 +284,7 @@ export default function ExamResultsWorkbenchPage() {
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
-      <ExamViewHeader view={view} onView={setView}>
-        <Button size="sm" onClick={handleExport} disabled={exporting || visible.length === 0}>
-          <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
-          {exporting ? t('exams.export.running') : t('exams.export.button')}
-        </Button>
-      </ExamViewHeader>
+      {header}
 
       <Card>
         <CardContent className="p-4 space-y-3">

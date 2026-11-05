@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Camera, Download, Search } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Camera, Search } from 'lucide-react';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
+import type { ExportAction } from './ExamExportButton';
 import { Input } from '../ui/input';
 import { FolderList } from './FolderList';
 import { FolderTable } from './FolderTable';
@@ -28,7 +29,7 @@ const EMPTY: FolderListData = {
  * A flat filter (exam, group, curator, status, proof, search) narrows every folder at once; each
  * folder is a table of results with their score reports, and exports to Excel with a proof link.
  */
-export function ResultFoldersView({ canWrite }: { canWrite: boolean }) {
+export function ResultFoldersView({ canWrite, onExport }: { canWrite: boolean; onExport: (action: ExportAction | null) => void }) {
   const t = useT();
   const locale = useLocale();
   const [exam, setExam] = useState<Exam>('');
@@ -128,6 +129,17 @@ export function ResultFoldersView({ canWrite }: { canWrite: boolean }) {
     }
   };
 
+  // The page header owns the export button; this view only says what it would export right now.
+  const runExport = useRef(handleExport);
+  runExport.current = handleExport;
+  const run = useCallback(() => { void runExport.current(); }, []);
+  const count = loading ? null : total;
+  const scopeText = t('exams.export.scopeFolder', { title, count: total });
+  useEffect(() => {
+    onExport({ scope: scopeText, count, busy: exporting, run });
+  }, [onExport, scopeText, count, exporting, run]);
+  useEffect(() => () => onExport(null), [onExport]);
+
   const field = 'mt-1 block w-full';
   return (
     <div className="space-y-4">
@@ -214,10 +226,6 @@ export function ResultFoldersView({ canWrite }: { canWrite: boolean }) {
                   {loading ? t('common.loading') : t('exams.folders.counts', { total, proof: counts.with_proof })}
                 </p>
               </div>
-              <Button size="sm" onClick={handleExport} disabled={exporting || total === 0}>
-                <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                {exporting ? t('exams.export.running') : t('exams.folders.export')}
-              </Button>
             </div>
             {!loading && rows.length === 0 && !error && (
               <p className="p-8 text-center text-muted-foreground">{t('exams.folders.none')}</p>
