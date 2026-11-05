@@ -16,8 +16,9 @@ interface Props {
 
 /**
  * The «Ссылка» add-menu entry (§8.1, D9): a URL and an optional title. `validateLinkUrl` runs
- * on blur and on submit — the same http(s)-only rule the backend enforces — and a Google
- * Docs/Drive host shows the sharing warning without blocking the submit.
+ * on blur (once something is typed: focus leaving an empty field is not a mistake) and on submit
+ * — the same http(s)-only rule the backend enforces — and a Google Docs/Drive host shows the
+ * sharing warning without blocking the submit.
  */
 export default function LinkDialog({ open, onOpenChange, locale, onSubmit }: Props) {
   const [url, setUrl] = useState('');
@@ -73,7 +74,7 @@ export default function LinkDialog({ open, onOpenChange, locale, onSubmit }: Pro
                 setUrl(e.target.value);
                 if (urlError) setUrlError(null);
               }}
-              onBlur={validate}
+              onBlur={() => { if (url.trim()) validate(); }}
               placeholder="https://…"
             />
             {urlError && <p className="text-xs text-destructive">{urlError}</p>}
