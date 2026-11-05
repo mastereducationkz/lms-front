@@ -1,18 +1,14 @@
 import { NativeSelect } from '@/components/ui/native-select';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { Download, History, MessageSquareQuote, Plus, Search } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Download, Search } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Badge } from '../components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { useAuth } from '../contexts/AuthContext';
-import { FinishedTag, GroupStateFilter } from '../components/exams/GroupStateFilter';
+import { GroupStateFilter } from '../components/exams/GroupStateFilter';
 import { examResultsDefaultGroupState, groupOptionLabel, type GroupState } from '../lib/groupState';
 import { useT } from '../lib/i18n/react';
 import { RecordResultDialog } from '../components/exams/RecordResultDialog';
-import { attemptsSummary } from '../components/exams/attemptsSummary';
-import { OutcomeMenu } from '../components/exams/OutcomeMenu';
 import { AttemptsDialog } from '../components/exams/AttemptsDialog';
 import { AddSectionsDialog } from '../components/exams/AddSectionsDialog';
 import { TestimonialDialog } from '../components/exams/TestimonialDialog';
@@ -31,9 +27,7 @@ import {
 } from '../services/api/exams';
 import '@/lib/i18n/catalogs/exams';
 import '@/lib/i18n/catalogs/teacherInsights';
-import { InitialScoreCell, ScoreChange } from '../components/exams/InitialScoreCell';
-import { MarketingChips } from '../components/exams/MarketingChips';
-import { ResultProofCell } from '../components/exams/ResultProofCell';
+import { ExamStudentsTable, isOutcome, type RowActions } from '../components/exams/ExamStudentsTable';
 import { ResultFoldersView } from '../components/exams/ResultFoldersView';
 import { DeepLinkedProof, ExamViewHeader, type ExamView } from '../components/exams/ExamViewHeader';
 import { datePassedNoResult } from '../components/exams/datePassed';
@@ -63,24 +57,6 @@ const WRITE_ROLES = new Set(['curator', 'head_curator', 'admin']);
 // Approving releases material to the sales team, so it is deliberately narrower than
 // collecting it: the person who gathered the photo is not the only check on it.
 const APPROVE_ROLES = new Set(['head_curator', 'admin']);
-
-const dash = (v: string | null | undefined) => (v && v.trim() ? v : '—');
-
-const triageTone: Record<string, string> = {
-  overdue: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
-  due: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
-  pending: 'bg-brand-subtle text-brand-subtle-foreground',
-  completed: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-  unscheduled: 'bg-muted text-muted-foreground',
-  // «Не хочет делиться» (owner, 2026-10-02): handled by the curator, not neglect — neutral, not red.
-  declined: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-  not_taking: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
-  unreachable: 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-};
-
-const TRIAGE_KEYS = ['overdue', 'due', 'pending', 'completed', 'unscheduled'];
-const isOutcome = (s: string | null | undefined) =>
-  s === 'declined' || s === 'not_taking' || s === 'unreachable';
 
 export default function ExamResultsWorkbenchPage() {
   const { user } = useAuth();
@@ -167,10 +143,14 @@ export default function ExamResultsWorkbenchPage() {
     }
   }, [t]);
 
+  // The grid is only fetched while it is on screen, and once per filter set: opening «Папки» first
+  // (?view=folders) loads nothing here, and flipping between the views never refetches.
+  const loadedFor = useRef<ExamResultFilters | null>(null);
   useEffect(() => {
-    const handle = setTimeout(() => load(filters), 300);
+    if (view !== 'students' || loadedFor.current === filters) return;
+    const handle = setTimeout(() => { loadedFor.current = filters; load(filters); }, 300);
     return () => clearTimeout(handle);
-  }, [filters, load]);
+  }, [filters, load, view]);
 
   const loadTestimonials = useCallback(async () => {
     if (!canWrite) return;   // readers do not see marketing material
@@ -238,29 +218,47 @@ export default function ExamResultsWorkbenchPage() {
     }
   };
 
-  const reschedule = async (row: ExamResultRow, newDate: string) => {
+  // The grid's handlers must keep one identity for the life of the page, or its memoized rows all
+  // re-render on every keystroke; they read the current filters and exam type through this ref.
+  const latest = useRef({ filters, examType, t });
+  latest.current = { filters, examType, t };
+  const reload = useCallback(() => load(latest.current.filters), [load]);
+
+  const reschedule = useCallback(async (row: ExamResultRow, newDate: string) => {
     if (!newDate) return;
+    const { filters: f, examType: exam, t: tr } = latest.current;
     setRescheduling(row.student.student_id);
     setError(null);
     try {
       await updatePlannedDate({
         student_id: row.student.student_id,
-        exam_type: examType,
+        exam_type: exam,
         planned_test_date: newDate,
       });
-      setNotice(t('exams.notice.rescheduled'));
-      await load(filters);
+      setNotice(tr('exams.notice.rescheduled'));
+      await load(f);
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
       setError(typeof detail === 'string' ? detail
-        : t('exams.errors.rescheduleFailed'));
+        : tr('exams.errors.rescheduleFailed'));
     } finally {
       setRescheduling(null);
     }
-  };
+  }, [load]);
+
+  const rowActions: RowActions = useMemo(() => ({
+    onHistory: setHistoryFor,
+    onRecord: setRecording,
+    onBreakdown: setBreakdownFor,
+    onTestimonial: setTestimonialFor,
+    onReschedule: reschedule,
+    onChanged: reload,
+    onError: setError,
+  }), [reschedule, reload]);
+  // A new filter set (or triage preset) starts the grid again from its first chunk.
+  const resetKey = useMemo(() => ({ filters, preset }), [filters, preset]);
 
   const isSat = examType === 'sat';
-  const isIelts = examType === 'ielts';
   const pastDates = officialDates.filter((d) => d.is_past);
 
   if (view === 'folders') {
@@ -431,166 +429,9 @@ export default function ExamResultsWorkbenchPage() {
       {visible.length > 0 && (
         <Card>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table className="w-full text-xs">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-8" />
-                    <TableHead className="sticky left-0 z-[3] bg-background border-r w-52">{t('exams.columns.student')}</TableHead>
-                    <TableHead>{t('exams.columns.group')}</TableHead>
-                    <TableHead>{t('exams.columns.phone')}</TableHead>
-                    <TableHead>Telegram</TableHead>
-                    <TableHead>{t('exams.columns.parent')}</TableHead>
-                    <TableHead>{t('exams.columns.parentPhone')}</TableHead>
-                    <TableHead>{t('exams.columns.planned')}</TableHead>
-                    <TableHead>{t('exams.columns.askOn')}</TableHead>
-                    <TableHead>{t('exams.columns.testDate')}</TableHead>
-                    <TableHead className="text-center">{t('exams.columns.initial')}</TableHead>
-                    {isSat && <><TableHead className="text-center">Verbal</TableHead><TableHead className="text-center">Math</TableHead></>}
-                    <TableHead className="text-center">{isIelts ? 'Overall' : t('exams.columns.total')}</TableHead>
-                    <TableHead className="text-center whitespace-nowrap">{t('exams.columns.marketing')}</TableHead>
-                    <TableHead>{t('exams.columns.status')}</TableHead>
-                    <TableHead className="text-center">{t('exams.columns.proof')}</TableHead>
-                    {canWrite && <TableHead className="text-center">{t('exams.columns.testimonial')}</TableHead>}
-                    {canWrite && <TableHead className="text-right">{t('exams.columns.actions')}</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {visible.map((row) => {
-                    const r = row.result;
-                    const id = row.student.student_id;
-                    return (
-                      <Fragment key={id}>
-                        <TableRow>
-                          <TableCell className="p-1">
-                            {row.attempts.length > 1 && (
-                              <button onClick={() => setHistoryFor(row)}
-                                      aria-haspopup="dialog"
-                                      aria-label={t('exams.row.attemptHistory')}
-                                      className="p-1 rounded hover:bg-accent">
-                                <History className="h-3.5 w-3.5" />
-                              </button>
-                            )}
-                          </TableCell>
-                          <TableCell className="sticky left-0 z-[2] bg-background border-r font-medium">
-                            {row.student.full_name}
-                            {row.student_is_active === false && (
-                              <span className="ml-1.5 inline-block rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
-                                    title={t('exams.inactive.hint')}>
-                                {t('exams.inactive.tag')}
-                              </span>
-                            )}
-                            {row.attempts.length > 1 && (
-                              <button type="button" onClick={() => setHistoryFor(row)}
-                                      className="ml-1 text-[10px] text-muted-foreground hover:underline">
-                                ×{row.attempts.length}
-                              </button>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">{dash(row.group_name)}<FinishedTag finished={row.group_is_finished} /></TableCell>
-                          <TableCell>{dash(row.student.student_phone)}</TableCell>
-                          <TableCell>{dash(row.student.telegram_tag)}</TableCell>
-                          <TableCell>{dash(row.student.parent_full_name)}</TableCell>
-                          <TableCell>{dash(row.student.parent_phone)}</TableCell>
-                          <TableCell>{dash(row.planned_test_date)}</TableCell>
-                          <TableCell>{dash(row.ask_result_on)}</TableCell>
-                          <TableCell>{dash(r?.test_date)}</TableCell>
-                          <TableCell className="text-center">
-                            <InitialScoreCell initial={row.initial} examType={examType} />
-                          </TableCell>
-                          {isSat && <>
-                            <TableCell className="text-center">
-                              {r && r.verbal_score == null && canWrite ? (
-                                <button type="button" onClick={() => setBreakdownFor(row)} title={t('exams.sections.addHint')}
-                                        className="rounded border border-amber-500 px-1 text-[10px] text-amber-700 hover:bg-amber-50 dark:text-amber-400">
-                                  {t('exams.sections.add')}
-                                </button>
-                              ) : (r?.verbal_score ?? '—')}
-                            </TableCell>
-                            <TableCell className="text-center">{r?.math_score ?? '—'}</TableCell>
-                          </>}
-                          <TableCell className="text-center font-semibold">
-                            {r ? Number(r.total_score) : '—'}
-                            {r && <ScoreChange change={row.initial?.change} examType={examType} />}
-                            {row.attempts.length > 1 && (
-                              <button type="button" onClick={() => setHistoryFor(row)} title={attemptsSummary(row.attempts)}
-                                      className="ml-1 rounded bg-muted px-1 text-[10px] font-normal text-muted-foreground hover:underline">
-                                +{row.attempts.length - 1}
-                              </button>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <MarketingChips row={row} />
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className={triageTone[row.triage_status ?? ''] ?? ''}
-                                   title={row.outcome_note ?? (row.triage_status === 'declined' ? row.decline_note ?? undefined : undefined)}>
-                              {isOutcome(row.triage_status)
-                                ? t(`exams.outcome.${row.triage_status}`)
-                                : row.triage_status && TRIAGE_KEYS.includes(row.triage_status)
-                                  ? t(`exams.triage.${row.triage_status}`)
-                                  : row.triage_status ?? '—'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {r ? (
-                              <ResultProofCell result={r} canWrite={canWrite} label={row.student.full_name}
-                                               onChanged={() => load(filters)} onError={setError} />
-                            ) : '—'}
-                          </TableCell>
-                          {canWrite && (
-                            <TableCell className="text-center whitespace-nowrap">
-                              {(() => {
-                                const tst = testimonials[id];
-                                return (
-                                  <button
-                                    onClick={() => setTestimonialFor(row)}
-                                    className="inline-flex items-center gap-1 hover:underline"
-                                    aria-label={t('exams.row.testimonialAndPhoto')}
-                                  >
-                                    <MessageSquareQuote className="h-3.5 w-3.5" aria-hidden="true" />
-                                    {tst?.is_marketing_ready
-                                      ? <span className="text-green-700 dark:text-green-400">
-                                          {t('exams.row.testimonialReady')}
-                                        </span>
-                                      : tst
-                                        ? <span className="text-muted-foreground">{t(`teacherInsights.testimonial.status.${tst.status}`)}</span>
-                                        : <span className="text-muted-foreground">{t('exams.row.testimonialAdd')}</span>}
-                                  </button>
-                                );
-                              })()}
-                            </TableCell>
-                          )}
-                          {canWrite && (
-                            <TableCell className="text-right whitespace-nowrap">
-                              <div className="inline-flex items-center gap-1">
-                                <label className="sr-only" htmlFor={`resch-${id}`}>
-                                  {t('exams.row.reschedule')}
-                                </label>
-                                <input id={`resch-${id}`} type="date"
-                                       disabled={rescheduling === id}
-                                       defaultValue={row.planned_test_date ?? ''}
-                                       onChange={(e) => reschedule(row, e.target.value)}
-                                       title={t('exams.row.reschedulePlanned')}
-                                       className="rounded border border-input bg-background px-1.5 py-1 text-[11px]" />
-                                <OutcomeMenu row={row} examType={examType}
-                                             onChanged={() => load(filters)} onError={setError} />
-                                <Button size="sm" variant="secondary"
-                                        onClick={() => setRecording(row)}>
-                                  <Plus className="mr-1 h-3 w-3" aria-hidden="true" />
-                                  {t('exams.row.addResult')}
-                                </Button>
-                              </div>
-                            </TableCell>
-                          )}
-                        </TableRow>
-
-                      </Fragment>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+            <ExamStudentsTable rows={visible} examType={examType} canWrite={canWrite}
+                               testimonials={testimonials} rescheduling={rescheduling}
+                               resetKey={resetKey} {...rowActions} />
           </CardContent>
         </Card>
       )}
