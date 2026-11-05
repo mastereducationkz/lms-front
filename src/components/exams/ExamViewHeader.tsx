@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, type ReactNode } from 'react';
 import { Button } from '../ui/button';
 import { ProofPreviewDialog } from './ProofPreviewDialog';
 import { useT } from '../../lib/i18n/react';
@@ -31,18 +30,25 @@ export function ExamViewHeader({ view, onView, children }: { view: ExamView; onV
   );
 }
 
-/** `/exam-results?proof=<id>`: the link in the Excel export opens that result's score report. */
+const proofFromUrl = (): number => {
+  const n = Number(new URLSearchParams(window.location.search).get('proof'));
+  return Number.isInteger(n) && n > 0 ? n : 0;
+};
+
+/** `/exam-results?proof=<id>`: the link in the Excel export opens that result's score report.
+ *  Reads the address bar directly so the page needs no router context. */
 export function DeepLinkedProof() {
-  const [params, setParams] = useSearchParams();
-  const id = Number(params.get('proof'));
-  if (!Number.isInteger(id) || id <= 0) return null;
+  const [id, setId] = useState(proofFromUrl);
+  if (!id) return null;
   return (
     <ProofPreviewDialog
       resultId={id}
       onClose={() => {
-        const next = new URLSearchParams(params);
+        const next = new URLSearchParams(window.location.search);
         next.delete('proof');
-        setParams(next, { replace: true });
+        const qs = next.toString();
+        window.history.replaceState(window.history.state, '', `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash}`);
+        setId(0);
       }}
     />
   );

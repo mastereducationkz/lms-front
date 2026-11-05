@@ -1,7 +1,6 @@
 import { NativeSelect } from '@/components/ui/native-select';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Download, History, MessageSquareQuote, Plus, Search } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -89,8 +88,7 @@ export default function ExamResultsWorkbenchPage() {
   const canWrite = WRITE_ROLES.has(user?.role || '');
   const canApprove = APPROVE_ROLES.has(user?.role || '');
 
-  const [params] = useSearchParams();
-  const [view, setView] = useState<ExamView>(() => (params.get('view') === 'folders' ? 'folders' : 'students'));
+  const [view, setView] = useState<ExamView>(() => (new URLSearchParams(window.location.search).get('view') === 'folders' ? 'folders' : 'students'));
   const [examType, setExamType] = useState<ExamType>('sat');
   const [dateField, setDateField] = useState<DateField>('planned');
   const [preset, setPreset] = useState<Preset>('all');
