@@ -124,6 +124,7 @@ export const serverErrors = {
   'serverErrors.staff_training_check_rate': 'Wait a few seconds before checking again',
   'serverErrors.staff_training_progress_forbidden': 'You can’t see this training progress',
   'serverErrors.training_copy_unavailable': 'The training copy is unavailable right now. Try again in a minute',
+  'serverErrors.training_copy_preparing': 'The training copy is getting ready. Try again in a minute',
   'serverErrors.staff_training_not_found': 'We couldn’t find that in staff training',
   'serverErrors.staff_training_bad_answer': 'That isn’t one of the answers offered. Reload the page and try again',
   'serverErrors.staff_training_bad_request': 'That request wasn’t valid. Check it and try again',

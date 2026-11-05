@@ -115,6 +115,7 @@ export const serverErrors: RuTable<typeof en> = {
   'serverErrors.staff_training_check_rate': 'Подождите несколько секунд перед следующей проверкой',
   'serverErrors.staff_training_progress_forbidden': 'Вам недоступен прогресс этого обучения',
   'serverErrors.training_copy_unavailable': 'Тренажёр сейчас недоступен, попробуйте через минуту',
+  'serverErrors.training_copy_preparing': 'Тренажёр готовится, попробуйте через минуту',
   'serverErrors.staff_training_not_found': 'Не нашли это в обучении сотрудников',
   'serverErrors.staff_training_bad_answer': 'Такого варианта ответа нет. Обновите страницу и попробуйте снова',
   'serverErrors.staff_training_bad_request': 'Запрос не подошёл. Проверьте его и попробуйте снова',
