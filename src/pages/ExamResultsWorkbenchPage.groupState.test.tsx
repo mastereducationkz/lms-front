@@ -22,6 +22,9 @@ vi.mock('../services/api/exams', () => ({
   updatePlannedDate: vi.fn(),
 }));
 
+// The Folders view's API module builds the real axios client at import; the grid tests never open that view.
+vi.mock('../services/api/examFolders', () => ({}));
+
 import { optionLabels, pickValue } from '@/test/dropdown';
 import ExamResultsWorkbenchPage from './ExamResultsWorkbenchPage';
 

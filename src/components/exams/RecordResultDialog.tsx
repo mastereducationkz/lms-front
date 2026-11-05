@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { ProofDropzone } from './ProofDropzone';
 import {
   createExamResult,
   uploadResultProof,
@@ -331,9 +332,10 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
                 <label htmlFor={`rr-proof-${b.key}`} className="text-xs font-medium">
                   {t('teacherInsights.recordResult.proof')}
                 </label>
-                <input id={`rr-proof-${b.key}`} type="file" accept="image/*,application/pdf"
-                       onChange={(e) => patch(b.key, { proof: e.target.files?.[0] ?? null })}
-                       className="mt-1 block w-full text-sm" />
+                <div className="mt-1">
+                  <ProofDropzone inputId={`rr-proof-${b.key}`} file={b.proof} disabled={saving}
+                                 onChange={(file) => patch(b.key, { proof: file })} />
+                </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
                   {t('teacherInsights.recordResult.proofHint')}
                 </p>

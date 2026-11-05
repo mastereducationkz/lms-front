@@ -1,6 +1,6 @@
 import { NativeSelect } from '@/components/ui/native-select';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { Download, FileText, History, MessageSquareQuote, Plus, Search } from 'lucide-react';
+import { Download, History, MessageSquareQuote, Plus, Search } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -22,7 +22,6 @@ import {
   getExamGroups,
   getAllExamResults,
   getSatOfficialDates,
-  openResultProof,
   updatePlannedDate,
   type ExamGroupOption,
   type ExamResultFilters,
@@ -33,6 +32,11 @@ import {
 import '@/lib/i18n/catalogs/exams';
 import '@/lib/i18n/catalogs/teacherInsights';
 import { InitialScoreCell, ScoreChange } from '../components/exams/InitialScoreCell';
+import { MarketingChips } from '../components/exams/MarketingChips';
+import { ResultProofCell } from '../components/exams/ResultProofCell';
+import { ResultFoldersView } from '../components/exams/ResultFoldersView';
+import { DeepLinkedProof, ExamViewHeader, type ExamView } from '../components/exams/ExamViewHeader';
+import { datePassedNoResult } from '../components/exams/datePassed';
 
 /**
  * The single exam-results screen: triage, reporting, recording and evidence in one
@@ -47,7 +51,7 @@ import { InitialScoreCell, ScoreChange } from '../components/exams/InitialScoreC
 
 type ExamType = 'sat' | 'ielts' | 'nuet';
 type DateField = 'planned' | 'actual';
-type Preset = 'all' | 'todo' | 'overdue' | 'no_result' | 'done';
+type Preset = 'all' | 'todo' | 'overdue' | 'date_passed' | 'no_result' | 'done';
 
 const EXAM_TYPES: { value: ExamType; label: string }[] = [
   { value: 'sat', label: 'SAT' },
@@ -78,59 +82,13 @@ const TRIAGE_KEYS = ['overdue', 'due', 'pending', 'completed', 'unscheduled'];
 const isOutcome = (s: string | null | undefined) =>
   s === 'declined' || s === 'not_taking' || s === 'unreachable';
 
-const chipBase = 'inline-block rounded px-1.5 py-0.5 text-[10px] leading-4 whitespace-nowrap';
-const chipOk = `${chipBase} font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300`;
-const chipMuted = `${chipBase} bg-muted text-muted-foreground`;
-
-/**
- * Why a row may be used in marketing. The two grounds are shown separately because they
- * permit different things: a score is a fact with no consent attached, while a
- * testimonial IS the consent record - only it allows using the student's name or photo.
- * Renders nothing when the row is not eligible.
- */
-function MarketingChips({ row }: { row: ExamResultRow }) {
-  const t = useT();
-  if (!row.marketing_eligible) return null;
-  const byScore = row.marketing_basis.includes('score');
-  const byTestimonial = row.marketing_basis.includes('testimonial');
-  // The qualifying sitting, spelled out: the verdict is judged on the student's current
-  // attempt, which is not always the attempt this row displays - a status or date filter
-  // can narrow the row to another one.
-  const scoreTitle = row.marketing_score != null && row.marketing_test_date != null
-    ? t('exams.marketing.scoreTitleWithAttempt', {
-        threshold: row.marketing_threshold ?? '', score: Number(row.marketing_score), date: row.marketing_test_date,
-      })
-    : t('exams.marketing.scoreTitle', { threshold: row.marketing_threshold ?? '' });
-  return (
-    <span className="inline-flex items-center gap-1">
-      {byScore && (
-        <span className={chipOk}
-              title={scoreTitle}>
-          {t('exams.marketing.score')}
-        </span>
-      )}
-      {byTestimonial && (
-        <span className={chipOk}
-              title={t('exams.marketing.testimonialTitle')}>
-          {t('exams.marketing.testimonial')}
-        </span>
-      )}
-      {byScore && !byTestimonial && (
-        <span className={chipMuted}
-              title={t('exams.marketing.noConsentTitle')}>
-          {t('exams.marketing.noConsent')}
-        </span>
-      )}
-    </span>
-  );
-}
-
 export default function ExamResultsWorkbenchPage() {
   const { user } = useAuth();
   const t = useT();
   const canWrite = WRITE_ROLES.has(user?.role || '');
   const canApprove = APPROVE_ROLES.has(user?.role || '');
 
+  const [view, setView] = useState<ExamView>(() => (new URLSearchParams(window.location.search).get('view') === 'folders' ? 'folders' : 'students'));
   const [examType, setExamType] = useState<ExamType>('sat');
   const [dateField, setDateField] = useState<DateField>('planned');
   const [preset, setPreset] = useState<Preset>('all');
@@ -237,6 +195,7 @@ export default function ExamResultsWorkbenchPage() {
     if (preset === 'all') return true;
     if (preset === 'done') return r.triage_status === 'completed';
     if (preset === 'overdue') return r.triage_status === 'overdue';
+    if (preset === 'date_passed') return datePassedNoResult(r);
     if (preset === 'no_result') return isOutcome(r.triage_status);
     return r.triage_status === 'overdue' || r.triage_status === 'due';
   }), [rows, preset, marketingOnly]);
@@ -257,6 +216,7 @@ export default function ExamResultsWorkbenchPage() {
     all: rows.length,
     todo: rows.filter((r) => r.triage_status === 'overdue' || r.triage_status === 'due').length,
     overdue: rows.filter((r) => r.triage_status === 'overdue').length,
+    datePassed: rows.filter((r) => datePassedNoResult(r)).length,
     noResult: rows.filter((r) => isOutcome(r.triage_status)).length,
     done: rows.filter((r) => r.triage_status === 'completed').length,
   }), [rows]);
@@ -303,20 +263,24 @@ export default function ExamResultsWorkbenchPage() {
   const isIelts = examType === 'ielts';
   const pastDates = officialDates.filter((d) => d.is_past);
 
+  if (view === 'folders') {
+    return (
+      <div className="space-y-4 p-4 sm:p-6">
+        <ExamViewHeader view={view} onView={setView} />
+        <ResultFoldersView canWrite={canWrite} />
+        <DeepLinkedProof />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 p-4 sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">{t('exams.title')}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {t('exams.subtitle')}
-          </p>
-        </div>
+      <ExamViewHeader view={view} onView={setView}>
         <Button size="sm" onClick={handleExport} disabled={exporting || visible.length === 0}>
           <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
           {exporting ? t('exams.export.running') : t('exams.export.button')}
         </Button>
-      </div>
+      </ExamViewHeader>
 
       <Card>
         <CardContent className="p-4 space-y-3">
@@ -341,6 +305,7 @@ export default function ExamResultsWorkbenchPage() {
               {([['all', t('exams.preset.all'), counts.all],
                  ['todo', t('exams.preset.todo'), counts.todo],
                  ['overdue', t('exams.preset.overdue'), counts.overdue],
+                 ['date_passed', t('exams.preset.datePassed'), counts.datePassed],
                  ['no_result', t('exams.preset.noResult'), counts.noResult],
                  ['done', t('exams.preset.done'), counts.done]] as const).map(([key, label, n]) => (
                 <Button key={key} size="sm" variant={preset === key ? 'default' : 'outline'}
@@ -568,15 +533,9 @@ export default function ExamResultsWorkbenchPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center">
-                            {r?.has_proof ? (
-                              <button type="button"
-                                      onClick={() => openResultProof(r.id).catch(
-                                        () => setError(t('exams.errors.openFileFailed')))}
-                                      className="inline-flex items-center gap-1 text-primary hover:underline"
-                                      aria-label={t('exams.row.openProof')}>
-                                <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-                                {t('exams.row.view')}
-                              </button>
+                            {r ? (
+                              <ResultProofCell result={r} canWrite={canWrite} label={row.student.full_name}
+                                               onChanged={() => load(filters)} onError={setError} />
                             ) : '—'}
                           </TableCell>
                           {canWrite && (
@@ -659,6 +618,8 @@ export default function ExamResultsWorkbenchPage() {
         <AddSectionsDialog row={breakdownFor} onClose={() => setBreakdownFor(null)}
                            onSaved={() => { setNotice(t('exams.sections.saved')); load(filters); }} />
       )}
+
+      <DeepLinkedProof />
 
       {recording && (
         <RecordResultDialog
