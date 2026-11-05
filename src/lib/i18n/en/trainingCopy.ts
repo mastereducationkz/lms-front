@@ -8,6 +8,13 @@ export const trainingCopy = {
   'trainingCopy.login.signingIn': 'Opening the practice copy…',
   'trainingCopy.login.expired': 'This link has expired. Go back to the LMS and press “Open practice copy” again.',
   'trainingCopy.login.expiredHint': 'Links work once and only for a couple of minutes.',
+  'trainingCopy.login.hint': 'This is your practice copy of the LMS and CRM: you can try anything here.',
+  'trainingCopy.login.pageTitleOpening': 'Opening the practice copy · Master Education',
+  'trainingCopy.login.pageTitleReady': 'Practice copy · Master Education',
+  'trainingCopy.login.errorHeading': 'Could not open the practice copy',
+  'trainingCopy.login.failed': 'The practice copy did not answer. Check your connection and try again.',
+  'trainingCopy.login.retry': 'Try again',
+  'trainingCopy.login.close': 'Close this tab',
 
   'trainingCopy.inbox.title': 'Practice inbox',
   'trainingCopy.inbox.subtitle': 'This is what the real system would have sent to parents, students and staff. Nothing here was actually delivered.',

@@ -16,12 +16,12 @@ const failed: CheckResult = {
 };
 const button = (label: string) => Array.from(document.querySelectorAll('button')).find((b) => b.textContent === label) as HTMLButtonElement;
 
-let tab: { location: { replace: ReturnType<typeof vi.fn> }; document: { body: { textContent: string }; title: string }; close: ReturnType<typeof vi.fn>; opener: unknown };
+let tab: { location: { replace: ReturnType<typeof vi.fn> }; document: Document; close: ReturnType<typeof vi.fn>; opener: unknown };
 let open: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   Object.values(api).forEach((fn) => fn.mockReset());
-  tab = { location: { replace: vi.fn() }, document: { body: { textContent: '' }, title: '' }, close: vi.fn(), opener: 'window' };
+  tab = { location: { replace: vi.fn() }, document: document.implementation.createHTMLDocument(''), close: vi.fn(), opener: 'window' };
   open = vi.fn(() => tab);
   vi.stubGlobal('open', open);
 });
@@ -70,13 +70,28 @@ describe('TaskCard: the training copy', () => {
     expect(document.querySelector(`a[href="${URL_ONCE}"]`)).not.toBeNull();
   });
 
-  it('closes the empty tab and says so when the copy is unavailable', async () => {
+  it('puts a loading screen with a title into the new tab while the link is being made', async () => {
+    let release: (v: { url: string; expires_at: string }) => void = () => undefined;
+    api.openTask.mockReturnValue(new Promise((r) => { release = r; }));
+    await show();
+    await click(button('Open the training copy'));
+    expect(tab.document.title).toBe('Opening the practice copy · Master Education');
+    expect(tab.document.body.textContent).toContain('Opening the practice copy…');
+    expect(tab.document.body.textContent).toContain('you can try anything here');
+    expect(tab.document.head.querySelector('style')).not.toBeNull();
+    release({ url: URL_ONCE, expires_at: '' });
+    await settle();
+    expect(tab.location.replace).toHaveBeenCalledWith(URL_ONCE);
+  });
+
+  it('shows the failure in the tab itself, with a button that closes it, when the copy is unavailable', async () => {
     const refusal = Object.assign(new Error('The training copy is unavailable right now. Try again in a minute'), { cause: { response: { data: { reason_code: 'training_copy_unavailable' } } } });
     api.openTask.mockRejectedValue(refusal);
     await show();
     await click(button('Open the training copy'));
     await settle();
-    expect(tab.close).toHaveBeenCalled();
+    expect(tab.document.body.textContent).toContain('Could not open the practice copy');
+    expect(tab.document.getElementById('close-tab')).not.toBeNull();
     expect(tab.location.replace).not.toHaveBeenCalled();
     expect(text()).toContain('unavailable right now');
   });

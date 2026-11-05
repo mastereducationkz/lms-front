@@ -11,6 +11,7 @@ import { formatDateTime } from '@/lib/i18n/format';
 import { checkTask, openTask, resetPractice, type CheckResult, type TaskResult, type TaskSummary } from '@/services/api/staffTraining';
 import RichText from './RichText';
 import { errorText, pick } from './model';
+import { paintErrorTab, paintLoadingTab, type TabStrings } from '@/lib/training/loadingTab';
 import '@/lib/i18n/catalogs/staffTraining';
 
 const CHECK_COOLDOWN_MS = 5000; // the server allows one check per 5 s (CONTRACTS §6.1)
@@ -48,9 +49,12 @@ export default function TaskCard({ task, locale, done, onChecked }: Props) {
     setError(null);
     setBlockedUrl(null);
     const tab = window.open('', '_blank');
-    try {
-      if (tab) tab.document.body.textContent = t('staffTraining.task.opening');
-    } catch { /* a blank tab we cannot write to is still a tab */ }
+    const strings: TabStrings = {
+      pageTitle: t('staffTraining.task.tab.title'), heading: t('staffTraining.task.tab.heading'), hint: t('staffTraining.task.tab.hint'),
+      errorHeading: t('staffTraining.task.tab.errorHeading'), errorHint: t('staffTraining.task.tab.errorHint'),
+      closeLabel: t('staffTraining.task.tab.close'),
+    };
+    if (tab) paintLoadingTab(tab, strings);       // the same screen the copy shows, with a title, until the link arrives
     try {
       const { url } = await openTask(task.id);
       if (tab) {
@@ -60,7 +64,7 @@ export default function TaskCard({ task, locale, done, onChecked }: Props) {
         setBlockedUrl(url);
       }
     } catch (e) {
-      tab?.close();
+      if (tab) paintErrorTab(tab, strings);           // the tab says so itself; its button closes it
       setError(errorText(e, t));
     } finally {
       setOpening(false);

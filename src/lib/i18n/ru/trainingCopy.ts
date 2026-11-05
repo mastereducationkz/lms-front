@@ -8,6 +8,13 @@ export const trainingCopy: RuTable<typeof en> = {
   'trainingCopy.login.signingIn': 'Открываем тренажёр…',
   'trainingCopy.login.expired': 'Ссылка устарела. Вернитесь в LMS и нажмите «Открыть тренажёр» ещё раз.',
   'trainingCopy.login.expiredHint': 'Ссылка работает один раз и всего несколько минут.',
+  'trainingCopy.login.hint': 'Это ваша учебная копия LMS и CRM — здесь можно всё пробовать.',
+  'trainingCopy.login.pageTitleOpening': 'Открываем тренажёр · Master Education',
+  'trainingCopy.login.pageTitleReady': 'Тренажёр · Master Education',
+  'trainingCopy.login.errorHeading': 'Не удалось открыть тренажёр',
+  'trainingCopy.login.failed': 'Тренажёр не ответил. Проверьте соединение и повторите.',
+  'trainingCopy.login.retry': 'Повторить',
+  'trainingCopy.login.close': 'Закрыть вкладку',
 
   'trainingCopy.inbox.title': 'Входящие тренажёра',
   'trainingCopy.inbox.subtitle': 'Это то, что настоящая система отправила бы родителям, ученикам и сотрудникам. Ничего из этого не было доставлено.',

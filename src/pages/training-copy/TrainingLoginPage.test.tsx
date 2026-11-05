@@ -64,6 +64,22 @@ describe('/training-login', () => {
     expect(text()).toContain('Opening the practice copy');
   });
 
+  it('reads Russian in a Russian browser and sets the Russian tab title', async () => {
+    vi.stubGlobal('navigator', { language: 'ru-RU' });
+    redeem.mockReturnValue(new Promise(() => undefined));
+    await open('?t=JWT');
+    expect(text()).toContain('Открываем тренажёр');
+    expect(document.title).toBe('Открываем тренажёр · Master Education');
+  });
+
+  it("prefers this device's last language over the browser's", async () => {
+    vi.stubGlobal('navigator', { language: 'ru-RU' });
+    localStorage.setItem('lms:ui-language', 'en');
+    redeem.mockReturnValue(new Promise(() => undefined));
+    await open('?t=JWT');
+    expect(text()).toContain('Opening the practice copy');
+  });
+
   it('shows one sentence, no password form, when the link is refused', async () => {
     redeem.mockRejectedValue({ response: { status: 401 } });
     await open('?t=USED');
@@ -71,6 +87,43 @@ describe('/training-login', () => {
     expect(text()).toContain('Open practice copy');
     expect(document.querySelector('input')).toBeNull();
     expect(updateUser).not.toHaveBeenCalled();
+  });
+
+  it('shows the loading screen with the logo, a hint and a title while it waits', async () => {
+    redeem.mockReturnValue(new Promise(() => undefined));
+    await open('?t=JWT');
+    expect(document.querySelector('[data-training-loader="loading"]')).not.toBeNull();
+    expect(document.querySelector('[data-training-loader] img[src="/logo.svg"]')).not.toBeNull();
+    expect(text()).toContain('Opening the practice copy');
+    expect(text()).toContain('you can try anything here');
+    expect(document.title).toBe('Opening the practice copy · Master Education');
+  });
+
+  it('retitles the tab when the practice copy is open', async () => {
+    redeem.mockResolvedValue({ user: { id: 1 }, path: '/dashboard', task: null });
+    await open('?t=JWT');
+    expect(document.title).toBe('Practice copy · Master Education');
+  });
+
+  it('offers a retry when the copy did not answer, and the second try can succeed', async () => {
+    redeem.mockRejectedValueOnce({ response: undefined, code: 'ERR_NETWORK' }).mockResolvedValueOnce({ user: { id: 1 }, path: '/attendance', task: null });
+    await open('?t=JWT');
+    expect(document.querySelector('[data-training-loader="error"]')).not.toBeNull();
+    expect(text()).toContain('did not answer');
+    const retry = Array.from(document.querySelectorAll('button')).find((b) => b.textContent === 'Try again') as HTMLButtonElement;
+    expect(retry).toBeTruthy();
+    const { act } = await import('react');
+    await act(async () => { retry.click(); });
+    await settle();
+    expect(redeem).toHaveBeenCalledTimes(2);
+    expect(text()).toContain('ATTENDANCE PAGE');
+  });
+
+  it('an expired link offers to close the tab, not a retry', async () => {
+    redeem.mockRejectedValue({ response: { status: 401 } });
+    await open('?t=USED');
+    const labels = Array.from(document.querySelectorAll('button')).map((b) => b.textContent);
+    expect(labels).toEqual(['Close this tab']);
   });
 
   it('does not call the server without a token', async () => {
