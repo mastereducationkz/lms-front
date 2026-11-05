@@ -41,6 +41,7 @@ import { studentHome } from './en/studentHome';
 import { publicPages } from './en/publicPages';
 import { chatLive } from './en/chatLive';
 import { meetViews } from './en/meetViews';
+import { meetJoinLog } from './en/meetJoinLog';
 import { teacherDesk } from './en/teacherDesk';
 import { teacherInsights } from './en/teacherInsights';
 import { courseAuthoring } from './en/courseAuthoring';
@@ -97,6 +98,7 @@ export const EN_NAMESPACES = {
   publicPages,
   chatLive,
   meetViews,
+  meetJoinLog,
   teacherDesk,
   teacherInsights,
   courseAuthoring,
@@ -154,6 +156,7 @@ export const en = {
   ...publicPages,
   ...chatLive,
   ...meetViews,
+  ...meetJoinLog,
   ...teacherDesk,
   ...teacherInsights,
   ...courseAuthoring,

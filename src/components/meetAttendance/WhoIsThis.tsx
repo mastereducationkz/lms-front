@@ -76,7 +76,9 @@ function AccountRow({ account, options, choice, onChoose, busy, onConfirm }: {
         {suggested && <span className="text-[11px] text-amber-700 dark:text-amber-300">{t('meetViews.whoIsThis.suggested')}</span>}
       </div>
       {account.kind !== 'signed_in' && (
-        <p className="mt-1.5 pl-6 text-[11px] text-muted-foreground">{t('meetViews.whoIsThis.notSignedIn')}</p>
+        <p className="mt-1.5 pl-6 text-[11px] text-muted-foreground">
+          {t(account.kind === 'guest' ? 'meetViews.whoIsThis.notSignedIn' : 'meetViews.whoIsThis.notSignedInPhone')}
+        </p>
       )}
     </li>
   );

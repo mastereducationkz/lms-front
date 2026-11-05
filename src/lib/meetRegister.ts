@@ -98,6 +98,12 @@ const SKIP: Record<string, MessageKey> = {
   person_changed_it: 'meet.register.skipPersonChangedIt',
   lesson_moved: 'meet.register.skipLessonMoved',
 };
+/** Why Meet left a student's mark alone, in words; null for a reason this page does not know. */
+export function skipText(reason: string | null | undefined, locale: Locale = activeLocale()): string | null {
+  const key = SKIP[reason ?? ''];
+  return key ? t(key, undefined, locale) : null;
+}
+
 const MARK: Record<string, MessageKey> = {
   present: 'meet.register.markPresent',
   late: 'meet.register.markLate',
