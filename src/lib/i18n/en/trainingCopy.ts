@@ -3,6 +3,7 @@ import type { MessageTable } from '../types';
 /** The training copy: the banner, the one-click login page (/training-login) and the inbox of everything it would have sent (/inbox). */
 export const trainingCopy = {
   'trainingCopy.banner': 'TRAINING COPY · nothing you do here leaves it · {commit}',
+  'trainingCopy.bannerNoCommit': 'TRAINING COPY · nothing you do here leaves it',
   'trainingCopy.nav.inbox': 'Practice inbox',
 
   'trainingCopy.login.signingIn': 'Opening the practice copy…',
@@ -11,6 +12,7 @@ export const trainingCopy = {
   'trainingCopy.login.hint': 'This is your practice copy of the LMS and CRM: you can try anything here.',
   'trainingCopy.login.pageTitleOpening': 'Opening the practice copy · Master Education',
   'trainingCopy.login.pageTitleReady': 'Practice copy · Master Education',
+  'trainingCopy.login.pageTitleError': 'Could not open the practice copy · Master Education',
   'trainingCopy.login.errorHeading': 'Could not open the practice copy',
   'trainingCopy.login.failed': 'The practice copy did not answer. Check your connection and try again.',
   'trainingCopy.login.retry': 'Try again',
