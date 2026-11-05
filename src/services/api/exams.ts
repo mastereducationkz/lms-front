@@ -59,6 +59,11 @@ export interface ExamResultDetail {
   source: string;
   has_proof: boolean;
   notes: string | null;
+  proof_uploaded_at?: string | null;
+  verified_at?: string | null;
+  /** Who typed the result in / who confirmed it (only while verified). Absent from an older server. */
+  recorded_by_name?: string | null;
+  verified_by_name?: string | null;
 }
 
 import type { BluebookFinalExam } from '../../lib/bluebookFinalExam';
@@ -90,6 +95,8 @@ export interface ExamResultRow {
   outcome_note?: string | null;
   /** The planned sitting itself has a result (a retake's older result does not count). */
   sitting_has_result?: boolean;
+  /** The planned date is behind us and the sitting has no result and no outcome (absent from an older server). */
+  date_passed_no_result?: boolean;
   /** «Не хочет делиться»: the curator's note when the student or parent declined to share. */
   decline_note?: string | null;
   /** Whether the sales team may use this row; `marketing_basis` says on what grounds. */
@@ -126,6 +133,10 @@ export interface ExamResultRow {
     status: 'reported' | 'verified' | 'rejected';
     source: string;
     has_proof: boolean;
+    proof_uploaded_at?: string | null;
+    verified_at?: string | null;
+    recorded_by_name?: string | null;
+    verified_by_name?: string | null;
   } | null;
 }
 
@@ -448,7 +459,13 @@ async function openAuthenticatedFile(path: string): Promise<void> {
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
-/** Open a result's proof (score report). Re-authorized server-side per request. */
+/** The proof file itself as a blob, for the in-app preview. Re-authorized server-side per request. */
+export async function fetchResultProofBlob(resultId: number): Promise<Blob> {
+  const response = await api.get(`/exams/results/${resultId}/proof`, { responseType: 'blob' });
+  return response.data as Blob;
+}
+
+/** Open a result's proof (score report) in a new tab. Re-authorized server-side per request. */
 export function openResultProof(resultId: number): Promise<void> {
   return openAuthenticatedFile(`/exams/results/${resultId}/proof`);
 }
