@@ -1,12 +1,13 @@
 import { NativeSelect } from '@/components/ui/native-select';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowRight, ArrowUp, Download, Search } from 'lucide-react';
+import { ArrowDown, ArrowRight, ArrowUp, Download, FileText, Search } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { FinalExamScore, FinalExamWhen } from '../components/exams/FinalExamCell';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import {
+  downloadBluebookReport,
   exportBluebookGrid,
   getBluebookGrid,
   getBluebookGroups,
@@ -15,6 +16,7 @@ import {
 } from '../services/api/exams';
 import type { MessageKey } from '../lib/i18n';
 import { useT } from '../lib/i18n/react';
+import { bluebookReportFilename } from '../lib/bluebookReportFile';
 import { useAuth } from '../contexts/AuthContext';
 import { GroupStateFilter } from '../components/exams/GroupStateFilter';
 import { defaultGroupState, groupOptionLabel, type GroupState } from '../lib/groupState';
@@ -128,6 +130,20 @@ export default function BluebookGroupGridPage() {
   useEffect(() => {
     if (groupId != null) load(groupId);
   }, [groupId, load]);
+
+  const handleDownloadReport = async (
+    row: BluebookGrid['rows'][number],
+    column: BluebookGrid['columns'][number],
+    assignmentId: number,
+  ) => {
+    try {
+      await downloadBluebookReport(
+        assignmentId, row.student_id, bluebookReportFilename(column.test_number, row.full_name),
+      );
+    } catch {
+      setError(t('teacherInsights.bluebook.reportFailed'));
+    }
+  };
 
   const handleExport = async () => {
     if (groupId == null) return;
@@ -357,6 +373,17 @@ export default function BluebookGroupGridPage() {
                                   <span className="sr-only">
                                     {` ${cell.delta != null ? t('teacherInsights.bluebook.trendBy', { trend: t(label), delta: Math.abs(cell.delta) }) : t(label)}`}
                                   </span>
+                                )}
+                                {cell.report_assignment_id != null && (
+                                  <button
+                                    type="button"
+                                    className="ml-1 rounded p-0.5 text-muted-foreground hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+                                    title={t('teacherInsights.bluebook.downloadReport')}
+                                    aria-label={t('teacherInsights.bluebook.downloadReportFor', { name: row.full_name, number: c.test_number ?? '' })}
+                                    onClick={() => handleDownloadReport(row, c, cell.report_assignment_id as number)}
+                                  >
+                                    <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                                  </button>
                                 )}
                               </span>
                             </TableCell>

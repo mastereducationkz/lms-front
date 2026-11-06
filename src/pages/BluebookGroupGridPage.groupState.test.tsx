@@ -12,10 +12,12 @@ vi.mock('../contexts/AuthContext', async () => {
 
 const getBluebookGroups = vi.fn();
 const getBluebookGrid = vi.fn();
+const downloadBluebookReport = vi.fn();
 vi.mock('../services/api/exams', () => ({
   getBluebookGroups: (...a: unknown[]) => getBluebookGroups(...a),
   getBluebookGrid: (...a: unknown[]) => getBluebookGrid(...a),
   exportBluebookGrid: vi.fn(),
+  downloadBluebookReport: (...a: unknown[]) => downloadBluebookReport(...a),
 }));
 
 import { dropdownText, dropdownValue } from '@/test/dropdown';
@@ -73,5 +75,41 @@ describe('Bluebook page group state', () => {
     expect(dropdownText(host.querySelector('#bb-group'))).toBe('SAT - Old · finished');
     expect(dropdownValue(host.querySelector('#bb-group'))).toBe('9');
     expect(getBluebookGrid).toHaveBeenLastCalledWith(9);
+  });
+
+  it('offers the PDF report only on cells that have one, and downloads it under a readable name', async () => {
+    role = 'teacher';
+    const col = (n: number) => ({
+      key: `t${n}`, label: `Bluebook #${n}`, test_number: n, assignment_id: 100 + n, due_date: null,
+      week_number: null, is_baseline: false, is_assigned: true,
+    });
+    const cell = (reportId: number | null) => ({
+      state: 'submitted', verbal_score: 600, math_score: 700, total_score: 1300, taken_at: null,
+      screenshot_url: null, source: 'homework', report_assignment_id: reportId, delta: null, trend: null,
+    });
+    const stat = { submitted_count: 1, expected_count: 1, completion_rate: 1, mean_total: null, median_total: null, mean_verbal: null, mean_math: null };
+    getBluebookGrid.mockResolvedValue({
+      group_id: 1, group_name: 'SAT - Daniil', teacher_name: null, start_date: null, finish_date: null,
+      columns: [col(7), col(8)],
+      rows: [{
+        student_id: 55, full_name: 'Иванов Иван', display_id: null, email: null,
+        cells: { t7: cell(107), t8: cell(null) },
+        submitted_count: 2, assigned_count: 2, best_total: 1300, latest_total: 1300, average_total: 1300,
+        baseline_total: null, improvement_from_baseline: null, final_exam: null,
+      }],
+      column_stats: { t7: stat, t8: stat },
+      group_stats: {
+        student_count: 1, tests_assigned: 2, tests_available: 8, submitted_count: 2, expected_count: 2,
+        completion_rate: 1, average_latest_total: 1300, median_latest_total: 1300, average_best_total: 1300,
+        highest_total: 1300, lowest_latest_total: 1300, average_improvement: null, improved_count: 0,
+        declined_count: 0, students_with_no_results: 0,
+      },
+    });
+    downloadBluebookReport.mockResolvedValue(undefined);
+    await show();
+    const buttons = Array.from(host.querySelectorAll('button[title="Download the College Board PDF report"]'));
+    expect(buttons).toHaveLength(1);
+    await act(async () => { (buttons[0] as HTMLButtonElement).click(); });
+    expect(downloadBluebookReport).toHaveBeenCalledWith(107, 55, 'Bluebook-7_Иванов-Иван.pdf');
   });
 });
