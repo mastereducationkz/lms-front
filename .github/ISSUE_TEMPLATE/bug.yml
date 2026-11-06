@@ -1,0 +1,83 @@
+name: Баг
+description: Что-то работает не так, как должно
+title: "[Баг] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Пиши так, чтобы любой мог повторить баг с первого раза.
+        Не пиши пароли и личные данные учеников. На скриншотах с прода замазывай имена и телефоны.
+        После создания поставь метку серьёзности: `критично`, `важно` или `мелочь`.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Серьёзность
+      options:
+        - критично (теряем деньги или данные, кто-то видит лишнее, нельзя войти или пройти тест)
+        - важно (функция работает неправильно, но есть обходной путь)
+        - мелочь (косметика, опечатка, неудобство)
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Где
+      options:
+        - staging
+        - прод
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Commit
+      description: С плашки STAGING на странице или из /health (build.commit)
+      placeholder: "b030f90"
+  - type: input
+    id: area
+    attributes:
+      label: Продукт и экран
+      placeholder: "CRM → карточка ученика → абонемент"
+    validations:
+      required: true
+  - type: input
+    id: role
+    attributes:
+      label: Роль и тестовый аккаунт
+      placeholder: "crm.admin@ / student3@"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги
+      description: Пронумеруй, начиная с входа в систему
+      placeholder: |
+        1. Войти как crm.admin@
+        2. Открыть ученика student3
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидалось
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Получилось
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Доказательства
+      description: Скриншот или видео, ошибки из консоли и вкладки Network в DevTools
+  - type: input
+    id: browser
+    attributes:
+      label: Браузер и устройство
+      placeholder: "Chrome 130, macOS / Safari, iPhone"
