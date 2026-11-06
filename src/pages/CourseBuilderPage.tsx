@@ -21,6 +21,7 @@ import { CSS } from '@dnd-kit/utilities';
 import Loader from '../components/Loader.tsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui/dialog';
 import ConfirmDialog from '../components/ConfirmDialog.tsx';
+import { toast } from '../components/Toast';
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import UnsavedChangesDialog from '../components/UnsavedChangesDialog';
 import { canManageCourseAccess } from '../lib/courseAccess';
@@ -1149,9 +1150,13 @@ export default function CourseBuilderPage() {
         }
         
         if (moduleId) {
-          await apiClient.deleteLecture(id);
-          const lectures = await apiClient.getModuleLessons(courseId, moduleId);
-          setModuleLectures(prev => new Map(prev).set(moduleId, lectures));
+          try {
+            await apiClient.deleteLecture(id);
+            const lectures = await apiClient.getModuleLessons(courseId, moduleId);
+            setModuleLectures(prev => new Map(prev).set(moduleId, lectures));
+          } catch {
+            toast(t('courseAuthoring.builder.deleteFailed'), 'error');
+          }
         }
       }
       setConfirmStep(1);

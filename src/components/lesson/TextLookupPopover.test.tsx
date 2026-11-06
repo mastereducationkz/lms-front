@@ -101,6 +101,11 @@ afterEach(() => {
 });
 
 describe('Look Up', () => {
+  it('ignores keydown events without a key', () => {
+    mount();
+    expect(() => document.dispatchEvent(new Event('keydown'))).not.toThrow();
+  });
+
   it('starts by itself once the selection has been still for 300 ms', () => {
     mount();
     select('p1', 'meticulous');

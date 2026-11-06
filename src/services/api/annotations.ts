@@ -42,8 +42,18 @@ export async function listAnnotations(
 ): Promise<{ attempt_no: number; annotations: TextAnnotation[] }> {
   // Never from the client cache: which attempt is «current» changes when a quiz is submitted,
   // which no /annotations mutation tells the cache about (a retake showed the last attempt's marks).
-  const response = await api.get('/annotations', { params: { surface, target_id: targetId, attempt }, cache: false } as never);
-  return response.data;
+  const options = { params: { surface, target_id: targetId, attempt }, cache: false, timeout: 10000 } as never;
+  try {
+    const response = await api.get('/annotations', options);
+    return response.data;
+  } catch (error) {
+    // Reading is safe to repeat. A timed-out write could already have reached the server,
+    // so only this GET gets a second chance during a brief connection interruption.
+    const code = (error as { code?: unknown } | null)?.code;
+    if (code !== 'ECONNABORTED' && code !== 'ETIMEDOUT' && code !== 'ERR_NETWORK') throw error;
+    const response = await api.get('/annotations', options);
+    return response.data;
+  }
 }
 
 export async function createAnnotation(surface: AnnotationSurface, targetId: number, body: NewAnnotation): Promise<TextAnnotation> {

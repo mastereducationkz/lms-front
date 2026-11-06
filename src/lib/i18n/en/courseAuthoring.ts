@@ -362,6 +362,7 @@ export const courseAuthoring = {
   'courseAuthoring.builder.lessonType': 'Lesson type',
   'courseAuthoring.builder.videoUrl': 'Video URL',
   'courseAuthoring.builder.deleteTitle': 'Delete lesson?',
+  'courseAuthoring.builder.deleteFailed': 'Could not delete the lesson. Check that you have permission and try again.',
   'courseAuthoring.builder.deleteTitleSure': 'Are you REALLY sure?',
   'courseAuthoring.builder.deleteText': 'This action cannot be undone. All lesson content, steps, and student progress will be permanently deleted.',
   'courseAuthoring.builder.deleteTextSure': 'This is your last chance! Once deleted, this lesson and all its data will be gone forever. There’s no going back.',
