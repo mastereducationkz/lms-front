@@ -101,7 +101,7 @@ export function useSelectionSettle(
       schedule();
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key.startsWith('Arrow') || event.key === 'Shift' || event.key === 'Home' || event.key === 'End') {
+      if (typeof event.key === 'string' && (event.key.startsWith('Arrow') || event.key === 'Shift' || event.key === 'Home' || event.key === 'End')) {
         pointerType = 'keyboard';
       }
     };

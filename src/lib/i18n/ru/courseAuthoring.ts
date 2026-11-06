@@ -365,6 +365,7 @@ export const courseAuthoring: RuTable<typeof en> = {
   'courseAuthoring.builder.lessonType': 'Тип урока',
   'courseAuthoring.builder.videoUrl': 'Ссылка на видео',
   'courseAuthoring.builder.deleteTitle': 'Удалить урок?',
+  'courseAuthoring.builder.deleteFailed': 'Не удалось удалить урок. Проверьте права доступа и попробуйте ещё раз.',
   'courseAuthoring.builder.deleteTitleSure': 'Точно удалить?',
   'courseAuthoring.builder.deleteText': 'Это нельзя отменить. Всё содержимое урока, шаги и прогресс учеников удалятся навсегда.',
   'courseAuthoring.builder.deleteTextSure': 'Последнее предупреждение: после удаления урок и все его данные исчезнут навсегда, вернуть их не получится.',
