@@ -248,6 +248,8 @@ export interface BluebookGrid {
       taken_at: string | null;
       screenshot_url: string | null;
       source: string | null;
+      /** Set only when the student's official College Board PDF is stored; the id to fetch it with. Absent from an older server. */
+      report_assignment_id?: number | null;
       delta: number | null;
       trend: 'up' | 'down' | 'same' | null;
     }>;
@@ -600,6 +602,30 @@ export function openBluebookReport(assignmentId: number, studentId: number): Pro
   return openAuthenticatedFile(
     `/exams/bluebook/report?assignment_id=${assignmentId}&student_id=${studentId}`,
   );
+}
+
+/**
+ * Save the student's official College Board PDF to disk under a readable name.
+ * Same endpoint and server-side access check as {@link openBluebookReport}; a download
+ * (not a new tab) so the file keeps `filename` instead of a blob id.
+ */
+export async function downloadBluebookReport(
+  assignmentId: number,
+  studentId: number,
+  filename: string,
+): Promise<void> {
+  const response = await api.get(
+    `/exams/bluebook/report?assignment_id=${assignmentId}&student_id=${studentId}`,
+    { responseType: 'blob' },
+  );
+  const url = URL.createObjectURL(response.data as Blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 /** Correct a parsed score. Records who changed it and why. */
